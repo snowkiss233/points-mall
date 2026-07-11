@@ -1316,7 +1316,7 @@
           </div>
         </div>
 
-        <div class="page-note">商品上架不等于前台投放。全局模板只能创建 1 个；游戏专区模板可以创建多个，并通过社区绑定控制投放范围。商城客户端可以在同一社区内投放多个 TAB 分区；每个 TAB 对应一条投放模板。同一商品可以投放到多个二级模板，并在各二级模板下分别维护排序。投放管理只维护模板与商品的投放关系，不维护商品基础信息、SKU 属性模板、库存、CDKey 码池和履约记录。</div>
+        <div class="page-note">商品上架不等于前台投放。全局模板只能创建 1 个，投放范围固定为全部社区；游戏专区模板可以创建多个，并通过社区绑定控制投放范围。商城客户端可以在同一社区内投放多个 TAB 分区；每个 TAB 对应一条投放模板。同一商品可以投放到多个二级模板，并在各二级模板下分别维护排序。投放管理只维护模板与商品的投放关系，不维护商品基础信息、SKU 属性模板、库存、CDKey 码池和履约记录。</div>
 
         <section class="card" aria-label="投放配置筛选区">
           <div class="card-body">
@@ -1343,7 +1343,7 @@
           <div class="table-head">
             <div>
               <div class="table-title">投放配置数据</div>
-              <div class="table-meta">全局模板最多 1 个；游戏专区模板按社区绑定维护，可创建多条；模板排序值越大越靠左。</div>
+              <div class="table-meta">全局模板覆盖全部社区；投放商品数按一级模板下的 SPU ID 去重统计；模板排序值越大越靠左。</div>
             </div>
             <div class="table-meta" id="displayTableCount">共 0 条</div>
           </div>
@@ -1357,7 +1357,7 @@
                   <th>投放范围</th>
                   <th>排序值（越大越靠左）</th>
                   <th>配置状态</th>
-                  <th>投放关系数</th>
+                  <th>投放商品数</th>
                   <th>生效时间</th>
                   <th>创建时间</th>
                   <th>最后操作人</th>
@@ -1690,7 +1690,7 @@
                   <div class="field"><label><span class="required-star">*</span>生效开始时间</label><input id="displayStartTime" placeholder="2026-05-20 10:00"></div>
                   <div class="field"><label><span class="required-star">*</span>生效结束时间</label><input id="displayEndTime" placeholder="2026-06-20 23:59"></div>
                 </div>
-                <div class="hint-text">全局模板只能创建 1 个，且不配置社区绑定；游戏专区模板可以创建多个。社区绑定选择游戏社区或战队社区时按当前入口社区归属投放；选择自定义社区时必须填写社区 ID。一级模板名称映射客户端一级 TAB，模板排序值越大越靠左。</div>
+                <div class="hint-text">全局模板只能创建 1 个，不配置社区绑定，投放范围固定为全部社区；游戏专区模板可以创建多个。社区绑定选择游戏社区或战队社区时按当前入口社区归属投放；选择自定义社区时必须填写社区 ID。一级模板名称映射客户端一级 TAB，模板排序值越大越靠左。</div>
               </div>
             </section>
 
@@ -2258,7 +2258,7 @@
     ];
 
     let displayConfigs = [
-      makeDisplayConfig("TPL_HOME_RECOMMEND", "上架", "2026-05-20 10:00", "2026-06-20 23:59", ["SPU10001", "SPU10002", "SPU10007", "SPU10005"], ""),
+      makeDisplayConfig("TPL_HOME_RECOMMEND", "上架", "2026-05-20 10:00", "2026-06-20 23:59", ["SPU10001", "SPU10002", "SPU10007", "SPU10001", "SPU10005"], ""),
       makeDisplayConfig("TPL_PUBG_BENEFIT", "上架", "2026-05-20 10:00", "2026-06-30 23:59", ["SPU10002", "SPU10003", "SPU10008"], "包含 CDKey 不足、码池未配置或草稿商品"),
       makeDisplayConfig("TPL_PUBG_DECORATION", "下架", "2026-05-01 10:00", "2026-05-31 23:59", ["SPU10002", "SPU10003"], ""),
       makeDisplayConfig("TPL_GAME_ITEM_ZONE", "草稿", "", "", ["SPU10008"], "配置草稿、CDKey 码池未配置")
@@ -3869,6 +3869,7 @@
     function makeDisplayConfig(id, state, startTime, endTime, spus, issue) {
       const partition = displayPartitions.find(item => item.id === id);
       const subTemplates = defaultDisplaySubTemplates(id);
+      const uniqueSpuCount = new Set(spus).size;
       return {
         id,
         templateId: id,
@@ -3896,7 +3897,7 @@
         operator: "平台运营",
         logs: [
           { time: nowText(), user: "平台运营", type: state === "上架" ? "上架投放配置" : "新建投放配置", object: id, before: "-", after: state, remark: "投放配置 mock 数据" },
-          { time: "2026-05-20 10:00", user: "王丰", type: "添加投放商品", object: id, before: "-", after: `${spus.length} 个商品`, remark: "维护模板商品投放关系" }
+          { time: "2026-05-20 10:00", user: "王丰", type: "添加投放商品", object: id, before: "-", after: `${uniqueSpuCount} 个投放商品`, remark: "按 SPU 去重统计，商品可投放到多个二级模板" }
         ]
       };
     }
@@ -3930,7 +3931,7 @@
     }
 
     function displayTemplateScopeText(config) {
-      if (config.templateType !== "游戏专区模板") return "全局模板";
+      if (config.templateType !== "游戏专区模板") return "全部社区";
       const binding = config.communityBinding || (config.communityId ? "自定义社区" : "游戏社区");
       if (binding === "自定义社区") return config.communityId ? `自定义社区：${config.communityId}` : "自定义社区 / 社区 ID 未填写";
       return binding;
@@ -3965,6 +3966,10 @@
 
     function displayProductNames(config) {
       return config.products.map(item => productBySpu(item.spu)?.name).filter(Boolean);
+    }
+
+    function uniqueDisplayProductCount(rows = []) {
+      return new Set(rows.map(row => String(row.spu || "").trim()).filter(Boolean)).size;
     }
 
     function getDisplayProductStatus(product, config) {
@@ -4024,7 +4029,7 @@
           <td>${displayTemplateScopeText(config)}</td>
           <td>${config.sortWeight || "-"}</td>
           <td>${stateTag(config.state)}</td>
-          <td>${config.products.length}</td>
+          <td>${uniqueDisplayProductCount(config.products)}</td>
           <td>${displayTimeText(config)}</td>
           <td>${config.createdAt || config.updatedAt}</td>
           <td>${lastOperatorFromLogs(config.logs, config.operator)}</td>
@@ -4105,15 +4110,16 @@
         if ((config.communityBinding || "") === "自定义社区" || config.communityId) basicRows.push(["社区 ID", config.communityId || "-"]);
       }
       document.getElementById("displayDetailBody").innerHTML = `
-        ${detailSection("模板基础信息", infoGrid(basicRows) + `<div class="hint-text">模板名称会映射为客户端 TAB 名称；全局模板只能创建 1 个且不配置社区绑定，游戏专区模板通过社区绑定控制投放范围。</div>`)}
+        ${detailSection("模板基础信息", infoGrid(basicRows) + `<div class="hint-text">模板名称会映射为客户端 TAB 名称；全局模板只能创建 1 个，投放范围固定为全部社区；游戏专区模板通过社区绑定控制投放范围。</div>`)}
         ${detailSection("投放配置", infoGrid([
           ["配置状态", config.state], ["生效开始时间", config.startTime || "-"],
-          ["生效结束时间", config.endTime || "-"], ["投放关系数", config.products.length],
+          ["生效结束时间", config.endTime || "-"], ["投放商品数", uniqueDisplayProductCount(config.products)],
           ["创建时间", config.createdAt || config.updatedAt], ["备注", config.remark || "-"]
-        ]))}
+        ]) + `<div class="hint-text">投放商品数按当前一级模板下的 SPU ID 去重统计；同一商品投放到多个二级模板时只计 1 个。</div>`)}
         ${detailSection("二级模板", displaySubTemplateReadonlyTable(config.subTemplates || []))}
-        ${detailSection("投放商品列表", displayProductTable(config.products, config, false))}
+        ${detailSection("投放商品列表", displayDetailProductContent(config))}
       `;
+      bindDisplayDetailProductTabs(config);
       openDrawer("displayDetailDrawer");
     }
 
@@ -4123,9 +4129,40 @@
       return `<div class="table-wrap"><table><thead><tr><th>二级模板名称</th><th>排序值（越大越靠左）</th></tr></thead><tbody>${sortedRows.map(row => `<tr><td>${row.name}</td><td>${row.sort}</td></tr>`).join("")}</tbody></table></div>`;
     }
 
-    function displayProductTable(rows, config, editable) {
+    function displayDetailProductSlots(config) {
+      const rows = sortedDisplaySubTemplateRows(config.subTemplates || []);
+      return rows.length ? rows : [{ id: "", name: "一级模板商品", sort: 0 }];
+    }
+
+    function displayDetailProductRows(config, subTemplateId) {
+      return (config.products || []).filter(row => (row.subTemplateId || "") === (subTemplateId || ""));
+    }
+
+    function displayDetailProductContent(config) {
+      const slots = displayDetailProductSlots(config);
+      const activeId = slots[0]?.id || "";
+      const hasSubTemplates = (config.subTemplates || []).length > 0;
+      const tabs = hasSubTemplates ? `<div class="tab-strip" id="displayDetailProductTabs">${slots.map((slot, index) => {
+        const count = uniqueDisplayProductCount(displayDetailProductRows(config, slot.id));
+        return `<button class="tab-button${index === 0 ? " active" : ""}" type="button" data-display-detail-tab="${slot.id}">${slot.name || "未命名二级模板"}<span class="tab-count">${count}</span></button>`;
+      }).join("")}</div>` : "";
+      return `${tabs}<div id="displayDetailProductTable">${displayProductTable(displayDetailProductRows(config, activeId), config, false, { showSubTemplate: false })}</div>${hasSubTemplates ? `<div class="hint-text">按二级模板切换查看投放商品；Tab 数字为当前二级模板内按 SPU ID 去重后的商品数。</div>` : ""}`;
+    }
+
+    function bindDisplayDetailProductTabs(config) {
+      const tabs = document.getElementById("displayDetailProductTabs");
+      const table = document.getElementById("displayDetailProductTable");
+      if (!tabs || !table) return;
+      tabs.querySelectorAll("[data-display-detail-tab]").forEach(button => button.addEventListener("click", () => {
+        tabs.querySelectorAll("[data-display-detail-tab]").forEach(item => item.classList.toggle("active", item === button));
+        table.innerHTML = displayProductTable(displayDetailProductRows(config, button.dataset.displayDetailTab || ""), config, false, { showSubTemplate: false });
+      }));
+    }
+
+    function displayProductTable(rows, config, editable, options = {}) {
       if (!rows.length) return `<div class="empty">当前暂无投放商品</div>`;
-      return `<div class="table-wrap"><table class="display-product-table"><thead><tr><th>商品ID</th><th>商品信息</th><th>商品类型</th><th>SKU 摘要</th><th>SKU 兑换货币</th><th>履约方式</th><th>商品状态</th><th>库存摘要</th><th>CDKey 状态</th><th>所属二级模板</th><th>投放排序</th><th>是否置顶</th>${editable ? "<th>最后操作人</th><th>操作</th>" : ""}</tr></thead><tbody>${rows.map((row, index) => displayProductRowHtml(row, config, editable, index)).join("")}</tbody></table></div>`;
+      const showSubTemplate = options.showSubTemplate !== false;
+      return `<div class="table-wrap"><table class="display-product-table"><thead><tr><th>商品ID</th><th>商品信息</th><th>商品类型</th><th>SKU 摘要</th><th>SKU 兑换货币</th><th>履约方式</th><th>商品状态</th><th>库存摘要</th><th>CDKey 状态</th>${showSubTemplate ? "<th>所属二级模板</th>" : ""}<th>投放排序</th><th>是否置顶</th>${editable ? "<th>最后操作人</th><th>操作</th>" : ""}</tr></thead><tbody>${rows.map((row, index) => displayProductRowHtml(row, config, editable, index, { showSubTemplate })).join("")}</tbody></table></div>`;
     }
 
     function displayProductRowHtml(row, config, editable, index, options = {}) {
@@ -4189,7 +4226,7 @@
       if (!container) return;
       ensureActiveDisplaySubTemplate();
       container.innerHTML = displayProductTabSlots().map(slot => {
-        const count = displayProductRows.filter(row => (row.subTemplateId || "") === slot.id).length;
+        const count = uniqueDisplayProductCount(displayProductRows.filter(row => (row.subTemplateId || "") === slot.id));
         const active = slot.id === activeDisplaySubTemplateId ? " active" : "";
         return `<button class="tab-button${active}" type="button" data-display-product-tab="${slot.id}">${slot.name || "未命名二级模板"}<span class="tab-count">${count}</span></button>`;
       }).join("");
