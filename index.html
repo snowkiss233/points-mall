@@ -671,8 +671,8 @@
     .side-anchor a:hover { background: var(--primary-weak); color: var(--primary); }
     .sku-edit-table { min-width: 1250px; }
     .display-table { min-width: 1680px; }
-    .display-product-table { min-width: 1850px; }
-    .picker-table { min-width: 1300px; }
+    .display-product-table { min-width: 1400px; }
+    .picker-table { min-width: 1180px; }
     .inventory-table { min-width: 2250px; }
     .inventory-flow-table { min-width: 1350px; }
     .delivery-table { min-width: 2400px; }
@@ -1732,11 +1732,8 @@
                         <th>商品信息</th>
                         <th>商品类型</th>
                         <th>SKU 摘要</th>
-                        <th>SKU 兑换货币</th>
                         <th>履约方式</th>
                         <th>商品状态</th>
-                        <th>库存摘要</th>
-                        <th>CDKey 状态</th>
                         <th><span class="required-star">*</span>投放排序</th>
                         <th>是否置顶</th>
                         <th>最后操作人</th>
@@ -1799,7 +1796,7 @@
       </div>
       <div class="table-wrap">
         <table class="picker-table">
-          <thead><tr><th><input type="checkbox" id="pickerSelectAll" aria-label="全选当前可添加商品"></th><th>商品ID</th><th>商品信息</th><th>商品类型</th><th>SKU 摘要</th><th>SKU 兑换货币</th><th>履约方式</th><th>商品状态</th><th>投放状态</th><th>创建时间</th><th>最后操作人</th><th>操作</th></tr></thead>
+          <thead><tr><th><input type="checkbox" id="pickerSelectAll" aria-label="全选当前可添加商品"></th><th>商品ID</th><th>商品信息</th><th>商品类型</th><th>SKU 摘要</th><th>履约方式</th><th>商品状态</th><th>投放状态</th><th>创建时间</th><th>最后操作人</th><th>操作</th></tr></thead>
           <tbody id="productPickerTbody"></tbody>
         </table>
       </div>
@@ -4161,7 +4158,7 @@
     function displayProductTable(rows, config, editable, options = {}) {
       if (!rows.length) return `<div class="empty">当前暂无投放商品</div>`;
       const showSubTemplate = options.showSubTemplate !== false;
-      return `<div class="table-wrap"><table class="display-product-table"><thead><tr><th>商品ID</th><th>商品信息</th><th>商品类型</th><th>SKU 摘要</th><th>SKU 兑换货币</th><th>履约方式</th><th>商品状态</th><th>库存摘要</th><th>CDKey 状态</th>${showSubTemplate ? "<th>所属二级模板</th>" : ""}<th>投放排序</th><th>是否置顶</th>${editable ? "<th>最后操作人</th><th>操作</th>" : ""}</tr></thead><tbody>${rows.map((row, index) => displayProductRowHtml(row, config, editable, index, { showSubTemplate })).join("")}</tbody></table></div>`;
+      return `<div class="table-wrap"><table class="display-product-table"><thead><tr><th>商品ID</th><th>商品信息</th><th>商品类型</th><th>SKU 摘要</th><th>履约方式</th><th>商品状态</th>${showSubTemplate ? "<th>所属二级模板</th>" : ""}<th>投放排序</th><th>是否置顶</th>${editable ? "<th>最后操作人</th><th>操作</th>" : ""}</tr></thead><tbody>${rows.map((row, index) => displayProductRowHtml(row, config, editable, index, { showSubTemplate })).join("")}</tbody></table></div>`;
     }
 
     function displayProductRowHtml(row, config, editable, index, options = {}) {
@@ -4170,7 +4167,7 @@
       const showSubTemplate = options.showSubTemplate !== false;
       return `<tr>
         <td><b>${product.spu}</b></td><td>${productInfoHtml(product)}</td><td>${product.type}</td><td>${product.skuSummary}</td>
-        <td>${skuCurrencySummary(product)}</td><td>${deliveryTag(product.delivery)}</td><td>${stateTag(product.state)}</td><td>${stockText(product.stock)}</td><td>${cdkeyTag(product.cdkey)}</td>
+        <td>${deliveryTag(product.delivery)}</td><td>${stateTag(product.state)}</td>
         ${showSubTemplate ? `<td>${displaySubTemplateName(row.subTemplateId || "", config)}</td>` : ""}
         <td>${editable ? `<input class="mini-input" type="number" data-display-row="${index}" data-display-field="sort" value="${row.sort}">` : row.sort}</td>
         <td>${editable ? `<select class="mini-input" data-display-row="${index}" data-display-field="pinned"><option ${row.pinned === "否" ? "selected" : ""}>否</option><option ${row.pinned === "是" ? "selected" : ""}>是</option></select>` : row.pinned}</td>
@@ -4370,7 +4367,7 @@
       const entries = displayActiveProductEntries();
       document.getElementById("displayProductTbody").innerHTML = entries.length
         ? entries.map(({ row, index }) => displayProductRowHtml(row, config, true, index, { showSubTemplate: false })).join("")
-        : `<tr><td colspan="13"><div class="empty">当前模板暂无投放商品，可点击添加商品维护当前模板的投放关系。</div></td></tr>`;
+        : `<tr><td colspan="10"><div class="empty">当前模板暂无投放商品，可点击添加商品维护当前模板的投放关系。</div></td></tr>`;
       document.querySelectorAll("[data-display-row]").forEach(el => el.addEventListener("input", updateDisplayProductRow));
       document.querySelectorAll("select[data-display-row]").forEach(el => el.addEventListener("change", updateDisplayProductRow));
       document.querySelectorAll("[data-remove-display-row]").forEach(btn => btn.addEventListener("click", () => removeProductFromDisplay(Number(btn.dataset.removeDisplayRow))));
@@ -4420,7 +4417,7 @@
           && true;
       });
       if (!rows.length) {
-        document.getElementById("productPickerTbody").innerHTML = `<tr><td colspan="12"><div class="empty">当前筛选条件下暂无可添加的上架商品</div></td></tr>`;
+        document.getElementById("productPickerTbody").innerHTML = `<tr><td colspan="11"><div class="empty">当前筛选条件下暂无可添加的上架商品</div></td></tr>`;
         updatePickerSelectedCount();
         return;
       }
@@ -4430,7 +4427,7 @@
         return `<tr>
           <td><input type="checkbox" data-picker-select="${product.spu}" ${disabledReason ? "disabled" : ""} aria-label="选择 ${product.name}"></td>
           <td><b>${product.spu}</b></td><td>${productInfoHtml(product)}</td><td>${product.type}</td><td>${product.skuSummary}</td>
-          <td>${skuCurrencySummary(product)}</td><td>${deliveryTag(product.delivery)}</td><td>${stateTag(product.state)}</td>
+          <td>${deliveryTag(product.delivery)}</td><td>${stateTag(product.state)}</td>
           <td>${product.exposure}</td><td>${product.createdAt || product.updatedAt}</td>
           <td>${lastOperatorFromLogs(product.logs)}</td>
           <td>${disabledReason ? `<button class="btn text" disabled>${disabledReason}</button>` : `<button class="btn text" data-pick-spu="${product.spu}">添加</button>`}</td>
