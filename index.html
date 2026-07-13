@@ -1814,12 +1814,12 @@
   <section class="modal wide" id="productPickerModal" role="dialog" aria-modal="true">
     <div class="modal-head"><span>选择投放商品</span><button class="btn text" data-close-modal="productPickerModal">关闭</button></div>
     <div class="modal-body">
-      <div class="form-grid three" style="margin-bottom:12px">
+      <div class="form-grid" id="productPickerFilters" style="margin-bottom:12px">
         <div class="field"><label>商品对外名称</label><input id="pickerFilterKeyword" placeholder="请输入商品对外名称"></div>
-        <div class="field"><label>SPU ID / SKU ID</label><input id="pickerFilterSpuSku" placeholder="请输入 SPU ID 或 SKU ID，多个可用逗号分隔"></div>
+        <div class="field"><label>SPU ID</label><input id="pickerFilterSpu" placeholder="请输入 SPU ID，多个可用逗号分隔"></div>
         <div class="field"><label>商品类型</label><select id="pickerFilterType"></select></div>
         <div class="field"><label>履约方式</label><select id="pickerFilterDelivery"></select></div>
-      <div class="field"><label>是否已在当前模板</label><select id="pickerFilterInCurrent"><option>全部</option><option>是</option><option>否</option></select></div>
+        <div class="field" id="pickerFilterInCurrentField"><label>是否已在当前模板</label><select id="pickerFilterInCurrent"><option>全部</option><option>是</option><option>否</option></select></div>
       </div>
       <div class="table-wrap">
         <table class="picker-table">
@@ -2134,7 +2134,7 @@
       displayDeleteReason: { maxLength: 200 },
       displayFilterSpuSku: { maxLength: 64 },
       pickerFilterKeyword: { maxLength: 50 },
-      pickerFilterSpuSku: { maxLength: 500 },
+      pickerFilterSpu: { maxLength: 500 },
       inventoryFilterKeyword: { maxLength: 80 },
       inventoryFilterSku: { maxLength: 32 },
       inventoryFilterUpdated: { maxLength: 32 },
@@ -3200,8 +3200,8 @@
       document.getElementById("confirmDisplayDisableBtn").addEventListener("click", confirmDisplayDisable);
       document.getElementById("confirmDisplayDeleteBtn").addEventListener("click", confirmDisplayDelete);
       document.getElementById("pickerAddSelectedBtn").addEventListener("click", addSelectedProductsToDisplay);
-      ["pickerFilterKeyword", "pickerFilterSpuSku", "pickerFilterType", "pickerFilterDelivery", "pickerFilterInCurrent"].forEach(id => {
-        document.getElementById(id).addEventListener(["pickerFilterKeyword", "pickerFilterSpuSku"].includes(id) ? "input" : "change", renderProductPickerTable);
+      ["pickerFilterKeyword", "pickerFilterSpu", "pickerFilterType", "pickerFilterDelivery", "pickerFilterInCurrent"].forEach(id => {
+        document.getElementById(id).addEventListener(["pickerFilterKeyword", "pickerFilterSpu"].includes(id) ? "input" : "change", renderProductPickerTable);
       });
       document.querySelectorAll("[data-close]").forEach(btn => btn.addEventListener("click", () => closeDrawer(btn.dataset.close)));
       document.querySelectorAll("[data-close-modal]").forEach(btn => btn.addEventListener("click", () => closeModal(btn.dataset.closeModal)));
@@ -4416,27 +4416,27 @@
     }
 
     function openProductPicker() {
+      const isEditMode = displayMode === "edit";
+      document.getElementById("pickerFilterInCurrentField").style.display = isEditMode ? "" : "none";
+      document.getElementById("productPickerFilters").classList.toggle("three", isEditMode);
+      if (!isEditMode) document.getElementById("pickerFilterInCurrent").value = "全部";
       renderProductPickerTable();
       openModal("productPickerModal");
     }
 
     function renderProductPickerTable() {
       const keyword = valueOf("pickerFilterKeyword");
-      const spuSkuKeyword = valueOf("pickerFilterSpuSku");
-      const batchIds = splitTagValues(spuSkuKeyword).map(item => item.toUpperCase()).filter(Boolean);
-      const spuSkuUpper = spuSkuKeyword.toUpperCase();
+      const spuKeyword = valueOf("pickerFilterSpu");
+      const spuIds = splitTagValues(spuKeyword).map(item => item.toUpperCase()).filter(Boolean);
       const type = valueOf("pickerFilterType");
       const delivery = valueOf("pickerFilterDelivery");
-      const inCurrent = valueOf("pickerFilterInCurrent");
+      const inCurrent = displayMode === "edit" ? valueOf("pickerFilterInCurrent") : "全部";
       const rows = products.filter(product => {
         const matchKeyword = !keyword || product.name.includes(keyword);
-        const matchSpuSku = !spuSkuKeyword
-          || (batchIds.length
-            ? batchIds.some(item => product.spu.toUpperCase().includes(item) || product.skuList.some(sku => String(sku.skuId || "").toUpperCase().includes(item)))
-            : (product.spu.toUpperCase().includes(spuSkuUpper) || product.skuList.some(sku => String(sku.skuId || "").toUpperCase().includes(spuSkuUpper))));
+        const matchSpu = !spuKeyword || spuIds.some(item => product.spu.toUpperCase().includes(item));
         const already = displayPlacementAvailability(product.spu, activeDisplaySubTemplateId).already;
         return matchKeyword
-          && matchSpuSku
+          && matchSpu
           && product.state === "上架"
           && (type === "全部" || product.type === type)
           && (delivery === "全部" || normalizeDelivery(product.delivery) === delivery)
