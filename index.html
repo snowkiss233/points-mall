@@ -4450,14 +4450,14 @@
       }
       document.getElementById("productPickerTbody").innerHTML = rows.map(product => {
         const placement = displayPlacementAvailability(product.spu, activeDisplaySubTemplateId);
-        const disabledReason = placement.full ? "已在当前模板" : "";
+        const isInCurrentTemplate = placement.full;
         return `<tr>
-          <td><input type="checkbox" data-picker-select="${product.spu}" ${disabledReason ? "disabled" : ""} aria-label="选择 ${product.name}"></td>
+          <td><input type="checkbox" data-picker-select="${product.spu}" ${isInCurrentTemplate ? "disabled" : ""} aria-label="选择 ${product.name}"></td>
           <td><b>${product.spu}</b></td><td>${productInfoHtml(product)}</td><td>${product.type}</td><td>${product.skuSummary}</td>
           <td>${deliveryTag(product.delivery)}</td><td>${stateTag(product.state)}</td>
           <td>${product.exposure}</td><td>${product.createdAt || product.updatedAt}</td>
           <td>${lastOperatorFromLogs(product.logs)}</td>
-          <td>${disabledReason ? `<button class="btn text" disabled>${disabledReason}</button>` : `<button class="btn text" data-pick-spu="${product.spu}">添加</button>`}</td>
+          <td>${isInCurrentTemplate ? `<button class="btn text danger" data-unpick-spu="${product.spu}">移除</button>` : `<button class="btn text" data-pick-spu="${product.spu}">添加</button>`}</td>
         </tr>`;
       }).join("");
       const selectAll = document.getElementById("pickerSelectAll");
@@ -4469,6 +4469,7 @@
       };
       document.querySelectorAll("[data-picker-select]").forEach(input => input.addEventListener("change", updatePickerSelectedCount));
       document.querySelectorAll("[data-pick-spu]").forEach(btn => btn.addEventListener("click", () => addProductToDisplay(btn.dataset.pickSpu)));
+      document.querySelectorAll("[data-unpick-spu]").forEach(btn => btn.addEventListener("click", () => removeProductFromPicker(btn.dataset.unpickSpu)));
       updatePickerSelectedCount();
     }
 
@@ -4533,6 +4534,16 @@
       if (!displayProductRows[index]) return;
       displayProductRows.splice(index, 1);
       renderDisplayProductRows();
+    }
+
+    function removeProductFromPicker(spu) {
+      const subTemplateId = activeDisplaySubTemplateId || "";
+      const index = displayProductRows.findIndex(row => row.spu === spu && (row.subTemplateId || "") === subTemplateId);
+      if (index === -1) return renderProductPickerTable();
+      displayProductRows.splice(index, 1);
+      renderDisplayProductRows();
+      renderProductPickerTable();
+      toast("已从当前模板移除该商品。");
     }
 
     function moveDisplayProduct(index, direction) {
