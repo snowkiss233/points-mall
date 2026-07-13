@@ -1795,7 +1795,6 @@
         <div class="field"><label>SPU ID / SKU ID</label><input id="pickerFilterSpuSku" placeholder="请输入 SPU ID 或 SKU ID，多个可用逗号分隔"></div>
         <div class="field"><label>商品类型</label><select id="pickerFilterType"></select></div>
         <div class="field"><label>履约方式</label><select id="pickerFilterDelivery"></select></div>
-        <div class="field"><label>CDKey 状态</label><select id="pickerFilterCdkey"><option>全部</option><option>-</option><option>码池可用</option><option>CDKey 不足</option><option>码池未配置</option><option>码池不可用</option></select></div>
       <div class="field"><label>是否已在当前模板</label><select id="pickerFilterInCurrent"><option>全部</option><option>是</option><option>否</option></select></div>
       </div>
       <div class="table-wrap">
@@ -3177,7 +3176,7 @@
       document.getElementById("confirmDisplayDisableBtn").addEventListener("click", confirmDisplayDisable);
       document.getElementById("confirmDisplayDeleteBtn").addEventListener("click", confirmDisplayDelete);
       document.getElementById("pickerAddSelectedBtn").addEventListener("click", addSelectedProductsToDisplay);
-      ["pickerFilterKeyword", "pickerFilterSpuSku", "pickerFilterType", "pickerFilterDelivery", "pickerFilterCdkey", "pickerFilterInCurrent"].forEach(id => {
+      ["pickerFilterKeyword", "pickerFilterSpuSku", "pickerFilterType", "pickerFilterDelivery", "pickerFilterInCurrent"].forEach(id => {
         document.getElementById(id).addEventListener(["pickerFilterKeyword", "pickerFilterSpuSku"].includes(id) ? "input" : "change", renderProductPickerTable);
       });
       document.querySelectorAll("[data-close]").forEach(btn => btn.addEventListener("click", () => closeDrawer(btn.dataset.close)));
@@ -4404,7 +4403,6 @@
       const spuSkuUpper = spuSkuKeyword.toUpperCase();
       const type = valueOf("pickerFilterType");
       const delivery = valueOf("pickerFilterDelivery");
-      const cdkey = valueOf("pickerFilterCdkey");
       const inCurrent = valueOf("pickerFilterInCurrent");
       const rows = products.filter(product => {
         const matchKeyword = !keyword || product.name.includes(keyword);
@@ -4418,7 +4416,6 @@
           && product.state === "上架"
           && (type === "全部" || product.type === type)
           && (delivery === "全部" || normalizeDelivery(product.delivery) === delivery)
-          && (cdkey === "全部" || product.cdkey === cdkey)
           && (inCurrent === "全部" || (inCurrent === "是" ? already : !already))
           && true;
       });
