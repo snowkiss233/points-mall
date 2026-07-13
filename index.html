@@ -672,7 +672,7 @@
     .sku-edit-table { min-width: 1250px; }
     .display-table { min-width: 1680px; }
     .display-product-table { min-width: 1850px; }
-    .picker-table { min-width: 1500px; }
+    .picker-table { min-width: 1300px; }
     .inventory-table { min-width: 2250px; }
     .inventory-flow-table { min-width: 1350px; }
     .delivery-table { min-width: 2400px; }
@@ -1800,7 +1800,7 @@
       </div>
       <div class="table-wrap">
         <table class="picker-table">
-          <thead><tr><th><input type="checkbox" id="pickerSelectAll" aria-label="全选当前可添加商品"></th><th>商品ID</th><th>商品信息</th><th>商品类型</th><th>SKU 摘要</th><th>SKU 兑换货币</th><th>履约方式</th><th>商品状态</th><th>库存摘要</th><th>CDKey 状态</th><th>投放状态</th><th>创建时间</th><th>最后操作人</th><th>操作</th></tr></thead>
+          <thead><tr><th><input type="checkbox" id="pickerSelectAll" aria-label="全选当前可添加商品"></th><th>商品ID</th><th>商品信息</th><th>商品类型</th><th>SKU 摘要</th><th>SKU 兑换货币</th><th>履约方式</th><th>商品状态</th><th>投放状态</th><th>创建时间</th><th>最后操作人</th><th>操作</th></tr></thead>
           <tbody id="productPickerTbody"></tbody>
         </table>
       </div>
@@ -4423,7 +4423,7 @@
           && true;
       });
       if (!rows.length) {
-        document.getElementById("productPickerTbody").innerHTML = `<tr><td colspan="14"><div class="empty">当前筛选条件下暂无可添加的上架商品</div></td></tr>`;
+        document.getElementById("productPickerTbody").innerHTML = `<tr><td colspan="12"><div class="empty">当前筛选条件下暂无可添加的上架商品</div></td></tr>`;
         updatePickerSelectedCount();
         return;
       }
@@ -4433,7 +4433,7 @@
         return `<tr>
           <td><input type="checkbox" data-picker-select="${product.spu}" ${disabledReason ? "disabled" : ""} aria-label="选择 ${product.name}"></td>
           <td><b>${product.spu}</b></td><td>${productInfoHtml(product)}</td><td>${product.type}</td><td>${product.skuSummary}</td>
-          <td>${skuCurrencySummary(product)}</td><td>${deliveryTag(product.delivery)}</td><td>${stateTag(product.state)}</td><td>${stockText(product.stock)}</td><td>${cdkeyTag(product.cdkey)}</td>
+          <td>${skuCurrencySummary(product)}</td><td>${deliveryTag(product.delivery)}</td><td>${stateTag(product.state)}</td>
           <td>${product.exposure}</td><td>${product.createdAt || product.updatedAt}</td>
           <td>${lastOperatorFromLogs(product.logs)}</td>
           <td>${disabledReason ? `<button class="btn text" disabled>${disabledReason}</button>` : `<button class="btn text" data-pick-spu="${product.spu}">添加</button>`}</td>
