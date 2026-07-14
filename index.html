@@ -1353,15 +1353,9 @@
               <div class="field"><label>模板类型</label><select id="displayFilterTemplateType"></select></div>
               <div class="field"><label>配置状态</label><select id="displayFilterState"></select></div>
             </div>
-            <div class="filter-grid more-filters" id="displayMoreFilters">
-              <div class="field"><label>商品对外名称</label><input id="displayFilterProduct" placeholder="请输入商品对外名称"></div>
-              <div class="field"><label>SPU ID / SKU ID</label><input id="displayFilterSpuSku" placeholder="请输入 SPU ID 或 SKU ID"></div>
-              <div class="field"><label>社区绑定 / 社区 ID</label><input id="displayFilterCommunity" placeholder="请输入社区绑定或社区 ID"></div>
-            </div>
             <div class="filter-actions">
               <button class="btn primary" id="displaySearchBtn">查询</button>
               <button class="btn" id="displayResetBtn">重置</button>
-              <button class="btn text" id="displayToggleMoreBtn">展开更多</button>
             </div>
           </div>
         </section>
@@ -2121,8 +2115,6 @@
       templateDeleteReason: { maxLength: 200 },
       displayFilterName: { maxLength: 30 },
       displayFilterId: { maxLength: 32 },
-      displayFilterProduct: { maxLength: 50 },
-      displayFilterCommunity: { maxLength: 64 },
       displayTemplateName: { maxLength: 20 },
       displayTemplateId: { maxLength: 32 },
       displayTemplateSort: { min: 1, max: 9999 },
@@ -2132,7 +2124,6 @@
       displayEndTime: { maxLength: 32 },
       displayRemark: { maxLength: 200 },
       displayDeleteReason: { maxLength: 200 },
-      displayFilterSpuSku: { maxLength: 64 },
       pickerFilterKeyword: { maxLength: 50 },
       pickerFilterSpu: { maxLength: 500 },
       inventoryFilterKeyword: { maxLength: 80 },
@@ -3185,7 +3176,6 @@
       document.getElementById("exportDisplayBtn").addEventListener("click", () => toast("导出任务已创建，可在下载中心查看。"));
       document.getElementById("displaySearchBtn").addEventListener("click", applyDisplayFilters);
       document.getElementById("displayResetBtn").addEventListener("click", resetDisplayFilters);
-      document.getElementById("displayToggleMoreBtn").addEventListener("click", toggleDisplayMoreFilters);
       document.getElementById("backToDisplayListBtn").addEventListener("click", showDisplayPage);
       document.getElementById("displayCancelEditBtn").addEventListener("click", showDisplayPage);
       document.getElementById("displaySaveDraftBtn").addEventListener("click", saveDisplayDraft);
@@ -4080,41 +4070,23 @@
       if (action === "delete") openDisplayDeleteModal(config);
     }
 
-    function toggleDisplayMoreFilters() {
-      const more = document.getElementById("displayMoreFilters");
-      more.classList.toggle("show");
-      document.getElementById("displayToggleMoreBtn").textContent = more.classList.contains("show") ? "收起" : "展开更多";
-    }
-
     function applyDisplayFilters() {
       const name = valueOf("displayFilterName");
       const id = valueOf("displayFilterId").toUpperCase();
       const templateType = valueOf("displayFilterTemplateType");
       const state = valueOf("displayFilterState");
-      const productKeyword = valueOf("displayFilterProduct");
-      const spuSkuId = valueOf("displayFilterSpuSku").toUpperCase();
-      const community = valueOf("displayFilterCommunity").toUpperCase();
       visibleDisplayConfigs = displayConfigs.filter(config => {
-        const names = displayProductNames(config).join(" ");
-        const matchSpuSku = !spuSkuId || config.products.some(row => {
-          const product = productBySpu(row.spu);
-          return String(row.spu || "").toUpperCase().includes(spuSkuId)
-            || product?.skuList?.some(sku => String(sku.skuId || "").toUpperCase().includes(spuSkuId));
-        });
         return (!name || (config.templateName || "").includes(name))
           && (!id || config.id.includes(id))
           && (templateType === "全部" || config.templateType === templateType)
-          && (state === "全部" || config.state === state)
-          && (!community || String(config.communityId || "").toUpperCase().includes(community) || String(config.communityBinding || "").toUpperCase().includes(community))
-          && (!productKeyword || names.includes(productKeyword))
-          && matchSpuSku;
+          && (state === "全部" || config.state === state);
       });
       renderDisplayTable();
       renderDisplayStats();
     }
 
     function resetDisplayFilters() {
-      ["displayFilterName", "displayFilterId", "displayFilterProduct", "displayFilterSpuSku", "displayFilterCommunity"].forEach(id => document.getElementById(id).value = "");
+      ["displayFilterName", "displayFilterId"].forEach(id => document.getElementById(id).value = "");
       ["displayFilterTemplateType", "displayFilterState"].forEach(id => document.getElementById(id).value = "全部");
       visibleDisplayConfigs = [...displayConfigs];
       renderDisplayTable();
