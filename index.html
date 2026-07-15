@@ -2422,7 +2422,7 @@
     function buildSkuList(spu, type, delivery) {
       const template = getSkuTemplate(type, true);
       if (!template) return [];
-      const attrCodes = template.attributes.filter(attr => !isFixedSkuSpecAttr(attr)).map(attr => attr.code);
+      const attrCodes = template.attributes.map(attr => attr.code);
       const sourceRows = sampleSkuValuesBySpu[spu] || (template.defaultSkuValues?.length ? template.defaultSkuValues : [makeEmptyAttributeValues(type, attrCodes)]);
       return sourceRows.map((values, index) => {
         const row = makeSkuRow(spu, type, values, index + 1, delivery === "未配置" ? "" : normalizeDelivery(delivery) || getDefaultDeliveryByType(type), attrCodes, template);
@@ -2509,12 +2509,12 @@
       return template ? template.attributes.map(normalizeSkuTemplateAttr) : [];
     }
 
-    function isFixedSkuSpecAttr(attr) {
-      return attr?.code === "duration" || attr?.name === "有效期";
+    function getConfigurableSkuAttributes(type) {
+      return getTemplateAttributes(type);
     }
 
-    function getConfigurableSkuAttributes(type) {
-      return getTemplateAttributes(type).filter(attr => !isFixedSkuSpecAttr(attr));
+    function isSkuMeasureTemplateAttr(attr) {
+      return attr?.code === "duration" || attr?.name === "有效期";
     }
 
     function defaultSkuAttrCodes(type) {
@@ -2600,7 +2600,7 @@
         const key = [...attrCodes.map(code => picked[code]), specType, duration].join("|");
         if (unique.has(key)) return;
         unique.add(key);
-        rows.push(makeSkuRow(spu, type, { ...picked, specType, duration }, rows.length + 1, delivery, attrCodes, template));
+        rows.push(makeSkuRow(spu, type, { ...picked, specType, skuDuration: duration }, rows.length + 1, delivery, attrCodes, template));
       });
       return rows.length ? rows : [makeSkuRow(spu, type, makeEmptyAttributeValues(type, attrCodes), 1, delivery, attrCodes, template)];
     }
@@ -2782,9 +2782,32 @@
       const parts = attrs
         .map(attr => attrValueWithUnit(attributeValues?.[attr.code], attr))
         .filter(Boolean);
-      if (shouldShowDuration(specType) && duration !== "") parts.unshift(skuMeasureText(specType, duration));
-      else if (specType && specType !== "无") parts.unshift(specType);
+      if (!attrs.some(isSkuMeasureTemplateAttr)) {
+        if (shouldShowDuration(specType) && duration !== "") parts.unshift(skuMeasureText(specType, duration));
+        else if (specType && specType !== "无") parts.unshift(specType);
+      }
       return parts.join(" / ") || (specType === "无" ? "无规格" : "");
+    }
+
+    function syncSkuMeasureFromTemplateAttr(row, type, attrCode) {
+      const attr = getConfigurableSkuAttributes(type).find(item => item.code === attrCode);
+      if (!isSkuMeasureTemplateAttr(attr)) return;
+      const value = String(row.attributeValues?.[attrCode] || "").trim();
+      if (!value) {
+        row.specType = "无";
+        row.duration = "";
+        return;
+      }
+      if (value === "永久") {
+        row.specType = "无";
+        row.duration = "0";
+        return;
+      }
+      const match = value.match(/^(\d+)(小时|天|个|件)$/);
+      if (match) {
+        row.duration = match[1];
+        row.specType = match[2];
+      }
     }
 
     function skuMeasureText(specType = "无", duration = "") {
@@ -7139,6 +7162,7 @@
       const field = e.target.dataset.field;
       if (attrCode) {
         skuRows[index].attributeValues[attrCode] = e.target.value;
+        syncSkuMeasureFromTemplateAttr(skuRows[index], type, attrCode);
         if (!skuRows[index].manualDisplay) skuRows[index].displayText = generateSkuDisplayText(skuRows[index].attributeValues, type, skuRows[index].skuAttrCodes || skuAttrCodesForRows(type), skuRows[index].specType, skuRows[index].duration);
         syncInventoryRows(false);
         renderSkuEdit();
