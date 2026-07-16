@@ -313,7 +313,7 @@
       border-collapse: collapse;
       width: 100%;
     }
-    .product-table { min-width: 1360px; }
+    .product-table { min-width: 1540px; }
     .template-table { min-width: 1500px; }
     .template-attr-table {
       min-width: 930px;
@@ -421,6 +421,56 @@
       color: var(--muted);
       text-decoration: line-through;
     }
+    .price-summary {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      min-width: 190px;
+    }
+    .price-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 8px;
+      border-radius: 7px;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: #344054;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .price-pill.default {
+      border-color: #93c5fd;
+      background: var(--primary-weak);
+      color: #1d4ed8;
+    }
+    .price-pill.point { border-color: #bfdbfe; background: #eff6ff; color: #1d4ed8; }
+    .price-pill.coin { border-color: #ddd6fe; background: #f5f3ff; color: #6d28d9; }
+    .price-pill.rmb { border-color: #bbf7d0; background: #ecfdf5; color: #15803d; }
+    .price-pill .default-mark {
+      font-size: 10px;
+      font-weight: 800;
+      opacity: .82;
+    }
+    .price-config-cell { min-width: 260px; }
+    .price-config-cell .btn { margin-top: 8px; }
+    .price-editor-table { min-width: 900px; }
+    .price-editor-table td { vertical-align: middle; }
+    .price-editor-table input[type="number"] { min-width: 130px; }
+    .price-route {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .price-preview {
+      margin-top: 14px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f8fafc;
+    }
+    .price-preview-title { font-weight: 800; margin-bottom: 8px; }
+    .price-preview-options { display: flex; flex-wrap: wrap; gap: 8px; }
     .tag {
       display: inline-flex;
       align-items: center;
@@ -669,7 +719,7 @@
       margin: 2px 0;
     }
     .side-anchor a:hover { background: var(--primary-weak); color: var(--primary); }
-    .sku-edit-table { min-width: 1250px; }
+    .sku-edit-table { min-width: 1380px; }
     .display-table { min-width: 1680px; }
     .display-product-table { min-width: 1400px; }
     #productPickerModal {
@@ -947,7 +997,7 @@
         <div class="page-head">
           <div>
             <h1>商品列表</h1>
-            <div class="sub">查询和管理积分商城商品与 SKU 基础配置，进入商品详情 / 编辑页</div>
+            <div class="sub">查询和管理积分商城商品与 SKU 基础配置，支持积分、N币、RMB多币种价格，进入商品详情 / 编辑页</div>
           </div>
           <div class="btn-row">
             <button class="btn primary" id="newProductBtn">新建商品</button>
@@ -999,6 +1049,7 @@
                   <th>商品信息</th>
                   <th>商品类型</th>
                   <th>SKU 摘要</th>
+                  <th>多币种价格</th>
                   <th>履约方式</th>
                   <th>商品状态</th>
                   <th>投放状态</th>
@@ -1018,7 +1069,7 @@
           <div>
             <button class="btn text" id="backToListBtn">返回商品列表</button>
             <h1 id="formTitle">新建商品</h1>
-            <div class="sub">配置商品类型、基础信息、商品素材、SKU、履约方式、CDKey 码池 ID 和初始库存。商品创建后，后续库存调整统一前往库存列表维护。</div>
+            <div class="sub">配置商品类型、基础信息、商品素材、SKU多币种价格、履约方式、CDKey 码池 ID 和初始库存。商品创建后，后续库存调整统一前往库存列表维护。</div>
           </div>
           <div class="btn-row">
             <button class="btn" id="saveDraftBtn">保存草稿</button>
@@ -1163,6 +1214,7 @@
             <section class="form-card" id="sectionSku">
               <h2><span class="required-star">*</span>SKU 配置</h2>
               <div class="body">
+                <div class="alert info">单个 SKU 可同时配置积分、N币、RMB价格。三种价格独立维护，不按充值汇率自动换算；用户下单后锁定所选币种，本期不支持积分、N币、RMB组合支付。</div>
                 <div class="btn-row" style="margin-bottom:10px">
                   <button class="btn primary" id="addSkuBtn" type="button">添加 SKU</button>
                   <button class="btn danger" id="clearSkuBtn" type="button">清空 SKU</button>
@@ -1939,6 +1991,26 @@
     </div>
   </section>
 
+  <section class="modal wide" id="skuPriceModal" role="dialog" aria-modal="true">
+    <div class="modal-head"><span id="skuPriceModalTitle">配置多币种价格</span><button class="btn text" data-close-modal="skuPriceModal">关闭</button></div>
+    <div class="modal-body">
+      <div class="alert info">积分、N币、RMB均为独立商品价格。1 RMB = 10 N币仅用于N币充值，不用于自动生成商品价格；RMB价格代表用户可直接使用人民币购买商品。</div>
+      <div class="table-wrap">
+        <table class="price-editor-table">
+          <thead><tr><th>启用</th><th>计价币种</th><th>销售价格</th><th>划线价</th><th>默认展示价</th><th>支付路由说明</th></tr></thead>
+          <tbody id="skuPriceEditorBody"></tbody>
+        </table>
+      </div>
+      <div class="error-text" id="skuPriceError"></div>
+      <div class="price-preview">
+        <div class="price-preview-title">客户端价格选择预览</div>
+        <div class="price-preview-options" id="skuPricePreview"></div>
+        <div class="hint-text">订单创建后锁定币种和价格。用户切换币种时，需要按新价格重新下单。</div>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn" data-close-modal="skuPriceModal">取消</button><button class="btn primary" id="confirmSkuPriceBtn">保存价格配置</button></div>
+  </section>
+
   <aside class="drawer" id="inventoryDetailDrawer">
     <div class="drawer-head"><div class="drawer-title">库存详情</div><button class="btn" data-close="inventoryDetailDrawer">关闭</button></div>
     <div class="drawer-body" id="inventoryDetailBody"></div>
@@ -2085,7 +2157,12 @@
     const businessSources = ["全部", "积分商城", "xx活动"];
     const allowedDeliveryOptions = [DELIVERY_AUTO_VIRTUAL, DELIVERY_AUTO_CDKEY, DELIVERY_MANUAL_PHYSICAL];
     const cdkeyTypeOptions = ["加速器时长", "加速器时长（不可暂停）"];
-    const skuCurrencyOptions = ["新积分"];
+    const skuCurrencyOptions = ["新积分", "N币", "RMB"];
+    const skuCurrencyMeta = {
+      "新积分": { code: "POINT", unit: "积分", precision: 0, css: "point", route: "内部积分钱包扣减" },
+      "N币": { code: "N_COIN", unit: "N币", precision: 0, css: "coin", route: "内部N币钱包扣减；余额不足可引导充值" },
+      "RMB": { code: "CNY", unit: "元", precision: 2, css: "rmb", route: "直接拉起RMB支付通道" }
+    };
     const skuSpecTypes = ["无", "小时", "天", "个", "件"];
     const skuDurationOptionsByUnit = {
       "小时": ["1小时", "3小时", "6小时", "12小时", "24小时"],
@@ -2361,6 +2438,8 @@
     let pendingFormEnable = false;
     let previousFormType = "";
     let currentEditingSkuIndex = null;
+    let currentEditingPriceSkuIndex = null;
+    let skuPriceDraft = [];
     let descriptionTags = [];
 
     function createEmptyMaterialAssets() {
@@ -2428,6 +2507,8 @@
       const sourceRows = sampleSkuValuesBySpu[spu] || (template.defaultSkuValues?.length ? template.defaultSkuValues : [makeEmptyAttributeValues(type, attrCodes)]);
       return sourceRows.map((values, index) => {
         const row = makeSkuRow(spu, type, values, index + 1, delivery === "未配置" ? "" : normalizeDelivery(delivery) || getDefaultDeliveryByType(type), attrCodes, template);
+        row.prices = sampleSkuPrices(type, row.attributeValues, index + 1);
+        syncLegacySkuPriceFields(row);
         if (isCdkeyDelivery(row.delivery)) {
           const poolIndex = { SPU10002: 0, SPU10003: 1 }[spu];
           const pool = Number.isInteger(poolIndex) ? poolMocks[poolIndex] : null;
@@ -2565,6 +2646,139 @@
       return skuCurrencyOptions.includes(value) ? value : skuCurrencyOptions[0];
     }
 
+    function currencyMeta(currency) {
+      return skuCurrencyMeta[normalizeSkuCurrency(currency)] || skuCurrencyMeta["新积分"];
+    }
+
+    function normalizePriceAmount(currency, value) {
+      if (value === "" || value === null || value === undefined) return "";
+      const meta = currencyMeta(currency);
+      const number = Number(value);
+      if (!Number.isFinite(number)) return "";
+      return meta.precision === 2 ? Number(number.toFixed(2)) : Math.round(number);
+    }
+
+    function defaultSkuPrices(type, attributeValues, sort) {
+      const basePrice = defaultSkuPrice(type, attributeValues, sort);
+      return skuCurrencyOptions.map(currency => ({
+        currency,
+        enabled: currency === "新积分",
+        amount: currency === "新积分" ? basePrice : "",
+        strikePrice: "",
+        isDefault: currency === "新积分"
+      }));
+    }
+
+    function sampleSkuPrices(type, attributeValues, sort) {
+      const pointAmount = defaultSkuPrice(type, attributeValues, sort);
+      const nCoinAmount = type === "实物" ? 720 : type === "CDKEY" ? Math.max(68, Math.round(pointAmount / 9)) : 99 + (sort - 1) * 60;
+      const rmbAmount = type === "实物" ? 68 : type === "CDKEY" ? Math.max(6.9, Number((pointAmount / 120).toFixed(2))) : Number((12.9 + (sort - 1) * 8).toFixed(2));
+      return [
+        { currency: "新积分", enabled: true, amount: pointAmount, strikePrice: "", isDefault: true },
+        { currency: "N币", enabled: true, amount: nCoinAmount, strikePrice: "", isDefault: false },
+        { currency: "RMB", enabled: true, amount: rmbAmount, strikePrice: "", isDefault: false }
+      ];
+    }
+
+    function normalizeSkuPrices(row, type, attributeValues, sort) {
+      const legacyCurrency = normalizeSkuCurrency(row?.currency || "新积分");
+      const legacyBasePrice = Number(row?.price) || defaultSkuPrice(type, attributeValues, sort);
+      const source = Array.isArray(row?.prices) ? row.prices : [];
+      const normalized = skuCurrencyOptions.map(currency => {
+        const meta = currencyMeta(currency);
+        const item = source.find(price => price.currency === currency || price.currencyCode === meta.code) || {};
+        const isLegacy = !source.length && currency === legacyCurrency;
+        const amount = item.amount ?? item.price ?? (isLegacy ? legacyBasePrice : "");
+        const strikePrice = item.strikePrice ?? item.originalAmount ?? (isLegacy ? normalizeSkuStrikePrice(row) : "");
+        return {
+          currency,
+          enabled: source.length ? item.enabled !== false && (item.amount !== undefined || item.price !== undefined || Boolean(item.enabled)) : currency === legacyCurrency,
+          amount: normalizePriceAmount(currency, amount),
+          strikePrice: strikePrice === "" || strikePrice === null || strikePrice === undefined ? "" : normalizePriceAmount(currency, strikePrice),
+          isDefault: source.length ? Boolean(item.isDefault) : currency === legacyCurrency
+        };
+      });
+      const enabled = normalized.filter(price => price.enabled);
+      const defaultRows = enabled.filter(price => price.isDefault);
+      if (defaultRows.length !== 1) {
+        normalized.forEach(price => { price.isDefault = false; });
+        if (enabled[0]) enabled[0].isDefault = true;
+      }
+      return normalized;
+    }
+
+    function enabledSkuPrices(row) {
+      return (row?.prices || []).filter(price => price.enabled);
+    }
+
+    function defaultSkuPriceEntry(row) {
+      const enabled = enabledSkuPrices(row);
+      return enabled.find(price => price.isDefault) || enabled[0] || null;
+    }
+
+    function formatSkuPriceAmount(currency, amount) {
+      const meta = currencyMeta(currency);
+      const value = Number(amount);
+      if (!Number.isFinite(value)) return "-";
+      if (currency === "RMB") return `¥${value.toFixed(2)}`;
+      return `${Math.round(value)} ${meta.unit}`;
+    }
+
+    function pricePillHtml(price, showDefault = true) {
+      const meta = currencyMeta(price.currency);
+      return `<span class="price-pill ${meta.css} ${price.isDefault ? "default" : ""}"><b>${price.currency}</b>${formatSkuPriceAmount(price.currency, price.amount)}${showDefault && price.isDefault ? `<span class="default-mark">默认</span>` : ""}</span>`;
+    }
+
+    function skuPriceSummary(row, showDefault = true) {
+      const enabled = enabledSkuPrices(row);
+      return enabled.length
+        ? `<div class="price-summary">${enabled.map(price => pricePillHtml(price, showDefault)).join("")}</div>`
+        : `<span class="tag red">未配置价格</span>`;
+    }
+
+    function productPriceSummary(product) {
+      const rows = product?.skuList || [];
+      const prices = skuCurrencyOptions.map(currency => {
+        const values = rows.flatMap(row => enabledSkuPrices(row)
+          .filter(price => price.currency === currency)
+          .map(price => Number(price.amount)))
+          .filter(Number.isFinite);
+        if (!values.length) return null;
+        const min = Math.min(...values);
+        const max = Math.max(...values);
+        return {
+          currency,
+          amount: min,
+          label: min === max ? formatSkuPriceAmount(currency, min) : `${formatSkuPriceAmount(currency, min)} ~ ${formatSkuPriceAmount(currency, max)}`
+        };
+      }).filter(Boolean);
+      if (!prices.length) return `<span class="tag red">未配置价格</span>`;
+      return `<div class="price-summary">${prices.map(price => {
+        const meta = currencyMeta(price.currency);
+        return `<span class="price-pill ${meta.css}"><b>${price.currency}</b>${price.label}</span>`;
+      }).join("")}</div>`;
+    }
+
+    function skuPriceGroupErrors(row) {
+      const prices = row?.prices || [];
+      const enabled = prices.filter(price => price.enabled);
+      const errors = [];
+      if (!enabled.length) errors.push("至少启用一种支付币种。");
+      if (enabled.some(price => !Number.isFinite(Number(price.amount)) || Number(price.amount) <= 0)) errors.push("已启用币种的销售价格必须大于0。");
+      if (enabled.some(price => price.currency !== "RMB" && !/^[1-9]\d*$/.test(String(price.amount)))) errors.push("积分和N币价格必须为正整数。");
+      if (enabled.some(price => price.strikePrice !== "" && (!Number.isFinite(Number(price.strikePrice)) || Number(price.strikePrice) <= Number(price.amount)))) errors.push("划线价必须大于销售价格。");
+      if (enabled.filter(price => price.isDefault).length !== 1) errors.push("必须选择一个已启用币种作为默认展示价。");
+      return errors;
+    }
+
+    function syncLegacySkuPriceFields(row) {
+      const price = defaultSkuPriceEntry(row);
+      row.currency = price?.currency || "新积分";
+      row.price = price?.amount || "";
+      row.strikePrice = price?.strikePrice || "";
+      return row;
+    }
+
     function attrValueWithUnit(value, attr) {
       if (value === undefined || value === null || String(value) === "") return "";
       return String(value);
@@ -2625,6 +2839,7 @@
         specType,
         duration,
         currency: normalizeSkuCurrency(values?.currency || "新积分"),
+        prices: defaultSkuPrices(type, attributeValues, sort),
         displayText,
         manualDisplay: false,
         sort,
@@ -2752,7 +2967,7 @@
       const skuName = Object.prototype.hasOwnProperty.call(row, "skuName")
         ? row.skuName
         : (row.name || row.displayText || row.text || `${type} SKU${index + 1}`);
-      return {
+      const normalizedRow = {
         skuId: row.skuId || `NEW-SKU${String(index + 1).padStart(2, "0")}`,
         skuName,
         templateId: template.templateId,
@@ -2762,6 +2977,7 @@
         specType,
         duration,
         currency: normalizeSkuCurrency(row.currency),
+        prices: normalizeSkuPrices(row, type, attributeValues, index + 1),
         displayText,
         manualDisplay: Boolean(row.manualDisplay),
         sort: row.sort ?? index + 1,
@@ -2775,6 +2991,7 @@
         deliveryParams: normalizeDeliveryParams(row, delivery),
         remark: row.remark || "SKU 级配置"
       };
+      return syncLegacySkuPriceFields(normalizedRow);
     }
 
     function generateSkuDisplayText(attributeValues, type, attrCodes = null, specType = "无", duration = "") {
@@ -3179,6 +3396,7 @@
       document.getElementById("clearOptionalSkuAttrBtn")?.addEventListener("click", clearOptionalSkuAttrs);
       document.getElementById("addSkuBtn").addEventListener("click", addSkuRow);
       document.getElementById("clearSkuBtn").addEventListener("click", clearSkuRows);
+      document.getElementById("confirmSkuPriceBtn").addEventListener("click", confirmSkuPriceConfig);
       document.querySelectorAll(".uploadBtn").forEach(btn => btn.addEventListener("click", () => uploadAsset(btn.dataset.assetType)));
       document.querySelectorAll("[data-rich-cmd]").forEach(btn => btn.addEventListener("click", () => handleRichCommand(btn.dataset.richTarget, btn.dataset.richCmd)));
       document.getElementById("confirmDeleteBtn").addEventListener("click", confirmDelete);
@@ -6643,7 +6861,7 @@
       const body = document.getElementById("productTbody");
       document.getElementById("tableCount").textContent = `共 ${visibleProducts.length} 条`;
       if (!visibleProducts.length) {
-        body.innerHTML = `<tr><td colspan="10"><div class="empty">当前筛选条件下暂无商品</div></td></tr>`;
+        body.innerHTML = `<tr><td colspan="11"><div class="empty">当前筛选条件下暂无商品</div></td></tr>`;
         return;
       }
       body.innerHTML = visibleProducts.map(p => `
@@ -6661,6 +6879,7 @@
           </td>
           <td>${p.type}</td>
           <td>${p.skuSummary}</td>
+          <td>${productPriceSummary(p)}</td>
           <td>${deliveryTag(p.delivery)}</td>
           <td>${stateTag(p.state)}</td>
           <td>${p.exposure.startsWith("已投放") ? `<span class="tag green">${p.exposure}</span>` : `<span class="tag orange">${p.exposure}</span>`}</td>
@@ -6761,8 +6980,8 @@
       const codes = attrCodes || deriveSkuAttrCodes({ skuList: rows }, type);
       const normalizedRows = rows.map((row, index) => normalizeSkuRow(row, type, index, codes));
       return `<div class="table-wrap"><table><thead><tr>
-        <th>SKU ID</th><th>SKU 名称</th><th>SKU 属性模板</th><th>SKU 属性值</th><th>计量单位 / 数值</th><th>排序（越大越靠前）</th><th>兑换货币类型</th><th>兑换价格</th><th>划线价</th><th>履约方式</th><th>CDKey 码池 ID</th><th>每人总兑换次数</th><th>每人每日兑换次数</th><th>SKU 备注</th>
-        </tr></thead><tbody>${normalizedRows.map(s => `<tr><td>${s.skuId}</td><td>${s.skuName}</td><td>${s.templateName}</td><td>${formatSkuAttributeValues(s, type, codes)}</td><td>${skuSpecText(s)}</td><td>${s.sort}</td><td>${s.currency}</td><td>${s.price}</td><td>${skuStrikePriceDisplay(s)}</td><td>${normalizeDelivery(s.delivery) || "未配置"}</td><td>${deliveryParamSummary(s)}</td><td>${s.totalLimit}</td><td>${s.dayLimit}</td><td>${s.remark}</td></tr>`).join("")}</tbody></table></div>`;
+        <th>SKU ID</th><th>SKU 名称</th><th>SKU 属性模板</th><th>SKU 属性值</th><th>计量单位 / 数值</th><th>排序（越大越靠前）</th><th>多币种价格</th><th>履约方式</th><th>CDKey 码池 ID</th><th>每人总兑换次数</th><th>每人每日兑换次数</th><th>SKU 备注</th>
+        </tr></thead><tbody>${normalizedRows.map(s => `<tr><td>${s.skuId}</td><td>${s.skuName}</td><td>${s.templateName}</td><td>${formatSkuAttributeValues(s, type, codes)}</td><td>${skuSpecText(s)}</td><td>${s.sort}</td><td>${skuPriceSummary(s)}</td><td>${normalizeDelivery(s.delivery) || "未配置"}</td><td>${deliveryParamSummary(s)}</td><td>${s.totalLimit}</td><td>${s.dayLimit}</td><td>${s.remark}</td></tr>`).join("")}</tbody></table></div>`;
     }
     function exposureDetail(product) {
       return infoGrid([
@@ -7141,7 +7360,7 @@
       const template = getSkuTemplate(type);
       const activeAttrs = getSelectedSkuAttrs(type);
       const dynamicHeaders = activeAttrs.map(attr => `<th>${attr.required === false ? "" : `<span class="required-star">*</span>`}${attr.name}</th>`).join("");
-      head.innerHTML = `<th>SKU 名称</th><th><span class="required-star">*</span>排序<br><span class="minor">越大越靠前</span></th><th><span class="required-star">*</span>计量单位</th><th>数值</th><th><span class="required-star">*</span>兑换货币类型</th><th><span class="required-star">*</span>兑换价格</th><th>划线价<br><span class="minor">非必填</span></th><th>CDKey 码池 ID</th><th>每人总兑换次数</th><th>每人每日兑换次数</th>${dynamicHeaders}<th>SKU 备注</th><th>操作</th>`;
+      head.innerHTML = `<th>SKU 名称</th><th><span class="required-star">*</span>排序<br><span class="minor">越大越靠前</span></th><th><span class="required-star">*</span>计量单位</th><th>数值</th><th><span class="required-star">*</span>多币种价格<br><span class="minor">积分 / N币 / RMB</span></th><th>CDKey 码池 ID</th><th>每人总兑换次数</th><th>每人每日兑换次数</th>${dynamicHeaders}<th>SKU 备注</th><th>操作</th>`;
       const attrCodes = activeAttrs.map(attr => attr.code);
       syncSkuDeliveryFromForm();
       skuRows = skuRows.map((row, index) => normalizeSkuRow(row, type, index, attrCodes));
@@ -7159,9 +7378,7 @@
             <td><input class="mini-input" type="number" min="1" data-sku="${i}" data-field="sort" value="${s.sort}" placeholder="正整数"></td>
             <td><select class="mini-input" data-sku="${i}" data-field="specType">${skuSpecTypes.map(item => `<option value="${item}" ${item === s.specType ? "selected" : ""}>${item}</option>`).join("")}</select></td>
             <td><input class="mini-input" type="number" min="0" step="1" data-sku="${i}" data-field="duration" value="${s.duration ?? ""}" placeholder="0或正整数"></td>
-            <td><select class="mini-input" data-sku="${i}" data-field="currency">${skuCurrencyOptions.map(item => `<option value="${item}" ${item === s.currency ? "selected" : ""}>${item}</option>`).join("")}</select></td>
-            <td><input class="mini-input" type="number" min="1" data-sku="${i}" data-field="price" value="${s.price}"></td>
-            <td><input class="mini-input" type="number" min="1" data-sku="${i}" data-field="strikePrice" value="${s.strikePrice ?? ""}" placeholder="非必填"></td>
+            <td class="price-config-cell">${skuPriceSummary(s)}<button class="btn text" type="button" data-edit-sku-price="${i}">配置多币种价格</button></td>
             <td>${cdkeyPoolEditor(s, i)}</td>
             <td><input class="mini-input" type="number" data-sku="${i}" data-field="totalLimit" value="${s.totalLimit}"></td>
             <td><input class="mini-input" type="number" data-sku="${i}" data-field="dayLimit" value="${s.dayLimit}"></td>
@@ -7169,17 +7386,111 @@
             <td><input class="mini-input" data-sku="${i}" data-field="remark" value="${s.remark || ""}"></td>
             <td><button class="btn text" data-copy-sku="${i}">复制</button><button class="btn text" data-del-sku="${i}">删除</button></td>
           </tr>`;
-      }).join("") : `<tr><td colspan="12"><div class="empty">请添加至少 1 条 SKU。</div></td></tr>`;
+      }).join("") : `<tr><td colspan="${10 + activeAttrs.length}"><div class="empty">请添加至少 1 条 SKU。</div></td></tr>`;
       body.querySelectorAll("[data-attr]").forEach(el => el.addEventListener("input", updateSkuFromInput));
       body.querySelectorAll("select[data-attr]").forEach(el => el.addEventListener("change", updateSkuFromInput));
       body.querySelectorAll("[data-field]").forEach(el => el.addEventListener("input", updateSkuFromInput));
       body.querySelectorAll("select[data-field]").forEach(el => el.addEventListener("change", updateSkuFromInput));
       body.querySelectorAll("[data-copy-sku]").forEach(btn => btn.addEventListener("click", () => copySkuRow(Number(btn.dataset.copySku))));
       body.querySelectorAll("[data-del-sku]").forEach(btn => btn.addEventListener("click", () => { skuRows.splice(Number(btn.dataset.delSku), 1); syncInventoryRows(true); renderSkuEdit(); renderInventoryConfig(); validateSkuRows(); }));
+      body.querySelectorAll("[data-edit-sku-price]").forEach(btn => btn.addEventListener("click", () => openSkuPriceModal(Number(btn.dataset.editSkuPrice))));
       body.querySelectorAll("[data-cdkey-pool]").forEach(input => input.addEventListener("input", updateSkuCdkeyPool));
       body.querySelectorAll("[data-check-pool]").forEach(btn => btn.addEventListener("click", () => checkSkuCdkeyPool(Number(btn.dataset.checkPool))));
       body.querySelectorAll("[data-select-pool]").forEach(btn => btn.addEventListener("click", () => openPoolModal(Number(btn.dataset.selectPool))));
       validateSkuRows();
+    }
+
+    function openSkuPriceModal(index) {
+      const row = skuRows[index];
+      if (!row) return;
+      currentEditingPriceSkuIndex = index;
+      const type = document.getElementById("formType").value;
+      row.prices = normalizeSkuPrices(row, type, row.attributeValues || {}, index + 1);
+      skuPriceDraft = JSON.parse(JSON.stringify(row.prices));
+      document.getElementById("skuPriceModalTitle").textContent = `配置多币种价格 - ${row.skuName || row.displayText || `SKU${index + 1}`}`;
+      renderSkuPriceEditor();
+      openModal("skuPriceModal");
+    }
+
+    function renderSkuPriceEditor() {
+      const body = document.getElementById("skuPriceEditorBody");
+      body.innerHTML = skuPriceDraft.map((price, index) => {
+        const meta = currencyMeta(price.currency);
+        const step = meta.precision === 2 ? ".01" : "1";
+        const disabled = price.enabled ? "" : "disabled";
+        return `<tr>
+          <td><label class="check-pill"><input type="checkbox" data-price-index="${index}" data-price-field="enabled" ${price.enabled ? "checked" : ""}>启用</label></td>
+          <td><span class="price-pill ${meta.css}"><b>${price.currency}</b></span><div class="minor">${meta.code} · 精度${meta.precision}</div></td>
+          <td><input type="number" min="${meta.precision === 2 ? ".01" : "1"}" step="${step}" data-price-index="${index}" data-price-field="amount" value="${price.amount ?? ""}" ${disabled}><div class="minor">${meta.precision === 2 ? "前台按元展示，服务端按分存储" : `仅支持正整数${meta.unit}`}</div></td>
+          <td><input type="number" min="${meta.precision === 2 ? ".01" : "1"}" step="${step}" data-price-index="${index}" data-price-field="strikePrice" value="${price.strikePrice ?? ""}" placeholder="非必填" ${disabled}><div class="minor">填写时必须大于销售价格</div></td>
+          <td><label class="check-pill"><input type="radio" name="defaultSkuPrice" data-price-index="${index}" data-price-field="isDefault" ${price.isDefault ? "checked" : ""} ${disabled}>默认</label></td>
+          <td><div class="price-route">${meta.route}</div></td>
+        </tr>`;
+      }).join("");
+      body.querySelectorAll("[data-price-index]").forEach(control => {
+        control.addEventListener(control.type === "number" ? "input" : "change", updateSkuPriceDraft);
+      });
+      renderSkuPricePreview();
+      validateSkuPriceDraft();
+    }
+
+    function updateSkuPriceDraft(event) {
+      const index = Number(event.target.dataset.priceIndex);
+      const field = event.target.dataset.priceField;
+      const price = skuPriceDraft[index];
+      if (!price) return;
+      if (field === "enabled") {
+        price.enabled = event.target.checked;
+        if (!price.enabled && price.isDefault) {
+          price.isDefault = false;
+          const nextDefault = skuPriceDraft.find(item => item.enabled);
+          if (nextDefault) nextDefault.isDefault = true;
+        }
+        if (price.enabled && !skuPriceDraft.some(item => item.enabled && item.isDefault)) price.isDefault = true;
+        renderSkuPriceEditor();
+        return;
+      }
+      if (field === "isDefault") {
+        skuPriceDraft.forEach(item => { item.isDefault = false; });
+        price.enabled = true;
+        price.isDefault = true;
+        renderSkuPriceEditor();
+        return;
+      }
+      price[field] = event.target.value;
+      renderSkuPricePreview();
+      validateSkuPriceDraft();
+    }
+
+    function renderSkuPricePreview() {
+      const preview = document.getElementById("skuPricePreview");
+      preview.innerHTML = skuPriceSummary({ prices: skuPriceDraft });
+    }
+
+    function validateSkuPriceDraft() {
+      const errors = skuPriceGroupErrors({ prices: skuPriceDraft });
+      document.getElementById("skuPriceError").textContent = errors.join(" ");
+      return errors;
+    }
+
+    function confirmSkuPriceConfig() {
+      const errors = validateSkuPriceDraft();
+      if (errors.length) {
+        toast("请修正多币种价格配置。");
+        return;
+      }
+      const row = skuRows[currentEditingPriceSkuIndex];
+      if (!row) return;
+      row.prices = skuPriceDraft.map(price => ({
+        ...price,
+        amount: normalizePriceAmount(price.currency, price.amount),
+        strikePrice: price.strikePrice === "" ? "" : normalizePriceAmount(price.currency, price.strikePrice)
+      }));
+      syncLegacySkuPriceFields(row);
+      closeModal("skuPriceModal");
+      renderSkuEdit();
+      validateSkuRows();
+      toast("多币种价格已保存。");
     }
 
     function cdkeyPoolEditor(row, index) {
@@ -7275,12 +7586,7 @@
       const signatures = skuRows.map(s => [s.specType || "无", s.duration || "", ...activeAttrs.map(attr => String(s.attributeValues?.[attr.code] || "").trim())].join("|"));
       const duplicate = signatures.find((signature, index) => signature && signatures.indexOf(signature) !== index);
       const invalidSort = skuRows.some(s => !/^[1-9]\d*$/.test(String(s.sort)));
-      const invalidPrice = skuRows.some(s => !/^[1-9]\d*$/.test(String(s.price)));
-      const invalidStrikePrice = skuRows.some(s => {
-        const value = normalizeSkuStrikePrice(s);
-        return value && !/^[1-9]\d*$/.test(value);
-      });
-      const invalidCurrency = skuRows.some(s => !skuCurrencyOptions.includes(s.currency));
+      const priceErrors = [...new Set(skuRows.flatMap(skuPriceGroupErrors))];
       const invalidDelivery = !allowedDeliveryOptions.includes(getFormDelivery()) || !isDeliveryCompatibleWithType(type, getFormDelivery());
       const invalidDuration = skuRows.some(s => {
         const value = String(s.duration ?? "").trim();
@@ -7294,9 +7600,7 @@
       if (missingRequiredAttr) errors.push("必填 SKU 属性项未填写。");
       if (invalidEnum) errors.push("SKU 枚举属性值不在模板可选值范围内。");
       if (duplicate) errors.push("SKU 属性值组合重复，请调整 SKU 属性值。");
-      if (invalidPrice) errors.push("兑换价格必须为正整数。");
-      if (invalidStrikePrice) errors.push("划线价填写时必须为正整数。");
-      if (invalidCurrency) errors.push("兑换货币类型不在系统枚举范围内。");
+      errors.push(...priceErrors);
       if (invalidDelivery) errors.push("履约方式与商品类型不匹配。");
       document.getElementById("skuError").textContent = errors.join(" ");
       return errors;
@@ -7779,7 +8083,7 @@
 
     function skuCurrencySummary(productOrRows) {
       const rows = Array.isArray(productOrRows) ? productOrRows : (productOrRows?.skuList || []);
-      const values = [...new Set(rows.map(row => normalizeSkuCurrency(row.currency)).filter(Boolean))];
+      const values = [...new Set(rows.flatMap(row => enabledSkuPrices(row).map(price => price.currency)).filter(Boolean))];
       if (!values.length) return productOrRows?.currency || "新积分";
       return values.length === 1 ? values[0] : values.join(" / ");
     }
@@ -7906,7 +8210,7 @@
         productDesc: richTextValue("formProductDesc"),
         type,
         skuSummary: skuSummaryText(),
-        currency: "新积分",
+        currency: skuCurrencySummary(skuRows),
         delivery,
         state,
         exposure: "未投放",
@@ -8076,8 +8380,7 @@
       skuRows.forEach((row, index) => {
         if (!/^[1-9]\d*$/.test(String(row.sort))) markInvalidElement(`[data-sku="${index}"][data-field="sort"]`);
         if (String(row.duration ?? "").trim() !== "" && !/^\d+$/.test(String(row.duration).trim())) markInvalidElement(`[data-sku="${index}"][data-field="duration"]`);
-        if (!/^[1-9]\d*$/.test(String(row.price))) markInvalidElement(`[data-sku="${index}"][data-field="price"]`);
-        if (normalizeSkuStrikePrice(row) && !/^[1-9]\d*$/.test(normalizeSkuStrikePrice(row))) markInvalidElement(`[data-sku="${index}"][data-field="strikePrice"]`);
+        if (skuPriceGroupErrors(row).length) markInvalidElement(`[data-edit-sku-price="${index}"]`);
         activeAttrs.forEach(attr => {
           if (attr.required !== false && !row.attributeValues?.[attr.code]) markInvalidElement(`[data-sku="${index}"][data-attr="${attr.code}"]`);
         });
@@ -8104,7 +8407,7 @@
         if (!skuRows.length) list.push(["SKU 配置", "未配置 SKU", "请至少配置 1 条 SKU"]);
         validateSkuRows().forEach(msg => {
           const item = msg.includes("属性") ? "SKU 属性值" : msg.includes("履约方式") ? "履约方式" : "SKU 配置";
-      const suggestion = msg.includes("属性") ? "请补充或调整 SKU 属性值" : msg.includes("履约方式") ? "请按系统履约方式枚举重新选择" : "请调整兑换价格、划线价或限兑配置";
+      const suggestion = msg.includes("属性") ? "请补充或调整 SKU 属性值" : msg.includes("履约方式") ? "请按系统履约方式枚举重新选择" : "请调整多币种价格、默认展示价或限兑配置";
           list.push([item, msg, suggestion]);
         });
         validateSkuCdkeyPools().forEach(err => list.push([err.item, err.problem, err.suggestion]));
