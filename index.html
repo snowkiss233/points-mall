@@ -1713,7 +1713,7 @@
                   <div class="field"><label><span class="required-star">*</span>生效开始时间</label><input id="displayStartTime" placeholder="2026-05-20 10:00"></div>
                   <div class="field"><label><span class="required-star">*</span>生效结束时间</label><input id="displayEndTime" placeholder="2026-06-20 23:59"></div>
                 </div>
-                <div class="hint-text">全局模板投放范围固定为全部社区；游戏专区模板可选择游戏社区、战队社区或自定义社区；活动模板投放范围固定为活动。自定义社区和活动均通过投放对象 ID 路由。</div>
+                <div class="hint-text">全局模板投放范围固定为全部社区；游戏专区模板可选择游戏社区、战队社区或自定义社区，自定义社区必须填写社区 ID；活动模板投放范围固定为活动，并通过活动 ID 路由。</div>
               </div>
             </section>
 
@@ -4159,10 +4159,10 @@
         ["模板名称", config.templateName || "-"], ["模板排序值", config.sortWeight || "-"],
         ["投放范围", displayTemplateScopeText(config)]
       ];
-      if (config.templateType === "游戏专区模板" && normalizedDisplayPlacementScope(config) === "自定义社区") {
-        basicRows.push(["投放对象 ID", normalizedDisplayTargetId(config) || "-"]);
+      if (config.templateType === "游戏专区模板") {
+        if (normalizedDisplayPlacementScope(config) === "自定义社区") basicRows.push(["社区 ID", normalizedDisplayTargetId(config) || "-"]);
       }
-      if (config.templateType === "活动模板") basicRows.push(["投放对象 ID", normalizedDisplayTargetId(config) || "-"]);
+      if (config.templateType === "活动模板") basicRows.push(["活动 ID", normalizedDisplayTargetId(config) || "-"]);
       document.getElementById("displayDetailBody").innerHTML = `
         ${detailSection("模板基础信息", infoGrid(basicRows) + `<div class="hint-text">模板名称用于对应投放页面的商品分区；全局模板覆盖全部社区，游戏专区模板按社区范围投放，活动模板通过活动 ID 路由。</div>`)}
         ${detailSection("投放配置", infoGrid([
@@ -4394,8 +4394,8 @@
       const needsActivityId = templateType === "活动模板";
       const needsTargetId = needsCommunityId || needsActivityId;
       targetField.style.display = needsTargetId ? "" : "none";
-      targetLabel.textContent = "投放对象 ID";
-      targetInput.placeholder = "请输入投放对象 ID";
+      targetLabel.textContent = needsActivityId ? "活动 ID" : "社区 ID";
+      targetInput.placeholder = needsActivityId ? "请输入活动 ID" : "请输入社区 ID";
       targetInput.disabled = !needsTargetId;
       targetInput.required = needsTargetId;
       if (resetTarget || !needsTargetId) targetInput.value = "";
@@ -4646,8 +4646,8 @@
       const globalConflict = displayTemplateTypeConflict(templateType, editingDisplayConfig?.id);
       if (globalConflict) errors.push({ item: "全局模板唯一性", problem: `已存在全局模板：${globalConflict.templateName || globalConflict.id}`, suggestion: "请编辑已有全局模板，或改为游戏专区模板 / 活动模板" });
       if (!valueOf("displayPlacementScope")) errors.push({ item: "投放范围", problem: "投放范围缺失", suggestion: "请重新选择模板类型" });
-      if (templateType === "游戏专区模板" && valueOf("displayPlacementScope") === "自定义社区" && !valueOf("displayTargetId")) errors.push({ item: "投放对象 ID", problem: "自定义社区缺少投放对象 ID", suggestion: "请填写投放对象 ID" });
-      if (templateType === "活动模板" && !valueOf("displayTargetId")) errors.push({ item: "投放对象 ID", problem: "活动模板缺少投放对象 ID", suggestion: "请填写投放对象 ID" });
+      if (templateType === "游戏专区模板" && valueOf("displayPlacementScope") === "自定义社区" && !valueOf("displayTargetId")) errors.push({ item: "社区 ID", problem: "自定义社区缺少社区 ID", suggestion: "请填写社区 ID" });
+      if (templateType === "活动模板" && !valueOf("displayTargetId")) errors.push({ item: "活动 ID", problem: "活动模板缺少活动 ID", suggestion: "请填写活动 ID" });
       if (!valueOf("displayTemplateName")) errors.push({ item: "模板名称", problem: "未填写模板名称", suggestion: "请填写投放分区名称" });
       if (!/^[1-9]\d*$/.test(valueOf("displayTemplateSort"))) errors.push({ item: "模板排序值", problem: "排序值缺失或格式错误", suggestion: "请填写正整数排序值" });
       return errors;
@@ -4662,8 +4662,8 @@
       add("模板名称", "模板名称缺失", "请填写投放分区名称", !!config.templateName);
       add("模板排序值", "排序值缺失或格式错误", "请填写正整数排序值", /^[1-9]\d*$/.test(String(config.sortWeight)));
       add("投放范围", "投放范围缺失", "请重新选择模板类型", !!config.placementScope);
-      if (config.templateType === "游戏专区模板" && config.placementScope === "自定义社区") add("投放对象 ID", "自定义社区缺少投放对象 ID", "请填写投放对象 ID，或改为游戏社区 / 战队社区", !!config.targetId);
-      if (config.templateType === "活动模板") add("投放对象 ID", "活动模板缺少投放对象 ID", "请填写投放对象 ID", !!config.targetId);
+      if (config.templateType === "游戏专区模板" && config.placementScope === "自定义社区") add("社区 ID", "自定义社区缺少社区 ID", "请填写社区 ID，或改为游戏社区 / 战队社区", !!config.targetId);
+      if (config.templateType === "活动模板") add("活动 ID", "活动模板缺少活动 ID", "请填写活动 ID", !!config.targetId);
       const subTemplateNames = (config.subTemplates || []).map(item => item.name).filter(Boolean);
       const duplicateSubName = subTemplateNames.some((name, index) => subTemplateNames.indexOf(name) !== index);
       const invalidSubTemplate = (config.subTemplates || []).some(item => !item.name || !/^[1-9]\d*$/.test(String(item.sort)));
