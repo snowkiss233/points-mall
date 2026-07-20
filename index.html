@@ -1143,7 +1143,7 @@
             </section>
 
             <section class="form-card" id="sectionScopeTags">
-              <h2>商品展示属性配置</h2>
+              <h2>商品展示配置</h2>
               <div class="body">
                 <div class="form-grid three">
                   <div class="field">
@@ -1200,7 +1200,7 @@
             <a href="#sectionBasic">基础信息</a>
             <a href="#sectionOperationDisplay">SPU 运营展示配置</a>
             <a href="#sectionMaterial">商品素材</a>
-            <a href="#sectionScopeTags">商品展示属性配置</a>
+            <a href="#sectionScopeTags">商品展示配置</a>
             <a href="#sectionSku">SKU 配置</a>
             <a href="#sectionInitialInventory">初始库存配置</a>
             <a href="#sectionRemark">备注</a>
@@ -6709,7 +6709,7 @@
         ]))}
         ${operationDisplayDetailSection(product)}
         ${spuAttrDetailSection(product)}
-        ${detailSection("商品展示属性配置", scopeTagsDetail(product))}
+        ${detailSection("商品展示配置", scopeTagsDetail(product))}
         ${detailSection("商品素材", materialHtml(product))}
         ${detailSection("SKU 列表", skuTable(product.skuList, product.type, product.skuAttrCodes))}
         ${detailSection("投放状态摘要", exposureDetail(product))}
