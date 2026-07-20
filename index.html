@@ -1143,20 +1143,20 @@
             </section>
 
             <section class="form-card" id="sectionScopeTags">
-              <h2>适用范围与标签</h2>
+              <h2>商品标签与角标</h2>
               <div class="body">
                 <div class="form-grid three">
                   <div class="field">
-                    <label>描述性标签</label>
+                    <label>商品标签</label>
                     <div class="tag-input-box" id="formTagsBox">
                       <div id="formTagsChipList" style="display:contents"></div>
                       <input id="formTagsInput" placeholder="输入文字后按空格生成标签">
                     </div>
                     <input id="formTags" type="hidden">
                   </div>
-                  <div class="field"><label>商品角标标签</label><select id="formCornerTags"><option value="">不展示角标</option><option>热门</option><option>新品</option><option>限时</option><option>限量</option><option>推荐</option><option>待配置</option></select></div>
+                  <div class="field"><label>商品角标</label><select id="formCornerTags"><option value="">不展示角标</option><option>热门</option><option>新品</option><option>限时</option><option>限量</option><option>推荐</option><option>待配置</option></select></div>
                 </div>
-                <div class="hint-text">适用范围与标签用于商品级运营识别、前台投放标识和服务端过滤，描述性标签输入后按空格生成标签块，同时兼容逗号或点号分割；商品角标标签通过下拉选择。商品是否前台投放仍由商品投放管理中的投放关系决定。</div>
+                <div class="hint-text">商品标签支持配置多个前台展示标签，输入文字后按空格生成标签块，同时兼容逗号或点号分割；商品角标用于商品卡片或头图的单一醒目标识，通过下拉选择。两者均不决定商品投放范围，商品是否前台投放仍由商品投放管理中的投放关系决定。</div>
               </div>
             </section>
 
@@ -1200,7 +1200,7 @@
             <a href="#sectionBasic">基础信息</a>
             <a href="#sectionOperationDisplay">SPU 运营展示配置</a>
             <a href="#sectionMaterial">商品素材</a>
-            <a href="#sectionScopeTags">适用范围与标签</a>
+            <a href="#sectionScopeTags">商品标签与角标</a>
             <a href="#sectionSku">SKU 配置</a>
             <a href="#sectionInitialInventory">初始库存配置</a>
             <a href="#sectionRemark">备注</a>
@@ -6709,7 +6709,7 @@
         ]))}
         ${operationDisplayDetailSection(product)}
         ${spuAttrDetailSection(product)}
-        ${detailSection("适用范围与标签", scopeTagsDetail(product))}
+        ${detailSection("商品标签与角标", scopeTagsDetail(product))}
         ${detailSection("商品素材", materialHtml(product))}
         ${detailSection("SKU 列表", skuTable(product.skuList, product.type, product.skuAttrCodes))}
         ${detailSection("投放状态摘要", exposureDetail(product))}
@@ -6753,9 +6753,9 @@
     }
     function scopeTagsDetail(product) {
       return infoGrid([
-        ["描述性标签", product.tags?.length ? product.tags.join("、") : "-"],
-        ["商品角标标签", product.cornerTags?.length ? product.cornerTags.join("、") : "-"]
-      ]) + `<div class="hint-text">适用范围与标签不参与商品后台分类树，也不决定 SKU 属性模板；商品是否投放仍由商品投放管理控制。</div>`;
+        ["商品标签", product.tags?.length ? product.tags.join("、") : "-"],
+        ["商品角标", product.cornerTags?.length ? product.cornerTags.join("、") : "-"]
+      ]) + `<div class="hint-text">商品标签与角标不参与商品后台分类树，也不决定 SKU 属性模板或商品投放范围；商品是否投放仍由商品投放管理控制。</div>`;
     }
     function skuTable(rows, type, attrCodes = null) {
       const codes = attrCodes || deriveSkuAttrCodes({ skuList: rows }, type);
