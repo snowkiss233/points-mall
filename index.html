@@ -3395,9 +3395,11 @@
 
     function templateActionButtons(t) {
       const buttons = [
-        `<button class="btn text" data-template-action="view" data-template-id="${t.id}">查看</button>`,
-        `<button class="btn text" data-template-action="edit" data-template-id="${t.id}">编辑</button>`
+        `<button class="btn text" data-template-action="view" data-template-id="${t.id}">查看</button>`
       ];
+      if (isEditableLifecycleState(t.state)) {
+        buttons.push(`<button class="btn text" data-template-action="edit" data-template-id="${t.id}">编辑</button>`);
+      }
       if (t.state === "草稿") {
         buttons.push(`<button class="btn text" data-template-action="enable" data-template-id="${t.id}">上架</button>`);
         buttons.push(`<button class="btn text" data-template-action="delete" data-template-id="${t.id}">删除</button>`);
@@ -3414,7 +3416,10 @@
       const template = attributeTemplates.find(t => t.id === id);
       selectedTemplate = template;
       if (action === "view") openTemplateDetail(template);
-      if (action === "edit") openTemplateForm("edit", template);
+      if (action === "edit") {
+        if (!isEditableLifecycleState(template?.state)) return toast("仅草稿或下架状态的商品属性模板允许编辑。");
+        openTemplateForm("edit", template);
+      }
       if (action === "enable") handleTemplateListEnable(template);
       if (action === "disable") openTemplateDisableModal(template);
       if (action === "delete") openTemplateDeleteModal(template);
@@ -3508,6 +3513,9 @@
     }
 
     function openTemplateForm(mode, template) {
+      if (mode === "edit" && !isEditableLifecycleState(template?.state)) {
+        return toast("仅草稿或下架状态的商品属性模板允许编辑。");
+      }
       templateMode = mode;
       editingTemplate = template || null;
       hideAllPages();
@@ -6677,9 +6685,11 @@
 
     function actionButtons(p) {
       const base = [
-        `<button class="btn text" data-action="view" data-spu="${p.spu}">查看</button>`,
-        `<button class="btn text" data-action="edit" data-spu="${p.spu}">编辑</button>`
+        `<button class="btn text" data-action="view" data-spu="${p.spu}">查看</button>`
       ];
+      if (isEditableLifecycleState(p.state)) {
+        base.push(`<button class="btn text" data-action="edit" data-spu="${p.spu}">编辑</button>`);
+      }
       if (p.state === "草稿") {
         base.push(`<button class="btn text" data-action="enable" data-spu="${p.spu}">上架</button>`);
         base.push(`<button class="btn text" data-action="delete" data-spu="${p.spu}">删除</button>`);
@@ -6695,7 +6705,10 @@
       const product = products.find(p => p.spu === spu);
       selectedProduct = product;
       if (action === "view") openDetail(product);
-      if (action === "edit") openForm("edit", product);
+      if (action === "edit") {
+        if (!isEditableLifecycleState(product?.state)) return toast("仅草稿或下架状态的商品允许编辑。");
+        openForm("edit", product);
+      }
       if (action === "enable") handleListEnable(product);
       if (action === "disable") openDisableModal(product);
       if (action === "delete") openDeleteModal(product);
@@ -6775,6 +6788,9 @@
       ]) + `<div class="hint-text">商品上架不等于前台投放，投放关系由商品投放管理维护。</div>`;
     }
     function openForm(mode, product) {
+      if (mode === "edit" && !isEditableLifecycleState(product?.state)) {
+        return toast("仅草稿或下架状态的商品允许编辑。");
+      }
       formMode = mode;
       editingProduct = product || null;
       hideAllPages();
@@ -8161,6 +8177,9 @@
     function stateTag(state) {
       const cls = state === "上架" ? "green" : state === "草稿" ? "orange" : state === "下架" ? "" : "";
       return `<span class="tag ${cls}">${state}</span>`;
+    }
+    function isEditableLifecycleState(state) {
+      return state === "草稿" || state === "下架";
     }
     function deliveryTag(delivery) {
       const normalized = normalizeDelivery(delivery);
