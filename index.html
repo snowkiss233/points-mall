@@ -1436,7 +1436,7 @@
           <div class="table-head">
             <div>
               <div class="table-title">库存主数据</div>
-              <div class="table-meta">库存按 SPU ID + SKU ID 唯一维护；默认按总库存、可用库存从高到低展示。</div>
+              <div class="table-meta">库存按 SPU ID + SKU ID 唯一维护；默认按创建时间倒序展示。</div>
             </div>
             <div class="table-meta" id="inventoryTableCount">共 0 条</div>
           </div>
@@ -2327,7 +2327,7 @@
     let visibleTemplates = [...attributeTemplates];
     let visibleDisplayConfigs = [...displayConfigs];
     let visibleInventoryRecords = [...inventoryRecords];
-    let inventorySortConfig = { field: "totalStock", direction: "desc" };
+    let inventorySortConfig = { field: "createdAt", direction: "desc" };
     let visibleDeliveryRecords = [...deliveryRecords];
     let visibleCdkeyPools = [...poolMocks];
     let selectedProduct = null;
@@ -3066,7 +3066,7 @@
       fillSelect("pickerFilterDelivery", deliveries);
       fillSelect("inventoryFilterType", types);
       fillSelect("inventoryFilterDelivery", deliveries);
-      fillSelect("inventoryFilterState", ["全部", "正常", "低库存", "售罄", "时段售罄", "不限量"]);
+      fillSelect("inventoryFilterState", ["全部", "正常", "低库存", "售罄", "不限量"]);
       fillSelect("deliveryFilterState", deliveryRecordStates);
       fillSelect("deliveryFilterSource", businessSources);
       fillSelect("deliveryFilterType", types);
@@ -4889,6 +4889,7 @@
     }
 
     function inventorySortMetric(record, field) {
+      if (field === "createdAt") return Date.parse(String(record.createdAt || record.updatedAt || "").replace(" ", "T")) || 0;
       if (field === "todayRemaining") return inventorySortValue(record.todayRemaining, record);
       if (field === "warningThreshold") return numberValue(record.warningThreshold);
       return inventorySortValue(record[field], record);
@@ -5140,7 +5141,6 @@
       if (record.stockMode === "不限量") return "不限量";
       if (record.missingInit || record.totalStock === "" || record.totalStock === null || record.totalStock === undefined) return "售罄";
       if (numberValue(record.availableStock) <= 0) return "售罄";
-      if (cloneDailyReleases(record).length && numberValue(record.todayRemaining) <= 0) return "时段售罄";
       if (isInventoryBelowWarning(record)) return "低库存";
       return "正常";
     }
@@ -5192,9 +5192,10 @@
       return `FLOW-${String(inventoryFlowCounter++).padStart(6, "0")}`;
     }
 
-    function makeInventoryFlow(record, type, before, after, reason, bizNo = "", operator = "平台运营", time = nowText(), businessSource = "积分商城") {
+    function makeInventoryFlow(record, type, before, after, reason, bizNo = "", operator = "平台运营", time = nowText(), businessSource = "积分商城", businessSourceId = "") {
       const sku = getInventorySku(record);
       const flowType = normalizeInventoryFlowType(type, before, after);
+      const sourceId = businessSourceId || (businessSource === "积分商城" ? "POINTS_MALL" : "ACTIVITY_10001");
       return {
         flowId: makeFlowId(),
         inventoryId: record.inventoryId,
@@ -5203,6 +5204,7 @@
         skuId: record.skuId,
         skuText: skuSpecText(sku),
         businessSource,
+        businessSourceId: sourceId,
         type: flowType,
         changeQty: inventoryFlowChangeQuantity(before, after),
         before,
@@ -5234,8 +5236,8 @@
       return "入库流水";
     }
 
-    function addInventoryFlow(record, type, before, after, reason, bizNo = "", operator = "平台运营", businessSource = "积分商城") {
-      inventoryFlows.unshift(makeInventoryFlow(record, type, before, after, reason, bizNo, operator, nowText(), businessSource));
+    function addInventoryFlow(record, type, before, after, reason, bizNo = "", operator = "平台运营", businessSource = "积分商城", businessSourceId = "") {
+      inventoryFlows.unshift(makeInventoryFlow(record, type, before, after, reason, bizNo, operator, nowText(), businessSource, businessSourceId));
     }
 
     function seedInventoryFlows() {
@@ -5643,8 +5645,7 @@
           ["SPU ID", record.spu], ["商品对外名称", product?.name || "-"], ["SKU ID", record.skuId], ["SKU 规格", skuSpecText(sku)],
           ["库存状态", calculateInventoryState(record)]
         ]))}
-        <div class="form-grid four" style="margin-bottom:12px">
-          <div class="field"><label>业务来源</label><select><option>全部</option><option>积分商城</option><option>xx活动</option></select></div>
+        <div class="form-grid three" style="margin-bottom:12px">
           <div class="field"><label>流水类型</label><select><option>全部</option><option>入库流水</option><option>出库流水</option></select></div>
           <div class="field"><label>关联业务单号</label><input placeholder="请输入订单号 / 工单号"></div>
           <div class="field"><label>操作人</label><input placeholder="请输入操作人"></div>
@@ -5657,11 +5658,11 @@
     function inventoryFlowTable(flows) {
       if (!flows.length) return `<div class="empty">暂无库存流水</div>`;
       return `<div class="table-wrap"><table class="inventory-flow-table"><thead><tr>
-        <th>流水 ID</th><th>关联业务单号</th><th>业务来源</th><th>流水类型</th><th>变动数量</th>
+        <th>流水 ID</th><th>关联业务单号</th><th>业务来源</th><th>业务来源 ID</th><th>流水类型</th><th>变动数量</th>
         <th>变更前可用库存</th><th>变更后可用库存</th><th>操作时间</th><th>操作人</th><th>操作原因</th>
       </tr></thead><tbody>${flows.map(flow => {
         return `<tr>
-          <td>${flow.flowId}</td><td>${flow.bizNo || "-"}</td><td>${flow.businessSource || "积分商城"}</td><td>${flow.type}</td><td>${flow.changeQty || inventoryFlowChangeQuantity(flow.before, flow.after)}</td>
+          <td>${flow.flowId}</td><td>${flow.bizNo || "-"}</td><td>${flow.businessSource || "积分商城"}</td><td>${flow.businessSourceId || "-"}</td><td>${flow.type}</td><td>${flow.changeQty || inventoryFlowChangeQuantity(flow.before, flow.after)}</td>
           <td>${inventoryNumberText(flow.before.availableStock, flow.before)}</td><td>${inventoryNumberText(flow.after.availableStock, flow.after)}</td><td>${flow.time}</td><td>${flow.operator}</td><td>${flow.reason}</td>
         </tr>`;
       }).join("")}</tbody></table></div>`;
