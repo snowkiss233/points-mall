@@ -5496,20 +5496,21 @@
       const product = getInventoryProduct(record);
       const sku = getInventorySku(record);
       const delivery = sku?.delivery || product?.delivery || "未配置";
+      const isCdkeyRecord = isCdkeyDelivery(delivery);
       document.getElementById("inventoryAdjustInfo").innerHTML = infoGrid([
-        ["SPU ID", record.spu], ["商品对外名称", product?.name || "-"], ["SKU ID", record.skuId], ["SKU 规格", skuSpecText(sku)],
+        ["SPU ID", record.spu], ["商品对外名称", product?.name || "-"], ["SKU ID", record.skuId], ["SKU 规格", skuSpecText(sku)], ["履约方式", normalizeDelivery(delivery)],
         ["当前库存模式", record.stockMode], ["当前总库存", inventoryNumberText(record.totalStock, record)], ["当前可用库存", inventoryNumberText(record.availableStock, record)],
         ["当前锁定库存", record.lockedStock], ["当前时段库存重置配置", record.stockMode === "不限量" ? "不限量" : (dailyReleaseLines(record.dailyReleases).join("，") || "不限制")],
         ["当前安全库存阈值", inventoryWarningText(record)]
       ]);
       adjustDailyReleases = cloneDailyReleases(record);
-      document.getElementById("inventoryAdjustMode").value = record.stockMode === "不限量" ? "不限量" : "限量";
+      document.getElementById("inventoryAdjustMode").value = isCdkeyRecord ? "限量" : (record.stockMode === "不限量" ? "不限量" : "限量");
       document.getElementById("inventoryAdjustType").value = "增加库存";
       document.getElementById("inventoryAdjustQty").value = "";
       document.getElementById("inventoryAdjustSafetyPercent").value = record.stockMode === "不限量" ? "不限量" : (record.warningThreshold ?? "");
       document.getElementById("inventoryAdjustReason").value = "";
       updateInventoryAdjustFields();
-      if (isCdkeyDelivery(delivery)) {
+      if (isCdkeyRecord) {
         document.getElementById("inventoryAdjustTip").textContent = "CDKey SKU 库存模式固定为限量；总库存和可用库存由关联码池同步。补货、核销和码池库存维护请前往 CDKey 码池管理。";
       }
       openModal("inventoryAdjustModal");
@@ -5518,7 +5519,8 @@
     function updateInventoryAdjustFields() {
       const record = selectedInventoryRecord;
       if (!record) return;
-      const targetMode = valueOf("inventoryAdjustMode");
+      const modeEl = document.getElementById("inventoryAdjustMode");
+      const targetMode = modeEl.value;
       const typeEl = document.getElementById("inventoryAdjustType");
       const type = typeEl.value;
       const qty = document.getElementById("inventoryAdjustQty");
@@ -5530,6 +5532,19 @@
       const isCdkeyRecord = isCdkeyDelivery(sku?.delivery || product?.delivery || "未配置");
       const modeChangingToUnlimited = targetMode === "不限量";
       const modeChangingToLimited = record.stockMode === "不限量" && targetMode === "限量";
+      modeEl.disabled = isCdkeyRecord;
+      if (isCdkeyRecord) {
+        modeEl.value = "限量";
+        typeEl.disabled = true;
+        qty.disabled = true;
+        qty.value = "";
+        safetyPercent.disabled = false;
+        label.innerHTML = "调整数量";
+        qty.placeholder = "CDKey 库存由码池同步";
+        renderAdjustDailyReleaseEditor(false);
+        tip.textContent = "CDKey SKU 库存模式固定为限量；总库存和可用库存由关联码池同步。补货、核销和码池库存维护请前往 CDKey 码池管理。";
+        return;
+      }
       typeEl.disabled = modeChangingToUnlimited;
       qty.disabled = modeChangingToUnlimited;
       qty.value = qty.disabled ? "" : qty.value;
@@ -5583,6 +5598,10 @@
       const qtyText = valueOf("inventoryAdjustQty");
       const safetyPercentText = valueOf("inventoryAdjustSafetyPercent");
       const reason = valueOf("inventoryAdjustReason");
+      const sku = getInventorySku(record);
+      const product = getInventoryProduct(record);
+      const isCdkeyRecord = isCdkeyDelivery(sku?.delivery || product?.delivery || "未配置");
+      if (isCdkeyRecord && (targetMode !== "限量" || qtyText)) return toast("CDKey SKU 库存由关联码池同步，不能在库存列表手动调整。");
       const qty = Number(qtyText);
       const before = snapshotInventory(record);
       let operation = type;
