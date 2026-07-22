@@ -203,6 +203,7 @@
       grid-template-columns: repeat(6, minmax(150px, 1fr));
       gap: 12px;
     }
+    .filter-grid.seven-columns { grid-template-columns: repeat(7, minmax(120px, 1fr)); }
     .field label {
       display: block;
       color: #475467;
@@ -898,6 +899,7 @@
 
     @media (max-width: 1180px) {
       .filter-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .filter-grid.seven-columns { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .form-layout { grid-template-columns: 1fr; }
       .side-anchor { position: static; }
@@ -906,7 +908,7 @@
       .sidebar { width: 76px; }
       .brand span, .nav-title, .nav-item span, .role { display: none; }
       .main { margin-left: 76px; width: calc(100% - 76px); }
-      .filter-grid, .form-grid, .form-grid.three, .info-grid, .material-grid, .upload-row { grid-template-columns: 1fr; }
+      .filter-grid, .filter-grid.seven-columns, .form-grid, .form-grid.three, .info-grid, .material-grid, .upload-row { grid-template-columns: 1fr; }
       .topbar { align-items: flex-start; height: auto; gap: 10px; padding: 12px; flex-direction: column; }
       .global-search { width: 100%; }
       .top-actions { width: 100%; flex-wrap: wrap; }
@@ -1409,7 +1411,8 @@
           <div class="card-body">
             <div class="filter-grid">
               <div class="field"><label>商品对外名称</label><input id="inventoryFilterKeyword" placeholder="请输入商品对外名称"></div>
-              <div class="field"><label>SPU ID / SKU ID</label><input id="inventoryFilterSku" placeholder="请输入 SPU ID 或 SKU ID"></div>
+              <div class="field"><label>SPU ID</label><input id="inventoryFilterSpu" placeholder="请输入 SPU ID"></div>
+              <div class="field"><label>SKU ID</label><input id="inventoryFilterSku" placeholder="请输入 SKU ID"></div>
               <div class="field"><label>商品类型</label><select id="inventoryFilterType"></select></div>
               <div class="field"><label>履约方式</label><select id="inventoryFilterDelivery"></select></div>
               <div class="field"><label>库存状态</label><select id="inventoryFilterState"></select></div>
@@ -1485,12 +1488,13 @@
 
         <section class="card" aria-label="履约记录筛选区">
           <div class="card-body">
-            <div class="filter-grid">
+            <div class="filter-grid seven-columns">
               <div class="field"><label>兑换单号</label><input id="deliveryFilterRecord" placeholder="请输入兑换单号"></div>
               <div class="field"><label>订单号</label><input id="deliveryFilterOrder" placeholder="请输入订单号"></div>
               <div class="field"><label>用户 ID</label><input id="deliveryFilterUser" placeholder="请输入用户 ID"></div>
               <div class="field"><label>商品对外名称</label><input id="deliveryFilterProduct" placeholder="请输入商品对外名称"></div>
-              <div class="field"><label>SPU ID / SKU ID</label><input id="deliveryFilterSku" placeholder="请输入 SPU ID 或 SKU ID"></div>
+              <div class="field"><label>SPU ID</label><input id="deliveryFilterSpu" placeholder="请输入 SPU ID"></div>
+              <div class="field"><label>SKU ID</label><input id="deliveryFilterSku" placeholder="请输入 SKU ID"></div>
               <div class="field"><label>履约状态</label><select id="deliveryFilterState"></select></div>
             </div>
             <div class="filter-grid more-filters" id="deliveryMoreFilters">
@@ -2131,6 +2135,7 @@
       pickerFilterKeyword: { maxLength: 50 },
       pickerFilterSpu: { maxLength: 500 },
       inventoryFilterKeyword: { maxLength: 80 },
+      inventoryFilterSpu: { maxLength: 32 },
       inventoryFilterSku: { maxLength: 32 },
       inventoryFilterUpdated: { maxLength: 32 },
       inventoryAdjustQty: { min: 1, max: 999999 },
@@ -2146,6 +2151,7 @@
       deliveryFilterOrder: { maxLength: 64 },
       deliveryFilterUser: { maxLength: 32 },
       deliveryFilterProduct: { maxLength: 80 },
+      deliveryFilterSpu: { maxLength: 32 },
       deliveryFilterSku: { maxLength: 32 },
       deliveryFilterPool: { maxLength: 64 },
       deliveryFilterDelivered: { maxLength: 32 },
@@ -5417,7 +5423,8 @@
 
     function applyInventoryFilters() {
       const productName = valueOf("inventoryFilterKeyword").toUpperCase();
-      const spuSkuId = valueOf("inventoryFilterSku").toUpperCase();
+      const spuId = valueOf("inventoryFilterSpu").toUpperCase();
+      const skuId = valueOf("inventoryFilterSku").toUpperCase();
       const type = valueOf("inventoryFilterType");
       const delivery = valueOf("inventoryFilterDelivery");
       const state = valueOf("inventoryFilterState");
@@ -5428,13 +5435,14 @@
         const sku = getInventorySku(record);
         const deliveryValue = normalizeDelivery(sku?.delivery || product?.delivery || "未配置");
         const matchName = !productName || product?.name?.toUpperCase().includes(productName);
-        const matchSpuSku = !spuSkuId || record.spu.toUpperCase().includes(spuSkuId) || record.skuId.toUpperCase().includes(spuSkuId);
+        const matchSpu = !spuId || record.spu.toUpperCase().includes(spuId);
+        const matchSku = !skuId || record.skuId.toUpperCase().includes(skuId);
         const matchType = type === "全部" || product?.type === type;
         const matchDelivery = delivery === "全部" || deliveryValue === delivery;
         const matchState = state === "全部" || calculateInventoryState(record) === state;
         const matchCdkey = cdkey === "全部" || inventoryCdkeyStatus(record) === cdkey;
         const matchUpdated = !updated || String(record.createdAt || record.updatedAt).includes(updated);
-        return matchName && matchSpuSku && matchType && matchDelivery && matchState && matchCdkey && matchUpdated;
+        return matchName && matchSpu && matchSku && matchType && matchDelivery && matchState && matchCdkey && matchUpdated;
       });
       renderInventoryTable();
       renderInventoryStats();
@@ -5442,7 +5450,7 @@
     }
 
     function resetInventoryFilters() {
-      ["inventoryFilterKeyword", "inventoryFilterSku", "inventoryFilterUpdated"].forEach(id => document.getElementById(id).value = "");
+      ["inventoryFilterKeyword", "inventoryFilterSpu", "inventoryFilterSku", "inventoryFilterUpdated"].forEach(id => document.getElementById(id).value = "");
       ["inventoryFilterType", "inventoryFilterDelivery", "inventoryFilterState", "inventoryFilterCdkey"].forEach(id => document.getElementById(id).value = "全部");
       visibleInventoryRecords = [...inventoryRecords];
       renderInventoryTable();
@@ -5967,7 +5975,8 @@
       const order = valueOf("deliveryFilterOrder").toUpperCase();
       const user = valueOf("deliveryFilterUser");
       const productName = valueOf("deliveryFilterProduct").toUpperCase();
-      const spuSkuId = valueOf("deliveryFilterSku").toUpperCase();
+      const spuId = valueOf("deliveryFilterSpu").toUpperCase();
+      const skuId = valueOf("deliveryFilterSku").toUpperCase();
       const state = valueOf("deliveryFilterState");
       const source = valueOf("deliveryFilterSource");
       const type = valueOf("deliveryFilterType");
@@ -5980,7 +5989,8 @@
           && (!order || record.orderId.toUpperCase().includes(order))
           && (!user || record.userId.includes(user))
           && (!productName || product?.name?.toUpperCase().includes(productName))
-          && (!spuSkuId || record.spu.toUpperCase().includes(spuSkuId) || record.skuId.toUpperCase().includes(spuSkuId))
+          && (!spuId || record.spu.toUpperCase().includes(spuId))
+          && (!skuId || record.skuId.toUpperCase().includes(skuId))
           && (state === "全部" || record.deliveryState === state)
           && (source === "全部" || record.businessSource === source)
           && (type === "全部" || product?.type === type)
@@ -5994,7 +6004,7 @@
     }
 
     function resetDeliveryRecordFilters() {
-      ["deliveryFilterRecord", "deliveryFilterOrder", "deliveryFilterUser", "deliveryFilterProduct", "deliveryFilterSku", "deliveryFilterPool", "deliveryFilterDelivered"].forEach(id => document.getElementById(id).value = "");
+      ["deliveryFilterRecord", "deliveryFilterOrder", "deliveryFilterUser", "deliveryFilterProduct", "deliveryFilterSpu", "deliveryFilterSku", "deliveryFilterPool", "deliveryFilterDelivered"].forEach(id => document.getElementById(id).value = "");
       ["deliveryFilterState", "deliveryFilterSource", "deliveryFilterType", "deliveryFilterMethod"].forEach(id => document.getElementById(id).value = "全部");
       visibleDeliveryRecords = [...deliveryRecords];
       renderDeliveryRecordTable();
