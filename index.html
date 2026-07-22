@@ -1411,8 +1411,8 @@
           <div class="card-body">
             <div class="filter-grid">
               <div class="field"><label>商品对外名称</label><input id="inventoryFilterKeyword" placeholder="请输入商品对外名称"></div>
-              <div class="field"><label>SPU ID</label><input id="inventoryFilterSpu" placeholder="请输入 SPU ID"></div>
               <div class="field"><label>SKU ID</label><input id="inventoryFilterSku" placeholder="请输入 SKU ID"></div>
+              <div class="field"><label>SPU ID</label><input id="inventoryFilterSpu" placeholder="请输入 SPU ID"></div>
               <div class="field"><label>商品类型</label><select id="inventoryFilterType"></select></div>
               <div class="field"><label>履约方式</label><select id="inventoryFilterDelivery"></select></div>
               <div class="field"><label>库存状态</label><select id="inventoryFilterState"></select></div>
@@ -1440,7 +1440,7 @@
           <div class="table-head">
             <div>
               <div class="table-title">库存主数据</div>
-              <div class="table-meta">库存按 SPU ID + SKU ID 唯一维护；默认按创建时间倒序展示。</div>
+              <div class="table-meta">SKU ID 为库存主键，SPU ID 用于关联所属商品；默认按创建时间倒序展示。</div>
             </div>
             <div class="table-meta" id="inventoryTableCount">共 0 条</div>
           </div>
@@ -1448,8 +1448,8 @@
             <table class="inventory-table">
               <thead>
                 <tr>
-                  <th>SPU ID</th>
                   <th>SKU ID</th>
+                  <th>SPU ID</th>
                   <th>商品信息</th>
                   <th>商品类型</th>
                   <th>SKU 规格</th>
@@ -5378,8 +5378,8 @@
         const cdkeyStatus = inventoryCdkeyStatus(record);
         record.stockState = calculateInventoryState(record);
         return `<tr>
-          <td><b>${record.spu}</b></td>
-          <td>${record.skuId}</td>
+          <td><b>${record.skuId}</b></td>
+          <td>${record.spu}</td>
           <td>${product ? productInfoHtml(product) : "-"}</td>
           <td>${product?.type || "-"}</td>
           <td>${skuSpecText(sku)}</td>
