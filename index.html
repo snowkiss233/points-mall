@@ -5746,11 +5746,11 @@
       if (!flows.length) return `<div class="empty">暂无库存流水</div>`;
       return `<div class="table-wrap"><table class="inventory-flow-table"><thead><tr>
         <th>流水 ID</th><th>关联业务单号</th><th>业务来源</th><th>业务来源 ID</th><th>流水类型</th><th>变动数量</th>
-        <th>变更前可用库存</th><th>变更后可用库存</th><th>操作时间</th><th>操作人</th><th>操作原因</th>
+        <th>变更前可用库存</th><th>变更后可用库存</th><th>操作时间</th><th>操作人</th>
       </tr></thead><tbody>${flows.map(flow => {
         return `<tr>
           <td>${flow.flowId}</td><td>${flow.bizNo || "-"}</td><td>${flow.businessSource || "积分商城"}</td><td>${flow.businessSourceId || "-"}</td><td>${flow.type}</td><td>${flow.changeQty || inventoryFlowChangeQuantity(flow.before, flow.after)}</td>
-          <td>${inventoryNumberText(flow.before.availableStock, flow.before)}</td><td>${inventoryNumberText(flow.after.availableStock, flow.after)}</td><td>${flow.time}</td><td>${flow.operator}</td><td>${flow.reason}</td>
+          <td>${inventoryNumberText(flow.before.availableStock, flow.before)}</td><td>${inventoryNumberText(flow.after.availableStock, flow.after)}</td><td>${flow.time}</td><td>${flow.operator}</td>
         </tr>`;
       }).join("")}</tbody></table></div>`;
     }
