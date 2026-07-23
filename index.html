@@ -7124,23 +7124,33 @@
 
     function renderTemplateInfo() {
       const type = document.getElementById("formType").value;
-      const template = getSkuTemplate(type);
+      const spuTemplate = getSpuTemplate(type);
+      const skuTemplate = getSkuTemplate(type);
       const tip = document.getElementById("templateTip");
-      if (!template) {
-        if (editingProduct?.templateDetachment?.SKU) {
-          tip.style.display = "";
-          tip.className = "alert warning";
-          tip.textContent = "原 SKU 属性模板已自动解绑，当前商品类型暂无已上架模板。请等待模板重新上架后再编辑商品完成关联。";
-        } else {
-          tip.style.display = "none";
-        }
+      const spuDetached = Boolean(editingProduct?.templateDetachment?.SPU);
+      const skuDetached = Boolean(editingProduct?.templateDetachment?.SKU);
+      if (!spuTemplate && !skuTemplate && !spuDetached && !skuDetached) {
+        tip.style.display = "none";
         return;
       }
+      const messages = [];
+      if (spuTemplate) {
+        messages.push(spuDetached
+          ? `原 SPU 属性模板已解绑；当前模板「${spuTemplate.templateName}」的字段已重新加载到基础信息，请配置属性值后保存关联`
+          : `已加载 SPU 属性模板「${spuTemplate.templateName}」，属性字段展示在基础信息中`);
+      } else if (spuDetached) {
+        messages.push("原 SPU 属性模板已自动解绑，当前商品类型暂无已上架的 SPU 属性模板");
+      }
+      if (skuTemplate) {
+        messages.push(skuDetached
+          ? `原 SKU 属性模板已解绑；当前模板「${skuTemplate.templateName}」的字段已重新加载到 SKU 列表，请配置属性值后保存关联`
+          : `已加载 SKU 属性模板「${skuTemplate.templateName}」，属性字段展示在 SKU 配置中`);
+      } else if (skuDetached) {
+        messages.push("原 SKU 属性模板已自动解绑，当前商品类型暂无已上架的 SKU 属性模板");
+      }
       tip.style.display = "";
-      tip.className = editingProduct?.templateDetachment?.SKU ? "alert warning" : "alert info";
-      tip.textContent = editingProduct?.templateDetachment?.SKU
-        ? `原 SKU 属性模板已解绑。当前模板「${template.templateName}」的属性字段已自动写入 SKU 列表，请重新设置枚举值和内容，保存后完成关联。`
-        : `当前商品类型已加载可用 SKU 属性模板：${template.templateName}。`;
+      tip.className = `alert ${spuDetached || skuDetached ? "warning" : "info"}`;
+      tip.textContent = `${messages.join("；")}。`;
     }
 
     function renderSpuAttrPanel() {
