@@ -1362,7 +1362,7 @@
           </div>
         </div>
 
-        <div class="page-note">商品上架不等于前台投放。全局模板只能创建 1 个，投放范围固定为全部社区；游戏专区模板通过社区范围投放；活动模板通过活动 ID 路由到指定活动页。商城客户端可以在同一投放对象下配置多个 TAB 分区；每个 TAB 对应一条投放模板。同一商品可以投放到多个二级模板，并在各二级模板下分别维护排序。投放管理只维护模板、投放对象与商品的投放关系，不维护商品基础信息、SKU 属性模板、库存、CDKey 码池、活动信息和履约记录。</div>
+        <div class="page-note">商品上架不等于前台投放。社区模板可按全部社区、游戏社区、战队社区或自定义社区投放；活动模板通过活动 ID 路由到指定活动页。商城客户端可以在同一投放对象下配置多个 TAB 分区；每个 TAB 对应一条投放模板。同一商品可以投放到多个二级模板，并在各二级模板下分别维护排序。投放管理只维护模板、投放对象与商品的投放关系，不维护商品基础信息、SKU 属性模板、库存、CDKey 码池、活动信息和履约记录。</div>
 
         <section class="card" aria-label="投放配置筛选区">
           <div class="card-body">
@@ -1383,7 +1383,7 @@
           <div class="table-head">
             <div>
               <div class="table-title">投放配置数据</div>
-              <div class="table-meta">全局模板覆盖全部社区；活动模板按活动 ID 路由；投放商品数按一级模板下的 SPU ID 去重统计；模板排序值越大越靠左。</div>
+              <div class="table-meta">社区模板按投放范围路由到对应社区；活动模板按活动 ID 路由；投放商品数按一级模板下的 SPU ID 去重统计；模板排序值越大越靠左。</div>
             </div>
             <div class="table-meta" id="displayTableCount">共 0 条</div>
           </div>
@@ -1724,7 +1724,7 @@
               <h2>基础信息</h2>
               <div class="body">
                 <div class="form-grid">
-                  <div class="field"><label><span class="required-star">*</span>模板类型</label><select id="displayTemplateType"><option>全局模板</option><option>游戏专区模板</option><option>活动模板</option></select></div>
+                  <div class="field"><label><span class="required-star">*</span>模板类型</label><select id="displayTemplateType"><option>社区模板</option><option>活动模板</option></select></div>
                   <div class="field"><label><span class="required-star">*</span>一级模板名称</label><input id="displayTemplateName" placeholder="请输入投放分区名称"></div>
                   <div class="field"><label>模板 ID</label><input id="displayTemplateId" value="新建后生成" disabled></div>
                   <div class="field"><label><span class="required-star">*</span>模板排序值</label><input id="displayTemplateSort" type="number" min="1" placeholder="数值越大越靠左"></div>
@@ -1733,7 +1733,7 @@
                   <div class="field" id="displayTargetIdField"><label><span class="required-star">*</span><span id="displayTargetIdLabel">投放对象 ID</span></label><input id="displayTargetId" placeholder="请输入投放对象 ID"></div>
                   <div class="field" style="grid-column:span 2"><label><span class="required-star">*</span>生效时间</label><input id="displayEffectiveTime" data-time-range="true" placeholder="YYYY-MM-DD HH:mm - YYYY-MM-DD HH:mm"></div>
                 </div>
-                <div class="hint-text">全局模板投放范围固定为全部社区；游戏专区模板可选择游戏社区、战队社区或自定义社区，自定义社区必须填写社区 ID；活动模板投放范围固定为活动，并通过活动 ID 路由。</div>
+                <div class="hint-text">社区模板可选择全部社区、游戏社区、战队社区或自定义社区，自定义社区必须填写社区 ID；活动模板投放范围固定为活动，并通过活动 ID 路由。</div>
               </div>
             </section>
 
@@ -2272,10 +2272,10 @@
     ];
 
     const displayPartitions = [
-      { id: "TPL_HOME_RECOMMEND", name: "全局商城", templateType: "全局模板", sortWeight: 100, placementScope: "全部社区", targetType: "GLOBAL", targetId: "", state: "上架" },
-      { id: "TPL_PUBG_BENEFIT", name: "PUBG 福利", templateType: "游戏专区模板", sortWeight: 100, placementScope: "游戏社区", targetType: "COMMUNITY", targetId: "", state: "上架" },
-      { id: "TPL_PUBG_DECORATION", name: "PUBG 装扮", templateType: "游戏专区模板", sortWeight: 90, placementScope: "自定义社区", targetType: "COMMUNITY", targetId: "COMMUNITY_PUBG_001", state: "上架" },
-      { id: "TPL_GAME_ITEM_ZONE", name: "游戏道具", templateType: "游戏专区模板", sortWeight: 80, placementScope: "战队社区", targetType: "COMMUNITY", targetId: "", state: "上架" },
+      { id: "TPL_HOME_RECOMMEND", name: "全局商城", templateType: "社区模板", sortWeight: 100, placementScope: "全部社区", targetType: "COMMUNITY", targetId: "", state: "上架" },
+      { id: "TPL_PUBG_BENEFIT", name: "PUBG 福利", templateType: "社区模板", sortWeight: 100, placementScope: "游戏社区", targetType: "COMMUNITY", targetId: "", state: "上架" },
+      { id: "TPL_PUBG_DECORATION", name: "PUBG 装扮", templateType: "社区模板", sortWeight: 90, placementScope: "自定义社区", targetType: "COMMUNITY", targetId: "COMMUNITY_PUBG_001", state: "上架" },
+      { id: "TPL_GAME_ITEM_ZONE", name: "游戏道具", templateType: "社区模板", sortWeight: 80, placementScope: "战队社区", targetType: "COMMUNITY", targetId: "", state: "上架" },
       { id: "TPL_SUMMER_EVENT", name: "夏日积分活动", templateType: "活动模板", sortWeight: 70, placementScope: "活动", targetType: "ACTIVITY", targetId: "ACTIVITY_SUMMER_2026", state: "草稿" }
     ];
 
@@ -3138,7 +3138,7 @@
       fillSelect("tmplFilterState", configStates);
       fillSelect("tmplFilterScope", templateScopes);
       fillSelect("tmplScope", templateScopes.filter(x => x !== "全部"));
-      fillSelect("displayFilterTemplateType", ["全部", "全局模板", "游戏专区模板", "活动模板"]);
+      fillSelect("displayFilterTemplateType", ["全部", "社区模板", "活动模板"]);
       fillSelect("displayFilterState", configStates);
       fillSelect("pickerFilterType", types);
       fillSelect("pickerFilterDelivery", deliveries);
@@ -4024,11 +4024,11 @@
       return {
         id,
         templateId: id,
-        templateType: partition?.templateType || "全局模板",
+        templateType: normalizeDisplayTemplateType(partition?.templateType),
         templateName: partition?.name || id,
         sortWeight: partition?.sortWeight || 1,
         placementScope: partition?.placementScope || "全部社区",
-        targetType: partition?.targetType || "GLOBAL",
+        targetType: partition?.targetType || "COMMUNITY",
         targetId: partition?.targetId || "",
         partitionId: id,
         partitionName: partition?.name || id,
@@ -4070,35 +4070,27 @@
       return displayPartitions.find(item => item.id === id);
     }
 
-    function existingGlobalDisplayConfig(excludeId = "") {
-      return displayConfigs.find(config => config.templateType === "全局模板" && config.id !== excludeId);
+    function normalizeDisplayTemplateType(templateType) {
+      return ["全局模板", "游戏专区模板", "社区模板"].includes(templateType) ? "社区模板" : (templateType || "社区模板");
     }
 
     function defaultDisplayTemplateType() {
-      return existingGlobalDisplayConfig() ? "游戏专区模板" : "全局模板";
-    }
-
-    function displayTemplateTypeConflict(templateType, excludeId = "") {
-      if (templateType !== "全局模板") return null;
-      return existingGlobalDisplayConfig(excludeId);
+      return "社区模板";
     }
 
     function displayTargetType(templateType) {
-      if (templateType === "活动模板") return "ACTIVITY";
-      if (templateType === "游戏专区模板") return "COMMUNITY";
-      return "GLOBAL";
+      return normalizeDisplayTemplateType(templateType) === "活动模板" ? "ACTIVITY" : "COMMUNITY";
     }
 
     function displayPlacementScopeOptions(templateType) {
-      if (templateType === "活动模板") return ["活动"];
-      if (templateType === "游戏专区模板") return ["游戏社区", "战队社区", "自定义社区"];
-      return ["全部社区"];
+      if (normalizeDisplayTemplateType(templateType) === "活动模板") return ["活动"];
+      return ["全部社区", "游戏社区", "战队社区", "自定义社区"];
     }
 
     function normalizedDisplayPlacementScope(config = {}) {
       if (config.placementScope) return config.placementScope;
-      if (config.templateType === "活动模板") return "活动";
-      if (config.templateType === "游戏专区模板") return config.communityBinding || (config.communityId ? "自定义社区" : "游戏社区");
+      if (normalizeDisplayTemplateType(config.templateType) === "活动模板") return "活动";
+      if (config.communityBinding || config.communityId) return config.communityBinding || "自定义社区";
       return "全部社区";
     }
 
@@ -4109,8 +4101,8 @@
     function displayTemplateScopeText(config) {
       const placementScope = normalizedDisplayPlacementScope(config);
       const targetId = normalizedDisplayTargetId(config);
-      if (config.templateType === "活动模板") return targetId ? `活动：${targetId}` : "活动 / 活动 ID 未填写";
-      if (config.templateType === "游戏专区模板" && placementScope === "自定义社区") return targetId ? `自定义社区：${targetId}` : "自定义社区 / 社区 ID 未填写";
+      if (normalizeDisplayTemplateType(config.templateType) === "活动模板") return targetId ? `活动：${targetId}` : "活动 / 活动 ID 未填写";
+      if (placementScope === "自定义社区") return targetId ? `自定义社区：${targetId}` : "自定义社区 / 社区 ID 未填写";
       return placementScope;
     }
 
@@ -4125,7 +4117,7 @@
     }
 
     function generateDisplayTemplateId(templateType) {
-      const prefix = templateType === "活动模板" ? "TPL_ACTIVITY" : templateType === "游戏专区模板" ? "TPL_GAME" : "TPL_GLOBAL";
+      const prefix = normalizeDisplayTemplateType(templateType) === "活动模板" ? "TPL_ACTIVITY" : "TPL_COMMUNITY";
       return uniqueDisplayTemplateId(prefix);
     }
 
@@ -4225,7 +4217,7 @@
         return `<tr>
           <td><b>${config.id}</b></td>
           <td><div class="main-name">${config.templateName || config.partitionName || config.id}</div></td>
-          <td>${config.templateType || "全局模板"}</td>
+          <td>${normalizeDisplayTemplateType(config.templateType)}</td>
           <td>${displayTemplateScopeText(config)}</td>
           <td>${config.sortWeight || "-"}</td>
           <td>${stateTag(config.state)}</td>
@@ -4265,7 +4257,7 @@
       visibleDisplayConfigs = displayConfigs.filter(config => {
         return (!name || (config.templateName || "").includes(name))
           && (!id || config.id.includes(id))
-          && (templateType === "全部" || config.templateType === templateType)
+          && (templateType === "全部" || normalizeDisplayTemplateType(config.templateType) === templateType)
           && (state === "全部" || config.state === state);
       });
       renderDisplayTable();
@@ -4283,16 +4275,16 @@
 
     function openDisplayDetail(config) {
       const basicRows = [
-        ["模板 ID", config.id], ["模板类型", config.templateType || "全局模板"],
+        ["模板 ID", config.id], ["模板类型", normalizeDisplayTemplateType(config.templateType)],
         ["模板名称", config.templateName || "-"], ["模板排序值", config.sortWeight || "-"],
         ["投放范围", displayTemplateScopeText(config)]
       ];
-      if (config.templateType === "游戏专区模板") {
+      if (normalizeDisplayTemplateType(config.templateType) === "社区模板") {
         if (normalizedDisplayPlacementScope(config) === "自定义社区") basicRows.push(["社区 ID", normalizedDisplayTargetId(config) || "-"]);
       }
-      if (config.templateType === "活动模板") basicRows.push(["活动 ID", normalizedDisplayTargetId(config) || "-"]);
+      if (normalizeDisplayTemplateType(config.templateType) === "活动模板") basicRows.push(["活动 ID", normalizedDisplayTargetId(config) || "-"]);
       document.getElementById("displayDetailBody").innerHTML = `
-        ${detailSection("模板基础信息", infoGrid(basicRows) + `<div class="hint-text">模板名称用于对应投放页面的商品分区；全局模板覆盖全部社区，游戏专区模板按社区范围投放，活动模板通过活动 ID 路由。</div>`)}
+        ${detailSection("模板基础信息", infoGrid(basicRows) + `<div class="hint-text">模板名称用于对应投放页面的商品分区；社区模板按投放范围路由到对应社区，活动模板通过活动 ID 路由。</div>`)}
         ${detailSection("投放配置", infoGrid([
           ["配置状态", config.state], ["生效时间", displayTimeText(config)], ["投放商品数", uniqueDisplayProductCount(config.products)],
           ["创建时间", config.createdAt || config.updatedAt], ["备注", config.remark || "-"]
@@ -4476,7 +4468,7 @@
       document.getElementById("displayFormPage").style.display = "block";
       setActiveMenu("商品投放管理");
       document.getElementById("displayFormTitle").textContent = mode === "edit" ? `编辑投放配置 - ${config.templateName || config.id}` : "新建投放配置";
-      document.getElementById("displayTemplateType").value = config?.templateType || defaultDisplayTemplateType();
+      document.getElementById("displayTemplateType").value = normalizeDisplayTemplateType(config?.templateType || defaultDisplayTemplateType());
       document.getElementById("displayTemplateName").value = config?.templateName || "";
       document.getElementById("displayTemplateId").value = mode === "edit" ? config.id : "新建后生成";
       document.getElementById("displayTemplateSort").value = config?.sortWeight || "";
@@ -4505,7 +4497,7 @@
     }
 
     function updateDisplayTargetFields(resetTarget = false) {
-      const templateType = valueOf("displayTemplateType") || "全局模板";
+      const templateType = normalizeDisplayTemplateType(valueOf("displayTemplateType"));
       const scope = document.getElementById("displayPlacementScope");
       const targetField = document.getElementById("displayTargetIdField");
       const targetLabel = document.getElementById("displayTargetIdLabel");
@@ -4514,9 +4506,9 @@
       const currentScope = scope.value;
       scope.innerHTML = options.map(option => `<option>${option}</option>`).join("");
       scope.value = options.includes(currentScope) ? currentScope : options[0];
-      scope.disabled = templateType !== "游戏专区模板";
+      scope.disabled = templateType === "活动模板";
 
-      const needsCommunityId = templateType === "游戏专区模板" && scope.value === "自定义社区";
+      const needsCommunityId = templateType === "社区模板" && scope.value === "自定义社区";
       const needsActivityId = templateType === "活动模板";
       const needsTargetId = needsCommunityId || needsActivityId;
       targetField.style.display = needsTargetId ? "" : "none";
@@ -4529,7 +4521,7 @@
 
     function buildDisplayFormConfig(state = "草稿") {
       const id = editingDisplayConfig?.id || generateDisplayTemplateId(valueOf("displayTemplateType"));
-      const templateType = valueOf("displayTemplateType") || "全局模板";
+      const templateType = normalizeDisplayTemplateType(valueOf("displayTemplateType"));
       const effectiveTime = splitTimeRange(valueOf("displayEffectiveTime"));
       return {
         id,
@@ -4769,11 +4761,9 @@
     function validateDisplayDraft() {
       const errors = [];
       const templateType = valueOf("displayTemplateType");
-      if (!templateType) errors.push({ item: "模板类型", problem: "未选择模板类型", suggestion: "请选择全局模板、游戏专区模板或活动模板" });
-      const globalConflict = displayTemplateTypeConflict(templateType, editingDisplayConfig?.id);
-      if (globalConflict) errors.push({ item: "全局模板唯一性", problem: `已存在全局模板：${globalConflict.templateName || globalConflict.id}`, suggestion: "请编辑已有全局模板，或改为游戏专区模板 / 活动模板" });
+      if (!templateType) errors.push({ item: "模板类型", problem: "未选择模板类型", suggestion: "请选择社区模板或活动模板" });
       if (!valueOf("displayPlacementScope")) errors.push({ item: "投放范围", problem: "投放范围缺失", suggestion: "请重新选择模板类型" });
-      if (templateType === "游戏专区模板" && valueOf("displayPlacementScope") === "自定义社区" && !valueOf("displayTargetId")) errors.push({ item: "社区 ID", problem: "自定义社区缺少社区 ID", suggestion: "请填写社区 ID" });
+      if (templateType === "社区模板" && valueOf("displayPlacementScope") === "自定义社区" && !valueOf("displayTargetId")) errors.push({ item: "社区 ID", problem: "自定义社区缺少社区 ID", suggestion: "请填写社区 ID" });
       if (templateType === "活动模板" && !valueOf("displayTargetId")) errors.push({ item: "活动 ID", problem: "活动模板缺少活动 ID", suggestion: "请填写活动 ID" });
       if (!valueOf("displayTemplateName")) errors.push({ item: "模板名称", problem: "未填写模板名称", suggestion: "请填写投放分区名称" });
       if (!/^[1-9]\d*$/.test(valueOf("displayTemplateSort"))) errors.push({ item: "模板排序值", problem: "排序值缺失或格式错误", suggestion: "请填写正整数排序值" });
@@ -4783,13 +4773,11 @@
     function validateDisplayEnable(config, asChecks = false) {
       const errors = [];
       const add = (item, problem, suggestion, pass = false) => asChecks ? errors.push({ item, problem, suggestion, pass }) : (!pass && errors.push({ item, problem, suggestion }));
-      add("模板类型", "未选择模板类型", "请选择全局模板、游戏专区模板或活动模板", !!config.templateType);
-      const globalConflict = displayTemplateTypeConflict(config.templateType, config.id);
-      add("全局模板唯一性", globalConflict ? `已存在全局模板：${globalConflict.templateName || globalConflict.id}` : "全局模板重复", "请编辑已有全局模板，或改为游戏专区模板 / 活动模板", !globalConflict);
+      add("模板类型", "未选择模板类型", "请选择社区模板或活动模板", !!config.templateType);
       add("模板名称", "模板名称缺失", "请填写投放分区名称", !!config.templateName);
       add("模板排序值", "排序值缺失或格式错误", "请填写正整数排序值", /^[1-9]\d*$/.test(String(config.sortWeight)));
       add("投放范围", "投放范围缺失", "请重新选择模板类型", !!config.placementScope);
-      if (config.templateType === "游戏专区模板" && config.placementScope === "自定义社区") add("社区 ID", "自定义社区缺少社区 ID", "请填写社区 ID，或改为游戏社区 / 战队社区", !!config.targetId);
+      if (normalizeDisplayTemplateType(config.templateType) === "社区模板" && config.placementScope === "自定义社区") add("社区 ID", "自定义社区缺少社区 ID", "请填写社区 ID，或改为全部社区 / 游戏社区 / 战队社区", !!config.targetId);
       if (config.templateType === "活动模板") add("活动 ID", "活动模板缺少活动 ID", "请填写活动 ID", !!config.targetId);
       const subTemplateNames = (config.subTemplates || []).map(item => item.name).filter(Boolean);
       const duplicateSubName = subTemplateNames.some((name, index) => subTemplateNames.indexOf(name) !== index);
@@ -4835,11 +4823,10 @@
 
     function highlightDisplayInvalidFields(config) {
       if (!config.templateType) markInvalidControl("displayTemplateType");
-      if (displayTemplateTypeConflict(config.templateType, config.id)) markInvalidControl("displayTemplateType");
       if (!config.templateName) markInvalidControl("displayTemplateName");
       if (!/^[1-9]\d*$/.test(String(config.sortWeight))) markInvalidControl("displayTemplateSort");
       if (!config.placementScope) markInvalidControl("displayPlacementScope");
-      if (config.templateType === "游戏专区模板" && config.placementScope === "自定义社区" && !config.targetId) markInvalidControl("displayTargetId");
+      if (normalizeDisplayTemplateType(config.templateType) === "社区模板" && config.placementScope === "自定义社区" && !config.targetId) markInvalidControl("displayTargetId");
       if (config.templateType === "活动模板" && !config.targetId) markInvalidControl("displayTargetId");
       config.subTemplates.forEach((row, index) => {
         if (!row.name) markInvalidElement(`[data-display-sub-template="${index}"][data-field="name"]`);
