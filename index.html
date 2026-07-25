@@ -678,17 +678,15 @@
     .inventory-config-table th:nth-child(1),
     .inventory-config-table td:nth-child(1) { width: 150px; }
     .inventory-config-table th:nth-child(2),
-    .inventory-config-table td:nth-child(2) { width: 280px; }
+    .inventory-config-table td:nth-child(2) { width: 170px; }
     .inventory-config-table th:nth-child(3),
-    .inventory-config-table td:nth-child(3) { width: 170px; }
+    .inventory-config-table td:nth-child(3) { width: 280px; }
     .inventory-config-table th:nth-child(4),
     .inventory-config-table td:nth-child(4) { width: 210px; }
     .inventory-config-table th:nth-child(5),
     .inventory-config-table td:nth-child(5) { width: 320px; }
     .inventory-config-table th:nth-child(6),
     .inventory-config-table td:nth-child(6) { width: 160px; }
-    .inventory-config-table th:nth-child(7),
-    .inventory-config-table td:nth-child(7) { width: 260px; }
     .display-table { min-width: 1680px; }
     .display-product-table { min-width: 1400px; }
     #productPickerModal {
@@ -1057,7 +1055,7 @@
                   <div class="field"><label>商品对内名称</label><input id="formInternal" placeholder="请输入后台内部名称"></div>
                   <div class="field"><label><span class="required-star">*</span>商品类型</label><select id="formType"></select><div class="hint-text">本期仅支持虚拟装扮、CDKEY、实物三个一级类型。</div></div>
                   <div class="field"><label><span class="required-star">*</span>风险等级</label><select id="formRiskLevel"><option value="">请选择风险等级</option><option>高风险</option><option>低风险</option></select></div>
-                  <div class="field"><label><span class="required-star">*</span>履约方式</label><select id="formDelivery" disabled></select><div class="hint-text">由商品类型自动确定，不支持单独修改。</div></div>
+                  <div class="field"><label><span class="required-star">*</span>履约方式</label><select id="formDelivery"></select><div class="hint-text" id="formDeliveryHint">履约方式与商品类型独立配置，请按实际履约链路选择。</div></div>
                   <div class="field"><label>商品状态</label><input id="formState" value="草稿" disabled></div>
                   <div class="field" style="grid-column:1/-1"><label>商品副标题 / 描述文案</label><textarea id="formSubtitle" rows="3" placeholder="商品简短说明或权益描述"></textarea></div>
                 </div>
@@ -2436,7 +2434,7 @@
       const attrCodes = template.attributes.map(attr => attr.code);
       const sourceRows = sampleSkuValuesBySpu[spu] || (template.defaultSkuValues?.length ? template.defaultSkuValues : [makeEmptyAttributeValues(type, attrCodes)]);
       return sourceRows.map((values, index) => {
-        const row = makeSkuRow(spu, type, values, index + 1, delivery === "未配置" ? "" : normalizeDelivery(delivery) || getDefaultDeliveryByType(type), attrCodes, template);
+        const row = makeSkuRow(spu, type, values, index + 1, delivery === "未配置" ? "" : normalizeDelivery(delivery), attrCodes, template);
         if (isCdkeyDelivery(row.delivery)) {
           const poolIndex = { SPU10002: 0, SPU10003: 1 }[spu];
           const pool = Number.isInteger(poolIndex) ? poolMocks[poolIndex] : null;
@@ -2450,26 +2448,23 @@
       });
     }
 
-    function getDefaultDeliveryByType(type) {
-      const map = {
-        "虚拟装扮": DELIVERY_AUTO_VIRTUAL,
-        "CDKEY": DELIVERY_AUTO_CDKEY,
-        "实物": DELIVERY_MANUAL_PHYSICAL
-      };
-      return map[type] || DELIVERY_AUTO_VIRTUAL;
-    }
-
-    function isDeliveryCompatibleWithType(type, delivery) {
-      return normalizeDelivery(delivery) === getDefaultDeliveryByType(type);
-    }
-
-    function syncDeliveryByProductType(type) {
+    function updateFormDeliveryOptions(delivery = "") {
       const select = document.getElementById("formDelivery");
       if (!select) return;
-      const delivery = getDefaultDeliveryByType(type);
-      select.innerHTML = `<option value="${delivery}">${delivery}</option>`;
-      select.value = delivery;
-      select.disabled = true;
+      const normalized = normalizeDelivery(delivery);
+      select.innerHTML = `<option value="">请选择履约方式</option>${allowedDeliveryOptions.map(item => `<option value="${item}">${item}</option>`).join("")}`;
+      select.value = allowedDeliveryOptions.includes(normalized) ? normalized : "";
+    }
+
+    function setFormDeliveryAvailability(product = null) {
+      const select = document.getElementById("formDelivery");
+      const hint = document.getElementById("formDeliveryHint");
+      if (!select || !hint) return;
+      const locked = formMode === "edit" && Boolean(product?.skuList?.some(row => hasInitializedInventory(row.skuId)));
+      select.disabled = locked;
+      hint.textContent = locked
+        ? "该商品已生成库存记录，本期不支持变更履约方式；商品类型与履约方式仍为独立字段。"
+        : "履约方式与商品类型独立配置，请按实际履约链路选择。";
     }
 
     function colorForProductType(type) {
@@ -2598,7 +2593,7 @@
       const attrCodes = attrs.map(attr => attr.code);
       const template = getSkuTemplate(type);
       if (!template) return [];
-      const delivery = getDefaultDeliveryByType(type);
+      const delivery = getFormDelivery();
       const sourceRows = template.defaultSkuValues?.length ? template.defaultSkuValues : [makeEmptyAttributeValues(type, attrCodes)];
       const unique = new Set();
       const rows = [];
@@ -2651,6 +2646,7 @@
 
     function initialDeliveryParams(delivery) {
       delivery = normalizeDelivery(delivery);
+      if (!delivery) return {};
       if (isCdkeyDelivery(delivery)) {
         return { cdkey: {} };
       }
@@ -2670,16 +2666,33 @@
     }
 
     function normalizeDeliveryParams(row, delivery) {
+      delivery = normalizeDelivery(delivery);
       const base = row.deliveryParams ? JSON.parse(JSON.stringify(row.deliveryParams)) : {};
-      if (!row.deliveryParams && row.param) {
-        if (isCdkeyDelivery(delivery) && !row.param.includes("待关联")) {
-          const pool = poolMocks.find(item => item.id === row.param);
-          base.cdkey = pool ? poolToParams(pool) : { poolId: row.param };
-        }
-        if (isPhysicalDelivery(delivery)) base.physical = { fulfillmentType: "外部履约", note: row.param };
-        if (normalizeDelivery(delivery) === DELIVERY_AUTO_VIRTUAL) base.auto = { ...initialDeliveryParams(DELIVERY_AUTO_VIRTUAL).auto, resourceId: row.param.replace("资源 ID：", "") };
+      if (isCdkeyDelivery(delivery)) {
+        const legacyPoolId = !row.deliveryParams && row.param && !row.param.includes("待关联") ? row.param : "";
+        const poolId = row.cdkeyPoolId || base.cdkey?.poolId || legacyPoolId;
+        const pool = poolId ? getPoolById(poolId) : null;
+        return { cdkey: pool ? poolToParams(pool) : { ...(base.cdkey || {}), ...(poolId ? { poolId } : {}) } };
       }
-      return { ...initialDeliveryParams(delivery), ...base };
+      if (isPhysicalDelivery(delivery)) {
+        return {
+          physical: {
+            ...initialDeliveryParams(DELIVERY_MANUAL_PHYSICAL).physical,
+            ...(base.physical || {}),
+            ...(!row.deliveryParams && row.param ? { note: row.param } : {})
+          }
+        };
+      }
+      if (delivery === DELIVERY_AUTO_VIRTUAL) {
+        return {
+          auto: {
+            ...initialDeliveryParams(DELIVERY_AUTO_VIRTUAL).auto,
+            ...(base.auto || {}),
+            ...(!row.deliveryParams && row.param ? { resourceId: row.param.replace("资源 ID：", "") } : {})
+          }
+        };
+      }
+      return {};
     }
 
     function poolToParams(pool) {
@@ -2756,7 +2769,7 @@
       const specType = normalizeSkuSpecType(row.specType || row.skuSpec || (legacyDuration && legacyDuration !== "永久" ? "天" : "无"));
       const duration = normalizeSkuDuration(specType, legacyDuration || "");
       const displayText = row.displayText || row.text || generateSkuDisplayText(attributeValues, type, codes, specType, duration);
-      const delivery = normalizeDelivery(row.delivery) || getDefaultDeliveryByType(type);
+      const delivery = normalizeDelivery(row.delivery) || getFormDelivery();
       const cdkeyPoolId = row.cdkeyPoolId || row.deliveryParams?.cdkey?.poolId || "";
       const skuName = Object.prototype.hasOwnProperty.call(row, "skuName")
         ? row.skuName
@@ -3120,7 +3133,7 @@
       fillSelect("filterType", types);
       fillSelect("filterState", productStates);
       fillSelect("filterDelivery", deliveries);
-      fillSelect("formDelivery", allowedDeliveryOptions);
+      updateFormDeliveryOptions();
       fillSelect("tmplFilterType", types);
       fillSelect("tmplFilterState", configStates);
       fillSelect("tmplFilterScope", templateScopes);
@@ -3214,6 +3227,7 @@
       document.getElementById("saveEnableBtn").addEventListener("click", handleFormEnable);
       document.getElementById("confirmEnableActionBtn").addEventListener("click", confirmEnableAction);
       document.getElementById("formType").addEventListener("change", onTypeChange);
+      document.getElementById("formDelivery").addEventListener("change", onDeliveryChange);
       ["input", "change"].forEach(eventName => {
         document.getElementById("formPage").addEventListener(eventName, event => {
           event.target.classList?.remove("invalid");
@@ -6893,7 +6907,8 @@
       document.getElementById("formRemark").value = product?.remark || "";
       updateFormTypes(false);
       document.getElementById("formType").value = product?.type || "虚拟装扮";
-      syncDeliveryByProductType(document.getElementById("formType").value);
+      updateFormDeliveryOptions(product?.delivery || "");
+      setFormDeliveryAvailability(product);
       setDescriptionTags(product?.tags || ["新品", "限时"]);
       document.getElementById("formTagsInput").value = "";
       document.getElementById("formCornerTags").value = product?.cornerTags?.[0] || "热门";
@@ -7028,11 +7043,17 @@
       handleTemplateChange(true);
     }
 
+    function onDeliveryChange() {
+      syncSkuDeliveryFromForm();
+      syncInventoryRows(false);
+      renderSkuEdit();
+      renderInventoryConfig();
+    }
+
     function handleTemplateChange(resetSku = false) {
       const type = document.getElementById("formType").value;
       const template = getSkuTemplate(type);
       const tip = document.getElementById("templateTip");
-      syncDeliveryByProductType(type);
       if (resetSku) spuAttrValues = defaultSpuAttributeValues(type);
       if (!template) {
         tip.style.display = "none";
@@ -7078,6 +7099,7 @@
         const next = { ...row, delivery };
         next.deliveryParams = normalizeDeliveryParams(next, delivery);
         if (!isCdkeyDelivery(delivery)) {
+          next.cdkeyPoolId = "";
           next.cdkeyPoolCheck = null;
         } else if (next.cdkeyPoolId) {
           next.cdkeyPoolCheck = checkCdkeyPool(next.cdkeyPoolId);
@@ -7307,12 +7329,17 @@
     }
 
     function cdkeyPoolEditor(row, index) {
+      if (!normalizeDelivery(row.delivery)) {
+        return `<b>待选择</b><div class="minor">请先选择履约方式</div>`;
+      }
       if (!isCdkeyDelivery(row.delivery)) {
         return `<b>手动初始化</b><div class="minor">库存由商品库存服务维护</div>`;
       }
       const check = row.cdkeyPoolCheck || (row.cdkeyPoolId ? checkCdkeyPool(row.cdkeyPoolId) : null);
       const tag = check ? `<span class="tag ${check.ok ? "green" : "red"}">${check.status}</span>` : `<span class="tag orange">未校验</span>`;
-      const message = check ? check.message : "请输入码池 ID 后校验";
+      const message = check?.ok
+        ? `${check.message}；总码数 ${check.pool.total} / 可用码 ${check.pool.available}`
+        : (check ? check.message : "请输入码池 ID 后校验");
       return `
         <div class="minor"><span class="required-star">*</span>CDKey 码池 ID</div>
         <input class="mini-input" data-sku="${index}" data-cdkey-pool="${index}" placeholder="请输入码池 ID" value="${row.cdkeyPoolId || ""}">
@@ -7407,7 +7434,7 @@
         return value && !/^[1-9]\d*$/.test(value);
       });
       const invalidCurrency = skuRows.some(s => !skuCurrencyOptions.includes(s.currency));
-      const invalidDelivery = !allowedDeliveryOptions.includes(getFormDelivery()) || !isDeliveryCompatibleWithType(type, getFormDelivery());
+      const invalidDelivery = !allowedDeliveryOptions.includes(getFormDelivery());
       const invalidDuration = skuRows.some(s => {
         const value = String(s.duration ?? "").trim();
         return value !== "" && !/^\d+$/.test(value);
@@ -7423,7 +7450,7 @@
       if (invalidPrice) errors.push("兑换价格必须为正整数。");
       if (invalidStrikePrice) errors.push("划线价填写时必须为正整数。");
       if (invalidCurrency) errors.push("兑换货币类型不在系统枚举范围内。");
-      if (invalidDelivery) errors.push("履约方式与商品类型不匹配。");
+      if (invalidDelivery) errors.push("请选择系统支持的履约方式。");
       document.getElementById("skuError").textContent = errors.join(" ");
       return errors;
     }
@@ -7433,7 +7460,7 @@
       const template = getSkuTemplate(type);
       const activeAttrs = getSelectedSkuAttrs(type);
       const attrCodes = activeAttrs.map(attr => attr.code);
-      const row = makeSkuRow("NEW", type, makeEmptyAttributeValues(type, attrCodes), skuRows.length + 1, getDefaultDeliveryByType(type), attrCodes, template);
+      const row = makeSkuRow("NEW", type, makeEmptyAttributeValues(type, attrCodes), skuRows.length + 1, getFormDelivery(), attrCodes, template);
       activeAttrs.forEach(attr => {
         if (attr.valueType !== "枚举") row.attributeValues[attr.code] = "";
       });
@@ -7558,7 +7585,7 @@
       body.innerHTML = `
         <div class="table-wrap">
           <table class="inventory-config-table">
-            <thead><tr><th>SKU 名称</th><th><span class="required-star">*</span>库存来源</th><th><span class="required-star">*</span>库存模式</th><th><span class="required-star">*</span>初始总库存</th><th>时段库存重置配置</th><th>安全库存阈值</th><th>库存状态</th></tr></thead>
+            <thead><tr><th>SKU 名称</th><th><span class="required-star">*</span>库存模式</th><th><span class="required-star">*</span>库存来源</th><th><span class="required-star">*</span>初始总库存</th><th>时段库存重置配置</th><th>安全库存阈值</th></tr></thead>
             <tbody>${initializableRows.map(({ row, index }) => {
               const isCdkeyRow = isCdkeyInventoryRow(index, row);
               const unlimitedDisabled = row.stockMode === "不限量";
@@ -7569,12 +7596,11 @@
               const totalStockValue = isCdkeyRow ? cdkeyInventoryDisplayValue(index) : (unlimitedDisabled ? "不限量" : row.totalStock);
               return `<tr>
                 <td>${row.skuDisplayText || "-"}</td>
-                <td>${cdkeyPoolEditor(skuRows[index], index)}</td>
                 <td>${stockModeEditor}</td>
+                <td>${cdkeyPoolEditor(skuRows[index], index)}</td>
                 <td><input class="mini-input" ${totalStockDisabled ? "disabled" : ""} data-inv="${index}" data-inv-field="totalStock" value="${totalStockValue}"></td>
                 <td>${dailyReleaseEditorHtml(row.dailyReleases, "inv", index, unlimitedDisabled)}</td>
                 <td><input class="mini-input" ${unlimitedDisabled ? "disabled" : ""} data-inv="${index}" data-inv-field="warningThreshold" value="${unlimitedDisabled ? "不限量" : row.warningThreshold}"></td>
-                <td>${row.stockState}${cdkeyInventoryHint(index)}</td>
               </tr>`;
             }).join("")}</tbody>
           </table>
@@ -7587,14 +7613,6 @@
       body.querySelectorAll("[data-cdkey-pool]").forEach(input => input.addEventListener("input", updateSkuCdkeyPool));
       body.querySelectorAll("[data-check-pool]").forEach(btn => btn.addEventListener("click", () => checkSkuCdkeyPool(Number(btn.dataset.checkPool))));
       body.querySelectorAll("[data-select-pool]").forEach(btn => btn.addEventListener("click", () => openPoolModal(Number(btn.dataset.selectPool))));
-    }
-
-    function cdkeyInventoryHint(index) {
-      const sku = skuRows[index];
-      if (!sku || !isCdkeyDelivery(sku.delivery)) return "";
-      const check = sku.cdkeyPoolCheck || (sku.cdkeyPoolId ? checkCdkeyPool(sku.cdkeyPoolId) : null);
-      if (check?.ok) return `<div class="minor">已关联码池 ${sku.cdkeyPoolId}，总码数 ${check.pool.total} / 可用码 ${check.pool.available}；库存由 CDKey 码池列表同步。</div>`;
-      return `<div class="minor">请在库存来源中填写并校验可用的 CDKey 码池 ID；绑定后库存由码池列表同步，保存后本期不支持更换。</div>`;
     }
 
     function updateInventoryFromInput(e) {
@@ -8320,8 +8338,7 @@
       if (fromForm) {
         if (!valueOf("formName")) list.push(["基础信息", "商品对外名称缺失", "请补充商品对外名称"]);
         if (!valueOf("formRiskLevel")) list.push(["基础信息", "风险等级缺失", "请选择风险等级"]);
-        if (!valueOf("formDelivery")) list.push(["基础信息", "履约方式缺失", "请重新选择商品类型以自动匹配履约方式"]);
-        if (valueOf("formType") && valueOf("formDelivery") && !isDeliveryCompatibleWithType(valueOf("formType"), valueOf("formDelivery"))) list.push(["基础信息", "履约方式与商品类型不匹配", "请重新选择商品类型以自动匹配履约方式"]);
+        if (!valueOf("formDelivery")) list.push(["基础信息", "履约方式缺失", "请选择实际履约方式"]);
         if (!valueOf("formType")) list.push(["商品类型", "商品类型缺失", "请选择商品类型"]);
         if (editingProduct?.templateDetachment?.SPU && !getSpuTemplate(valueOf("formType"))) list.push(["SPU 属性模板", "原模板已解绑且暂无可用模板", "请等待 SPU 属性模板重新上架后再编辑关联"]);
         if (editingProduct?.templateDetachment?.SKU && !getSkuTemplate(valueOf("formType"))) list.push(["SKU 属性模板", "原模板已解绑且暂无可用模板", "请等待 SKU 属性模板重新上架后再编辑关联"]);
