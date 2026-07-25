@@ -671,6 +671,24 @@
     }
     .side-anchor a:hover { background: var(--primary-weak); color: var(--primary); }
     .sku-edit-table { min-width: 1250px; }
+    .inventory-config-table {
+      min-width: 1480px;
+      table-layout: fixed;
+    }
+    .inventory-config-table th:nth-child(1),
+    .inventory-config-table td:nth-child(1) { width: 150px; }
+    .inventory-config-table th:nth-child(2),
+    .inventory-config-table td:nth-child(2) { width: 280px; }
+    .inventory-config-table th:nth-child(3),
+    .inventory-config-table td:nth-child(3) { width: 170px; }
+    .inventory-config-table th:nth-child(4),
+    .inventory-config-table td:nth-child(4) { width: 210px; }
+    .inventory-config-table th:nth-child(5),
+    .inventory-config-table td:nth-child(5) { width: 320px; }
+    .inventory-config-table th:nth-child(6),
+    .inventory-config-table td:nth-child(6) { width: 160px; }
+    .inventory-config-table th:nth-child(7),
+    .inventory-config-table td:nth-child(7) { width: 260px; }
     .display-table { min-width: 1680px; }
     .display-product-table { min-width: 1400px; }
     #productPickerModal {
@@ -1020,7 +1038,7 @@
           <div>
             <button class="btn text" id="backToListBtn">返回商品列表</button>
             <h1 id="formTitle">新建商品</h1>
-            <div class="sub">配置商品类型、基础信息、商品素材、SKU、履约方式、CDKey 码池 ID 和初始库存。商品创建后，后续库存调整统一前往库存列表维护。</div>
+            <div class="sub">配置商品类型、基础信息、商品素材、SKU、履约方式与库存来源。CDKey 码池 ID 在库存来源与初始化中配置；商品创建后，后续库存调整统一前往库存列表维护。</div>
           </div>
           <div class="btn-row">
             <button class="btn" id="saveDraftBtn">保存草稿</button>
@@ -1180,11 +1198,11 @@
             </section>
 
             <section class="form-card" id="sectionInitialInventory">
-              <h2><span class="required-star">*</span>初始库存配置</h2>
+              <h2><span class="required-star">*</span>库存来源与初始化</h2>
               <div class="body">
-                <div class="alert info">新建商品时可配置全部 SKU 的初始库存；编辑商品时仅允许为本次新增的 SKU 初始化库存，存量 SKU 库存仍需前往库存列表维护。履约方式为自动履约（CDKey）时，库存模式固定为限量，初始总库存由绑定的 CDKey 码池同步，不支持手动设置。</div>
+                <div class="alert info">新建商品时可配置全部 SKU 的库存来源与初始库存；编辑商品时仅允许为本次新增的 SKU 配置。履约方式为自动履约（CDKey）时，需在此绑定并校验 CDKey 码池 ID，库存模式固定为限量，初始总库存由码池同步，不支持手动设置。本期不支持更换已绑定码池。</div>
                 <div id="inventoryConfigBody"></div>
-                <div class="hint-text">非 CDKey 商品的初始库存只用于新 SKU 首次创建库存记录。CDKey 商品绑定码池 ID 后，库存数据以 CDKey 码池列表为唯一来源，保证库存唯一性和正确性。</div>
+                <div class="hint-text">非 CDKey 商品采用手动初始化，仅用于新 SKU 首次创建库存记录。CDKey 商品绑定码池 ID 后，库存数据以 CDKey 码池列表为唯一来源；存量 SKU 的库存和码池绑定均不可在商品编辑页修改。</div>
               </div>
             </section>
 
@@ -1204,7 +1222,7 @@
             <a href="#sectionMaterial">商品素材</a>
             <a href="#sectionScopeTags">商品展示配置</a>
             <a href="#sectionSku">SKU 配置</a>
-            <a href="#sectionInitialInventory">初始库存配置</a>
+            <a href="#sectionInitialInventory">库存来源与初始化</a>
             <a href="#sectionRemark">备注</a>
           </aside>
         </div>
@@ -7243,7 +7261,7 @@
       const template = getSkuTemplate(type);
       const activeAttrs = getSelectedSkuAttrs(type);
       const dynamicHeaders = activeAttrs.map(attr => `<th>${attr.required === false ? "" : `<span class="required-star">*</span>`}${attr.name}</th>`).join("");
-      head.innerHTML = `<th>SKU 名称</th><th><span class="required-star">*</span>排序<br><span class="minor">越大越靠前</span></th><th><span class="required-star">*</span>计量单位</th><th>数值</th><th><span class="required-star">*</span>兑换货币类型</th><th><span class="required-star">*</span>兑换价格</th><th>划线价<br><span class="minor">非必填</span></th><th>CDKey 码池 ID</th><th>每人总兑换次数</th><th>每人每日兑换次数</th>${dynamicHeaders}<th>SKU 备注</th><th>操作</th>`;
+      head.innerHTML = `<th>SKU 名称</th><th><span class="required-star">*</span>排序<br><span class="minor">越大越靠前</span></th><th><span class="required-star">*</span>计量单位</th><th>数值</th><th><span class="required-star">*</span>兑换货币类型</th><th><span class="required-star">*</span>兑换价格</th><th>划线价<br><span class="minor">非必填</span></th><th>每人总兑换次数</th><th>每人每日兑换次数</th>${dynamicHeaders}<th>SKU 备注</th><th>操作</th>`;
       const attrCodes = activeAttrs.map(attr => attr.code);
       syncSkuDeliveryFromForm();
       skuRows = skuRows.map((row, index) => normalizeSkuRow(row, type, index, attrCodes, Boolean(editingProduct?.templateDetachment?.SKU)));
@@ -7264,7 +7282,6 @@
             <td><select class="mini-input" data-sku="${i}" data-field="currency">${skuCurrencyOptions.map(item => `<option value="${item}" ${item === s.currency ? "selected" : ""}>${item}</option>`).join("")}</select></td>
             <td><input class="mini-input" type="number" min="1" data-sku="${i}" data-field="price" value="${s.price}"></td>
             <td><input class="mini-input" type="number" min="1" data-sku="${i}" data-field="strikePrice" value="${s.strikePrice ?? ""}" placeholder="非必填"></td>
-            <td>${cdkeyPoolEditor(s, i)}</td>
             <td><input class="mini-input" type="number" data-sku="${i}" data-field="totalLimit" value="${s.totalLimit}"></td>
             <td><input class="mini-input" type="number" data-sku="${i}" data-field="dayLimit" value="${s.dayLimit}"></td>
             ${attrCells}
@@ -7286,18 +7303,18 @@
         renderInventoryConfig();
         validateSkuRows();
       }));
-      body.querySelectorAll("[data-cdkey-pool]").forEach(input => input.addEventListener("input", updateSkuCdkeyPool));
-      body.querySelectorAll("[data-check-pool]").forEach(btn => btn.addEventListener("click", () => checkSkuCdkeyPool(Number(btn.dataset.checkPool))));
-      body.querySelectorAll("[data-select-pool]").forEach(btn => btn.addEventListener("click", () => openPoolModal(Number(btn.dataset.selectPool))));
       validateSkuRows();
     }
 
     function cdkeyPoolEditor(row, index) {
-      if (!isCdkeyDelivery(row.delivery)) return `<span class="minor">无需配置</span>`;
+      if (!isCdkeyDelivery(row.delivery)) {
+        return `<b>手动初始化</b><div class="minor">库存由商品库存服务维护</div>`;
+      }
       const check = row.cdkeyPoolCheck || (row.cdkeyPoolId ? checkCdkeyPool(row.cdkeyPoolId) : null);
       const tag = check ? `<span class="tag ${check.ok ? "green" : "red"}">${check.status}</span>` : `<span class="tag orange">未校验</span>`;
       const message = check ? check.message : "请输入码池 ID 后校验";
       return `
+        <div class="minor"><span class="required-star">*</span>CDKey 码池 ID</div>
         <input class="mini-input" data-sku="${index}" data-cdkey-pool="${index}" placeholder="请输入码池 ID" value="${row.cdkeyPoolId || ""}">
         <div class="btn-row" style="margin-top:6px"><button class="btn text" type="button" data-check-pool="${index}">校验</button><button class="btn text" type="button" data-select-pool="${index}">选择</button>${tag}</div>
         <div class="minor">${message}</div>`;
@@ -7363,7 +7380,7 @@
       if (!skuRows[index]) return;
       skuRows[index].cdkeyPoolId = e.target.value.trim();
       skuRows[index].cdkeyPoolCheck = null;
-      renderInventoryConfig();
+      if (inventoryRows[index]) applyCdkeyInventorySync(inventoryRows[index], index);
     }
 
     function checkSkuCdkeyPool(index) {
@@ -7374,7 +7391,6 @@
         const bindingError = cdkeyPoolBindingError(row.cdkeyPoolId, row.skuId);
         if (bindingError) row.cdkeyPoolCheck = { status: "失败", ok: false, message: bindingError };
       }
-      renderSkuEdit();
       renderInventoryConfig();
       toast(row.cdkeyPoolCheck.ok ? `已校验通过：${row.cdkeyPoolCheck.pool.name}，可用 ${row.cdkeyPoolCheck.pool.available}` : row.cdkeyPoolCheck.message);
     }
@@ -7437,6 +7453,11 @@
       copy.manualDisplay = true;
       copy.sort = skuRows.length + 1;
       copy.skuId = "";
+      if (isCdkeyDelivery(copy.delivery)) {
+        copy.cdkeyPoolId = "";
+        copy.cdkeyPoolCheck = null;
+        copy.deliveryParams = initialDeliveryParams(copy.delivery);
+      }
       skuRows.push(copy);
       syncInventoryRows(false);
       renderSkuEdit();
@@ -7506,12 +7527,13 @@
     function cdkeyPoolForInventoryRow(index) {
       const sku = skuRows[index];
       const poolId = sku?.cdkeyPoolId || sku?.deliveryParams?.cdkey?.poolId || "";
-      return poolId ? getPoolById(poolId) : null;
+      if (!poolId || !sku?.cdkeyPoolCheck?.ok) return null;
+      return sku.cdkeyPoolCheck.pool || getPoolById(poolId);
     }
 
     function cdkeyInventoryDisplayValue(index) {
       const pool = cdkeyPoolForInventoryRow(index);
-      return pool ? `码池同步：总码数 ${pool.total}` : "绑定码池后同步";
+      return pool ? `码池同步：总码数 ${pool.total}` : "码池校验通过后同步";
     }
 
     function applyCdkeyInventorySync(row, index) {
@@ -7530,13 +7552,13 @@
         .map((row, index) => ({ row, index }))
         .filter(item => item.row._initializable !== false);
       if (!initializableRows.length) {
-        body.innerHTML = `<div class="empty">${formMode === "edit" ? "当前未新增 SKU。新增 SKU 后，可在此配置该 SKU 的初始库存。" : "请先配置 SKU，系统会按 SKU 生成初始库存配置行。"}</div>`;
+        body.innerHTML = `<div class="empty">${formMode === "edit" ? "当前未新增 SKU。存量 SKU 的库存及码池绑定不可在此修改；新增 SKU 后，可在此配置库存来源与初始库存。" : "请先配置 SKU，系统会按 SKU 生成库存来源与初始化配置行。"}</div>`;
         return;
       }
       body.innerHTML = `
         <div class="table-wrap">
-          <table>
-            <thead><tr><th>SKU 名称</th><th><span class="required-star">*</span>库存模式</th><th><span class="required-star">*</span>初始总库存</th><th>时段库存重置配置</th><th>安全库存阈值</th><th>库存状态</th></tr></thead>
+          <table class="inventory-config-table">
+            <thead><tr><th>SKU 名称</th><th><span class="required-star">*</span>库存来源</th><th><span class="required-star">*</span>库存模式</th><th><span class="required-star">*</span>初始总库存</th><th>时段库存重置配置</th><th>安全库存阈值</th><th>库存状态</th></tr></thead>
             <tbody>${initializableRows.map(({ row, index }) => {
               const isCdkeyRow = isCdkeyInventoryRow(index, row);
               const unlimitedDisabled = row.stockMode === "不限量";
@@ -7547,6 +7569,7 @@
               const totalStockValue = isCdkeyRow ? cdkeyInventoryDisplayValue(index) : (unlimitedDisabled ? "不限量" : row.totalStock);
               return `<tr>
                 <td>${row.skuDisplayText || "-"}</td>
+                <td>${cdkeyPoolEditor(skuRows[index], index)}</td>
                 <td>${stockModeEditor}</td>
                 <td><input class="mini-input" ${totalStockDisabled ? "disabled" : ""} data-inv="${index}" data-inv-field="totalStock" value="${totalStockValue}"></td>
                 <td>${dailyReleaseEditorHtml(row.dailyReleases, "inv", index, unlimitedDisabled)}</td>
@@ -7561,6 +7584,9 @@
       body.querySelectorAll("[data-inv-release]").forEach(input => input.addEventListener("input", updateInventoryDailyRelease));
       body.querySelectorAll("[data-add-inv-release]").forEach(btn => btn.addEventListener("click", addInventoryDailyRelease));
       body.querySelectorAll("[data-remove-inv-release]").forEach(btn => btn.addEventListener("click", removeInventoryDailyRelease));
+      body.querySelectorAll("[data-cdkey-pool]").forEach(input => input.addEventListener("input", updateSkuCdkeyPool));
+      body.querySelectorAll("[data-check-pool]").forEach(btn => btn.addEventListener("click", () => checkSkuCdkeyPool(Number(btn.dataset.checkPool))));
+      body.querySelectorAll("[data-select-pool]").forEach(btn => btn.addEventListener("click", () => openPoolModal(Number(btn.dataset.selectPool))));
     }
 
     function cdkeyInventoryHint(index) {
@@ -7568,7 +7594,7 @@
       if (!sku || !isCdkeyDelivery(sku.delivery)) return "";
       const check = sku.cdkeyPoolCheck || (sku.cdkeyPoolId ? checkCdkeyPool(sku.cdkeyPoolId) : null);
       if (check?.ok) return `<div class="minor">已关联码池 ${sku.cdkeyPoolId}，总码数 ${check.pool.total} / 可用码 ${check.pool.available}；库存由 CDKey 码池列表同步。</div>`;
-      return `<div class="minor">CDKey SKU 库存模式固定为限量；请先在 SKU 配置中填写并校验可用的 CDKey 码池 ID，绑定后库存由码池列表同步。</div>`;
+      return `<div class="minor">请在库存来源中填写并校验可用的 CDKey 码池 ID；绑定后库存由码池列表同步，保存后本期不支持更换。</div>`;
     }
 
     function updateInventoryFromInput(e) {
@@ -7744,26 +7770,26 @@
         ? skuRows.filter(row => !originalEditingSkuIds.has(row.skuId) || !hasInitializedInventory(row.skuId)).length
         : skuRows.length;
       if (targetRows.length !== expectedCount) {
-        errors.push({ item: "初始库存配置", problem: "SKU 与初始库存配置行数量不一致", suggestion: "请检查 SKU 配置后重新进入初始库存配置" });
+        errors.push({ item: "库存来源与初始化", problem: "SKU 与库存来源初始化行数量不一致", suggestion: "请检查 SKU 配置后重新进入库存来源与初始化" });
       }
       targetRows.forEach(({ row, index }) => {
         const isCdkeyRow = isCdkeyInventoryRow(index, row);
         if (isCdkeyRow) applyCdkeyInventorySync(row, index);
         const name = row.skuDisplayText || "未命名 SKU";
         if (!isCdkeyRow && row.stockMode === "限量" && !/^[1-9]\d*$/.test(String(row.totalStock))) {
-          errors.push({ item: "初始库存配置", problem: `SKU「${name}」初始总库存缺失`, suggestion: "请填写当前 SKU 的初始总库存" });
+          errors.push({ item: "库存来源与初始化", problem: `SKU「${name}」初始总库存缺失`, suggestion: "请填写当前 SKU 的初始总库存" });
         }
         [["warningThreshold", "安全库存阈值"]].forEach(([field, label]) => {
           if (row[field] !== "" && !/^\d+$/.test(String(row[field]))) {
-            errors.push({ item: "初始库存配置", problem: `SKU「${name}」${label}格式错误`, suggestion: "请填写非负整数" });
+            errors.push({ item: "库存来源与初始化", problem: `SKU「${name}」${label}格式错误`, suggestion: "请填写非负整数" });
           }
         });
         if (row.warningThreshold !== "" && Number(row.warningThreshold) > 100) {
-          errors.push({ item: "初始库存配置", problem: `SKU「${name}」安全库存阈值不能大于 100`, suggestion: "请填写 0-100 的整数" });
+          errors.push({ item: "库存来源与初始化", problem: `SKU「${name}」安全库存阈值不能大于 100`, suggestion: "请填写 0-100 的整数" });
         }
         if (row.stockMode === "限量" && (!isCdkeyRow || row.totalStock)) {
           const releaseError = validateDailyReleaseRows(row.dailyReleases, row.totalStock);
-          if (releaseError) errors.push({ item: "初始库存配置", problem: `SKU「${name}」时段库存重置配置错误`, suggestion: releaseError });
+          if (releaseError) errors.push({ item: "库存来源与初始化", problem: `SKU「${name}」时段库存重置配置错误`, suggestion: releaseError });
         }
       });
       return errors;
@@ -7790,18 +7816,18 @@
         }
 
         if (pool.state !== "上架") {
-          errors.push({ item: "CDKey 码池", problem: `SKU「${skuName}」配置的码池不是上架状态`, suggestion: "请更换上架状态的码池" });
+          errors.push({ item: "CDKey 码池", problem: `SKU「${skuName}」配置的码池不是上架状态`, suggestion: "请重新选择上架状态的码池" });
           return;
         }
 
         if (pool.available <= 0) {
-          errors.push({ item: "CDKey 码池", problem: `SKU「${skuName}」配置的码池可用数量不足`, suggestion: "请补充码池或更换码池" });
+          errors.push({ item: "CDKey 码池", problem: `SKU「${skuName}」配置的码池可用数量不足`, suggestion: "请补充码池或重新选择可用码池" });
           return;
         }
 
         const bindingError = cdkeyPoolBindingError(poolId, row.skuId);
         if (bindingError) {
-          errors.push({ item: "CDKey 码池", problem: `SKU「${skuName}」${bindingError}`, suggestion: "请更换未绑定 SKU 的码池" });
+          errors.push({ item: "CDKey 码池", problem: `SKU「${skuName}」${bindingError}`, suggestion: "请重新选择未绑定其他 SKU 的码池" });
           return;
         }
 
@@ -7869,7 +7895,6 @@
         if (bindingError) row.cdkeyPoolCheck = { status: "失败", ok: false, message: bindingError };
       }
       closeModal("poolModal");
-      renderSkuEdit();
       renderInventoryConfig();
       toast(row.cdkeyPoolCheck.ok ? "码池 ID 已回填并校验通过。" : row.cdkeyPoolCheck.message);
     }
@@ -8141,7 +8166,7 @@
       if (!skuRows.length) issues.push("SKU 配置缺失");
       if (!getFormDelivery()) issues.push("履约方式缺失");
       if (isCdkeyDelivery(getFormDelivery()) && skuRows.some(s => !(s.cdkeyPoolId || s.deliveryParams?.cdkey?.poolId))) issues.push("CDKey 码池未配置");
-      if (!buildStockFromInventoryRows()) issues.push("初始库存配置缺失");
+      if (!buildStockFromInventoryRows()) issues.push("库存来源与初始化缺失");
       if (editingProduct?.templateDetachment?.SPU && !getSpuTemplate(valueOf("formType"))) issues.push("SPU 属性模板已解绑");
       if (editingProduct?.templateDetachment?.SKU && !getSkuTemplate(valueOf("formType"))) issues.push("SKU 属性模板已解绑");
       return issues;
@@ -8314,7 +8339,7 @@
         validateSkuCdkeyPools().forEach(err => list.push([err.item, err.problem, err.suggestion]));
         validateInventoryRows().forEach(err => list.push([err.item, err.problem, err.suggestion]));
       } else {
-        if (product.issues.includes("初始库存配置缺失")) list.push(["初始库存配置", "初始库存配置缺失或不完整", "请在新建商品或编辑新增 SKU 时配置初始库存，存量 SKU 后续调整前往库存列表维护"]);
+        if (product.issues.includes("库存来源与初始化缺失")) list.push(["库存来源与初始化", "库存来源或初始库存缺失", "请在新建商品或编辑新增 SKU 时完成配置，存量 SKU 后续调整前往库存列表维护"]);
         if (product.issues.includes("商品头图缺失")) list.push(["商品素材", "商品头图缺失", "请上传商品头图"]);
         if (product.issues.includes("商品说明缺失")) list.push(["商品素材", "商品说明缺失", "请补充商品说明富文本"]);
         if (product.issues.includes("权益素材缺失")) list.push(["虚拟权益素材", "虚拟装扮类商品缺少商品详情图", "请补充商品详情图"]);
@@ -8324,8 +8349,8 @@
         if (product.issues.includes("CDKey 码池未配置")) list.push(["CDKey 码池", "CDKey SKU 未填写码池 ID", "请填写可用的 CDKey 码池 ID"]);
         if (product.cdkey === "码池未配置") list.push(["CDKey 码池", "CDKey SKU 未填写码池 ID", "请填写可用的 CDKey 码池 ID"]);
         if (product.cdkey === "码池不存在") list.push(["CDKey 码池", "CDKey SKU 配置的码池 ID 不存在", "请检查码池 ID 是否正确"]);
-        if (product.cdkey === "码池不可用") list.push(["CDKey 码池", "CDKey SKU 配置的码池不是上架状态", "请更换上架状态的码池"]);
-        if (product.cdkey === "CDKey 不足") list.push(["CDKey 码池", "CDKey SKU 码池可用数量不足", "请补充码池或更换码池"]);
+        if (product.cdkey === "码池不可用") list.push(["CDKey 码池", "CDKey SKU 配置的码池不是上架状态", "请前往码池管理恢复码池状态；本期不支持更换已绑定码池"]);
+        if (product.cdkey === "CDKey 不足") list.push(["CDKey 码池", "CDKey SKU 码池可用数量不足", "请前往码池管理补充可用码"]);
       }
       return list.map(([item, problem, suggestion]) => ({ item, problem, suggestion }));
     }
