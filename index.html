@@ -1507,7 +1507,7 @@
             <div class="filter-grid seven-columns">
               <div class="field"><label>兑换单号</label><input id="deliveryFilterRecord" placeholder="请输入兑换单号"></div>
               <div class="field"><label>订单号</label><input id="deliveryFilterOrder" placeholder="请输入订单号"></div>
-              <div class="field"><label>用户 ID</label><input id="deliveryFilterUser" placeholder="请输入用户 ID"></div>
+              <div class="field"><label>用户信息</label><input id="deliveryFilterUser" placeholder="请输入用户 ID / NN 号 / 手机号"></div>
               <div class="field"><label>商品对外名称</label><input id="deliveryFilterProduct" placeholder="请输入商品对外名称"></div>
               <div class="field"><label>SPU ID</label><input id="deliveryFilterSpu" placeholder="请输入 SPU ID"></div>
               <div class="field"><label>SKU ID</label><input id="deliveryFilterSku" placeholder="请输入 SKU ID"></div>
@@ -5956,7 +5956,7 @@
     function applyDeliveryRecordFilters() {
       const recordId = valueOf("deliveryFilterRecord").toUpperCase();
       const order = valueOf("deliveryFilterOrder").toUpperCase();
-      const user = valueOf("deliveryFilterUser");
+      const userKeyword = valueOf("deliveryFilterUser").toUpperCase();
       const productName = valueOf("deliveryFilterProduct").toUpperCase();
       const spuId = valueOf("deliveryFilterSpu").toUpperCase();
       const skuId = valueOf("deliveryFilterSku").toUpperCase();
@@ -5970,7 +5970,7 @@
         const product = getDeliveryProduct(record);
         return (!recordId || record.exchangeNo.toUpperCase().includes(recordId))
           && (!order || record.orderId.toUpperCase().includes(order))
-          && (!user || record.userId.includes(user))
+          && (!userKeyword || [record.userId, record.userNnNo, record.userPhone].some(value => String(value || "").toUpperCase().includes(userKeyword)))
           && (!productName || product?.name?.toUpperCase().includes(productName))
           && (!spuId || record.spu.toUpperCase().includes(spuId))
           && (!skuId || record.skuId.toUpperCase().includes(skuId))
