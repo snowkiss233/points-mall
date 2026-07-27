@@ -5518,6 +5518,7 @@
       const isCdkeyRecord = isCdkeyDelivery(delivery);
       document.getElementById("inventoryAdjustInfo").innerHTML = infoGrid([
         ["SPU ID", record.spu], ["商品对外名称", product?.name || "-"], ["SKU ID", record.skuId], ["SKU 规格", skuSpecText(sku)], ["履约方式", normalizeDelivery(delivery)],
+        ...(isCdkeyRecord ? [["绑定码池 ID", inventoryCdkeyPoolId(record) || "未配置"]] : []),
         ["当前库存模式", record.stockMode], ["当前总库存", inventoryNumberText(record.totalStock, record)], ["当前可用库存", inventoryNumberText(record.availableStock, record)],
         ["当前扣减库存", record.deductedStock], ["当前时段库存重置配置", record.stockMode === "不限量" ? "不限量" : (dailyReleaseLines(record.dailyReleases).join("，") || "不限制")],
         ["当前安全库存阈值", inventoryWarningText(record)]
