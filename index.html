@@ -6899,7 +6899,8 @@
         ["综合投放状态", overallStatus]
       ]);
       const detail = relations.length
-        ? `<div class="table-wrap"><table><thead><tr><th>一级模板</th><th>二级模板</th><th>模板类型</th><th>投放范围</th><th>模板状态</th><th>生效时间</th><th>商品投放排序</th></tr></thead><tbody>${relations.map(({ config, row }) => `<tr>
+        ? `<div class="table-wrap"><table><thead><tr><th>模板名称</th><th>一级模板</th><th>二级模板</th><th>模板类型</th><th>投放范围</th><th>模板状态</th><th>生效时间</th><th>商品投放排序</th></tr></thead><tbody>${relations.map(({ config, row }) => `<tr>
+            <td><div class="main-name">${config.templateName || config.id}</div></td>
             <td><div class="main-name">${config.templateName || config.id}</div></td>
             <td>${displaySubTemplateName(row.subTemplateId || "", config)}</td>
             <td>${normalizeDisplayTemplateType(config.templateType)}</td>
