@@ -6885,7 +6885,7 @@
       ]);
       const detail = relations.length
         ? `<div class="table-wrap"><table><thead><tr><th>一级模板</th><th>二级模板</th><th>投放范围</th><th>模板状态</th><th>生效时间</th><th>商品投放排序</th></tr></thead><tbody>${relations.map(({ config, row }) => `<tr>
-            <td><div class="main-name">${config.templateName || config.id}</div><div class="minor">${config.id}</div></td>
+            <td><div class="main-name">${config.templateName || config.id}</div></td>
             <td>${displaySubTemplateName(row.subTemplateId || "", config)}</td>
             <td>${displayTemplateScopeText(config)}</td>
             <td>${stateTag(config.state)}</td>
