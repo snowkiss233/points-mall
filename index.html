@@ -6886,17 +6886,13 @@
     }
     function exposureDetail(product) {
       const relations = productDisplayRelations(product);
-      const placementCount = new Set(relations.map(item => `${item.config.id}::${item.row.subTemplateId || "DEFAULT"}`)).size;
-      const relationCount = new Set(relations.map(item => item.config.id)).size;
+      const templateCount = new Set(relations.map(item => item.config.id)).size;
       const effectiveCount = new Set(relations
         .filter(item => isDisplayRelationEffective(item.config, product))
         .map(item => item.config.id)).size;
-      const overallStatus = !relationCount ? "未投放" : effectiveCount === relationCount ? "投放中" : effectiveCount > 0 ? "部分生效" : "未生效";
       const summary = infoGrid([
-        ["投放位置数", placementCount],
-        ["投放关系数", relationCount],
-        ["生效关系数", effectiveCount],
-        ["综合投放状态", overallStatus]
+        ["投放模板数", templateCount],
+        ["投放生效数", effectiveCount]
       ]);
       const detail = relations.length
         ? `<div class="table-wrap"><table><thead><tr><th>模板名称</th><th>一级模板</th><th>二级模板</th><th>模板类型</th><th>投放范围</th><th>模板状态</th><th>生效时间</th><th>商品投放排序</th></tr></thead><tbody>${relations.map(({ config, row }) => `<tr>
@@ -6910,7 +6906,7 @@
             <td>${row.sort || "-"}</td>
           </tr>`).join("")}</tbody></table></div>`
         : `<div class="empty">当前商品未配置投放关系</div>`;
-      return `${summary}<div class="table-title" style="margin:16px 0 10px">投放明细</div>${detail}<div class="hint-text">商品侧仅展示非草稿模板的投放关系；投放位置数按一级模板和二级模板组合去重，无二级模板时按一级模板本身计 1 个位置；投放关系数和生效关系数均按投放模板 ID 去重，同一模板下配置多个二级模板仍只计 1 条关系。商品上架不等于前台投放，投放关系由商品投放管理维护。</div>`;
+      return `${summary}<div class="table-title" style="margin:16px 0 10px">投放明细</div>${detail}<div class="hint-text">商品侧仅展示非草稿模板的投放关系；投放模板数和投放生效数均按投放模板 ID 去重，同一模板下配置多个一级或二级模板仍只计 1 个投放模板。商品上架不等于前台投放，投放关系由商品投放管理维护。</div>`;
     }
     function openForm(mode, product) {
       if (mode === "edit" && !isEditableLifecycleState(product?.state)) {
