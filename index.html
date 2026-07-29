@@ -1778,7 +1778,6 @@
                         <th>履约方式</th>
                         <th>商品状态</th>
                         <th><span class="required-star">*</span>投放排序</th>
-                        <th>是否置顶</th>
                         <th>最后操作人</th>
                         <th>操作</th>
                       </tr>
@@ -1786,7 +1785,7 @@
                     <tbody id="displayProductTbody"></tbody>
                   </table>
                 </div>
-                <div class="hint-text">商品配置按二级模板分页管理。当前 Tab 只展示该二级模板下的投放商品，同一个商品可以分别添加到多个二级模板；排序和置顶只在当前二级模板内生效。</div>
+                <div class="hint-text">商品配置按二级模板分页管理。当前 Tab 只展示该二级模板下的投放商品，同一个商品可以分别添加到多个二级模板；投放排序只在当前二级模板内生效。</div>
               </div>
             </section>
 
@@ -4042,7 +4041,7 @@
         products: spus.map((spu, index) => {
           const subTemplateId = subTemplates.length ? subTemplates[index % subTemplates.length].id : "";
           const sort = subTemplates.length ? Math.floor(index / subTemplates.length) + 1 : index + 1;
-          return { spu, subTemplateId, sort, pinned: "否" };
+          return { spu, subTemplateId, sort };
         }),
         createdAt: nowText(),
         updatedAt: nowText(),
@@ -4335,7 +4334,7 @@
     function displayProductTable(rows, config, editable, options = {}) {
       if (!rows.length) return `<div class="empty">当前暂无投放商品</div>`;
       const showSubTemplate = options.showSubTemplate !== false;
-      return `<div class="table-wrap"><table class="display-product-table"><thead><tr><th>商品ID</th><th>商品信息</th><th>商品类型</th><th>SKU 摘要</th><th>履约方式</th><th>商品状态</th>${showSubTemplate ? "<th>所属二级模板</th>" : ""}<th>投放排序</th><th>是否置顶</th>${editable ? "<th>最后操作人</th><th>操作</th>" : ""}</tr></thead><tbody>${rows.map((row, index) => displayProductRowHtml(row, config, editable, index, { showSubTemplate })).join("")}</tbody></table></div>`;
+      return `<div class="table-wrap"><table class="display-product-table"><thead><tr><th>商品ID</th><th>商品信息</th><th>商品类型</th><th>SKU 摘要</th><th>履约方式</th><th>商品状态</th>${showSubTemplate ? "<th>所属二级模板</th>" : ""}<th>投放排序</th>${editable ? "<th>最后操作人</th><th>操作</th>" : ""}</tr></thead><tbody>${rows.map((row, index) => displayProductRowHtml(row, config, editable, index, { showSubTemplate })).join("")}</tbody></table></div>`;
     }
 
     function displayProductRowHtml(row, config, editable, index, options = {}) {
@@ -4347,7 +4346,6 @@
         <td>${deliveryTag(product.delivery)}</td><td>${stateTag(product.state)}</td>
         ${showSubTemplate ? `<td>${displaySubTemplateName(row.subTemplateId || "", config)}</td>` : ""}
         <td>${editable ? `<input class="mini-input" type="number" data-display-row="${index}" data-display-field="sort" value="${row.sort}">` : row.sort}</td>
-        <td>${editable ? `<select class="mini-input" data-display-row="${index}" data-display-field="pinned"><option ${row.pinned === "否" ? "selected" : ""}>否</option><option ${row.pinned === "是" ? "selected" : ""}>是</option></select>` : row.pinned}</td>
         ${editable ? `<td>${lastOperatorFromLogs(product.logs)}</td>` : ""}
         ${editable ? `<td><button class="btn text danger" data-remove-display-row="${index}">移除</button></td>` : ""}
       </tr>`;
@@ -4553,7 +4551,7 @@
       const entries = displayActiveProductEntries();
       document.getElementById("displayProductTbody").innerHTML = entries.length
         ? entries.map(({ row, index }) => displayProductRowHtml(row, config, true, index, { showSubTemplate: false })).join("")
-        : `<tr><td colspan="10"><div class="empty">当前模板暂无投放商品，可点击添加商品维护当前模板的投放关系。</div></td></tr>`;
+        : `<tr><td colspan="9"><div class="empty">当前模板暂无投放商品，可点击添加商品维护当前模板的投放关系。</div></td></tr>`;
       document.querySelectorAll("[data-display-row]").forEach(el => el.addEventListener("input", updateDisplayProductRow));
       document.querySelectorAll("select[data-display-row]").forEach(el => el.addEventListener("change", updateDisplayProductRow));
       document.querySelectorAll("[data-remove-display-row]").forEach(btn => btn.addEventListener("click", () => removeProductFromDisplay(Number(btn.dataset.removeDisplayRow))));
@@ -4676,7 +4674,7 @@
           failures.push(`${product.name} 已在当前模板中投放`);
           return;
         }
-        displayProductRows.push({ spu, subTemplateId, sort: nextDisplayProductSort(subTemplateId), pinned: "否" });
+        displayProductRows.push({ spu, subTemplateId, sort: nextDisplayProductSort(subTemplateId) });
         added += 1;
       });
       if (added > 0) {
@@ -6800,7 +6798,7 @@
         ${detailSection("商品展示配置", scopeTagsDetail(product))}
         ${detailSection("商品素材", materialHtml(product))}
         ${detailSection("SKU 列表", skuTable(product.skuList, product.type, product.skuTemplateId ? product.skuAttrCodes : []))}
-        ${detailSection("投放状态摘要", exposureDetail(product))}
+        ${detailSection("商品投放", exposureDetail(product))}
       `;
       openDrawer("detailDrawer");
     }
@@ -6861,14 +6859,41 @@
         <th>SKU ID</th><th>SKU 名称</th><th>SKU 属性模板</th><th>SKU 属性值</th><th>计量单位 / 数值</th><th>排序（越大越靠前）</th><th>兑换货币类型</th><th>兑换价格</th><th>划线价</th><th>履约方式</th><th>CDKey 码池 ID</th><th>每人总兑换次数</th><th>每人每日兑换次数</th><th>SKU 备注</th>
         </tr></thead><tbody>${normalizedRows.map(s => `<tr><td>${s.skuId}</td><td>${s.skuName}</td><td>${hasTemplateBinding ? (s.templateName || "-") : "-"}</td><td>${hasTemplateBinding ? formatSkuAttributeValues(s, type, codes) : "-"}</td><td>${skuSpecText(s)}</td><td>${s.sort}</td><td>${s.currency}</td><td>${s.price}</td><td>${skuStrikePriceDisplay(s)}</td><td>${normalizeDelivery(s.delivery) || "未配置"}</td><td>${deliveryParamSummary(s)}</td><td>${s.totalLimit}</td><td>${s.dayLimit}</td><td>${s.remark}</td></tr>`).join("")}</tbody></table></div>`;
     }
+    function productDisplayRelations(product) {
+      return displayConfigs.flatMap(config => (config.products || [])
+        .filter(row => row.spu === product.spu)
+        .map(row => ({ config, row })))
+        .sort((a, b) => Number(b.config.sortWeight || 0) - Number(a.config.sortWeight || 0) || Number(a.row.sort || 0) - Number(b.row.sort || 0));
+    }
+    function isDisplayRelationEffective(config, product) {
+      if (config.state !== "上架" || product.state !== "上架" || !config.startTime || !config.endTime) return false;
+      const now = new Date("2026/05/24 12:00");
+      const start = parseDisplayTime(config.startTime);
+      const end = parseDisplayTime(config.endTime);
+      return !!start && !!end && now >= start && now <= end;
+    }
     function exposureDetail(product) {
-      return infoGrid([
-        ["已投放模板", product.exposure],
-        ["投放状态", product.exposure.startsWith("已投放") && product.state === "上架" ? "投放配置生效" : "未投放"],
-        ["上下架时间", product.exposure.startsWith("已投放") ? "2026-05-20 10:00 - 2026-06-20 23:59" : "-"],
-        ["排序值", product.exposure.startsWith("已投放") ? "90" : "-"],
-        ["未投放原因", product.exposure === "未投放" ? "未在商品投放管理中配置投放关系" : product.state !== "上架" ? "商品状态不是上架" : "-"]
-      ]) + `<div class="hint-text">商品上架不等于前台投放，投放关系由商品投放管理维护。</div>`;
+      const relations = productDisplayRelations(product);
+      const templateCount = new Set(relations.map(item => item.config.id)).size;
+      const effectiveCount = relations.filter(item => isDisplayRelationEffective(item.config, product)).length;
+      const overallStatus = !relations.length ? "未投放" : effectiveCount === relations.length ? "投放中" : effectiveCount > 0 ? "部分生效" : "未生效";
+      const summary = infoGrid([
+        ["关联一级模板数", templateCount],
+        ["投放关系数", relations.length],
+        ["生效关系数", effectiveCount],
+        ["综合投放状态", overallStatus]
+      ]);
+      const detail = relations.length
+        ? `<div class="table-wrap"><table><thead><tr><th>一级模板</th><th>二级模板</th><th>投放范围</th><th>模板状态</th><th>生效时间</th><th>商品投放排序</th></tr></thead><tbody>${relations.map(({ config, row }) => `<tr>
+            <td><div class="main-name">${config.templateName || config.id}</div><div class="minor">${config.id}</div></td>
+            <td>${displaySubTemplateName(row.subTemplateId || "", config)}</td>
+            <td>${displayTemplateScopeText(config)}</td>
+            <td>${stateTag(config.state)}</td>
+            <td>${displayTimeText(config)}</td>
+            <td>${row.sort || "-"}</td>
+          </tr>`).join("")}</tbody></table></div>`
+        : `<div class="empty">当前商品未配置投放关系</div>`;
+      return `${summary}<div class="table-title" style="margin:16px 0 10px">投放明细</div>${detail}<div class="hint-text">关联一级模板数按一级模板 ID 去重；同一商品投放到同一一级模板的多个二级模板时，分别计为多条投放关系。商品上架不等于前台投放，投放关系由商品投放管理维护。</div>`;
     }
     function openForm(mode, product) {
       if (mode === "edit" && !isEditableLifecycleState(product?.state)) {
