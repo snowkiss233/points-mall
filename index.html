@@ -4105,6 +4105,14 @@
       return placementScope;
     }
 
+    function productDisplayScopeHtml(config) {
+      const placementScope = normalizedDisplayPlacementScope(config);
+      if (normalizeDisplayTemplateType(config.templateType) === "社区模板" && placementScope === "自定义社区") {
+        return `<div class="main-name">自定义社区</div><div class="minor">社区 ID：${normalizedDisplayTargetId(config) || "未填写"}</div>`;
+      }
+      return displayTemplateScopeText(config);
+    }
+
     function uniqueDisplayTemplateId(prefix) {
       let index = displayConfigs.length + 1;
       let id = `${prefix}_${String(index).padStart(3, "0")}`;
@@ -6888,10 +6896,11 @@
         ["综合投放状态", overallStatus]
       ]);
       const detail = relations.length
-        ? `<div class="table-wrap"><table><thead><tr><th>一级模板</th><th>二级模板</th><th>投放范围</th><th>模板状态</th><th>生效时间</th><th>商品投放排序</th></tr></thead><tbody>${relations.map(({ config, row }) => `<tr>
+        ? `<div class="table-wrap"><table><thead><tr><th>一级模板</th><th>二级模板</th><th>模板类型</th><th>投放范围</th><th>模板状态</th><th>生效时间</th><th>商品投放排序</th></tr></thead><tbody>${relations.map(({ config, row }) => `<tr>
             <td><div class="main-name">${config.templateName || config.id}</div></td>
             <td>${displaySubTemplateName(row.subTemplateId || "", config)}</td>
-            <td>${displayTemplateScopeText(config)}</td>
+            <td>${normalizeDisplayTemplateType(config.templateType)}</td>
+            <td>${productDisplayScopeHtml(config)}</td>
             <td>${stateTag(config.state)}</td>
             <td>${displayTimeText(config)}</td>
             <td>${row.sort || "-"}</td>
