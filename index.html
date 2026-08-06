@@ -203,7 +203,6 @@
       grid-template-columns: repeat(6, minmax(150px, 1fr));
       gap: 12px;
     }
-    .filter-grid.seven-columns { grid-template-columns: repeat(7, minmax(120px, 1fr)); }
     .field label {
       display: block;
       color: #475467;
@@ -422,6 +421,32 @@
       color: var(--muted);
       text-decoration: line-through;
     }
+    .price-summary {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      min-width: 190px;
+    }
+    .price-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 8px;
+      border-radius: 7px;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: #344054;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .price-pill.point { border-color: #bfdbfe; background: #eff6ff; color: #1d4ed8; }
+    .price-pill.coin { border-color: #ddd6fe; background: #f5f3ff; color: #6d28d9; }
+    .price-pill.rmb { border-color: #bbf7d0; background: #ecfdf5; color: #15803d; }
+    .price-config-cell { min-width: 260px; }
+    .price-config-cell .btn { margin-top: 8px; }
+    .price-editor-table { min-width: 640px; }
+    .price-editor-table td { vertical-align: middle; }
+    .price-editor-table input[type="number"] { min-width: 130px; }
     .tag {
       display: inline-flex;
       align-items: center;
@@ -670,23 +695,7 @@
       margin: 2px 0;
     }
     .side-anchor a:hover { background: var(--primary-weak); color: var(--primary); }
-    .sku-edit-table { min-width: 1250px; }
-    .inventory-config-table {
-      min-width: 1480px;
-      table-layout: fixed;
-    }
-    .inventory-config-table th:nth-child(1),
-    .inventory-config-table td:nth-child(1) { width: 150px; }
-    .inventory-config-table th:nth-child(2),
-    .inventory-config-table td:nth-child(2) { width: 170px; }
-    .inventory-config-table th:nth-child(3),
-    .inventory-config-table td:nth-child(3) { width: 280px; }
-    .inventory-config-table th:nth-child(4),
-    .inventory-config-table td:nth-child(4) { width: 210px; }
-    .inventory-config-table th:nth-child(5),
-    .inventory-config-table td:nth-child(5) { width: 320px; }
-    .inventory-config-table th:nth-child(6),
-    .inventory-config-table td:nth-child(6) { width: 160px; }
+    .sku-edit-table { min-width: 1380px; }
     .display-table { min-width: 1680px; }
     .display-product-table { min-width: 1400px; }
     #productPickerModal {
@@ -915,7 +924,6 @@
 
     @media (max-width: 1180px) {
       .filter-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-      .filter-grid.seven-columns { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .form-layout { grid-template-columns: 1fr; }
       .side-anchor { position: static; }
@@ -924,7 +932,7 @@
       .sidebar { width: 76px; }
       .brand span, .nav-title, .nav-item span, .role { display: none; }
       .main { margin-left: 76px; width: calc(100% - 76px); }
-      .filter-grid, .filter-grid.seven-columns, .form-grid, .form-grid.three, .info-grid, .material-grid, .upload-row { grid-template-columns: 1fr; }
+      .filter-grid, .form-grid, .form-grid.three, .info-grid, .material-grid, .upload-row { grid-template-columns: 1fr; }
       .topbar { align-items: flex-start; height: auto; gap: 10px; padding: 12px; flex-direction: column; }
       .global-search { width: 100%; }
       .top-actions { width: 100%; flex-wrap: wrap; }
@@ -965,7 +973,7 @@
         <div class="page-head">
           <div>
             <h1>商品列表</h1>
-            <div class="sub">查询和管理积分商城商品与 SKU 基础配置，进入商品详情 / 编辑页</div>
+            <div class="sub">查询和管理积分商城商品与 SKU 基础配置，支持积分、N币、RMB多币种价格，进入商品详情 / 编辑页</div>
           </div>
           <div class="btn-row">
             <button class="btn primary" id="newProductBtn">新建商品</button>
@@ -977,14 +985,14 @@
           <div class="card-body">
             <div class="filter-grid">
               <div class="field"><label>商品对外名称</label><input id="filterName" placeholder="请输入商品对外名称"></div>
-              <div class="field"><label>SPU ID</label><input id="filterSpu" placeholder="请输入 SPU ID"></div>
+              <div class="field"><label>商品ID</label><input id="filterSpu" placeholder="请输入商品ID"></div>
               <div class="field"><label>商品类型</label><select id="filterType"></select></div>
               <div class="field"><label>商品状态</label><select id="filterState"></select></div>
               <div class="field"><label>履约方式</label><select id="filterDelivery"></select></div>
             </div>
             <div class="filter-grid more-filters" id="moreFilters">
               <div class="field"><label>商品对内名称</label><input id="filterInternal" placeholder="请输入后台内部名称"></div>
-              <div class="field"><label>创建时间</label><input id="filterCreated" data-time-range="true" placeholder="YYYY-MM-DD HH:mm - YYYY-MM-DD HH:mm"></div>
+              <div class="field"><label>创建时间</label><input id="filterCreated" placeholder="开始时间 - 结束时间"></div>
             </div>
             <div class="filter-actions">
               <button class="btn primary" id="searchBtn">查询</button>
@@ -1013,7 +1021,7 @@
             <table class="product-table">
               <thead>
                 <tr>
-                  <th>SPU ID</th>
+                  <th>商品ID</th>
                   <th>商品信息</th>
                   <th>商品类型</th>
                   <th>SKU 摘要</th>
@@ -1036,7 +1044,7 @@
           <div>
             <button class="btn text" id="backToListBtn">返回商品列表</button>
             <h1 id="formTitle">新建商品</h1>
-            <div class="sub">配置商品类型、基础信息、商品素材、SKU、履约方式与库存来源。CDKey 码池 ID 在库存来源与初始化中配置；商品创建后，后续库存调整统一前往库存列表维护。</div>
+            <div class="sub">配置商品类型、基础信息、商品素材、SKU多币种价格、履约方式、CDKey 码池 ID 和初始库存。商品创建后，后续库存调整统一前往库存列表维护。</div>
           </div>
           <div class="btn-row">
             <button class="btn" id="saveDraftBtn">保存草稿</button>
@@ -1055,7 +1063,7 @@
                   <div class="field"><label>商品对内名称</label><input id="formInternal" placeholder="请输入后台内部名称"></div>
                   <div class="field"><label><span class="required-star">*</span>商品类型</label><select id="formType"></select><div class="hint-text">本期仅支持虚拟装扮、CDKEY、实物三个一级类型。</div></div>
                   <div class="field"><label><span class="required-star">*</span>风险等级</label><select id="formRiskLevel"><option value="">请选择风险等级</option><option>高风险</option><option>低风险</option></select></div>
-                  <div class="field"><label><span class="required-star">*</span>履约方式</label><select id="formDelivery"></select><div class="hint-text" id="formDeliveryHint">履约方式与商品类型独立配置，请按实际履约链路选择。</div></div>
+                  <div class="field"><label><span class="required-star">*</span>履约方式</label><select id="formDelivery" disabled></select><div class="hint-text">由商品类型自动确定，不支持单独修改。</div></div>
                   <div class="field"><label>商品状态</label><input id="formState" value="草稿" disabled></div>
                   <div class="field" style="grid-column:1/-1"><label>商品副标题 / 描述文案</label><textarea id="formSubtitle" rows="3" placeholder="商品简短说明或权益描述"></textarea></div>
                 </div>
@@ -1181,6 +1189,7 @@
             <section class="form-card" id="sectionSku">
               <h2><span class="required-star">*</span>SKU 配置</h2>
               <div class="body">
+                <div class="alert info" style="margin-bottom:10px">同一SKU可分别配置积分、N币和RMB价格；各币种独立定价，不按汇率自动换算。所有商品统一按“积分 → N币 → RMB”的顺序展示已启用的币种价格。</div>
                 <div class="btn-row" style="margin-bottom:10px">
                   <button class="btn primary" id="addSkuBtn" type="button">添加 SKU</button>
                   <button class="btn danger" id="clearSkuBtn" type="button">清空 SKU</button>
@@ -1196,11 +1205,11 @@
             </section>
 
             <section class="form-card" id="sectionInitialInventory">
-              <h2><span class="required-star">*</span>库存来源与初始化</h2>
+              <h2><span class="required-star">*</span>初始库存配置</h2>
               <div class="body">
-                <div class="alert info">新建商品时可配置全部 SKU 的库存来源与初始库存；编辑商品时仅允许为本次新增的 SKU 配置。履约方式为自动履约（CDKey）时，需在此绑定并校验 CDKey 码池 ID，库存模式固定为限量，初始总库存由码池同步，不支持手动设置。本期不支持更换已绑定码池。</div>
+                <div class="alert info">首次新建商品时支持配置 SKU 初始库存；履约方式为自动履约（CDKey）时，库存模式固定为限量，初始总库存由绑定的 CDKey 码池同步，不支持在商品新建页手动设置。</div>
                 <div id="inventoryConfigBody"></div>
-                <div class="hint-text">非 CDKey 商品采用手动初始化，仅用于新 SKU 首次创建库存记录。CDKey 商品绑定码池 ID 后，库存数据以 CDKey 码池列表为唯一来源；存量 SKU 的库存和码池绑定均不可在商品编辑页修改。</div>
+                <div class="hint-text">非 CDKey 商品的初始库存只用于商品首次创建时初始化库存记录。CDKey 商品绑定码池 ID 后，库存数据以 CDKey 码池列表为唯一来源，保证库存唯一性和正确性。</div>
               </div>
             </section>
 
@@ -1220,7 +1229,7 @@
             <a href="#sectionMaterial">商品素材</a>
             <a href="#sectionScopeTags">商品展示配置</a>
             <a href="#sectionSku">SKU 配置</a>
-            <a href="#sectionInitialInventory">库存来源与初始化</a>
+            <a href="#sectionInitialInventory">初始库存配置</a>
             <a href="#sectionRemark">备注</a>
           </aside>
         </div>
@@ -1330,7 +1339,6 @@
                   <button class="btn primary" id="tmplAddAttrBtn" type="button">添加属性项</button>
                   <button class="btn danger" id="tmplClearAttrBtn" type="button">清空属性项</button>
                 </div>
-                <div class="alert info" style="margin-bottom:10px">属性项保存后，属性名称、属性值类型、是否必填及枚举值均不可修改，只能删除整个属性项；新增属性项保存前仍可配置。</div>
                 <div class="table-wrap">
                   <table class="template-attr-table">
                     <thead><tr><th><span class="required-star">*</span>属性名称</th><th><span class="required-star">*</span>属性值类型</th><th><span class="required-star">*</span>是否必填</th><th><span class="required-star">*</span>可选值</th><th>操作</th></tr></thead>
@@ -1362,7 +1370,7 @@
           </div>
         </div>
 
-        <div class="page-note">商品上架不等于前台投放。社区模板可按全部社区、游戏社区、战队社区或自定义社区投放；活动模板通过活动 ID 路由到指定活动页。商城客户端可以在同一投放对象下配置多个 TAB 分区；每个 TAB 对应一条投放模板。同一商品可以投放到多个二级模板，并在各二级模板下分别维护排序。投放管理只维护模板、投放对象与商品的投放关系，不维护商品基础信息、SKU 属性模板、库存、CDKey 码池、活动信息和履约记录。</div>
+        <div class="page-note">商品上架不等于前台投放。全局模板只能创建 1 个，投放范围固定为全部社区；游戏专区模板通过社区范围投放；活动模板通过活动 ID 路由到指定活动页。商城客户端可以在同一投放对象下配置多个 TAB 分区；每个 TAB 对应一条投放模板。同一商品可以投放到多个二级模板，并在各二级模板下分别维护排序。投放管理只维护模板、投放对象与商品的投放关系，不维护商品基础信息、SKU 属性模板、库存、CDKey 码池、活动信息和履约记录。</div>
 
         <section class="card" aria-label="投放配置筛选区">
           <div class="card-body">
@@ -1383,7 +1391,7 @@
           <div class="table-head">
             <div>
               <div class="table-title">投放配置数据</div>
-              <div class="table-meta">社区模板按投放范围路由到对应社区；活动模板按活动 ID 路由；投放商品数按一级模板下的 SPU ID 去重统计；模板排序值越大越靠左。</div>
+              <div class="table-meta">全局模板覆盖全部社区；活动模板按活动 ID 路由；投放商品数按一级模板下的 SPU ID 去重统计；模板排序值越大越靠左。</div>
             </div>
             <div class="table-meta" id="displayTableCount">共 0 条</div>
           </div>
@@ -1427,15 +1435,14 @@
           <div class="card-body">
             <div class="filter-grid">
               <div class="field"><label>商品对外名称</label><input id="inventoryFilterKeyword" placeholder="请输入商品对外名称"></div>
-              <div class="field"><label>SKU ID</label><input id="inventoryFilterSku" placeholder="请输入 SKU ID"></div>
-              <div class="field"><label>SPU ID</label><input id="inventoryFilterSpu" placeholder="请输入 SPU ID"></div>
+              <div class="field"><label>SPU ID / SKU ID</label><input id="inventoryFilterSku" placeholder="请输入 SPU ID 或 SKU ID"></div>
               <div class="field"><label>商品类型</label><select id="inventoryFilterType"></select></div>
               <div class="field"><label>履约方式</label><select id="inventoryFilterDelivery"></select></div>
               <div class="field"><label>库存状态</label><select id="inventoryFilterState"></select></div>
             </div>
             <div class="filter-grid more-filters" id="inventoryMoreFilters">
               <div class="field"><label>CDKey 状态</label><select id="inventoryFilterCdkey"><option>全部</option><option>-</option><option>码池可用</option><option>CDKey 不足</option><option>码池未配置</option><option>码池不可用</option></select></div>
-              <div class="field"><label>创建时间</label><input id="inventoryFilterUpdated" data-time-range="true" placeholder="YYYY-MM-DD HH:mm - YYYY-MM-DD HH:mm"></div>
+              <div class="field"><label>创建时间</label><input id="inventoryFilterUpdated" placeholder="开始时间 - 结束时间"></div>
             </div>
             <div class="filter-actions">
               <button class="btn primary" id="inventorySearchBtn">查询</button>
@@ -1456,7 +1463,7 @@
           <div class="table-head">
             <div>
               <div class="table-title">库存主数据</div>
-              <div class="table-meta">SKU ID 为库存主键，SPU ID 用于关联所属商品；默认按创建时间倒序展示。</div>
+              <div class="table-meta">库存按 SPU ID + SKU ID 唯一维护；默认按总库存、可用库存从高到低展示。</div>
             </div>
             <div class="table-meta" id="inventoryTableCount">共 0 条</div>
           </div>
@@ -1464,8 +1471,8 @@
             <table class="inventory-table">
               <thead>
                 <tr>
-                  <th>SKU ID</th>
                   <th>SPU ID</th>
+                  <th>SKU ID</th>
                   <th>商品信息</th>
                   <th>商品类型</th>
                   <th>SKU 规格</th>
@@ -1473,7 +1480,7 @@
                   <th>库存模式</th>
                   <th><button class="sort-head" type="button" data-inventory-sort="totalStock">总库存</button></th>
                   <th><button class="sort-head" type="button" data-inventory-sort="availableStock">可用库存</button></th>
-                  <th><button class="sort-head" type="button" data-inventory-sort="deductedStock">扣减库存</button></th>
+                  <th><button class="sort-head" type="button" data-inventory-sort="lockedStock">锁定库存</button></th>
                   <th><button class="sort-head" type="button" data-inventory-sort="todayRemaining">时段库存重置配置</button></th>
                   <th><button class="sort-head" type="button" data-inventory-sort="warningThreshold">安全库存阈值</button></th>
                   <th>库存状态</th>
@@ -1504,13 +1511,12 @@
 
         <section class="card" aria-label="履约记录筛选区">
           <div class="card-body">
-            <div class="filter-grid seven-columns">
+            <div class="filter-grid">
               <div class="field"><label>兑换单号</label><input id="deliveryFilterRecord" placeholder="请输入兑换单号"></div>
               <div class="field"><label>订单号</label><input id="deliveryFilterOrder" placeholder="请输入订单号"></div>
-              <div class="field"><label>用户信息</label><input id="deliveryFilterUser" placeholder="请输入用户 ID / NN 号 / 手机号"></div>
+              <div class="field"><label>用户 ID</label><input id="deliveryFilterUser" placeholder="请输入用户 ID"></div>
               <div class="field"><label>商品对外名称</label><input id="deliveryFilterProduct" placeholder="请输入商品对外名称"></div>
-              <div class="field"><label>SPU ID</label><input id="deliveryFilterSpu" placeholder="请输入 SPU ID"></div>
-              <div class="field"><label>SKU ID</label><input id="deliveryFilterSku" placeholder="请输入 SKU ID"></div>
+              <div class="field"><label>SPU ID / SKU ID</label><input id="deliveryFilterSku" placeholder="请输入 SPU ID 或 SKU ID"></div>
               <div class="field"><label>履约状态</label><select id="deliveryFilterState"></select></div>
             </div>
             <div class="filter-grid more-filters" id="deliveryMoreFilters">
@@ -1518,7 +1524,7 @@
               <div class="field"><label>商品类型</label><select id="deliveryFilterType"></select></div>
               <div class="field"><label>履约方式</label><select id="deliveryFilterMethod"></select></div>
               <div class="field"><label>CDKey 码池 ID</label><input id="deliveryFilterPool" placeholder="请输入码池 ID"></div>
-              <div class="field"><label>履约时间</label><input id="deliveryFilterDelivered" data-time-range="true" placeholder="YYYY-MM-DD HH:mm - YYYY-MM-DD HH:mm"></div>
+              <div class="field"><label>履约时间</label><input id="deliveryFilterDelivered" placeholder="开始时间 - 结束时间"></div>
             </div>
             <div class="filter-actions">
               <button class="btn primary" id="deliverySearchBtn">查询</button>
@@ -1592,7 +1598,7 @@
               <div class="field"><label>码池类型</label><select id="cdkeyPoolFilterSource"><option>全部</option><option>接口生成码</option><option>手工上传码</option></select></div>
               <div class="field"><label>CDKey 类型</label><select id="cdkeyPoolFilterCdkeyType"><option>全部</option><option>加速器时长</option><option>加速器时长（不可暂停）</option></select></div>
               <div class="field"><label>是否绑定商品</label><select id="cdkeyPoolFilterBound"><option>全部</option><option>是</option><option>否</option></select></div>
-              <div class="field"><label>创建时间</label><input id="cdkeyPoolFilterUpdated" data-time-range="true" placeholder="YYYY-MM-DD HH:mm - YYYY-MM-DD HH:mm"></div>
+              <div class="field"><label>创建时间</label><input id="cdkeyPoolFilterUpdated" placeholder="开始时间 - 结束时间"></div>
             </div>
             <div class="filter-actions">
               <button class="btn primary" id="cdkeyPoolSearchBtn">查询</button>
@@ -1724,16 +1730,17 @@
               <h2>基础信息</h2>
               <div class="body">
                 <div class="form-grid">
-                  <div class="field"><label><span class="required-star">*</span>模板类型</label><select id="displayTemplateType"><option>社区模板</option><option>活动模板</option></select></div>
+                  <div class="field"><label><span class="required-star">*</span>模板类型</label><select id="displayTemplateType"><option>全局模板</option><option>游戏专区模板</option><option>活动模板</option></select></div>
                   <div class="field"><label><span class="required-star">*</span>一级模板名称</label><input id="displayTemplateName" placeholder="请输入投放分区名称"></div>
                   <div class="field"><label>模板 ID</label><input id="displayTemplateId" value="新建后生成" disabled></div>
                   <div class="field"><label><span class="required-star">*</span>模板排序值</label><input id="displayTemplateSort" type="number" min="1" placeholder="数值越大越靠左"></div>
                   <div class="field"><label>配置状态</label><input id="displayConfigState" value="草稿" disabled></div>
                   <div class="field" id="displayPlacementScopeField"><label><span class="required-star">*</span>投放范围</label><select id="displayPlacementScope"></select></div>
                   <div class="field" id="displayTargetIdField"><label><span class="required-star">*</span><span id="displayTargetIdLabel">投放对象 ID</span></label><input id="displayTargetId" placeholder="请输入投放对象 ID"></div>
-                  <div class="field" style="grid-column:span 2"><label><span class="required-star">*</span>生效时间</label><input id="displayEffectiveTime" data-time-range="true" placeholder="YYYY-MM-DD HH:mm - YYYY-MM-DD HH:mm"></div>
+                  <div class="field"><label><span class="required-star">*</span>生效开始时间</label><input id="displayStartTime" placeholder="2026-05-20 10:00"></div>
+                  <div class="field"><label><span class="required-star">*</span>生效结束时间</label><input id="displayEndTime" placeholder="2026-06-20 23:59"></div>
                 </div>
-                <div class="hint-text">社区模板可选择全部社区、游戏社区、战队社区或自定义社区，自定义社区必须填写社区 ID；活动模板投放范围固定为活动，并通过活动 ID 路由。</div>
+                <div class="hint-text">全局模板投放范围固定为全部社区；游戏专区模板可选择游戏社区、战队社区或自定义社区，自定义社区必须填写社区 ID；活动模板投放范围固定为活动，并通过活动 ID 路由。</div>
               </div>
             </section>
 
@@ -1778,6 +1785,7 @@
                         <th>履约方式</th>
                         <th>商品状态</th>
                         <th><span class="required-star">*</span>投放排序</th>
+                        <th>是否置顶</th>
                         <th>最后操作人</th>
                         <th>操作</th>
                       </tr>
@@ -1785,7 +1793,7 @@
                     <tbody id="displayProductTbody"></tbody>
                   </table>
                 </div>
-                <div class="hint-text">商品配置按二级模板分页管理。当前 Tab 只展示该二级模板下的投放商品，同一个商品可以分别添加到多个二级模板；投放排序只在当前二级模板内生效。</div>
+                <div class="hint-text">商品配置按二级模板分页管理。当前 Tab 只展示该二级模板下的投放商品，同一个商品可以分别添加到多个二级模板；排序和置顶只在当前二级模板内生效。</div>
               </div>
             </section>
 
@@ -1866,7 +1874,7 @@
   <section class="modal" id="templateDisableModal" role="dialog" aria-modal="true">
     <div class="modal-head"><span>下架属性模板</span><button class="btn text" data-close-modal="templateDisableModal">关闭</button></div>
     <div class="modal-body">
-      <p id="templateDisableMessage">下架后，该模板将停止引用，并自动解绑已关联商品的属性字段。</p>
+      <p>下架后，该模板不可再被商品新建 / 编辑页引用；已创建商品的历史投放、兑换、订单和履约记录不受影响。</p>
     </div>
     <div class="modal-foot">
       <button class="btn" data-close-modal="templateDisableModal">取消</button>
@@ -1877,7 +1885,7 @@
   <section class="modal" id="templateDeleteModal" role="dialog" aria-modal="true">
     <div class="modal-head"><span>删除属性模板</span><button class="btn text" data-close-modal="templateDeleteModal">关闭</button></div>
     <div class="modal-body">
-      <p id="templateDeleteMessage">删除后该模板将从常规列表中移除，并自动解绑已关联商品的属性字段。</p>
+      <p>删除后该模板将从常规列表中移除，商品新建 / 编辑页不可引用，并记录删除人、删除时间和删除原因。删除不是模板状态。</p>
       <div class="field"><label>删除原因</label><textarea id="templateDeleteReason" rows="4" placeholder="请输入删除原因，选填"></textarea></div>
     </div>
     <div class="modal-foot">
@@ -1958,6 +1966,21 @@
     </div>
   </section>
 
+  <section class="modal wide" id="skuPriceModal" role="dialog" aria-modal="true">
+    <div class="modal-head"><span id="skuPriceModalTitle">配置多币种价格</span><button class="btn text" data-close-modal="skuPriceModal">关闭</button></div>
+    <div class="modal-body">
+      <div class="alert info">积分、N币、RMB均为独立商品价格，启用币种后需分别填写销售价格；所有商品统一按“积分 → N币 → RMB”的顺序展示已启用的币种价格。</div>
+      <div class="table-wrap">
+        <table class="price-editor-table">
+          <thead><tr><th>启用</th><th>计价币种</th><th>销售价格</th><th>划线价</th></tr></thead>
+          <tbody id="skuPriceEditorBody"></tbody>
+        </table>
+      </div>
+      <div class="error-text" id="skuPriceError"></div>
+    </div>
+    <div class="modal-foot"><button class="btn" data-close-modal="skuPriceModal">取消</button><button class="btn primary" id="confirmSkuPriceBtn">保存价格配置</button></div>
+  </section>
+
   <aside class="drawer" id="inventoryDetailDrawer">
     <div class="drawer-head"><div class="drawer-title">库存详情</div><button class="btn" data-close="inventoryDetailDrawer">关闭</button></div>
     <div class="drawer-body" id="inventoryDetailBody"></div>
@@ -1983,6 +2006,20 @@
       <div class="alert info" id="inventoryAdjustTip"></div>
     </div>
     <div class="modal-foot"><button class="btn" data-close-modal="inventoryAdjustModal">取消</button><button class="btn primary" id="confirmInventoryAdjustBtn">确认调整</button></div>
+  </section>
+
+  <section class="modal" id="inventoryLockModal" role="dialog" aria-modal="true">
+    <div class="modal-head"><span>锁定 / 释放库存</span><button class="btn text" data-close-modal="inventoryLockModal">关闭</button></div>
+    <div class="modal-body">
+      <div id="inventoryLockInfo"></div>
+      <div class="form-grid" style="margin-top:12px">
+        <div class="field"><label><span class="required-star">*</span>操作类型</label><select id="inventoryLockType"><option>锁定库存</option><option>释放锁定</option><option>锁定转扣减</option></select></div>
+        <div class="field"><label><span class="required-star">*</span>操作数量</label><input id="inventoryLockQty" type="number" placeholder="请输入操作数量"></div>
+        <div class="field"><label>关联业务单号</label><input id="inventoryLockBizNo" placeholder="可填写订单号 / 工单号"></div>
+        <div class="field" style="grid-column:1/-1"><label><span class="required-star">*</span>操作原因</label><textarea id="inventoryLockReason" rows="3" placeholder="请输入操作原因"></textarea></div>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn" data-close-modal="inventoryLockModal">取消</button><button class="btn primary" id="confirmInventoryLockBtn">确认操作</button></div>
   </section>
 
   <section class="modal" id="inventoryAlertModal" role="dialog" aria-modal="true">
@@ -2090,7 +2127,12 @@
     const businessSources = ["全部", "积分商城", "xx活动"];
     const allowedDeliveryOptions = [DELIVERY_AUTO_VIRTUAL, DELIVERY_AUTO_CDKEY, DELIVERY_MANUAL_PHYSICAL];
     const cdkeyTypeOptions = ["加速器时长", "加速器时长（不可暂停）"];
-    const skuCurrencyOptions = ["新积分"];
+    const skuCurrencyOptions = ["新积分", "N币", "RMB"];
+    const skuCurrencyMeta = {
+      "新积分": { code: "POINT", unit: "积分", precision: 0, css: "point" },
+      "N币": { code: "N_COIN", unit: "N币", precision: 0, css: "coin" },
+      "RMB": { code: "CNY", unit: "元", precision: 2, css: "rmb" }
+    };
     const skuSpecTypes = ["无", "小时", "天", "个", "件"];
     const skuDurationOptionsByUnit = {
       "小时": ["1小时", "3小时", "6小时", "12小时", "24小时"],
@@ -2128,13 +2170,13 @@
       displayTemplateSort: { min: 1, max: 9999 },
       displayConfigState: { maxLength: 10 },
       displayTargetId: { maxLength: 64 },
-      displayEffectiveTime: { maxLength: 40 },
+      displayStartTime: { maxLength: 32 },
+      displayEndTime: { maxLength: 32 },
       displayRemark: { maxLength: 200 },
       displayDeleteReason: { maxLength: 200 },
       pickerFilterKeyword: { maxLength: 50 },
       pickerFilterSpu: { maxLength: 500 },
       inventoryFilterKeyword: { maxLength: 80 },
-      inventoryFilterSpu: { maxLength: 32 },
       inventoryFilterSku: { maxLength: 32 },
       inventoryFilterUpdated: { maxLength: 32 },
       inventoryAdjustQty: { min: 1, max: 999999 },
@@ -2142,12 +2184,14 @@
       inventoryAdjustDailyRefreshTimes: { maxLength: 64 },
       inventoryAdjustSafetyPercent: { min: 0, max: 100 },
       inventoryAdjustReason: { maxLength: 200 },
+      inventoryLockQty: { min: 1, max: 999999 },
+      inventoryLockBizNo: { maxLength: 64 },
+      inventoryLockReason: { maxLength: 200 },
       inventoryAlertThreshold: { min: 0, max: 100 },
       deliveryFilterRecord: { maxLength: 64 },
       deliveryFilterOrder: { maxLength: 64 },
       deliveryFilterUser: { maxLength: 32 },
       deliveryFilterProduct: { maxLength: 80 },
-      deliveryFilterSpu: { maxLength: 32 },
       deliveryFilterSku: { maxLength: 32 },
       deliveryFilterPool: { maxLength: 64 },
       deliveryFilterDelivered: { maxLength: 32 },
@@ -2271,10 +2315,10 @@
     ];
 
     const displayPartitions = [
-      { id: "TPL_HOME_RECOMMEND", name: "全局商城", templateType: "社区模板", sortWeight: 100, placementScope: "全部社区", targetType: "COMMUNITY", targetId: "", state: "上架" },
-      { id: "TPL_PUBG_BENEFIT", name: "PUBG 福利", templateType: "社区模板", sortWeight: 100, placementScope: "游戏社区", targetType: "COMMUNITY", targetId: "", state: "上架" },
-      { id: "TPL_PUBG_DECORATION", name: "PUBG 装扮", templateType: "社区模板", sortWeight: 90, placementScope: "自定义社区", targetType: "COMMUNITY", targetId: "COMMUNITY_PUBG_001", state: "上架" },
-      { id: "TPL_GAME_ITEM_ZONE", name: "游戏道具", templateType: "社区模板", sortWeight: 80, placementScope: "战队社区", targetType: "COMMUNITY", targetId: "", state: "上架" },
+      { id: "TPL_HOME_RECOMMEND", name: "全局商城", templateType: "全局模板", sortWeight: 100, placementScope: "全部社区", targetType: "GLOBAL", targetId: "", state: "上架" },
+      { id: "TPL_PUBG_BENEFIT", name: "PUBG 福利", templateType: "游戏专区模板", sortWeight: 100, placementScope: "游戏社区", targetType: "COMMUNITY", targetId: "", state: "上架" },
+      { id: "TPL_PUBG_DECORATION", name: "PUBG 装扮", templateType: "游戏专区模板", sortWeight: 90, placementScope: "自定义社区", targetType: "COMMUNITY", targetId: "COMMUNITY_PUBG_001", state: "上架" },
+      { id: "TPL_GAME_ITEM_ZONE", name: "游戏道具", templateType: "游戏专区模板", sortWeight: 80, placementScope: "战队社区", targetType: "COMMUNITY", targetId: "", state: "上架" },
       { id: "TPL_SUMMER_EVENT", name: "夏日积分活动", templateType: "活动模板", sortWeight: 70, placementScope: "活动", targetType: "ACTIVITY", targetId: "ACTIVITY_SUMMER_2026", state: "草稿" }
     ];
 
@@ -2330,7 +2374,7 @@
     let visibleTemplates = [...attributeTemplates];
     let visibleDisplayConfigs = [...displayConfigs];
     let visibleInventoryRecords = [...inventoryRecords];
-    let inventorySortConfig = { field: "createdAt", direction: "desc" };
+    let inventorySortConfig = { field: "totalStock", direction: "desc" };
     let visibleDeliveryRecords = [...deliveryRecords];
     let visibleCdkeyPools = [...poolMocks];
     let selectedProduct = null;
@@ -2358,13 +2402,14 @@
     let displaySubTemplateRows = [];
     let activeDisplaySubTemplateId = "";
     let formMode = "new";
-    let originalEditingSkuIds = new Set();
     let templateMode = "new";
     let displayMode = "new";
     let materialAssets = createEmptyMaterialAssets();
     let pendingFormEnable = false;
     let previousFormType = "";
     let currentEditingSkuIndex = null;
+    let currentEditingPriceSkuIndex = null;
+    let skuPriceDraft = [];
     let descriptionTags = [];
 
     function createEmptyMaterialAssets() {
@@ -2414,8 +2459,6 @@
         exchangeDesc: "",
         spuTemplateId: spuTemplate?.templateId || "",
         spuTemplateName: spuTemplate?.templateName || "",
-        skuTemplateId: skuList[0]?.templateId || "",
-        skuTemplateName: skuList[0]?.templateName || "",
         spuAttributeValues,
         remark: "运营配置样例，供评审查看字段组织和操作路径。",
         skuList,
@@ -2433,7 +2476,9 @@
       const attrCodes = template.attributes.map(attr => attr.code);
       const sourceRows = sampleSkuValuesBySpu[spu] || (template.defaultSkuValues?.length ? template.defaultSkuValues : [makeEmptyAttributeValues(type, attrCodes)]);
       return sourceRows.map((values, index) => {
-        const row = makeSkuRow(spu, type, values, index + 1, delivery === "未配置" ? "" : normalizeDelivery(delivery), attrCodes, template);
+        const row = makeSkuRow(spu, type, values, index + 1, delivery === "未配置" ? "" : normalizeDelivery(delivery) || getDefaultDeliveryByType(type), attrCodes, template);
+        row.prices = sampleSkuPrices(type, row.attributeValues, index + 1);
+        syncLegacySkuPriceFields(row);
         if (isCdkeyDelivery(row.delivery)) {
           const poolIndex = { SPU10002: 0, SPU10003: 1 }[spu];
           const pool = Number.isInteger(poolIndex) ? poolMocks[poolIndex] : null;
@@ -2447,23 +2492,26 @@
       });
     }
 
-    function updateFormDeliveryOptions(delivery = "") {
-      const select = document.getElementById("formDelivery");
-      if (!select) return;
-      const normalized = normalizeDelivery(delivery);
-      select.innerHTML = `<option value="">请选择履约方式</option>${allowedDeliveryOptions.map(item => `<option value="${item}">${item}</option>`).join("")}`;
-      select.value = allowedDeliveryOptions.includes(normalized) ? normalized : "";
+    function getDefaultDeliveryByType(type) {
+      const map = {
+        "虚拟装扮": DELIVERY_AUTO_VIRTUAL,
+        "CDKEY": DELIVERY_AUTO_CDKEY,
+        "实物": DELIVERY_MANUAL_PHYSICAL
+      };
+      return map[type] || DELIVERY_AUTO_VIRTUAL;
     }
 
-    function setFormDeliveryAvailability(product = null) {
+    function isDeliveryCompatibleWithType(type, delivery) {
+      return normalizeDelivery(delivery) === getDefaultDeliveryByType(type);
+    }
+
+    function syncDeliveryByProductType(type) {
       const select = document.getElementById("formDelivery");
-      const hint = document.getElementById("formDeliveryHint");
-      if (!select || !hint) return;
-      const locked = formMode === "edit" && Boolean(product?.skuList?.some(row => hasInitializedInventory(row.skuId)));
-      select.disabled = locked;
-      hint.textContent = locked
-        ? "该商品已生成库存记录，本期不支持变更履约方式；商品类型与履约方式仍为独立字段。"
-        : "履约方式与商品类型独立配置，请按实际履约链路选择。";
+      if (!select) return;
+      const delivery = getDefaultDeliveryByType(type);
+      select.innerHTML = `<option value="${delivery}">${delivery}</option>`;
+      select.value = delivery;
+      select.disabled = true;
     }
 
     function colorForProductType(type) {
@@ -2568,21 +2616,129 @@
       return skuCurrencyOptions.includes(value) ? value : skuCurrencyOptions[0];
     }
 
+    function currencyMeta(currency) {
+      return skuCurrencyMeta[normalizeSkuCurrency(currency)] || skuCurrencyMeta["新积分"];
+    }
+
+    function normalizePriceAmount(currency, value) {
+      if (value === "" || value === null || value === undefined) return "";
+      const meta = currencyMeta(currency);
+      const number = Number(value);
+      if (!Number.isFinite(number)) return "";
+      return meta.precision === 2 ? Number(number.toFixed(2)) : Math.round(number);
+    }
+
+    function defaultSkuPrices(type, attributeValues, sort) {
+      const basePrice = defaultSkuPrice(type, attributeValues, sort);
+      return skuCurrencyOptions.map(currency => ({
+        currency,
+        enabled: currency === "新积分",
+        amount: currency === "新积分" ? basePrice : "",
+        strikePrice: ""
+      }));
+    }
+
+    function sampleSkuPrices(type, attributeValues, sort) {
+      const pointAmount = defaultSkuPrice(type, attributeValues, sort);
+      const nCoinAmount = type === "实物" ? 720 : type === "CDKEY" ? Math.max(68, Math.round(pointAmount / 9)) : 99 + (sort - 1) * 60;
+      const rmbAmount = type === "实物" ? 68 : type === "CDKEY" ? Math.max(6.9, Number((pointAmount / 120).toFixed(2))) : Number((12.9 + (sort - 1) * 8).toFixed(2));
+      return [
+        { currency: "新积分", enabled: true, amount: pointAmount, strikePrice: "" },
+        { currency: "N币", enabled: true, amount: nCoinAmount, strikePrice: "" },
+        { currency: "RMB", enabled: true, amount: rmbAmount, strikePrice: "" }
+      ];
+    }
+
+    function normalizeSkuPrices(row, type, attributeValues, sort) {
+      const legacyCurrency = normalizeSkuCurrency(row?.currency || "新积分");
+      const legacyBasePrice = Number(row?.price) || defaultSkuPrice(type, attributeValues, sort);
+      const source = Array.isArray(row?.prices) ? row.prices : [];
+      return skuCurrencyOptions.map(currency => {
+        const meta = currencyMeta(currency);
+        const item = source.find(price => price.currency === currency || price.currencyCode === meta.code) || {};
+        const isLegacy = !source.length && currency === legacyCurrency;
+        const amount = item.amount ?? item.price ?? (isLegacy ? legacyBasePrice : "");
+        const strikePrice = item.strikePrice ?? item.originalAmount ?? (isLegacy ? normalizeSkuStrikePrice(row) : "");
+        return {
+          currency,
+          enabled: source.length ? item.enabled !== false && (item.amount !== undefined || item.price !== undefined || Boolean(item.enabled)) : currency === legacyCurrency,
+          amount: normalizePriceAmount(currency, amount),
+          strikePrice: strikePrice === "" || strikePrice === null || strikePrice === undefined ? "" : normalizePriceAmount(currency, strikePrice)
+        };
+      });
+    }
+
+    function enabledSkuPrices(row) {
+      const prices = row?.prices || [];
+      return skuCurrencyOptions
+        .map(currency => prices.find(price => price.currency === currency && price.enabled))
+        .filter(Boolean);
+    }
+
+    function firstDisplayedSkuPrice(row) {
+      return enabledSkuPrices(row)[0] || null;
+    }
+
+    function formatSkuPriceAmount(currency, amount) {
+      const meta = currencyMeta(currency);
+      const value = Number(amount);
+      if (!Number.isFinite(value)) return "-";
+      if (currency === "RMB") return `¥${value.toFixed(2)}`;
+      return `${Math.round(value)} ${meta.unit}`;
+    }
+
+    function pricePillHtml(price) {
+      const meta = currencyMeta(price.currency);
+      return `<span class="price-pill ${meta.css}"><b>${price.currency}</b>${formatSkuPriceAmount(price.currency, price.amount)}</span>`;
+    }
+
+    function skuPriceSummary(row) {
+      const enabled = enabledSkuPrices(row);
+      return enabled.length
+        ? `<div class="price-summary">${enabled.map(pricePillHtml).join("")}</div>`
+        : `<span class="tag red">未配置价格</span>`;
+    }
+
+    function validSkuPriceAmount(currency, value) {
+      const raw = String(value ?? "").trim();
+      if (!raw || Number(raw) <= 0) return false;
+      return currency === "RMB" ? /^(?:0|[1-9]\d*)(?:\.\d{1,2})?$/.test(raw) : /^[1-9]\d*$/.test(raw);
+    }
+
+    function skuPriceGroupErrors(row) {
+      const prices = row?.prices || [];
+      const enabled = prices.filter(price => price.enabled);
+      const errors = [];
+      if (!enabled.length) errors.push("至少启用一种支付币种。");
+      if (enabled.some(price => price.currency !== "RMB" && !validSkuPriceAmount(price.currency, price.amount))) errors.push("积分和N币价格必须为正整数。");
+      if (enabled.some(price => price.currency === "RMB" && !validSkuPriceAmount(price.currency, price.amount))) errors.push("RMB价格必须大于0且最多保留2位小数。");
+      if (enabled.some(price => price.strikePrice !== "" && (!validSkuPriceAmount(price.currency, price.strikePrice) || Number(price.strikePrice) <= Number(price.amount)))) errors.push("划线价须符合对应币种精度且大于销售价格。");
+      return errors;
+    }
+
+    function syncLegacySkuPriceFields(row) {
+      const price = firstDisplayedSkuPrice(row);
+      row.currency = price?.currency || "新积分";
+      row.price = price?.amount || "";
+      row.strikePrice = price?.strikePrice || "";
+      return row;
+    }
+
     function attrValueWithUnit(value, attr) {
       if (value === undefined || value === null || String(value) === "") return "";
       return String(value);
     }
 
-    function makeEmptyAttributeValues(type, attrCodes = null, requireExplicit = false) {
+    function makeEmptyAttributeValues(type, attrCodes = null) {
       return Object.fromEntries(getConfigurableSkuAttributes(type)
         .filter(attr => !attrCodes || attrCodes.includes(attr.code))
-        .map(attr => [attr.code, !requireExplicit && attr.valueType === "枚举" && attr.required !== false ? skuAttrOptions(attr)[0] || "" : ""]));
+        .map(attr => [attr.code, attr.valueType === "枚举" && attr.required !== false ? skuAttrOptions(attr)[0] || "" : ""]));
     }
 
-    function pickAttributeValues(type, values = {}, attrCodes = null, requireExplicit = false) {
+    function pickAttributeValues(type, values = {}, attrCodes = null) {
       const allowedCodes = new Set((attrCodes || getConfigurableSkuAttributes(type).map(attr => attr.code)));
       return {
-        ...makeEmptyAttributeValues(type, attrCodes, requireExplicit),
+        ...makeEmptyAttributeValues(type, attrCodes),
         ...Object.fromEntries(Object.entries(values || {}).filter(([code]) => allowedCodes.has(code)))
       };
     }
@@ -2592,7 +2748,7 @@
       const attrCodes = attrs.map(attr => attr.code);
       const template = getSkuTemplate(type);
       if (!template) return [];
-      const delivery = getFormDelivery();
+      const delivery = getDefaultDeliveryByType(type);
       const sourceRows = template.defaultSkuValues?.length ? template.defaultSkuValues : [makeEmptyAttributeValues(type, attrCodes)];
       const unique = new Set();
       const rows = [];
@@ -2628,6 +2784,7 @@
         specType,
         duration,
         currency: normalizeSkuCurrency(values?.currency || "新积分"),
+        prices: defaultSkuPrices(type, attributeValues, sort),
         displayText,
         manualDisplay: false,
         sort,
@@ -2645,7 +2802,6 @@
 
     function initialDeliveryParams(delivery) {
       delivery = normalizeDelivery(delivery);
-      if (!delivery) return {};
       if (isCdkeyDelivery(delivery)) {
         return { cdkey: {} };
       }
@@ -2665,33 +2821,16 @@
     }
 
     function normalizeDeliveryParams(row, delivery) {
-      delivery = normalizeDelivery(delivery);
       const base = row.deliveryParams ? JSON.parse(JSON.stringify(row.deliveryParams)) : {};
-      if (isCdkeyDelivery(delivery)) {
-        const legacyPoolId = !row.deliveryParams && row.param && !row.param.includes("待关联") ? row.param : "";
-        const poolId = row.cdkeyPoolId || base.cdkey?.poolId || legacyPoolId;
-        const pool = poolId ? getPoolById(poolId) : null;
-        return { cdkey: pool ? poolToParams(pool) : { ...(base.cdkey || {}), ...(poolId ? { poolId } : {}) } };
+      if (!row.deliveryParams && row.param) {
+        if (isCdkeyDelivery(delivery) && !row.param.includes("待关联")) {
+          const pool = poolMocks.find(item => item.id === row.param);
+          base.cdkey = pool ? poolToParams(pool) : { poolId: row.param };
+        }
+        if (isPhysicalDelivery(delivery)) base.physical = { fulfillmentType: "外部履约", note: row.param };
+        if (normalizeDelivery(delivery) === DELIVERY_AUTO_VIRTUAL) base.auto = { ...initialDeliveryParams(DELIVERY_AUTO_VIRTUAL).auto, resourceId: row.param.replace("资源 ID：", "") };
       }
-      if (isPhysicalDelivery(delivery)) {
-        return {
-          physical: {
-            ...initialDeliveryParams(DELIVERY_MANUAL_PHYSICAL).physical,
-            ...(base.physical || {}),
-            ...(!row.deliveryParams && row.param ? { note: row.param } : {})
-          }
-        };
-      }
-      if (delivery === DELIVERY_AUTO_VIRTUAL) {
-        return {
-          auto: {
-            ...initialDeliveryParams(DELIVERY_AUTO_VIRTUAL).auto,
-            ...(base.auto || {}),
-            ...(!row.deliveryParams && row.param ? { resourceId: row.param.replace("资源 ID：", "") } : {})
-          }
-        };
-      }
-      return {};
+      return { ...initialDeliveryParams(delivery), ...base };
     }
 
     function poolToParams(pool) {
@@ -2751,11 +2890,11 @@
       return value ? `<del class="sku-strike-price">${value}</del>` : "-";
     }
 
-    function normalizeSkuRow(row, type, index = 0, attrCodes = null, requireExplicit = false) {
+    function normalizeSkuRow(row, type, index = 0, attrCodes = null) {
       const template = getSkuTemplate(type);
       if (!template) return row;
       const codes = attrCodes || row.skuAttrCodes || skuAttrCodesForRows(type);
-      const attributeValues = pickAttributeValues(type, row.attributeValues || {}, codes, requireExplicit);
+      const attributeValues = pickAttributeValues(type, row.attributeValues || {}, codes);
       if (!row.attributeValues) {
         const firstAttr = getTemplateAttributes(type)[0];
         if (firstAttr && row.value) {
@@ -2768,12 +2907,12 @@
       const specType = normalizeSkuSpecType(row.specType || row.skuSpec || (legacyDuration && legacyDuration !== "永久" ? "天" : "无"));
       const duration = normalizeSkuDuration(specType, legacyDuration || "");
       const displayText = row.displayText || row.text || generateSkuDisplayText(attributeValues, type, codes, specType, duration);
-      const delivery = normalizeDelivery(row.delivery) || getFormDelivery();
+      const delivery = normalizeDelivery(row.delivery) || getDefaultDeliveryByType(type);
       const cdkeyPoolId = row.cdkeyPoolId || row.deliveryParams?.cdkey?.poolId || "";
       const skuName = Object.prototype.hasOwnProperty.call(row, "skuName")
         ? row.skuName
         : (row.name || row.displayText || row.text || `${type} SKU${index + 1}`);
-      return {
+      const normalizedRow = {
         skuId: row.skuId || `NEW-SKU${String(index + 1).padStart(2, "0")}`,
         skuName,
         templateId: template.templateId,
@@ -2783,6 +2922,7 @@
         specType,
         duration,
         currency: normalizeSkuCurrency(row.currency),
+        prices: normalizeSkuPrices(row, type, attributeValues, index + 1),
         displayText,
         manualDisplay: Boolean(row.manualDisplay),
         sort: row.sort ?? index + 1,
@@ -2796,6 +2936,7 @@
         deliveryParams: normalizeDeliveryParams(row, delivery),
         remark: row.remark || "SKU 级配置"
       };
+      return syncLegacySkuPriceFields(normalizedRow);
     }
 
     function generateSkuDisplayText(attributeValues, type, attrCodes = null, specType = "无", duration = "") {
@@ -3059,10 +3200,6 @@
       if (row.valueType !== "枚举") {
         return `<div class="tag-input-box template-option-input disabled">-</div>`;
       }
-      if (row._persisted) {
-        const readonlyChips = optionChipValues(row.options).map(item => `<span class="tag-chip">${item}</span>`).join("");
-        return `<div class="tag-input-box template-option-input disabled">${readonlyChips || "-"}</div>`;
-      }
       const chips = optionChipValues(row.options).map((item, chipIndex) => `
         <span class="tag-chip">${item}<button type="button" aria-label="删除${item}" data-remove-template-option="${index}:${chipIndex}">×</button></span>
       `).join("");
@@ -3073,77 +3210,25 @@
     }
 
     function referencedProducts(template) {
-      if (!template) return [];
-      const scope = normalizeTemplateScope(template.scope);
-      return products.filter(product => {
-        if (scope === "SPU") return product.spuTemplateId === template.id;
-        return product.skuTemplateId === template.id;
-      });
-    }
-
-    function templateReferenceCount(template) {
-      return referencedProducts(template).length;
-    }
-
-    function unbindTemplateFromProducts(template) {
-      const scope = normalizeTemplateScope(template.scope);
-      const refs = referencedProducts(template);
-      refs.forEach(product => {
-        const issue = scope === "SPU" ? "SPU 属性模板已解绑" : "SKU 属性模板已解绑";
-        product.templateDetachment = {
-          ...(product.templateDetachment || {}),
-          [scope]: { templateId: template.id, templateName: template.name, detachedAt: nowText() }
-        };
-        if (scope === "SPU") {
-          product.spuTemplateId = "";
-          product.spuTemplateName = "";
-          product.spuAttributeValues = {};
-        } else {
-          product.skuTemplateId = "";
-          product.skuTemplateName = "";
-          product.skuAttrCodes = [];
-          product.skuList = (product.skuList || []).map(row => ({
-            ...row,
-            templateId: "",
-            templateName: "",
-            skuAttrCodes: [],
-            attributeValues: {}
-          }));
-          product.skuSummary = `${product.skuList.length} 个 SKU：属性模板已解绑`;
-        }
-        product.issues = [...new Set([...(product.issues || []), issue])];
-        product.updatedAt = nowText();
-        product.logs = product.logs || [];
-        product.logs.unshift({
-          time: nowText(),
-          user: "平台运营",
-          type: "属性模板自动解绑",
-          object: product.spu,
-          before: template.name,
-          after: "未关联",
-          remark: `属性模板下架或删除，自动移除 ${scope} 属性绑定`
-        });
-      });
-      template.refCount = 0;
-      return refs.length;
+      return products.filter(product => product.type === template.type).slice(0, template.refCount);
     }
 
     function init() {
       fillSelect("filterType", types);
       fillSelect("filterState", productStates);
       fillSelect("filterDelivery", deliveries);
-      updateFormDeliveryOptions();
+      fillSelect("formDelivery", allowedDeliveryOptions);
       fillSelect("tmplFilterType", types);
       fillSelect("tmplFilterState", configStates);
       fillSelect("tmplFilterScope", templateScopes);
       fillSelect("tmplScope", templateScopes.filter(x => x !== "全部"));
-      fillSelect("displayFilterTemplateType", ["全部", "社区模板", "活动模板"]);
+      fillSelect("displayFilterTemplateType", ["全部", "全局模板", "游戏专区模板", "活动模板"]);
       fillSelect("displayFilterState", configStates);
       fillSelect("pickerFilterType", types);
       fillSelect("pickerFilterDelivery", deliveries);
       fillSelect("inventoryFilterType", types);
       fillSelect("inventoryFilterDelivery", deliveries);
-      fillSelect("inventoryFilterState", ["全部", "正常", "低库存", "售罄", "不限量"]);
+      fillSelect("inventoryFilterState", ["全部", "正常", "低库存", "售罄", "时段售罄", "不限量"]);
       fillSelect("deliveryFilterState", deliveryRecordStates);
       fillSelect("deliveryFilterSource", businessSources);
       fillSelect("deliveryFilterType", types);
@@ -3196,6 +3281,7 @@
       document.getElementById("inventoryAdjustType").addEventListener("change", updateInventoryAdjustFields);
       document.getElementById("confirmInventoryAdjustBtn").addEventListener("click", confirmInventoryAdjust);
       document.querySelectorAll("[data-inventory-sort]").forEach(btn => btn.addEventListener("click", () => setInventorySort(btn.dataset.inventorySort)));
+      document.getElementById("confirmInventoryLockBtn").addEventListener("click", confirmInventoryLockAction);
       document.getElementById("confirmInventoryAlertBtn").addEventListener("click", confirmInventoryAlertConfig);
       document.getElementById("deliverySearchBtn").addEventListener("click", applyDeliveryRecordFilters);
       document.getElementById("deliveryResetBtn").addEventListener("click", resetDeliveryRecordFilters);
@@ -3226,7 +3312,6 @@
       document.getElementById("saveEnableBtn").addEventListener("click", handleFormEnable);
       document.getElementById("confirmEnableActionBtn").addEventListener("click", confirmEnableAction);
       document.getElementById("formType").addEventListener("change", onTypeChange);
-      document.getElementById("formDelivery").addEventListener("change", onDeliveryChange);
       ["input", "change"].forEach(eventName => {
         document.getElementById("formPage").addEventListener(eventName, event => {
           event.target.classList?.remove("invalid");
@@ -3263,6 +3348,7 @@
       document.getElementById("poolFilterName").addEventListener("input", renderPoolTable);
       document.getElementById("poolFilterState").addEventListener("change", renderPoolTable);
       document.getElementById("poolFilterSpec").addEventListener("input", renderPoolTable);
+      document.getElementById("confirmSkuPriceBtn").addEventListener("click", confirmSkuPriceConfig);
       document.getElementById("newTemplateBtn").addEventListener("click", () => openTemplateForm("new"));
       document.getElementById("exportTemplateBtn").addEventListener("click", () => toast("导出任务已创建，可在下载中心查看。"));
       document.getElementById("templateSearchBtn").addEventListener("click", applyTemplateFilters);
@@ -3286,7 +3372,7 @@
       document.getElementById("displayCancelEditBtn").addEventListener("click", showDisplayPage);
       document.getElementById("displaySaveDraftBtn").addEventListener("click", saveDisplayDraft);
       document.getElementById("displaySaveEnableBtn").addEventListener("click", handleDisplayFormEnable);
-      ["displayTemplateType", "displayTemplateName", "displayTemplateSort", "displayPlacementScope", "displayTargetId", "displayEffectiveTime"].forEach(id => {
+      ["displayTemplateType", "displayTemplateName", "displayTemplateSort", "displayPlacementScope", "displayTargetId", "displayStartTime", "displayEndTime"].forEach(id => {
         const eventName = id === "displayTemplateType" || id === "displayPlacementScope" ? "change" : "input";
         document.getElementById(id).addEventListener(eventName, () => {
           updateDisplayTargetFields(id === "displayTemplateType" || id === "displayPlacementScope");
@@ -3328,7 +3414,7 @@
         const matchState = state === "全部" || p.state === state;
         const matchDelivery = delivery === "全部" || normalizeDelivery(p.delivery) === delivery;
         const matchInternal = !internal || p.internalName.includes(internal);
-        const matchCreated = matchesTimeRange(p.createdAt || p.updatedAt || "", created);
+        const matchCreated = !created || String(p.createdAt || p.updatedAt || "").includes(created);
         return matchName && matchSpu && matchType && matchState && matchDelivery && matchInternal && matchCreated;
       });
       renderTable();
@@ -3461,7 +3547,7 @@
           <td>${templateAttrSummary(t)}</td>
           <td>${t.attrs.length}</td>
           <td>${stateTag(t.state)}</td>
-          <td>${templateReferenceCount(t) > 0 ? `<span class="tag orange">${templateReferenceCount(t)}</span>` : "0"}</td>
+          <td>${t.refCount > 0 ? `<span class="tag orange">${t.refCount}</span>` : "0"}</td>
           <td>${t.createdAt || t.updatedAt}</td>
           <td>${lastOperatorFromLogs(t.logs, t.creator)}</td>
           <td><div class="action-list">${templateActionButtons(t)}</div></td>
@@ -3472,11 +3558,9 @@
 
     function templateActionButtons(t) {
       const buttons = [
-        `<button class="btn text" data-template-action="view" data-template-id="${t.id}">查看</button>`
+        `<button class="btn text" data-template-action="view" data-template-id="${t.id}">查看</button>`,
+        `<button class="btn text" data-template-action="edit" data-template-id="${t.id}">编辑</button>`
       ];
-      if (isEditableLifecycleState(t.state)) {
-        buttons.push(`<button class="btn text" data-template-action="edit" data-template-id="${t.id}">编辑</button>`);
-      }
       if (t.state === "草稿") {
         buttons.push(`<button class="btn text" data-template-action="enable" data-template-id="${t.id}">上架</button>`);
         buttons.push(`<button class="btn text" data-template-action="delete" data-template-id="${t.id}">删除</button>`);
@@ -3493,10 +3577,7 @@
       const template = attributeTemplates.find(t => t.id === id);
       selectedTemplate = template;
       if (action === "view") openTemplateDetail(template);
-      if (action === "edit") {
-        if (!isEditableLifecycleState(template?.state)) return toast("仅草稿或下架状态的商品属性模板允许编辑。");
-        openTemplateForm("edit", template);
-      }
+      if (action === "edit") openTemplateForm("edit", template);
       if (action === "enable") handleTemplateListEnable(template);
       if (action === "disable") openTemplateDisableModal(template);
       if (action === "delete") openTemplateDeleteModal(template);
@@ -3508,7 +3589,7 @@
         ${detailSection("基础信息", infoGrid([
           ["模板 ID", template.id], ["模板名称", template.name], ["属性模板类型", templateScopeText(template.scope)], ["模板状态", template.state],
           ["绑定商品类型", template.type],
-          ["引用商品数", refs.length], ["创建人", template.creator], ["创建时间", template.createdAt || template.updatedAt], ["备注", template.remark]
+          ["引用商品数", template.refCount], ["创建人", template.creator], ["创建时间", template.createdAt || template.updatedAt], ["备注", template.remark]
         ]))}
         ${detailSection("属性项列表", templateAttrReadonlyTable(template.attrs))}
         ${detailSection("被引用商品", refs.length ? referencedProductTable(refs) : `<div class="empty">暂无商品引用该模板。</div>`)}
@@ -3590,17 +3671,12 @@
     }
 
     function openTemplateForm(mode, template) {
-      if (mode === "edit" && !isEditableLifecycleState(template?.state)) {
-        return toast("仅草稿或下架状态的商品属性模板允许编辑。");
-      }
       templateMode = mode;
       editingTemplate = template || null;
       hideAllPages();
       document.getElementById("templateFormPage").style.display = "block";
       setActiveMenu("商品属性模板");
       document.getElementById("templateFormTitle").textContent = mode === "edit" ? `编辑属性模板 - ${template.name}` : "新建属性模板";
-      document.getElementById("templateSaveDraftBtn").textContent = mode === "edit" ? "保存修改" : "保存草稿";
-      document.getElementById("templateSaveEnableBtn").textContent = mode === "edit" && template?.state === "下架" ? "保存并重新上架" : "保存并上架";
       document.getElementById("tmplName").value = template?.name || "";
       document.getElementById("tmplScope").value = templateScopeText(template?.scope || "SKU");
       document.getElementById("tmplId").value = mode === "edit" ? template.id : "新建后生成";
@@ -3613,9 +3689,7 @@
       updateTemplateFormTypes(false);
       if (mode === "edit") document.getElementById("tmplType").value = template.type;
       if (mode === "new") syncTemplateFormDefaults();
-      templateAttrRows = template
-        ? cloneData(template.attrs).map(attr => ({ ...attr, _persisted: true }))
-        : cloneData((normalizeTemplateScope(valueOf("tmplScope")) === "SPU" ? spuTemplateExamples : templateExamples)[valueOf("tmplType")] || []).map(attr => ({ ...attr, _persisted: false }));
+      templateAttrRows = template ? cloneData(template.attrs) : cloneData((normalizeTemplateScope(valueOf("tmplScope")) === "SPU" ? spuTemplateExamples : templateExamples)[valueOf("tmplType")] || []);
       renderTemplateAttrRows();
       window.scrollTo(0,0);
     }
@@ -3634,11 +3708,11 @@
       templateAttrRows = templateAttrRows.map((row, index) => ({ ...row, code: row.code || nextTemplateAttrCode(index), valueType: normalizeTemplateValueType(row.valueType) }));
       body.innerHTML = templateAttrRows.map((row, index) => `
         <tr>
-          <td><input class="mini-input" data-tmpl-attr="${index}" data-field="name" value="${row.name || ""}" ${row._persisted ? "disabled" : ""}></td>
-          <td><select class="mini-input" data-tmpl-attr="${index}" data-field="valueType" ${row._persisted ? "disabled" : ""}><option ${row.valueType === "文本" ? "selected" : ""}>文本</option><option ${row.valueType === "枚举" ? "selected" : ""}>枚举</option></select></td>
-          <td><select class="mini-input" data-tmpl-attr="${index}" data-field="required" ${row._persisted ? "disabled" : ""}><option value="true" ${row.required !== false ? "selected" : ""}>必填</option><option value="false" ${row.required === false ? "selected" : ""}>非必填</option></select></td>
+          <td><input class="mini-input" data-tmpl-attr="${index}" data-field="name" value="${row.name || ""}"></td>
+          <td><select class="mini-input" data-tmpl-attr="${index}" data-field="valueType"><option ${row.valueType === "文本" ? "selected" : ""}>文本</option><option ${row.valueType === "枚举" ? "selected" : ""}>枚举</option></select></td>
+          <td><select class="mini-input" data-tmpl-attr="${index}" data-field="required"><option value="true" ${row.required !== false ? "selected" : ""}>必填</option><option value="false" ${row.required === false ? "selected" : ""}>非必填</option></select></td>
           <td>${templateOptionInputHtml(row, index)}</td>
-          <td><div class="action-list">${row._persisted ? "" : `<button class="btn text" data-attr-copy="${index}">复制</button>`}<button class="btn text" data-attr-delete="${index}">删除</button></div></td>
+          <td><div class="action-list"><button class="btn text" data-attr-copy="${index}">复制</button><button class="btn text" data-attr-delete="${index}">删除</button></div></td>
         </tr>
       `).join("");
       body.querySelectorAll("[data-tmpl-attr]").forEach(el => el.addEventListener("input", updateTemplateAttrFromInput));
@@ -3661,7 +3735,6 @@
       const index = Number(e.target.dataset.tmplAttr);
       const field = e.target.dataset.field;
       if (!templateAttrRows[index]) return;
-      if (templateAttrRows[index]._persisted) return toast("已保存的属性项不可修改，只能删除后新增。");
       templateAttrRows[index][field] = field === "required" ? e.target.value === "true" : field === "valueType" ? normalizeTemplateValueType(e.target.value) : e.target.value;
       if (field === "valueType") {
         if (e.target.value !== "枚举") templateAttrRows[index].options = "";
@@ -3673,7 +3746,6 @@
 
     function setTemplateOptions(index, values) {
       if (!templateAttrRows[index]) return;
-      if (templateAttrRows[index]._persisted) return;
       templateAttrRows[index].options = [...new Set(values.map(item => String(item).trim()).filter(Boolean))].join("、");
     }
 
@@ -3713,7 +3785,6 @@
     function removeTemplateOption(event) {
       event.stopPropagation();
       const [index, chipIndex] = event.currentTarget.dataset.removeTemplateOption.split(":").map(Number);
-      if (templateAttrRows[index]?._persisted) return toast("已保存属性项的枚举值不可修改，只能删除整个属性项。");
       const values = optionChipValues(templateAttrRows[index]?.options);
       values.splice(chipIndex, 1);
       setTemplateOptions(index, values);
@@ -3732,13 +3803,12 @@
     }
 
     function addTemplateAttrRow() {
-      templateAttrRows.push({ code: nextTemplateAttrCode(), name: "", valueType: "枚举", required: true, options: "", desc: "", _persisted: false });
+      templateAttrRows.push({ code: nextTemplateAttrCode(), name: "", valueType: "枚举", required: true, options: "", desc: "" });
       renderTemplateAttrRows();
     }
 
     function fillTemplateAttrExample() {
-      if (templateMode === "edit") return toast("编辑模板时不可覆盖已保存属性项，请使用新增或删除操作。");
-      templateAttrRows = cloneData((normalizeTemplateScope(valueOf("tmplScope")) === "SPU" ? spuTemplateExamples : templateExamples)[valueOf("tmplType")] || []).map(attr => ({ ...attr, _persisted: false }));
+      templateAttrRows = cloneData((normalizeTemplateScope(valueOf("tmplScope")) === "SPU" ? spuTemplateExamples : templateExamples)[valueOf("tmplType")] || []);
       renderTemplateAttrRows();
       toast("已按当前商品类型填充示例属性项。");
     }
@@ -3750,7 +3820,6 @@
     }
 
     function copyTemplateAttrRow(index) {
-      if (templateAttrRows[index]?._persisted) return toast("已保存的属性项不可复制或修改，只能删除。");
       const copy = cloneData(templateAttrRows[index]);
       copy.code = `${copy.code}_copy`;
       copy.name = `${copy.name}副本`;
@@ -3784,7 +3853,7 @@
     }
 
     function cleanTemplateAttrs(attrs) {
-      return cloneData(attrs).map(({ sort, _persisted, ...attr }) => attr);
+      return cloneData(attrs).map(({ sort, ...attr }) => attr);
     }
 
     function buildTemplateFromForm(state) {
@@ -3852,9 +3921,8 @@
         toast("请先补充模板名称、绑定商品类型和至少 1 个属性项。");
         return;
       }
-      const targetState = editingTemplate?.state === "下架" ? "下架" : "草稿";
-      upsertTemplateFromForm(targetState);
-      toast(editingTemplate ? "模板修改已保存，状态保持不变。" : "模板草稿已保存。");
+      upsertTemplateFromForm("草稿");
+      toast(editingTemplate ? "模板草稿已更新。" : "模板草稿已保存。");
     }
 
     function upsertTemplateFromForm(state) {
@@ -3902,9 +3970,7 @@
       }
       openEnableConfirm({
         title: "确认上架属性模板",
-        message: editingTemplate?.state === "下架"
-          ? "重新上架后不会自动恢复此前的商品关联；存量商品需先下架，再进入编辑页重新配置属性值并保存。是否确认上架？"
-          : "上架后，商品新建 / 编辑页可以引用该模板生成属性配置。是否确认上架？",
+        message: "上架后，商品新建 / 编辑页可以引用该模板生成属性配置。是否确认上架？",
         confirmText: "确认上架",
         onConfirm: () => {
           upsertTemplateFromForm("上架");
@@ -3921,9 +3987,7 @@
       }
       openEnableConfirm({
         title: "确认上架属性模板",
-        message: template.state === "下架"
-          ? "重新上架后不会自动恢复此前的商品关联；存量商品需先下架，再进入编辑页重新配置属性值并保存。是否确认上架？"
-          : "上架后，商品新建 / 编辑页可以引用该模板生成属性配置。是否确认上架？",
+        message: "上架后，商品新建 / 编辑页可以引用该模板生成属性配置。是否确认上架？",
         confirmText: "确认上架",
         onConfirm: () => {
           const target = attributeTemplates.find(t => t.id === template.id);
@@ -3934,49 +3998,43 @@
           target.logs.unshift({ time: nowText(), user: "平台运营", type: "上架模板", object: target.id, before, after: "上架", remark: "模板上架后可被商品新建 / 编辑页引用" });
           renderTemplateTable();
           renderTemplateStats();
-          toast(before === "下架" ? "模板已重新上架，历史商品不会自动恢复关联。" : "模板已上架。");
+          toast("模板已上架。");
         }
       });
     }
 
     function openTemplateDisableModal(template) {
       pendingTemplateAction = { template, fromForm: false };
-      const count = templateReferenceCount(template);
-      document.getElementById("templateDisableMessage").textContent = `当前共有 ${count} 个商品关联该模板。下架后将立即自动解绑，这些商品的 ${normalizeTemplateScope(template.scope)} 属性字段和值将移除且不可见；重新上架模板不会自动恢复关联。`;
       openModal("templateDisableModal");
     }
 
     function confirmTemplateDisable() {
       const template = attributeTemplates.find(t => t.id === pendingTemplateAction.template.id);
-      const unboundCount = unbindTemplateFromProducts(template);
       template.state = "下架";
       template.updatedAt = nowText();
       template.logs.unshift({ time: nowText(), user: "平台运营", type: "下架模板", object: template.id, before: "上架", after: "下架", remark: "列表操作下架" });
       closeModal("templateDisableModal");
       renderTemplateTable();
       renderTemplateStats();
-      toast(`模板已下架，已自动解绑 ${unboundCount} 个商品。`);
+      toast("模板已下架。");
     }
 
     function openTemplateDeleteModal(template) {
       if (!["草稿", "下架"].includes(template.state)) return toast("仅草稿或下架状态的属性模板允许删除。");
       pendingTemplateAction = { template, fromForm: false };
       document.getElementById("templateDeleteReason").value = "";
-      const count = templateReferenceCount(template);
-      document.getElementById("templateDeleteMessage").textContent = `删除后模板将从常规列表移除，并自动解绑当前关联的 ${count} 个商品；商品中的对应属性字段和值将移除且不可见。`;
       openModal("templateDeleteModal");
     }
 
     function confirmTemplateDelete() {
       if (!["草稿", "下架"].includes(pendingTemplateAction?.template?.state)) return toast("仅草稿或下架状态的属性模板允许删除。");
       const template = pendingTemplateAction.template;
-      const unboundCount = unbindTemplateFromProducts(template);
       attributeTemplates = attributeTemplates.filter(t => t.id !== template.id);
       visibleTemplates = visibleTemplates.filter(t => t.id !== template.id);
       closeModal("templateDeleteModal");
       renderTemplateTable();
       renderTemplateStats();
-      toast(`属性模板已删除，已自动解绑 ${unboundCount} 个商品。`);
+      toast("属性模板已删除。");
     }
 
     function openTemplateCopyModal(template) {
@@ -4023,11 +4081,11 @@
       return {
         id,
         templateId: id,
-        templateType: normalizeDisplayTemplateType(partition?.templateType),
+        templateType: partition?.templateType || "全局模板",
         templateName: partition?.name || id,
         sortWeight: partition?.sortWeight || 1,
         placementScope: partition?.placementScope || "全部社区",
-        targetType: partition?.targetType || "COMMUNITY",
+        targetType: partition?.targetType || "GLOBAL",
         targetId: partition?.targetId || "",
         partitionId: id,
         partitionName: partition?.name || id,
@@ -4041,7 +4099,7 @@
         products: spus.map((spu, index) => {
           const subTemplateId = subTemplates.length ? subTemplates[index % subTemplates.length].id : "";
           const sort = subTemplates.length ? Math.floor(index / subTemplates.length) + 1 : index + 1;
-          return { spu, subTemplateId, sort };
+          return { spu, subTemplateId, sort, pinned: "否" };
         }),
         createdAt: nowText(),
         updatedAt: nowText(),
@@ -4069,27 +4127,35 @@
       return displayPartitions.find(item => item.id === id);
     }
 
-    function normalizeDisplayTemplateType(templateType) {
-      return ["全局模板", "游戏专区模板", "社区模板"].includes(templateType) ? "社区模板" : (templateType || "社区模板");
+    function existingGlobalDisplayConfig(excludeId = "") {
+      return displayConfigs.find(config => config.templateType === "全局模板" && config.id !== excludeId);
     }
 
     function defaultDisplayTemplateType() {
-      return "社区模板";
+      return existingGlobalDisplayConfig() ? "游戏专区模板" : "全局模板";
+    }
+
+    function displayTemplateTypeConflict(templateType, excludeId = "") {
+      if (templateType !== "全局模板") return null;
+      return existingGlobalDisplayConfig(excludeId);
     }
 
     function displayTargetType(templateType) {
-      return normalizeDisplayTemplateType(templateType) === "活动模板" ? "ACTIVITY" : "COMMUNITY";
+      if (templateType === "活动模板") return "ACTIVITY";
+      if (templateType === "游戏专区模板") return "COMMUNITY";
+      return "GLOBAL";
     }
 
     function displayPlacementScopeOptions(templateType) {
-      if (normalizeDisplayTemplateType(templateType) === "活动模板") return ["活动"];
-      return ["全部社区", "游戏社区", "战队社区", "自定义社区"];
+      if (templateType === "活动模板") return ["活动"];
+      if (templateType === "游戏专区模板") return ["游戏社区", "战队社区", "自定义社区"];
+      return ["全部社区"];
     }
 
     function normalizedDisplayPlacementScope(config = {}) {
       if (config.placementScope) return config.placementScope;
-      if (normalizeDisplayTemplateType(config.templateType) === "活动模板") return "活动";
-      if (config.communityBinding || config.communityId) return config.communityBinding || "自定义社区";
+      if (config.templateType === "活动模板") return "活动";
+      if (config.templateType === "游戏专区模板") return config.communityBinding || (config.communityId ? "自定义社区" : "游戏社区");
       return "全部社区";
     }
 
@@ -4100,17 +4166,9 @@
     function displayTemplateScopeText(config) {
       const placementScope = normalizedDisplayPlacementScope(config);
       const targetId = normalizedDisplayTargetId(config);
-      if (normalizeDisplayTemplateType(config.templateType) === "活动模板") return targetId ? `活动：${targetId}` : "活动 / 活动 ID 未填写";
-      if (placementScope === "自定义社区") return targetId ? `自定义社区：${targetId}` : "自定义社区 / 社区 ID 未填写";
+      if (config.templateType === "活动模板") return targetId ? `活动：${targetId}` : "活动 / 活动 ID 未填写";
+      if (config.templateType === "游戏专区模板" && placementScope === "自定义社区") return targetId ? `自定义社区：${targetId}` : "自定义社区 / 社区 ID 未填写";
       return placementScope;
-    }
-
-    function productDisplayScopeHtml(config) {
-      const placementScope = normalizedDisplayPlacementScope(config);
-      if (normalizeDisplayTemplateType(config.templateType) === "社区模板" && placementScope === "自定义社区") {
-        return `<div class="main-name">自定义社区</div><div class="minor">社区 ID：${normalizedDisplayTargetId(config) || "未填写"}</div>`;
-      }
-      return displayTemplateScopeText(config);
     }
 
     function uniqueDisplayTemplateId(prefix) {
@@ -4124,7 +4182,7 @@
     }
 
     function generateDisplayTemplateId(templateType) {
-      const prefix = normalizeDisplayTemplateType(templateType) === "活动模板" ? "TPL_ACTIVITY" : "TPL_COMMUNITY";
+      const prefix = templateType === "活动模板" ? "TPL_ACTIVITY" : templateType === "游戏专区模板" ? "TPL_GAME" : "TPL_GLOBAL";
       return uniqueDisplayTemplateId(prefix);
     }
 
@@ -4135,28 +4193,6 @@
     function parseDisplayTime(text) {
       if (!text) return null;
       return new Date(String(text).replace(/-/g, "/"));
-    }
-
-    function splitTimeRange(text) {
-      const parts = String(text || "").trim().split(/\s+-\s+/);
-      return {
-        startTime: parts.length === 2 ? parts[0].trim() : "",
-        endTime: parts.length === 2 ? parts[1].trim() : ""
-      };
-    }
-
-    function joinTimeRange(startTime, endTime) {
-      return startTime && endTime ? `${startTime} - ${endTime}` : "";
-    }
-
-    function matchesTimeRange(timestamp, rangeText) {
-      if (!rangeText) return true;
-      const range = splitTimeRange(rangeText);
-      const target = parseDisplayTime(timestamp)?.getTime();
-      const start = parseDisplayTime(range.startTime)?.getTime();
-      const end = parseDisplayTime(range.endTime)?.getTime();
-      if (![target, start, end].every(Number.isFinite)) return false;
-      return target >= start && target <= end;
     }
 
     function displayTimeText(config) {
@@ -4224,7 +4260,7 @@
         return `<tr>
           <td><b>${config.id}</b></td>
           <td><div class="main-name">${config.templateName || config.partitionName || config.id}</div></td>
-          <td>${normalizeDisplayTemplateType(config.templateType)}</td>
+          <td>${config.templateType || "全局模板"}</td>
           <td>${displayTemplateScopeText(config)}</td>
           <td>${config.sortWeight || "-"}</td>
           <td>${stateTag(config.state)}</td>
@@ -4264,7 +4300,7 @@
       visibleDisplayConfigs = displayConfigs.filter(config => {
         return (!name || (config.templateName || "").includes(name))
           && (!id || config.id.includes(id))
-          && (templateType === "全部" || normalizeDisplayTemplateType(config.templateType) === templateType)
+          && (templateType === "全部" || config.templateType === templateType)
           && (state === "全部" || config.state === state);
       });
       renderDisplayTable();
@@ -4282,18 +4318,19 @@
 
     function openDisplayDetail(config) {
       const basicRows = [
-        ["模板 ID", config.id], ["模板类型", normalizeDisplayTemplateType(config.templateType)],
+        ["模板 ID", config.id], ["模板类型", config.templateType || "全局模板"],
         ["模板名称", config.templateName || "-"], ["模板排序值", config.sortWeight || "-"],
         ["投放范围", displayTemplateScopeText(config)]
       ];
-      if (normalizeDisplayTemplateType(config.templateType) === "社区模板") {
+      if (config.templateType === "游戏专区模板") {
         if (normalizedDisplayPlacementScope(config) === "自定义社区") basicRows.push(["社区 ID", normalizedDisplayTargetId(config) || "-"]);
       }
-      if (normalizeDisplayTemplateType(config.templateType) === "活动模板") basicRows.push(["活动 ID", normalizedDisplayTargetId(config) || "-"]);
+      if (config.templateType === "活动模板") basicRows.push(["活动 ID", normalizedDisplayTargetId(config) || "-"]);
       document.getElementById("displayDetailBody").innerHTML = `
-        ${detailSection("模板基础信息", infoGrid(basicRows) + `<div class="hint-text">模板名称用于对应投放页面的商品分区；社区模板按投放范围路由到对应社区，活动模板通过活动 ID 路由。</div>`)}
+        ${detailSection("模板基础信息", infoGrid(basicRows) + `<div class="hint-text">模板名称用于对应投放页面的商品分区；全局模板覆盖全部社区，游戏专区模板按社区范围投放，活动模板通过活动 ID 路由。</div>`)}
         ${detailSection("投放配置", infoGrid([
-          ["配置状态", config.state], ["生效时间", displayTimeText(config)], ["投放商品数", uniqueDisplayProductCount(config.products)],
+          ["配置状态", config.state], ["生效开始时间", config.startTime || "-"],
+          ["生效结束时间", config.endTime || "-"], ["投放商品数", uniqueDisplayProductCount(config.products)],
           ["创建时间", config.createdAt || config.updatedAt], ["备注", config.remark || "-"]
         ]) + `<div class="hint-text">投放商品数按当前一级模板下的 SPU ID 去重统计；同一商品投放到多个二级模板时只计 1 个。</div>`)}
         ${detailSection("二级模板", displaySubTemplateReadonlyTable(config.subTemplates || []))}
@@ -4342,7 +4379,7 @@
     function displayProductTable(rows, config, editable, options = {}) {
       if (!rows.length) return `<div class="empty">当前暂无投放商品</div>`;
       const showSubTemplate = options.showSubTemplate !== false;
-      return `<div class="table-wrap"><table class="display-product-table"><thead><tr><th>商品ID</th><th>商品信息</th><th>商品类型</th><th>SKU 摘要</th><th>履约方式</th><th>商品状态</th>${showSubTemplate ? "<th>所属二级模板</th>" : ""}<th>投放排序</th>${editable ? "<th>最后操作人</th><th>操作</th>" : ""}</tr></thead><tbody>${rows.map((row, index) => displayProductRowHtml(row, config, editable, index, { showSubTemplate })).join("")}</tbody></table></div>`;
+      return `<div class="table-wrap"><table class="display-product-table"><thead><tr><th>商品ID</th><th>商品信息</th><th>商品类型</th><th>SKU 摘要</th><th>履约方式</th><th>商品状态</th>${showSubTemplate ? "<th>所属二级模板</th>" : ""}<th>投放排序</th><th>是否置顶</th>${editable ? "<th>最后操作人</th><th>操作</th>" : ""}</tr></thead><tbody>${rows.map((row, index) => displayProductRowHtml(row, config, editable, index, { showSubTemplate })).join("")}</tbody></table></div>`;
     }
 
     function displayProductRowHtml(row, config, editable, index, options = {}) {
@@ -4354,6 +4391,7 @@
         <td>${deliveryTag(product.delivery)}</td><td>${stateTag(product.state)}</td>
         ${showSubTemplate ? `<td>${displaySubTemplateName(row.subTemplateId || "", config)}</td>` : ""}
         <td>${editable ? `<input class="mini-input" type="number" data-display-row="${index}" data-display-field="sort" value="${row.sort}">` : row.sort}</td>
+        <td>${editable ? `<select class="mini-input" data-display-row="${index}" data-display-field="pinned"><option ${row.pinned === "否" ? "selected" : ""}>否</option><option ${row.pinned === "是" ? "selected" : ""}>是</option></select>` : row.pinned}</td>
         ${editable ? `<td>${lastOperatorFromLogs(product.logs)}</td>` : ""}
         ${editable ? `<td><button class="btn text danger" data-remove-display-row="${index}">移除</button></td>` : ""}
       </tr>`;
@@ -4474,7 +4512,7 @@
       document.getElementById("displayFormPage").style.display = "block";
       setActiveMenu("商品投放管理");
       document.getElementById("displayFormTitle").textContent = mode === "edit" ? `编辑投放配置 - ${config.templateName || config.id}` : "新建投放配置";
-      document.getElementById("displayTemplateType").value = normalizeDisplayTemplateType(config?.templateType || defaultDisplayTemplateType());
+      document.getElementById("displayTemplateType").value = config?.templateType || defaultDisplayTemplateType();
       document.getElementById("displayTemplateName").value = config?.templateName || "";
       document.getElementById("displayTemplateId").value = mode === "edit" ? config.id : "新建后生成";
       document.getElementById("displayTemplateSort").value = config?.sortWeight || "";
@@ -4485,7 +4523,8 @@
       document.getElementById("displayTargetId").value = normalizedDisplayTargetId(config || {});
       updateDisplayTargetFields(false);
       document.getElementById("displayConfigState").value = config?.state || "草稿";
-      document.getElementById("displayEffectiveTime").value = joinTimeRange(config?.startTime, config?.endTime);
+      document.getElementById("displayStartTime").value = config?.startTime || "";
+      document.getElementById("displayEndTime").value = config?.endTime || "";
       document.getElementById("displayRemark").value = config?.remark || "";
       displayProductRows = cloneData(config?.products || []);
       displaySubTemplateRows = cloneData(config?.subTemplates || []);
@@ -4503,7 +4542,7 @@
     }
 
     function updateDisplayTargetFields(resetTarget = false) {
-      const templateType = normalizeDisplayTemplateType(valueOf("displayTemplateType"));
+      const templateType = valueOf("displayTemplateType") || "全局模板";
       const scope = document.getElementById("displayPlacementScope");
       const targetField = document.getElementById("displayTargetIdField");
       const targetLabel = document.getElementById("displayTargetIdLabel");
@@ -4512,9 +4551,9 @@
       const currentScope = scope.value;
       scope.innerHTML = options.map(option => `<option>${option}</option>`).join("");
       scope.value = options.includes(currentScope) ? currentScope : options[0];
-      scope.disabled = templateType === "活动模板";
+      scope.disabled = templateType !== "游戏专区模板";
 
-      const needsCommunityId = templateType === "社区模板" && scope.value === "自定义社区";
+      const needsCommunityId = templateType === "游戏专区模板" && scope.value === "自定义社区";
       const needsActivityId = templateType === "活动模板";
       const needsTargetId = needsCommunityId || needsActivityId;
       targetField.style.display = needsTargetId ? "" : "none";
@@ -4527,8 +4566,7 @@
 
     function buildDisplayFormConfig(state = "草稿") {
       const id = editingDisplayConfig?.id || generateDisplayTemplateId(valueOf("displayTemplateType"));
-      const templateType = normalizeDisplayTemplateType(valueOf("displayTemplateType"));
-      const effectiveTime = splitTimeRange(valueOf("displayEffectiveTime"));
+      const templateType = valueOf("displayTemplateType") || "全局模板";
       return {
         id,
         templateId: id,
@@ -4541,8 +4579,8 @@
         partitionId: id,
         partitionName: valueOf("displayTemplateName"),
         state,
-        startTime: effectiveTime.startTime,
-        endTime: effectiveTime.endTime,
+        startTime: valueOf("displayStartTime"),
+        endTime: valueOf("displayEndTime"),
         sortRule: "手动排序",
         remark: valueOf("displayRemark"),
         subTemplates: cloneData(displaySubTemplateRows),
@@ -4559,7 +4597,7 @@
       const entries = displayActiveProductEntries();
       document.getElementById("displayProductTbody").innerHTML = entries.length
         ? entries.map(({ row, index }) => displayProductRowHtml(row, config, true, index, { showSubTemplate: false })).join("")
-        : `<tr><td colspan="9"><div class="empty">当前模板暂无投放商品，可点击添加商品维护当前模板的投放关系。</div></td></tr>`;
+        : `<tr><td colspan="10"><div class="empty">当前模板暂无投放商品，可点击添加商品维护当前模板的投放关系。</div></td></tr>`;
       document.querySelectorAll("[data-display-row]").forEach(el => el.addEventListener("input", updateDisplayProductRow));
       document.querySelectorAll("select[data-display-row]").forEach(el => el.addEventListener("change", updateDisplayProductRow));
       document.querySelectorAll("[data-remove-display-row]").forEach(btn => btn.addEventListener("click", () => removeProductFromDisplay(Number(btn.dataset.removeDisplayRow))));
@@ -4620,7 +4658,7 @@
           <td><input type="checkbox" data-picker-select="${product.spu}" ${isInCurrentTemplate ? "disabled" : ""} aria-label="选择 ${product.name}"></td>
           <td><b>${product.spu}</b></td><td>${productInfoHtml(product)}</td><td>${product.type}</td><td>${product.skuSummary}</td>
           <td>${deliveryTag(product.delivery)}</td><td>${stateTag(product.state)}</td>
-          <td>${productExposureText(product)}</td><td>${product.createdAt || product.updatedAt}</td>
+          <td>${product.exposure}</td><td>${product.createdAt || product.updatedAt}</td>
           <td>${lastOperatorFromLogs(product.logs)}</td>
           <td>${isInCurrentTemplate ? `<button class="btn text danger" data-unpick-spu="${product.spu}">移除</button>` : `<button class="btn text" data-pick-spu="${product.spu}">添加</button>`}</td>
         </tr>`;
@@ -4682,7 +4720,7 @@
           failures.push(`${product.name} 已在当前模板中投放`);
           return;
         }
-        displayProductRows.push({ spu, subTemplateId, sort: nextDisplayProductSort(subTemplateId) });
+        displayProductRows.push({ spu, subTemplateId, sort: nextDisplayProductSort(subTemplateId), pinned: "否" });
         added += 1;
       });
       if (added > 0) {
@@ -4767,9 +4805,11 @@
     function validateDisplayDraft() {
       const errors = [];
       const templateType = valueOf("displayTemplateType");
-      if (!templateType) errors.push({ item: "模板类型", problem: "未选择模板类型", suggestion: "请选择社区模板或活动模板" });
+      if (!templateType) errors.push({ item: "模板类型", problem: "未选择模板类型", suggestion: "请选择全局模板、游戏专区模板或活动模板" });
+      const globalConflict = displayTemplateTypeConflict(templateType, editingDisplayConfig?.id);
+      if (globalConflict) errors.push({ item: "全局模板唯一性", problem: `已存在全局模板：${globalConflict.templateName || globalConflict.id}`, suggestion: "请编辑已有全局模板，或改为游戏专区模板 / 活动模板" });
       if (!valueOf("displayPlacementScope")) errors.push({ item: "投放范围", problem: "投放范围缺失", suggestion: "请重新选择模板类型" });
-      if (templateType === "社区模板" && valueOf("displayPlacementScope") === "自定义社区" && !valueOf("displayTargetId")) errors.push({ item: "社区 ID", problem: "自定义社区缺少社区 ID", suggestion: "请填写社区 ID" });
+      if (templateType === "游戏专区模板" && valueOf("displayPlacementScope") === "自定义社区" && !valueOf("displayTargetId")) errors.push({ item: "社区 ID", problem: "自定义社区缺少社区 ID", suggestion: "请填写社区 ID" });
       if (templateType === "活动模板" && !valueOf("displayTargetId")) errors.push({ item: "活动 ID", problem: "活动模板缺少活动 ID", suggestion: "请填写活动 ID" });
       if (!valueOf("displayTemplateName")) errors.push({ item: "模板名称", problem: "未填写模板名称", suggestion: "请填写投放分区名称" });
       if (!/^[1-9]\d*$/.test(valueOf("displayTemplateSort"))) errors.push({ item: "模板排序值", problem: "排序值缺失或格式错误", suggestion: "请填写正整数排序值" });
@@ -4779,11 +4819,13 @@
     function validateDisplayEnable(config, asChecks = false) {
       const errors = [];
       const add = (item, problem, suggestion, pass = false) => asChecks ? errors.push({ item, problem, suggestion, pass }) : (!pass && errors.push({ item, problem, suggestion }));
-      add("模板类型", "未选择模板类型", "请选择社区模板或活动模板", !!config.templateType);
+      add("模板类型", "未选择模板类型", "请选择全局模板、游戏专区模板或活动模板", !!config.templateType);
+      const globalConflict = displayTemplateTypeConflict(config.templateType, config.id);
+      add("全局模板唯一性", globalConflict ? `已存在全局模板：${globalConflict.templateName || globalConflict.id}` : "全局模板重复", "请编辑已有全局模板，或改为游戏专区模板 / 活动模板", !globalConflict);
       add("模板名称", "模板名称缺失", "请填写投放分区名称", !!config.templateName);
       add("模板排序值", "排序值缺失或格式错误", "请填写正整数排序值", /^[1-9]\d*$/.test(String(config.sortWeight)));
       add("投放范围", "投放范围缺失", "请重新选择模板类型", !!config.placementScope);
-      if (normalizeDisplayTemplateType(config.templateType) === "社区模板" && config.placementScope === "自定义社区") add("社区 ID", "自定义社区缺少社区 ID", "请填写社区 ID，或改为全部社区 / 游戏社区 / 战队社区", !!config.targetId);
+      if (config.templateType === "游戏专区模板" && config.placementScope === "自定义社区") add("社区 ID", "自定义社区缺少社区 ID", "请填写社区 ID，或改为游戏社区 / 战队社区", !!config.targetId);
       if (config.templateType === "活动模板") add("活动 ID", "活动模板缺少活动 ID", "请填写活动 ID", !!config.targetId);
       const subTemplateNames = (config.subTemplates || []).map(item => item.name).filter(Boolean);
       const duplicateSubName = subTemplateNames.some((name, index) => subTemplateNames.indexOf(name) !== index);
@@ -4829,10 +4871,11 @@
 
     function highlightDisplayInvalidFields(config) {
       if (!config.templateType) markInvalidControl("displayTemplateType");
+      if (displayTemplateTypeConflict(config.templateType, config.id)) markInvalidControl("displayTemplateType");
       if (!config.templateName) markInvalidControl("displayTemplateName");
       if (!/^[1-9]\d*$/.test(String(config.sortWeight))) markInvalidControl("displayTemplateSort");
       if (!config.placementScope) markInvalidControl("displayPlacementScope");
-      if (normalizeDisplayTemplateType(config.templateType) === "社区模板" && config.placementScope === "自定义社区" && !config.targetId) markInvalidControl("displayTargetId");
+      if (config.templateType === "游戏专区模板" && config.placementScope === "自定义社区" && !config.targetId) markInvalidControl("displayTargetId");
       if (config.templateType === "活动模板" && !config.targetId) markInvalidControl("displayTargetId");
       config.subTemplates.forEach((row, index) => {
         if (!row.name) markInvalidElement(`[data-display-sub-template="${index}"][data-field="name"]`);
@@ -4842,9 +4885,11 @@
       config.subTemplates.forEach((row, index) => {
         if (row.name && names.indexOf(row.name) !== names.lastIndexOf(row.name)) markInvalidElement(`[data-display-sub-template="${index}"][data-field="name"]`);
       });
-      if (!config.startTime || !config.endTime) markInvalidControl("displayEffectiveTime");
+      if (!config.startTime) markInvalidControl("displayStartTime");
+      if (!config.endTime) markInvalidControl("displayEndTime");
       if (config.startTime && config.endTime && parseDisplayTime(config.endTime) <= parseDisplayTime(config.startTime)) {
-        markInvalidControl("displayEffectiveTime");
+        markInvalidControl("displayStartTime");
+        markInvalidControl("displayEndTime");
       }
       if (!config.products.length) document.getElementById("displaySectionProducts")?.classList.add("invalid");
       config.products.forEach((row, index) => {
@@ -5007,7 +5052,6 @@
     }
 
     function inventorySortMetric(record, field) {
-      if (field === "createdAt") return Date.parse(String(record.createdAt || record.updatedAt || "").replace(" ", "T")) || 0;
       if (field === "todayRemaining") return inventorySortValue(record.todayRemaining, record);
       if (field === "warningThreshold") return numberValue(record.warningThreshold);
       return inventorySortValue(record[field], record);
@@ -5037,7 +5081,7 @@
       const labels = {
         totalStock: "总库存",
         availableStock: "可用库存",
-        deductedStock: "扣减库存",
+        lockedStock: "锁定库存",
       todayRemaining: "时段库存重置配置",
         warningThreshold: "安全库存阈值"
       };
@@ -5259,6 +5303,7 @@
       if (record.stockMode === "不限量") return "不限量";
       if (record.missingInit || record.totalStock === "" || record.totalStock === null || record.totalStock === undefined) return "售罄";
       if (numberValue(record.availableStock) <= 0) return "售罄";
+      if (cloneDailyReleases(record).length && numberValue(record.todayRemaining) <= 0) return "时段售罄";
       if (isInventoryBelowWarning(record)) return "低库存";
       return "正常";
     }
@@ -5288,8 +5333,8 @@
 
     function inventorySummaryFromRecord(record) {
       if (!record) return `<span class="tag orange">未配置</span>`;
-      if (record.stockMode === "不限量") return `不限量，已扣减 ${record.deductedStock}`;
-      return `可用 ${record.availableStock}，已扣减 ${record.deductedStock}`;
+      if (record.stockMode === "不限量") return `不限量，锁定 ${record.lockedStock}`;
+      return `可用 ${record.availableStock}，锁定 ${record.lockedStock}`;
     }
 
     function snapshotInventory(record) {
@@ -5310,10 +5355,9 @@
       return `FLOW-${String(inventoryFlowCounter++).padStart(6, "0")}`;
     }
 
-    function makeInventoryFlow(record, type, before, after, reason, bizNo = "", operator = "平台运营", time = nowText(), businessSource = "积分商城", businessSourceId = "") {
+    function makeInventoryFlow(record, type, before, after, reason, bizNo = "", operator = "平台运营", time = nowText(), businessSource = "积分商城") {
       const sku = getInventorySku(record);
       const flowType = normalizeInventoryFlowType(type, before, after);
-      const sourceId = businessSourceId || (businessSource === "积分商城" ? "POINTS_MALL" : "ACTIVITY_10001");
       return {
         flowId: makeFlowId(),
         inventoryId: record.inventoryId,
@@ -5322,7 +5366,6 @@
         skuId: record.skuId,
         skuText: skuSpecText(sku),
         businessSource,
-        businessSourceId: sourceId,
         type: flowType,
         changeQty: inventoryFlowChangeQuantity(before, after),
         before,
@@ -5354,8 +5397,8 @@
       return "入库流水";
     }
 
-    function addInventoryFlow(record, type, before, after, reason, bizNo = "", operator = "平台运营", businessSource = "积分商城", businessSourceId = "") {
-      inventoryFlows.unshift(makeInventoryFlow(record, type, before, after, reason, bizNo, operator, nowText(), businessSource, businessSourceId));
+    function addInventoryFlow(record, type, before, after, reason, bizNo = "", operator = "平台运营", businessSource = "积分商城") {
+      inventoryFlows.unshift(makeInventoryFlow(record, type, before, after, reason, bizNo, operator, nowText(), businessSource));
     }
 
     function seedInventoryFlows() {
@@ -5403,8 +5446,8 @@
         const cdkeyStatus = inventoryCdkeyStatus(record);
         record.stockState = calculateInventoryState(record);
         return `<tr>
-          <td><b>${record.skuId}</b></td>
-          <td>${record.spu}</td>
+          <td><b>${record.spu}</b></td>
+          <td>${record.skuId}</td>
           <td>${product ? productInfoHtml(product) : "-"}</td>
           <td>${product?.type || "-"}</td>
           <td>${skuSpecText(sku)}</td>
@@ -5412,7 +5455,7 @@
           <td>${record.stockMode}</td>
           <td>${inventoryNumberText(record.totalStock, record)}</td>
           <td>${inventoryNumberText(record.availableStock, record)}</td>
-          <td>${record.deductedStock}</td>
+          <td>${record.lockedStock}</td>
           <td>${inventoryDailyReleaseSummary(record)}</td>
           <td>${inventoryWarningText(record)}</td>
           <td>${inventoryStateTag(record.stockState)}</td>
@@ -5448,8 +5491,7 @@
 
     function applyInventoryFilters() {
       const productName = valueOf("inventoryFilterKeyword").toUpperCase();
-      const spuId = valueOf("inventoryFilterSpu").toUpperCase();
-      const skuId = valueOf("inventoryFilterSku").toUpperCase();
+      const spuSkuId = valueOf("inventoryFilterSku").toUpperCase();
       const type = valueOf("inventoryFilterType");
       const delivery = valueOf("inventoryFilterDelivery");
       const state = valueOf("inventoryFilterState");
@@ -5460,14 +5502,13 @@
         const sku = getInventorySku(record);
         const deliveryValue = normalizeDelivery(sku?.delivery || product?.delivery || "未配置");
         const matchName = !productName || product?.name?.toUpperCase().includes(productName);
-        const matchSpu = !spuId || record.spu.toUpperCase().includes(spuId);
-        const matchSku = !skuId || record.skuId.toUpperCase().includes(skuId);
+        const matchSpuSku = !spuSkuId || record.spu.toUpperCase().includes(spuSkuId) || record.skuId.toUpperCase().includes(spuSkuId);
         const matchType = type === "全部" || product?.type === type;
         const matchDelivery = delivery === "全部" || deliveryValue === delivery;
         const matchState = state === "全部" || calculateInventoryState(record) === state;
         const matchCdkey = cdkey === "全部" || inventoryCdkeyStatus(record) === cdkey;
-        const matchUpdated = matchesTimeRange(record.createdAt || record.updatedAt, updated);
-        return matchName && matchSpu && matchSku && matchType && matchDelivery && matchState && matchCdkey && matchUpdated;
+        const matchUpdated = !updated || String(record.createdAt || record.updatedAt).includes(updated);
+        return matchName && matchSpuSku && matchType && matchDelivery && matchState && matchCdkey && matchUpdated;
       });
       renderInventoryTable();
       renderInventoryStats();
@@ -5475,7 +5516,7 @@
     }
 
     function resetInventoryFilters() {
-      ["inventoryFilterKeyword", "inventoryFilterSpu", "inventoryFilterSku", "inventoryFilterUpdated"].forEach(id => document.getElementById(id).value = "");
+      ["inventoryFilterKeyword", "inventoryFilterSku", "inventoryFilterUpdated"].forEach(id => document.getElementById(id).value = "");
       ["inventoryFilterType", "inventoryFilterDelivery", "inventoryFilterState", "inventoryFilterCdkey"].forEach(id => document.getElementById(id).value = "全部");
       visibleInventoryRecords = [...inventoryRecords];
       renderInventoryTable();
@@ -5502,12 +5543,12 @@
         ]) + `<div class="hint-text">商品与 SKU 信息来自商品列表，库存列表只读展示，不维护商品基础信息、SKU 属性、履约方式和 CDKey 码池 ID。</div>`)}
         ${detailSection("库存主数据", infoGrid([
           ["库存模式", record.stockMode], ["总库存", inventoryNumberText(record.totalStock, record)],
-          ["可用库存", inventoryNumberText(record.availableStock, record)], ["扣减库存", record.deductedStock],
+          ["可用库存", inventoryNumberText(record.availableStock, record)], ["锁定库存", record.lockedStock],
           ["当前时段剩余库存", inventoryNumberText(record.todayRemaining, record)], ["时段库存重置配置", record.stockMode === "不限量" ? "不限量" : (dailyReleaseLines(record.dailyReleases).join("，") || "不限制")],
           ["安全库存阈值", inventoryWarningText(record)],
           ["库存状态", calculateInventoryState(record)], ["最近同步时间", record.lastSyncTime], ["创建时间", record.createdAt || record.updatedAt], ["备注", record.remark || "-"]
         ]) + cdkeyNotice + physicalNotice)}
-        ${detailSection("库存计算说明", `<div class="alert info">可用库存表示当前可兑换数量；扣减库存表示已完成库存扣减的累计数量。订单链路中的临时占用由系统内部处理，不作为运营维护字段。库存告警按可用库存 / 总库存的百分比判断。</div><div class="hint-text">商品是否前台投放由商品投放管理决定，库存列表只影响商品是否具备可兑换库存。</div>`)}
+        ${detailSection("库存计算说明", `<div class="alert info">可用库存用于兑换前锁定；锁定库存表示兑换流程中已占用但尚未最终扣减或释放的库存。库存告警按可用库存 / 总库存的百分比判断。</div><div class="hint-text">商品是否前台投放由商品投放管理决定，库存列表只影响商品是否具备可兑换库存。</div>`)}
         ${detailSection("最近库存流水", `${inventoryFlowTable(getInventoryFlows(record).slice(0, 5))}<div class="btn-row" style="margin-top:10px"><button class="btn" id="inventoryMoreFlowBtn">查看更多流水</button></div>`)}
       `;
       openDrawer("inventoryDetailDrawer");
@@ -5521,22 +5562,20 @@
       const product = getInventoryProduct(record);
       const sku = getInventorySku(record);
       const delivery = sku?.delivery || product?.delivery || "未配置";
-      const isCdkeyRecord = isCdkeyDelivery(delivery);
       document.getElementById("inventoryAdjustInfo").innerHTML = infoGrid([
-        ["SPU ID", record.spu], ["商品对外名称", product?.name || "-"], ["SKU ID", record.skuId], ["SKU 规格", skuSpecText(sku)], ["履约方式", normalizeDelivery(delivery)],
-        ...(isCdkeyRecord ? [["绑定码池 ID", inventoryCdkeyPoolId(record) || "未配置"]] : []),
+        ["SPU ID", record.spu], ["商品对外名称", product?.name || "-"], ["SKU ID", record.skuId], ["SKU 规格", skuSpecText(sku)],
         ["当前库存模式", record.stockMode], ["当前总库存", inventoryNumberText(record.totalStock, record)], ["当前可用库存", inventoryNumberText(record.availableStock, record)],
-        ["当前扣减库存", record.deductedStock], ["当前时段库存重置配置", record.stockMode === "不限量" ? "不限量" : (dailyReleaseLines(record.dailyReleases).join("，") || "不限制")],
+        ["当前锁定库存", record.lockedStock], ["当前时段库存重置配置", record.stockMode === "不限量" ? "不限量" : (dailyReleaseLines(record.dailyReleases).join("，") || "不限制")],
         ["当前安全库存阈值", inventoryWarningText(record)]
       ]);
       adjustDailyReleases = cloneDailyReleases(record);
-      document.getElementById("inventoryAdjustMode").value = isCdkeyRecord ? "限量" : (record.stockMode === "不限量" ? "不限量" : "限量");
+      document.getElementById("inventoryAdjustMode").value = record.stockMode === "不限量" ? "不限量" : "限量";
       document.getElementById("inventoryAdjustType").value = "增加库存";
       document.getElementById("inventoryAdjustQty").value = "";
       document.getElementById("inventoryAdjustSafetyPercent").value = record.stockMode === "不限量" ? "不限量" : (record.warningThreshold ?? "");
       document.getElementById("inventoryAdjustReason").value = "";
       updateInventoryAdjustFields();
-      if (isCdkeyRecord) {
+      if (isCdkeyDelivery(delivery)) {
         document.getElementById("inventoryAdjustTip").textContent = "CDKey SKU 库存模式固定为限量；总库存和可用库存由关联码池同步。补货、核销和码池库存维护请前往 CDKey 码池管理。";
       }
       openModal("inventoryAdjustModal");
@@ -5545,8 +5584,7 @@
     function updateInventoryAdjustFields() {
       const record = selectedInventoryRecord;
       if (!record) return;
-      const modeEl = document.getElementById("inventoryAdjustMode");
-      const targetMode = modeEl.value;
+      const targetMode = valueOf("inventoryAdjustMode");
       const typeEl = document.getElementById("inventoryAdjustType");
       const type = typeEl.value;
       const qty = document.getElementById("inventoryAdjustQty");
@@ -5558,19 +5596,6 @@
       const isCdkeyRecord = isCdkeyDelivery(sku?.delivery || product?.delivery || "未配置");
       const modeChangingToUnlimited = targetMode === "不限量";
       const modeChangingToLimited = record.stockMode === "不限量" && targetMode === "限量";
-      modeEl.disabled = isCdkeyRecord;
-      if (isCdkeyRecord) {
-        modeEl.value = "限量";
-        typeEl.disabled = true;
-        qty.disabled = true;
-        qty.value = "";
-        safetyPercent.disabled = false;
-        label.innerHTML = "调整数量";
-        qty.placeholder = "CDKey 库存由码池同步";
-        renderAdjustDailyReleaseEditor(false);
-        tip.textContent = "CDKey SKU 库存模式固定为限量；总库存和可用库存由关联码池同步。补货、核销和码池库存维护请前往 CDKey 码池管理。";
-        return;
-      }
       typeEl.disabled = modeChangingToUnlimited;
       qty.disabled = modeChangingToUnlimited;
       qty.value = qty.disabled ? "" : qty.value;
@@ -5624,10 +5649,6 @@
       const qtyText = valueOf("inventoryAdjustQty");
       const safetyPercentText = valueOf("inventoryAdjustSafetyPercent");
       const reason = valueOf("inventoryAdjustReason");
-      const sku = getInventorySku(record);
-      const product = getInventoryProduct(record);
-      const isCdkeyRecord = isCdkeyDelivery(sku?.delivery || product?.delivery || "未配置");
-      if (isCdkeyRecord && (targetMode !== "限量" || qtyText)) return toast("CDKey SKU 库存由关联码池同步，不能在库存列表手动调整。");
       const qty = Number(qtyText);
       const before = snapshotInventory(record);
       let operation = type;
@@ -5720,6 +5741,61 @@
       toast("库存调整已完成。");
     }
 
+    function openInventoryLockModal(inventoryId) {
+      const record = getInventoryRecordById(inventoryId);
+      if (!record) return;
+      selectedInventoryRecord = record;
+      const product = getInventoryProduct(record);
+      const sku = getInventorySku(record);
+      document.getElementById("inventoryLockInfo").innerHTML = infoGrid([
+        ["SPU ID", record.spu], ["商品对外名称", product?.name || "-"], ["SKU ID", record.skuId], ["SKU 规格", skuSpecText(sku)],
+        ["当前可用库存", inventoryNumberText(record.availableStock, record)], ["当前锁定库存", record.lockedStock], ["当前已扣减库存", record.deductedStock]
+      ]);
+      document.getElementById("inventoryLockType").value = "锁定库存";
+      document.getElementById("inventoryLockQty").value = "";
+      document.getElementById("inventoryLockBizNo").value = "";
+      document.getElementById("inventoryLockReason").value = "";
+      openModal("inventoryLockModal");
+    }
+
+    function confirmInventoryLockAction() {
+      const record = selectedInventoryRecord;
+      if (!record) return;
+      const type = valueOf("inventoryLockType");
+      const qty = Number(valueOf("inventoryLockQty"));
+      const bizNo = valueOf("inventoryLockBizNo");
+      const reason = valueOf("inventoryLockReason");
+      if (!Number.isInteger(qty) || qty <= 0) return toast("请输入正整数操作数量。");
+      if (!reason) return toast("请输入操作原因。");
+      const before = snapshotInventory(record);
+      if (type === "锁定库存") {
+        if (record.stockMode !== "不限量" && qty > numberValue(record.availableStock)) return toast("锁定库存数量不能大于可用库存。");
+        if (record.stockMode !== "不限量") record.availableStock = numberValue(record.availableStock) - qty;
+        record.lockedStock = numberValue(record.lockedStock) + qty;
+      }
+      if (type === "释放锁定") {
+        if (qty > numberValue(record.lockedStock)) return toast("释放数量不能大于锁定库存。");
+        record.lockedStock = numberValue(record.lockedStock) - qty;
+        if (record.stockMode !== "不限量") record.availableStock = numberValue(record.availableStock) + qty;
+      }
+      if (type === "锁定转扣减") {
+        if (qty > numberValue(record.lockedStock)) return toast("转扣减数量不能大于锁定库存。");
+        record.lockedStock = numberValue(record.lockedStock) - qty;
+        record.deductedStock = numberValue(record.deductedStock) + qty;
+      }
+      record.stockState = calculateInventoryState(record);
+      record.updatedAt = nowText();
+      record.lastSyncTime = nowText();
+      addInventoryFlow(record, type, before, snapshotInventory(record), reason, bizNo, "系统");
+      syncProductStockSummaryByInventory(record.spu);
+      closeModal("inventoryLockModal");
+      renderInventoryTable();
+      renderInventoryStats();
+      renderTable();
+      renderStats();
+      toast("库存锁定 / 释放操作已完成。");
+    }
+
     function openInventoryFlowDrawer(inventoryId) {
       const record = getInventoryRecordById(inventoryId);
       if (!record) return;
@@ -5730,7 +5806,8 @@
           ["SPU ID", record.spu], ["商品对外名称", product?.name || "-"], ["SKU ID", record.skuId], ["SKU 规格", skuSpecText(sku)],
           ["库存状态", calculateInventoryState(record)]
         ]))}
-        <div class="form-grid three" style="margin-bottom:12px">
+        <div class="form-grid four" style="margin-bottom:12px">
+          <div class="field"><label>业务来源</label><select><option>全部</option><option>积分商城</option><option>xx活动</option></select></div>
           <div class="field"><label>流水类型</label><select><option>全部</option><option>入库流水</option><option>出库流水</option></select></div>
           <div class="field"><label>关联业务单号</label><input placeholder="请输入订单号 / 工单号"></div>
           <div class="field"><label>操作人</label><input placeholder="请输入操作人"></div>
@@ -5743,12 +5820,12 @@
     function inventoryFlowTable(flows) {
       if (!flows.length) return `<div class="empty">暂无库存流水</div>`;
       return `<div class="table-wrap"><table class="inventory-flow-table"><thead><tr>
-        <th>流水 ID</th><th>关联业务单号</th><th>业务来源</th><th>业务来源 ID</th><th>流水类型</th><th>变动数量</th>
-        <th>变更前可用库存</th><th>变更后可用库存</th><th>操作时间</th><th>操作人</th>
+        <th>流水 ID</th><th>关联业务单号</th><th>业务来源</th><th>流水类型</th><th>变动数量</th>
+        <th>变更前可用库存</th><th>变更后可用库存</th><th>操作时间</th><th>操作人</th><th>操作原因</th>
       </tr></thead><tbody>${flows.map(flow => {
         return `<tr>
-          <td>${flow.flowId}</td><td>${flow.bizNo || "-"}</td><td>${flow.businessSource || "积分商城"}</td><td>${flow.businessSourceId || "-"}</td><td>${flow.type}</td><td>${flow.changeQty || inventoryFlowChangeQuantity(flow.before, flow.after)}</td>
-          <td>${inventoryNumberText(flow.before.availableStock, flow.before)}</td><td>${inventoryNumberText(flow.after.availableStock, flow.after)}</td><td>${flow.time}</td><td>${flow.operator}</td>
+          <td>${flow.flowId}</td><td>${flow.bizNo || "-"}</td><td>${flow.businessSource || "积分商城"}</td><td>${flow.type}</td><td>${flow.changeQty || inventoryFlowChangeQuantity(flow.before, flow.after)}</td>
+          <td>${inventoryNumberText(flow.before.availableStock, flow.before)}</td><td>${inventoryNumberText(flow.after.availableStock, flow.after)}</td><td>${flow.time}</td><td>${flow.operator}</td><td>${flow.reason}</td>
         </tr>`;
       }).join("")}</tbody></table></div>`;
     }
@@ -5963,10 +6040,9 @@
     function applyDeliveryRecordFilters() {
       const recordId = valueOf("deliveryFilterRecord").toUpperCase();
       const order = valueOf("deliveryFilterOrder").toUpperCase();
-      const userKeyword = valueOf("deliveryFilterUser").toUpperCase();
+      const user = valueOf("deliveryFilterUser");
       const productName = valueOf("deliveryFilterProduct").toUpperCase();
-      const spuId = valueOf("deliveryFilterSpu").toUpperCase();
-      const skuId = valueOf("deliveryFilterSku").toUpperCase();
+      const spuSkuId = valueOf("deliveryFilterSku").toUpperCase();
       const state = valueOf("deliveryFilterState");
       const source = valueOf("deliveryFilterSource");
       const type = valueOf("deliveryFilterType");
@@ -5977,16 +6053,15 @@
         const product = getDeliveryProduct(record);
         return (!recordId || record.exchangeNo.toUpperCase().includes(recordId))
           && (!order || record.orderId.toUpperCase().includes(order))
-          && (!userKeyword || [record.userId, record.userNnNo, record.userPhone].some(value => String(value || "").toUpperCase().includes(userKeyword)))
+          && (!user || record.userId.includes(user))
           && (!productName || product?.name?.toUpperCase().includes(productName))
-          && (!spuId || record.spu.toUpperCase().includes(spuId))
-          && (!skuId || record.skuId.toUpperCase().includes(skuId))
+          && (!spuSkuId || record.spu.toUpperCase().includes(spuSkuId) || record.skuId.toUpperCase().includes(spuSkuId))
           && (state === "全部" || record.deliveryState === state)
           && (source === "全部" || record.businessSource === source)
           && (type === "全部" || product?.type === type)
           && (method === "全部" || normalizeDelivery(record.deliveryMethod) === method)
           && (!poolId || record.cdkeyPoolId.toUpperCase().includes(poolId))
-          && matchesTimeRange(record.deliveredAt || "", delivered);
+          && (!delivered || String(record.deliveredAt || "").includes(delivered));
       });
       renderDeliveryRecordTable();
       renderDeliveryRecordStats();
@@ -5994,7 +6069,7 @@
     }
 
     function resetDeliveryRecordFilters() {
-      ["deliveryFilterRecord", "deliveryFilterOrder", "deliveryFilterUser", "deliveryFilterProduct", "deliveryFilterSpu", "deliveryFilterSku", "deliveryFilterPool", "deliveryFilterDelivered"].forEach(id => document.getElementById(id).value = "");
+      ["deliveryFilterRecord", "deliveryFilterOrder", "deliveryFilterUser", "deliveryFilterProduct", "deliveryFilterSku", "deliveryFilterPool", "deliveryFilterDelivered"].forEach(id => document.getElementById(id).value = "");
       ["deliveryFilterState", "deliveryFilterSource", "deliveryFilterType", "deliveryFilterMethod"].forEach(id => document.getElementById(id).value = "全部");
       visibleDeliveryRecords = [...deliveryRecords];
       renderDeliveryRecordTable();
@@ -6025,7 +6100,7 @@
         ${detailSection("履约链路信息", deliveryChainDetail(record))}
         ${detailSection("关联库存与流水", infoGrid([
           ["关联库存流水 ID", record.inventoryFlowId || "-"], ["库存变更类型", record.deliveryState === "已履约" ? "确认扣减" : "锁定 / 异常"],
-          ["SPU ID", record.spu], ["SKU ID", record.skuId], ["扣减库存", inventory?.deductedStock ?? "-"]
+          ["SPU ID", record.spu], ["SKU ID", record.skuId], ["锁定库存", inventory?.lockedStock ?? "-"]
         ]) + `<div class="hint-text">库存处理请前往库存列表查看库存主数据和库存流水，履约记录列表不提供库存调整动作。</div>`)}
         ${detailSection("处理建议", `<div class="alert info">${deliveryAdvice(record)}</div>`)}
       `;
@@ -6213,7 +6288,7 @@
           && (source === "全部" || pool.source === source)
           && (cdkeyType === "全部" || pool.cdkeyType === cdkeyType)
           && (bound === "全部" || (bound === "是" ? boundCount > 0 : boundCount === 0))
-          && matchesTimeRange(pool.createdAt || pool.updatedAt, updated);
+          && (!updated || String(pool.createdAt || pool.updatedAt).includes(updated));
       });
       renderCdkeyPoolTable();
       renderCdkeyPoolStats();
@@ -6751,7 +6826,7 @@
           <td>${p.skuSummary}</td>
           <td>${deliveryTag(p.delivery)}</td>
           <td>${stateTag(p.state)}</td>
-          <td>${productExposureText(p).startsWith("已投放") ? `<span class="tag green">${productExposureText(p)}</span>` : `<span class="tag orange">${productExposureText(p)}</span>`}</td>
+          <td>${p.exposure.startsWith("已投放") ? `<span class="tag green">${p.exposure}</span>` : `<span class="tag orange">${p.exposure}</span>`}</td>
           <td>${p.createdAt || p.updatedAt}</td>
           <td>${lastOperatorFromLogs(p.logs)}</td>
           <td><div class="action-list">${actionButtons(p)}</div></td>
@@ -6764,11 +6839,9 @@
 
     function actionButtons(p) {
       const base = [
-        `<button class="btn text" data-action="view" data-spu="${p.spu}">查看</button>`
+        `<button class="btn text" data-action="view" data-spu="${p.spu}">查看</button>`,
+        `<button class="btn text" data-action="edit" data-spu="${p.spu}">编辑</button>`
       ];
-      if (isEditableLifecycleState(p.state)) {
-        base.push(`<button class="btn text" data-action="edit" data-spu="${p.spu}">编辑</button>`);
-      }
       if (p.state === "草稿") {
         base.push(`<button class="btn text" data-action="enable" data-spu="${p.spu}">上架</button>`);
         base.push(`<button class="btn text" data-action="delete" data-spu="${p.spu}">删除</button>`);
@@ -6784,10 +6857,7 @@
       const product = products.find(p => p.spu === spu);
       selectedProduct = product;
       if (action === "view") openDetail(product);
-      if (action === "edit") {
-        if (!isEditableLifecycleState(product?.state)) return toast("仅草稿或下架状态的商品允许编辑。");
-        openForm("edit", product);
-      }
+      if (action === "edit") openForm("edit", product);
       if (action === "enable") handleListEnable(product);
       if (action === "disable") openDisableModal(product);
       if (action === "delete") openDeleteModal(product);
@@ -6802,11 +6872,10 @@
         ]))}
         ${operationDisplayDetailSection(product)}
         ${spuAttrDetailSection(product)}
-        ${templateBindingStatusSection(product)}
         ${detailSection("商品展示配置", scopeTagsDetail(product))}
         ${detailSection("商品素材", materialHtml(product))}
-        ${detailSection("SKU 列表", skuTable(product.skuList, product.type, product.skuTemplateId ? product.skuAttrCodes : []))}
-        ${detailSection("商品投放", exposureDetail(product))}
+        ${detailSection("SKU 列表", skuTable(product.skuList, product.type, product.skuAttrCodes))}
+        ${detailSection("投放状态摘要", exposureDetail(product))}
       `;
       openDrawer("detailDrawer");
     }
@@ -6838,20 +6907,12 @@
         <div class="hint-text">商品头图和商品详情图均使用一套通用素材适配 PC / APP；商品说明和兑换说明使用富文本配置。</div>`;
     }
     function spuAttrDetailSection(product) {
-      const template = getSpuTemplate(product.type);
-      if (!product.spuTemplateId || template?.templateId !== product.spuTemplateId) return "";
       const attrs = getSpuTemplateAttributes(product.type);
       if (!attrs.length) return "";
       return detailSection("SPU 属性", infoGrid([
-        ["SPU 属性模板", product.spuTemplateName || "-"],
+        ["SPU 属性模板", product.spuTemplateName || getSpuTemplate(product.type)?.templateName || "-"],
         ["属性值", formatSpuAttributeValues(product.spuAttributeValues || {}, product.type)]
       ]));
-    }
-    function templateBindingStatusSection(product) {
-      const detached = Object.entries(product.templateDetachment || {});
-      if (!detached.length) return "";
-      const text = detached.map(([scope, item]) => `${scope} 属性模板「${item.templateName}」已自动解绑`).join("；");
-      return detailSection("属性模板绑定状态", `<div class="alert warning">${text}。重新上架模板不会自动恢复关联；需先下架商品，再编辑商品并重新配置属性值。</div>`);
     }
     function scopeTagsDetail(product) {
       return infoGrid([
@@ -6860,61 +6921,24 @@
       ]) + `<div class="hint-text">商品展示属性仅用于前台展示，不参与商品后台分类树，也不决定 SKU 属性模板或商品投放范围；商品是否投放仍由商品投放管理控制。</div>`;
     }
     function skuTable(rows, type, attrCodes = null) {
-      const hasTemplateBinding = !Array.isArray(attrCodes) || attrCodes.length > 0;
       const codes = attrCodes || deriveSkuAttrCodes({ skuList: rows }, type);
-      const normalizedRows = hasTemplateBinding ? rows.map((row, index) => normalizeSkuRow(row, type, index, codes)) : rows;
+      const normalizedRows = rows.map((row, index) => normalizeSkuRow(row, type, index, codes));
       return `<div class="table-wrap"><table><thead><tr>
-        <th>SKU ID</th><th>SKU 名称</th><th>SKU 属性模板</th><th>SKU 属性值</th><th>计量单位 / 数值</th><th>排序（越大越靠前）</th><th>兑换货币类型</th><th>兑换价格</th><th>划线价</th><th>履约方式</th><th>CDKey 码池 ID</th><th>每人总兑换次数</th><th>每人每日兑换次数</th><th>SKU 备注</th>
-        </tr></thead><tbody>${normalizedRows.map(s => `<tr><td>${s.skuId}</td><td>${s.skuName}</td><td>${hasTemplateBinding ? (s.templateName || "-") : "-"}</td><td>${hasTemplateBinding ? formatSkuAttributeValues(s, type, codes) : "-"}</td><td>${skuSpecText(s)}</td><td>${s.sort}</td><td>${s.currency}</td><td>${s.price}</td><td>${skuStrikePriceDisplay(s)}</td><td>${normalizeDelivery(s.delivery) || "未配置"}</td><td>${deliveryParamSummary(s)}</td><td>${s.totalLimit}</td><td>${s.dayLimit}</td><td>${s.remark}</td></tr>`).join("")}</tbody></table></div>`;
-    }
-    function productDisplayRelations(product) {
-      return displayConfigs.filter(config => config.state !== "草稿").flatMap(config => (config.products || [])
-        .filter(row => row.spu === product.spu)
-        .map(row => ({ config, row })))
-        .sort((a, b) => Number(b.config.sortWeight || 0) - Number(a.config.sortWeight || 0) || Number(a.row.sort || 0) - Number(b.row.sort || 0));
-    }
-    function productExposureText(product) {
-      const templateCount = new Set(productDisplayRelations(product).map(item => item.config.id)).size;
-      return templateCount ? `已投放 ${templateCount} 个模板` : "未投放";
-    }
-    function isDisplayRelationEffective(config, product) {
-      if (config.state !== "上架" || product.state !== "上架" || !config.startTime || !config.endTime) return false;
-      const now = new Date("2026/05/24 12:00");
-      const start = parseDisplayTime(config.startTime);
-      const end = parseDisplayTime(config.endTime);
-      return !!start && !!end && now >= start && now <= end;
+        <th>SKU ID</th><th>SKU 名称</th><th>SKU 属性模板</th><th>SKU 属性值</th><th>计量单位 / 数值</th><th>排序（越大越靠前）</th><th>多币种价格</th><th>履约方式</th><th>CDKey 码池 ID</th><th>每人总兑换次数</th><th>每人每日兑换次数</th><th>SKU 备注</th>
+        </tr></thead><tbody>${normalizedRows.map(s => `<tr><td>${s.skuId}</td><td>${s.skuName}</td><td>${s.templateName}</td><td>${formatSkuAttributeValues(s, type, codes)}</td><td>${skuSpecText(s)}</td><td>${s.sort}</td><td>${skuPriceSummary(s)}</td><td>${normalizeDelivery(s.delivery) || "未配置"}</td><td>${deliveryParamSummary(s)}</td><td>${s.totalLimit}</td><td>${s.dayLimit}</td><td>${s.remark}</td></tr>`).join("")}</tbody></table></div>`;
     }
     function exposureDetail(product) {
-      const relations = productDisplayRelations(product);
-      const templateCount = new Set(relations.map(item => item.config.id)).size;
-      const effectiveCount = new Set(relations
-        .filter(item => isDisplayRelationEffective(item.config, product))
-        .map(item => item.config.id)).size;
-      const summary = infoGrid([
-        ["投放模板数", templateCount],
-        ["投放生效数", effectiveCount]
-      ]);
-      const detail = relations.length
-        ? `<div class="table-wrap"><table><thead><tr><th>模板名称</th><th>一级模板</th><th>二级模板</th><th>模板类型</th><th>投放范围</th><th>模板状态</th><th>生效时间</th><th>商品投放排序</th></tr></thead><tbody>${relations.map(({ config, row }) => `<tr>
-            <td><div class="main-name">${config.templateName || config.id}</div></td>
-            <td><div class="main-name">${config.templateName || config.id}</div></td>
-            <td>${displaySubTemplateName(row.subTemplateId || "", config)}</td>
-            <td>${normalizeDisplayTemplateType(config.templateType)}</td>
-            <td>${productDisplayScopeHtml(config)}</td>
-            <td>${stateTag(config.state)}</td>
-            <td>${displayTimeText(config)}</td>
-            <td>${row.sort || "-"}</td>
-          </tr>`).join("")}</tbody></table></div>`
-        : `<div class="empty">当前商品未配置投放关系</div>`;
-      return `${summary}<div class="table-title" style="margin:16px 0 10px">投放明细</div>${detail}<div class="hint-text">商品侧仅展示非草稿模板的投放关系；投放模板数和投放生效数均按投放模板 ID 去重，同一模板下配置多个一级或二级模板仍只计 1 个投放模板。商品上架不等于前台投放，投放关系由商品投放管理维护。</div>`;
+      return infoGrid([
+        ["已投放模板", product.exposure],
+        ["投放状态", product.exposure.startsWith("已投放") && product.state === "上架" ? "投放配置生效" : "未投放"],
+        ["上下架时间", product.exposure.startsWith("已投放") ? "2026-05-20 10:00 - 2026-06-20 23:59" : "-"],
+        ["排序值", product.exposure.startsWith("已投放") ? "90" : "-"],
+        ["未投放原因", product.exposure === "未投放" ? "未在商品投放管理中配置投放关系" : product.state !== "上架" ? "商品状态不是上架" : "-"]
+      ]) + `<div class="hint-text">商品上架不等于前台投放，投放关系由商品投放管理维护。</div>`;
     }
     function openForm(mode, product) {
-      if (mode === "edit" && !isEditableLifecycleState(product?.state)) {
-        return toast("仅草稿或下架状态的商品允许编辑。");
-      }
       formMode = mode;
       editingProduct = product || null;
-      originalEditingSkuIds = new Set(product?.skuList?.map(row => row.skuId).filter(Boolean) || []);
       hideAllPages();
       document.getElementById("formPage").style.display = "block";
       setActiveMenu("商品列表");
@@ -6933,8 +6957,7 @@
       document.getElementById("formRemark").value = product?.remark || "";
       updateFormTypes(false);
       document.getElementById("formType").value = product?.type || "虚拟装扮";
-      updateFormDeliveryOptions(product?.delivery || "");
-      setFormDeliveryAvailability(product);
+      syncDeliveryByProductType(document.getElementById("formType").value);
       setDescriptionTags(product?.tags || ["新品", "限时"]);
       document.getElementById("formTagsInput").value = "";
       document.getElementById("formCornerTags").value = product?.cornerTags?.[0] || "热门";
@@ -6945,10 +6968,10 @@
       const type = document.getElementById("formType").value || "虚拟装扮";
       spuAttrValues = product ? normalizeSpuAttributeValues(type, product.spuAttributeValues || {}) : defaultSpuAttributeValues(type);
       selectedSkuAttrCodes = product ? deriveSkuAttrCodes(product, type) : defaultSkuAttrCodes(type);
-      skuRows = product ? JSON.parse(JSON.stringify(product.skuList)).map((row, index) => normalizeSkuRow(row, type, index, selectedSkuAttrCodes, Boolean(product.templateDetachment?.SKU))) : buildDefaultSkuRows(type);
+      skuRows = product ? JSON.parse(JSON.stringify(product.skuList)).map((row, index) => normalizeSkuRow(row, type, index, selectedSkuAttrCodes)) : buildDefaultSkuRows(type);
       inventoryRows = product ? buildReadonlyInventoryRows(product) : [];
       syncInventoryRows(false);
-      toggleInitialInventorySection(true);
+      toggleInitialInventorySection(mode !== "edit");
       previousFormType = type;
       handleTemplateChange(false);
       renderSpuAttrPanel();
@@ -7069,17 +7092,11 @@
       handleTemplateChange(true);
     }
 
-    function onDeliveryChange() {
-      syncSkuDeliveryFromForm();
-      syncInventoryRows(false);
-      renderSkuEdit();
-      renderInventoryConfig();
-    }
-
     function handleTemplateChange(resetSku = false) {
       const type = document.getElementById("formType").value;
       const template = getSkuTemplate(type);
       const tip = document.getElementById("templateTip");
+      syncDeliveryByProductType(type);
       if (resetSku) spuAttrValues = defaultSpuAttributeValues(type);
       if (!template) {
         tip.style.display = "none";
@@ -7104,7 +7121,7 @@
           syncInventoryRows(true);
         } else {
           selectedSkuAttrCodes = deriveSkuAttrCodes(editingProduct, type);
-          skuRows = skuRows.map((row, index) => normalizeSkuRow(row, type, index, selectedSkuAttrCodes, Boolean(editingProduct?.templateDetachment?.SKU)));
+          skuRows = skuRows.map((row, index) => normalizeSkuRow(row, type, index, selectedSkuAttrCodes));
           syncInventoryRows(false);
         }
       }
@@ -7125,7 +7142,6 @@
         const next = { ...row, delivery };
         next.deliveryParams = normalizeDeliveryParams(next, delivery);
         if (!isCdkeyDelivery(delivery)) {
-          next.cdkeyPoolId = "";
           next.cdkeyPoolCheck = null;
         } else if (next.cdkeyPoolId) {
           next.cdkeyPoolCheck = checkCdkeyPool(next.cdkeyPoolId);
@@ -7136,33 +7152,14 @@
 
     function renderTemplateInfo() {
       const type = document.getElementById("formType").value;
-      const spuTemplate = getSpuTemplate(type);
-      const skuTemplate = getSkuTemplate(type);
+      const template = getSkuTemplate(type);
       const tip = document.getElementById("templateTip");
-      const spuDetached = Boolean(editingProduct?.templateDetachment?.SPU);
-      const skuDetached = Boolean(editingProduct?.templateDetachment?.SKU);
-      if (!spuTemplate && !skuTemplate && !spuDetached && !skuDetached) {
+      if (!template) {
         tip.style.display = "none";
         return;
       }
-      const messages = [];
-      if (spuTemplate) {
-        messages.push(spuDetached
-          ? `原 SPU 属性模板已解绑；当前模板「${spuTemplate.templateName}」的字段已重新加载到基础信息，请配置属性值后保存关联`
-          : `已加载 SPU 属性模板「${spuTemplate.templateName}」，属性字段展示在基础信息中`);
-      } else if (spuDetached) {
-        messages.push("原 SPU 属性模板已自动解绑，当前商品类型暂无已上架的 SPU 属性模板");
-      }
-      if (skuTemplate) {
-        messages.push(skuDetached
-          ? `原 SKU 属性模板已解绑；当前模板「${skuTemplate.templateName}」的字段已重新加载到 SKU 列表，请配置属性值后保存关联`
-          : `已加载 SKU 属性模板「${skuTemplate.templateName}」，属性字段展示在 SKU 配置中`);
-      } else if (skuDetached) {
-        messages.push("原 SKU 属性模板已自动解绑，当前商品类型暂无已上架的 SKU 属性模板");
-      }
       tip.style.display = "";
-      tip.className = `alert ${spuDetached || skuDetached ? "warning" : "info"}`;
-      tip.textContent = `${messages.join("；")}。`;
+      tip.textContent = `当前商品类型已加载可用 SKU 属性模板：${template.templateName}。`;
     }
 
     function renderSpuAttrPanel() {
@@ -7172,15 +7169,13 @@
       const template = getSpuTemplate(type);
       const attrs = getSpuTemplateAttributes(type);
       if (!template || !attrs.length) {
-        panel.innerHTML = editingProduct?.templateDetachment?.SPU
-          ? `<div class="alert warning" style="margin-top:14px">原 SPU 属性模板已自动解绑，当前商品类型暂无已上架模板。请等待模板重新上架后再编辑商品完成关联。</div>`
-          : "";
+        panel.innerHTML = "";
         return;
       }
       spuAttrValues = normalizeSpuAttributeValues(type, spuAttrValues);
       panel.innerHTML = `
         <div class="subsection-title" style="margin-top:14px">SPU 属性信息</div>
-        <div class="alert ${editingProduct?.templateDetachment?.SPU ? "warning" : "info"}">${editingProduct?.templateDetachment?.SPU ? `原 SPU 属性模板已解绑。当前模板「${template.templateName}」的属性字段已自动写入基础信息，请重新设置枚举值和内容，保存后完成关联。` : `已加载当前商品类型下上架的 SPU 属性模板：${template.templateName}。SPU 属性用于描述商品组级信息，不进入 SKU 价格、库存和履约配置。`}</div>
+        <div class="alert info">已加载当前商品类型下上架的 SPU 属性模板：${template.templateName}。SPU 属性用于描述商品组级信息，不进入 SKU 价格、库存和履约配置。</div>
         <div class="form-grid three">
           ${attrs.map(attr => `
             <div class="field">
@@ -7309,15 +7304,15 @@
       const template = getSkuTemplate(type);
       const activeAttrs = getSelectedSkuAttrs(type);
       const dynamicHeaders = activeAttrs.map(attr => `<th>${attr.required === false ? "" : `<span class="required-star">*</span>`}${attr.name}</th>`).join("");
-      head.innerHTML = `<th>SKU 名称</th><th><span class="required-star">*</span>排序<br><span class="minor">越大越靠前</span></th><th><span class="required-star">*</span>计量单位</th><th>数值</th><th><span class="required-star">*</span>兑换货币类型</th><th><span class="required-star">*</span>兑换价格</th><th>划线价<br><span class="minor">非必填</span></th><th>每人总兑换次数</th><th>每人每日兑换次数</th>${dynamicHeaders}<th>SKU 备注</th><th>操作</th>`;
+      head.innerHTML = `<th>SKU 名称</th><th><span class="required-star">*</span>排序<br><span class="minor">越大越靠前</span></th><th><span class="required-star">*</span>计量单位</th><th>数值</th><th><span class="required-star">*</span>多币种价格<br><span class="minor">积分 / N币 / RMB</span></th><th>CDKey 码池 ID</th><th>每人总兑换次数</th><th>每人每日兑换次数</th>${dynamicHeaders}<th>SKU 备注</th><th>操作</th>`;
       const attrCodes = activeAttrs.map(attr => attr.code);
       syncSkuDeliveryFromForm();
-      skuRows = skuRows.map((row, index) => normalizeSkuRow(row, type, index, attrCodes, Boolean(editingProduct?.templateDetachment?.SKU)));
+      skuRows = skuRows.map((row, index) => normalizeSkuRow(row, type, index, attrCodes));
       body.innerHTML = skuRows.length ? skuRows.map((s, i) => {
         const attrCells = activeAttrs.map(attr => {
           const value = s.attributeValues[attr.code] || "";
           const control = attr.valueType === "枚举"
-            ? `<select class="mini-input" data-sku="${i}" data-attr="${attr.code}"><option value="" ${value === "" ? "selected" : ""}>${attr.required === false ? "不配置" : "请选择"}</option>${skuAttrOptions(attr).map(opt => `<option value="${opt}" ${opt === value ? "selected" : ""}>${opt}</option>`).join("")}</select>`
+            ? `<select class="mini-input" data-sku="${i}" data-attr="${attr.code}">${attr.required === false ? `<option value="" ${value === "" ? "selected" : ""}>请选择</option>` : ""}${skuAttrOptions(attr).map(opt => `<option value="${opt}" ${opt === value ? "selected" : ""}>${opt}</option>`).join("")}</select>`
             : `<input class="mini-input" type="text" data-sku="${i}" data-attr="${attr.code}" value="${value}">`;
           return `<td>${control}</td>`;
         }).join("");
@@ -7327,9 +7322,8 @@
             <td><input class="mini-input" type="number" min="1" data-sku="${i}" data-field="sort" value="${s.sort}" placeholder="正整数"></td>
             <td><select class="mini-input" data-sku="${i}" data-field="specType">${skuSpecTypes.map(item => `<option value="${item}" ${item === s.specType ? "selected" : ""}>${item}</option>`).join("")}</select></td>
             <td><input class="mini-input" type="number" min="0" step="1" data-sku="${i}" data-field="duration" value="${s.duration ?? ""}" placeholder="0或正整数"></td>
-            <td><select class="mini-input" data-sku="${i}" data-field="currency">${skuCurrencyOptions.map(item => `<option value="${item}" ${item === s.currency ? "selected" : ""}>${item}</option>`).join("")}</select></td>
-            <td><input class="mini-input" type="number" min="1" data-sku="${i}" data-field="price" value="${s.price}"></td>
-            <td><input class="mini-input" type="number" min="1" data-sku="${i}" data-field="strikePrice" value="${s.strikePrice ?? ""}" placeholder="非必填"></td>
+            <td class="price-config-cell">${skuPriceSummary(s)}<button class="btn text" type="button" data-edit-sku-price="${i}">配置多币种价格</button></td>
+            <td>${cdkeyPoolEditor(s, i)}</td>
             <td><input class="mini-input" type="number" data-sku="${i}" data-field="totalLimit" value="${s.totalLimit}"></td>
             <td><input class="mini-input" type="number" data-sku="${i}" data-field="dayLimit" value="${s.dayLimit}"></td>
             ${attrCells}
@@ -7342,32 +7336,90 @@
       body.querySelectorAll("[data-field]").forEach(el => el.addEventListener("input", updateSkuFromInput));
       body.querySelectorAll("select[data-field]").forEach(el => el.addEventListener("change", updateSkuFromInput));
       body.querySelectorAll("[data-copy-sku]").forEach(btn => btn.addEventListener("click", () => copySkuRow(Number(btn.dataset.copySku))));
-      body.querySelectorAll("[data-del-sku]").forEach(btn => btn.addEventListener("click", () => {
-        const index = Number(btn.dataset.delSku);
-        skuRows.splice(index, 1);
-        inventoryRows.splice(index, 1);
-        syncInventoryRows(false);
-        renderSkuEdit();
-        renderInventoryConfig();
-        validateSkuRows();
-      }));
+      body.querySelectorAll("[data-del-sku]").forEach(btn => btn.addEventListener("click", () => { skuRows.splice(Number(btn.dataset.delSku), 1); syncInventoryRows(true); renderSkuEdit(); renderInventoryConfig(); validateSkuRows(); }));
+      body.querySelectorAll("[data-edit-sku-price]").forEach(btn => btn.addEventListener("click", () => openSkuPriceModal(Number(btn.dataset.editSkuPrice))));
+      body.querySelectorAll("[data-cdkey-pool]").forEach(input => input.addEventListener("input", updateSkuCdkeyPool));
+      body.querySelectorAll("[data-check-pool]").forEach(btn => btn.addEventListener("click", () => checkSkuCdkeyPool(Number(btn.dataset.checkPool))));
+      body.querySelectorAll("[data-select-pool]").forEach(btn => btn.addEventListener("click", () => openPoolModal(Number(btn.dataset.selectPool))));
       validateSkuRows();
     }
 
+    function openSkuPriceModal(index) {
+      const row = skuRows[index];
+      if (!row) return;
+      currentEditingPriceSkuIndex = index;
+      const type = document.getElementById("formType").value;
+      skuPriceDraft = JSON.parse(JSON.stringify(normalizeSkuPrices(row, type, row.attributeValues || {}, index + 1)));
+      document.getElementById("skuPriceModalTitle").textContent = `配置多币种价格 - ${row.skuName || row.displayText || `SKU${index + 1}`}`;
+      renderSkuPriceEditor();
+      openModal("skuPriceModal");
+    }
+
+    function renderSkuPriceEditor() {
+      const body = document.getElementById("skuPriceEditorBody");
+      body.innerHTML = skuPriceDraft.map((price, index) => {
+        const meta = currencyMeta(price.currency);
+        const step = meta.precision === 2 ? ".01" : "1";
+        const disabled = price.enabled ? "" : "disabled";
+        return `<tr>
+          <td><label class="check-pill"><input type="checkbox" data-price-index="${index}" data-price-field="enabled" ${price.enabled ? "checked" : ""}>启用</label></td>
+          <td><span class="price-pill ${meta.css}"><b>${price.currency}</b></span></td>
+          <td><input type="number" min="${meta.precision === 2 ? ".01" : "1"}" step="${step}" data-price-index="${index}" data-price-field="amount" value="${price.amount ?? ""}" ${disabled}><div class="minor">${meta.precision === 2 ? "最多支持2位小数" : `仅支持正整数${meta.unit}`}</div></td>
+          <td><input type="number" min="${meta.precision === 2 ? ".01" : "1"}" step="${step}" data-price-index="${index}" data-price-field="strikePrice" value="${price.strikePrice ?? ""}" placeholder="非必填" ${disabled}><div class="minor">符合币种精度且大于销售价格</div></td>
+        </tr>`;
+      }).join("");
+      body.querySelectorAll("[data-price-index]").forEach(control => {
+        control.addEventListener(control.type === "number" ? "input" : "change", updateSkuPriceDraft);
+      });
+      validateSkuPriceDraft();
+    }
+
+    function updateSkuPriceDraft(event) {
+      const index = Number(event.target.dataset.priceIndex);
+      const field = event.target.dataset.priceField;
+      const price = skuPriceDraft[index];
+      if (!price) return;
+      if (field === "enabled") {
+        price.enabled = event.target.checked;
+        renderSkuPriceEditor();
+        return;
+      }
+      price[field] = event.target.value;
+      validateSkuPriceDraft();
+    }
+
+    function validateSkuPriceDraft() {
+      const errors = skuPriceGroupErrors({ prices: skuPriceDraft });
+      document.getElementById("skuPriceError").textContent = errors.join(" ");
+      return errors;
+    }
+
+    function confirmSkuPriceConfig() {
+      const errors = validateSkuPriceDraft();
+      if (errors.length) {
+        toast("请修正多币种价格配置。");
+        return;
+      }
+      const row = skuRows[currentEditingPriceSkuIndex];
+      if (!row) return;
+      row.prices = skuPriceDraft.map(price => ({
+        ...price,
+        amount: normalizePriceAmount(price.currency, price.amount),
+        strikePrice: price.strikePrice === "" ? "" : normalizePriceAmount(price.currency, price.strikePrice)
+      }));
+      syncLegacySkuPriceFields(row);
+      closeModal("skuPriceModal");
+      renderSkuEdit();
+      validateSkuRows();
+      toast("多币种价格已保存。");
+    }
+
     function cdkeyPoolEditor(row, index) {
-      if (!normalizeDelivery(row.delivery)) {
-        return `<b>待选择</b><div class="minor">请先选择履约方式</div>`;
-      }
-      if (!isCdkeyDelivery(row.delivery)) {
-        return `<b>手动初始化</b><div class="minor">库存由商品库存服务维护</div>`;
-      }
+      if (!isCdkeyDelivery(row.delivery)) return `<span class="minor">无需配置</span>`;
       const check = row.cdkeyPoolCheck || (row.cdkeyPoolId ? checkCdkeyPool(row.cdkeyPoolId) : null);
       const tag = check ? `<span class="tag ${check.ok ? "green" : "red"}">${check.status}</span>` : `<span class="tag orange">未校验</span>`;
-      const message = check?.ok
-        ? `${check.message}；总码数 ${check.pool.total} / 可用码 ${check.pool.available}`
-        : (check ? check.message : "请输入码池 ID 后校验");
+      const message = check ? check.message : "请输入码池 ID 后校验";
       return `
-        <div class="minor"><span class="required-star">*</span>CDKey 码池 ID</div>
         <input class="mini-input" data-sku="${index}" data-cdkey-pool="${index}" placeholder="请输入码池 ID" value="${row.cdkeyPoolId || ""}">
         <div class="btn-row" style="margin-top:6px"><button class="btn text" type="button" data-check-pool="${index}">校验</button><button class="btn text" type="button" data-select-pool="${index}">选择</button>${tag}</div>
         <div class="minor">${message}</div>`;
@@ -7433,7 +7485,7 @@
       if (!skuRows[index]) return;
       skuRows[index].cdkeyPoolId = e.target.value.trim();
       skuRows[index].cdkeyPoolCheck = null;
-      if (inventoryRows[index]) applyCdkeyInventorySync(inventoryRows[index], index);
+      renderInventoryConfig();
     }
 
     function checkSkuCdkeyPool(index) {
@@ -7444,6 +7496,7 @@
         const bindingError = cdkeyPoolBindingError(row.cdkeyPoolId, row.skuId);
         if (bindingError) row.cdkeyPoolCheck = { status: "失败", ok: false, message: bindingError };
       }
+      renderSkuEdit();
       renderInventoryConfig();
       toast(row.cdkeyPoolCheck.ok ? `已校验通过：${row.cdkeyPoolCheck.pool.name}，可用 ${row.cdkeyPoolCheck.pool.available}` : row.cdkeyPoolCheck.message);
     }
@@ -7454,13 +7507,8 @@
       const signatures = skuRows.map(s => [s.specType || "无", s.duration || "", ...activeAttrs.map(attr => String(s.attributeValues?.[attr.code] || "").trim())].join("|"));
       const duplicate = signatures.find((signature, index) => signature && signatures.indexOf(signature) !== index);
       const invalidSort = skuRows.some(s => !/^[1-9]\d*$/.test(String(s.sort)));
-      const invalidPrice = skuRows.some(s => !/^[1-9]\d*$/.test(String(s.price)));
-      const invalidStrikePrice = skuRows.some(s => {
-        const value = normalizeSkuStrikePrice(s);
-        return value && !/^[1-9]\d*$/.test(value);
-      });
-      const invalidCurrency = skuRows.some(s => !skuCurrencyOptions.includes(s.currency));
-      const invalidDelivery = !allowedDeliveryOptions.includes(getFormDelivery());
+      const priceErrors = [...new Set(skuRows.flatMap(skuPriceGroupErrors))];
+      const invalidDelivery = !allowedDeliveryOptions.includes(getFormDelivery()) || !isDeliveryCompatibleWithType(type, getFormDelivery());
       const invalidDuration = skuRows.some(s => {
         const value = String(s.duration ?? "").trim();
         return value !== "" && !/^\d+$/.test(value);
@@ -7473,10 +7521,8 @@
       if (missingRequiredAttr) errors.push("必填 SKU 属性项未填写。");
       if (invalidEnum) errors.push("SKU 枚举属性值不在模板可选值范围内。");
       if (duplicate) errors.push("SKU 属性值组合重复，请调整 SKU 属性值。");
-      if (invalidPrice) errors.push("兑换价格必须为正整数。");
-      if (invalidStrikePrice) errors.push("划线价填写时必须为正整数。");
-      if (invalidCurrency) errors.push("兑换货币类型不在系统枚举范围内。");
-      if (invalidDelivery) errors.push("请选择系统支持的履约方式。");
+      errors.push(...priceErrors);
+      if (invalidDelivery) errors.push("履约方式与商品类型不匹配。");
       document.getElementById("skuError").textContent = errors.join(" ");
       return errors;
     }
@@ -7486,11 +7532,10 @@
       const template = getSkuTemplate(type);
       const activeAttrs = getSelectedSkuAttrs(type);
       const attrCodes = activeAttrs.map(attr => attr.code);
-      const row = makeSkuRow("NEW", type, makeEmptyAttributeValues(type, attrCodes), skuRows.length + 1, getFormDelivery(), attrCodes, template);
+      const row = makeSkuRow("NEW", type, makeEmptyAttributeValues(type, attrCodes), skuRows.length + 1, getDefaultDeliveryByType(type), attrCodes, template);
       activeAttrs.forEach(attr => {
         if (attr.valueType !== "枚举") row.attributeValues[attr.code] = "";
       });
-      row.skuId = "";
       row.displayText = generateSkuDisplayText(row.attributeValues, type, attrCodes, row.specType, row.duration);
       skuRows.push(row);
       syncInventoryRows(false);
@@ -7505,12 +7550,6 @@
       copy.skuName = copy.skuName ? `${copy.skuName} 副本` : "";
       copy.manualDisplay = true;
       copy.sort = skuRows.length + 1;
-      copy.skuId = "";
-      if (isCdkeyDelivery(copy.delivery)) {
-        copy.cdkeyPoolId = "";
-        copy.cdkeyPoolCheck = null;
-        copy.deliveryParams = initialDeliveryParams(copy.delivery);
-      }
       skuRows.push(copy);
       syncInventoryRows(false);
       renderSkuEdit();
@@ -7525,15 +7564,11 @@
       toast("SKU 已清空，保存并上架前需至少配置 1 条 SKU。");
     }
 
-    function hasInitializedInventory(skuId) {
-      return Boolean(skuId && inventoryRecords.some(record => record.skuId === skuId));
-    }
-
     function syncInventoryRows(forceReset = false) {
+      if (formMode === "edit") return;
       syncSkuDeliveryFromForm();
       inventoryRows = skuRows.map((sku, index) => {
         const existing = forceReset ? null : inventoryRows[index];
-        const isExistingEditSku = formMode === "edit" && originalEditingSkuIds.has(sku.skuId) && hasInitializedInventory(sku.skuId);
         const isCdkey = isCdkeyDelivery(sku.delivery);
         const poolId = sku.cdkeyPoolId || sku.deliveryParams?.cdkey?.poolId || "";
         const pool = poolId ? getPoolById(poolId) : null;
@@ -7549,7 +7584,7 @@
           dailyReleases: stockMode === "不限量" ? [] : cloneEditableDailyReleases(existing?.dailyReleases || []),
           warningThreshold: existing?.warningThreshold ?? "",
           stockState: existing?.stockState || "待初始化",
-          _initializable: !isExistingEditSku
+          remark: existing?.remark || ""
         };
         return applyCdkeyInventorySync(row, index);
       });
@@ -7580,13 +7615,12 @@
     function cdkeyPoolForInventoryRow(index) {
       const sku = skuRows[index];
       const poolId = sku?.cdkeyPoolId || sku?.deliveryParams?.cdkey?.poolId || "";
-      if (!poolId || !sku?.cdkeyPoolCheck?.ok) return null;
-      return sku.cdkeyPoolCheck.pool || getPoolById(poolId);
+      return poolId ? getPoolById(poolId) : null;
     }
 
     function cdkeyInventoryDisplayValue(index) {
       const pool = cdkeyPoolForInventoryRow(index);
-      return pool ? `码池同步：总码数 ${pool.total}` : "码池校验通过后同步";
+      return pool ? `码池同步：总码数 ${pool.total}` : "绑定码池后同步";
     }
 
     function applyCdkeyInventorySync(row, index) {
@@ -7600,19 +7634,20 @@
     function renderInventoryConfig() {
       const body = document.getElementById("inventoryConfigBody");
       if (!body) return;
+      if (formMode === "edit") {
+        body.innerHTML = "";
+        return;
+      }
       syncInventoryRows(false);
-      const initializableRows = inventoryRows
-        .map((row, index) => ({ row, index }))
-        .filter(item => item.row._initializable !== false);
-      if (!initializableRows.length) {
-        body.innerHTML = `<div class="empty">${formMode === "edit" ? "当前未新增 SKU。存量 SKU 的库存及码池绑定不可在此修改；新增 SKU 后，可在此配置库存来源与初始库存。" : "请先配置 SKU，系统会按 SKU 生成库存来源与初始化配置行。"}</div>`;
+      if (!inventoryRows.length) {
+        body.innerHTML = `<div class="empty">请先配置 SKU，系统会按 SKU 生成初始库存配置行。</div>`;
         return;
       }
       body.innerHTML = `
         <div class="table-wrap">
-          <table class="inventory-config-table">
-            <thead><tr><th>SKU 名称</th><th><span class="required-star">*</span>库存模式</th><th><span class="required-star">*</span>库存来源</th><th><span class="required-star">*</span>初始总库存</th><th>时段库存重置配置</th><th>安全库存阈值</th></tr></thead>
-            <tbody>${initializableRows.map(({ row, index }) => {
+          <table>
+            <thead><tr><th>SKU 名称</th><th><span class="required-star">*</span>库存模式</th><th><span class="required-star">*</span>初始总库存</th><th>时段库存重置配置</th><th>安全库存阈值</th><th>库存状态</th><th>备注</th></tr></thead>
+            <tbody>${inventoryRows.map((row, index) => {
               const isCdkeyRow = isCdkeyInventoryRow(index, row);
               const unlimitedDisabled = row.stockMode === "不限量";
               const stockModeEditor = isCdkeyRow
@@ -7623,10 +7658,11 @@
               return `<tr>
                 <td>${row.skuDisplayText || "-"}</td>
                 <td>${stockModeEditor}</td>
-                <td>${cdkeyPoolEditor(skuRows[index], index)}</td>
                 <td><input class="mini-input" ${totalStockDisabled ? "disabled" : ""} data-inv="${index}" data-inv-field="totalStock" value="${totalStockValue}"></td>
                 <td>${dailyReleaseEditorHtml(row.dailyReleases, "inv", index, unlimitedDisabled)}</td>
                 <td><input class="mini-input" ${unlimitedDisabled ? "disabled" : ""} data-inv="${index}" data-inv-field="warningThreshold" value="${unlimitedDisabled ? "不限量" : row.warningThreshold}"></td>
+                <td>${row.stockState}</td>
+                <td><input class="mini-input" data-inv="${index}" data-inv-field="remark" value="${row.remark}">${cdkeyInventoryHint(index)}</td>
               </tr>`;
             }).join("")}</tbody>
           </table>
@@ -7636,9 +7672,14 @@
       body.querySelectorAll("[data-inv-release]").forEach(input => input.addEventListener("input", updateInventoryDailyRelease));
       body.querySelectorAll("[data-add-inv-release]").forEach(btn => btn.addEventListener("click", addInventoryDailyRelease));
       body.querySelectorAll("[data-remove-inv-release]").forEach(btn => btn.addEventListener("click", removeInventoryDailyRelease));
-      body.querySelectorAll("[data-cdkey-pool]").forEach(input => input.addEventListener("input", updateSkuCdkeyPool));
-      body.querySelectorAll("[data-check-pool]").forEach(btn => btn.addEventListener("click", () => checkSkuCdkeyPool(Number(btn.dataset.checkPool))));
-      body.querySelectorAll("[data-select-pool]").forEach(btn => btn.addEventListener("click", () => openPoolModal(Number(btn.dataset.selectPool))));
+    }
+
+    function cdkeyInventoryHint(index) {
+      const sku = skuRows[index];
+      if (!sku || !isCdkeyDelivery(sku.delivery)) return "";
+      const check = sku.cdkeyPoolCheck || (sku.cdkeyPoolId ? checkCdkeyPool(sku.cdkeyPoolId) : null);
+      if (check?.ok) return `<div class="minor">已关联码池 ${sku.cdkeyPoolId}，总码数 ${check.pool.total} / 可用码 ${check.pool.available}；库存由 CDKey 码池列表同步。</div>`;
+      return `<div class="minor">CDKey SKU 库存模式固定为限量；请先在 SKU 配置中填写并校验可用的 CDKey 码池 ID，绑定后库存由码池列表同步。</div>`;
     }
 
     function updateInventoryFromInput(e) {
@@ -7807,33 +7848,27 @@
 
     function validateInventoryRows() {
       const errors = [];
-      const targetRows = inventoryRows
-        .map((row, index) => ({ row, index }))
-        .filter(item => item.row._initializable !== false);
-      const expectedCount = formMode === "edit"
-        ? skuRows.filter(row => !originalEditingSkuIds.has(row.skuId) || !hasInitializedInventory(row.skuId)).length
-        : skuRows.length;
-      if (targetRows.length !== expectedCount) {
-        errors.push({ item: "库存来源与初始化", problem: "SKU 与库存来源初始化行数量不一致", suggestion: "请检查 SKU 配置后重新进入库存来源与初始化" });
+      if (inventoryRows.length !== skuRows.length) {
+        errors.push({ item: "初始库存配置", problem: "SKU 与初始库存配置行数量不一致", suggestion: "请检查 SKU 配置后重新进入初始库存配置" });
       }
-      targetRows.forEach(({ row, index }) => {
+      inventoryRows.forEach((row, index) => {
         const isCdkeyRow = isCdkeyInventoryRow(index, row);
         if (isCdkeyRow) applyCdkeyInventorySync(row, index);
         const name = row.skuDisplayText || "未命名 SKU";
         if (!isCdkeyRow && row.stockMode === "限量" && !/^[1-9]\d*$/.test(String(row.totalStock))) {
-          errors.push({ item: "库存来源与初始化", problem: `SKU「${name}」初始总库存缺失`, suggestion: "请填写当前 SKU 的初始总库存" });
+          errors.push({ item: "初始库存配置", problem: `SKU「${name}」初始总库存缺失`, suggestion: "请填写当前 SKU 的初始总库存" });
         }
         [["warningThreshold", "安全库存阈值"]].forEach(([field, label]) => {
           if (row[field] !== "" && !/^\d+$/.test(String(row[field]))) {
-            errors.push({ item: "库存来源与初始化", problem: `SKU「${name}」${label}格式错误`, suggestion: "请填写非负整数" });
+            errors.push({ item: "初始库存配置", problem: `SKU「${name}」${label}格式错误`, suggestion: "请填写非负整数" });
           }
         });
         if (row.warningThreshold !== "" && Number(row.warningThreshold) > 100) {
-          errors.push({ item: "库存来源与初始化", problem: `SKU「${name}」安全库存阈值不能大于 100`, suggestion: "请填写 0-100 的整数" });
+          errors.push({ item: "初始库存配置", problem: `SKU「${name}」安全库存阈值不能大于 100`, suggestion: "请填写 0-100 的整数" });
         }
         if (row.stockMode === "限量" && (!isCdkeyRow || row.totalStock)) {
           const releaseError = validateDailyReleaseRows(row.dailyReleases, row.totalStock);
-          if (releaseError) errors.push({ item: "库存来源与初始化", problem: `SKU「${name}」时段库存重置配置错误`, suggestion: releaseError });
+          if (releaseError) errors.push({ item: "初始库存配置", problem: `SKU「${name}」时段库存重置配置错误`, suggestion: releaseError });
         }
       });
       return errors;
@@ -7860,18 +7895,18 @@
         }
 
         if (pool.state !== "上架") {
-          errors.push({ item: "CDKey 码池", problem: `SKU「${skuName}」配置的码池不是上架状态`, suggestion: "请重新选择上架状态的码池" });
+          errors.push({ item: "CDKey 码池", problem: `SKU「${skuName}」配置的码池不是上架状态`, suggestion: "请更换上架状态的码池" });
           return;
         }
 
         if (pool.available <= 0) {
-          errors.push({ item: "CDKey 码池", problem: `SKU「${skuName}」配置的码池可用数量不足`, suggestion: "请补充码池或重新选择可用码池" });
+          errors.push({ item: "CDKey 码池", problem: `SKU「${skuName}」配置的码池可用数量不足`, suggestion: "请补充码池或更换码池" });
           return;
         }
 
         const bindingError = cdkeyPoolBindingError(poolId, row.skuId);
         if (bindingError) {
-          errors.push({ item: "CDKey 码池", problem: `SKU「${skuName}」${bindingError}`, suggestion: "请重新选择未绑定其他 SKU 的码池" });
+          errors.push({ item: "CDKey 码池", problem: `SKU「${skuName}」${bindingError}`, suggestion: "请更换未绑定 SKU 的码池" });
           return;
         }
 
@@ -7939,6 +7974,7 @@
         if (bindingError) row.cdkeyPoolCheck = { status: "失败", ok: false, message: bindingError };
       }
       closeModal("poolModal");
+      renderSkuEdit();
       renderInventoryConfig();
       toast(row.cdkeyPoolCheck.ok ? "码池 ID 已回填并校验通过。" : row.cdkeyPoolCheck.message);
     }
@@ -7968,7 +8004,7 @@
 
     function skuCurrencySummary(productOrRows) {
       const rows = Array.isArray(productOrRows) ? productOrRows : (productOrRows?.skuList || []);
-      const values = [...new Set(rows.map(row => normalizeSkuCurrency(row.currency)).filter(Boolean))];
+      const values = [...new Set(rows.flatMap(row => enabledSkuPrices(row).map(price => price.currency)).filter(Boolean))];
       if (!values.length) return productOrRows?.currency || "新积分";
       return values.length === 1 ? values[0] : values.join(" / ");
     }
@@ -8069,12 +8105,6 @@
       return "码池可用";
     }
 
-    function requiredAttributeValuesComplete(attrs, values) {
-      return attrs
-        .filter(attr => attr.required !== false)
-        .every(attr => String(values?.[attr.code] ?? "").trim() !== "");
-    }
-
     function createProductFromForm(state) {
       const spu = editingProduct?.spu || nextSpuId();
       const delivery = resolveFormDelivery();
@@ -8082,43 +8112,16 @@
       syncSkuDeliveryFromForm();
       syncInventoryRows(false);
       const stock = editingProduct ? editingProduct.stock : buildStockFromInventoryRows();
-      const usedSkuIds = new Set(skuRows.map(row => originalEditingSkuIds.has(row.skuId) ? row.skuId : "").filter(Boolean));
-      let nextSkuSequence = 1;
-      const allocateSkuId = () => {
-        let candidate = "";
-        do {
-          candidate = `${spu}-SKU${String(nextSkuSequence++).padStart(2, "0")}`;
-        } while (usedSkuIds.has(candidate));
-        usedSkuIds.add(candidate);
-        return candidate;
-      };
-      const savedSkuList = skuRows.map((row, index) => {
-        const skuId = originalEditingSkuIds.has(row.skuId) ? row.skuId : allocateSkuId();
-        return normalizeSkuRow({ ...row, delivery, skuId, sort: row.sort ?? index + 1, skuAttrCodes: [...selectedSkuAttrCodes] }, type, index, selectedSkuAttrCodes, Boolean(editingProduct?.templateDetachment?.SKU));
-      });
-      const savedInventoryRows = inventoryRows.map((row, index) => {
+      const savedInventoryRows = (editingProduct ? (editingProduct.inventoryRows || inventoryRows) : inventoryRows).map((row, index) => {
         const next = { ...row };
         applyCdkeyInventorySync(next, index);
-        delete next._initializable;
         return {
           ...next,
-          rowKey: savedSkuList[index]?.skuId || next.rowKey,
           dailyReleases: next.stockMode === "不限量" ? [] : normalizeDailyReleaseRows(next.dailyReleases || [])
         };
       });
       const cdkeyState = resolveCdkeyState(skuRows, savedInventoryRows);
       const spuTemplate = getSpuTemplate(type);
-      const skuTemplate = getSkuTemplate(type);
-      const templateDetachment = { ...(editingProduct?.templateDetachment || {}) };
-      const spuRebindComplete = !templateDetachment.SPU || Boolean(spuTemplate && requiredAttributeValuesComplete(getSpuTemplateAttributes(type), spuAttrValues));
-      const skuRebindComplete = !templateDetachment.SKU || Boolean(skuTemplate && skuRows.length && skuRows.every(row => requiredAttributeValuesComplete(getTemplateAttributes(type), row.attributeValues)));
-      if (spuTemplate && spuRebindComplete) delete templateDetachment.SPU;
-      if (skuTemplate && skuRebindComplete) delete templateDetachment.SKU;
-      const boundSpuTemplate = templateDetachment.SPU ? null : spuTemplate;
-      const boundSkuTemplate = templateDetachment.SKU ? null : skuTemplate;
-      const issues = state === "草稿" ? draftIssuesFromForm() : [];
-      if (templateDetachment.SPU) issues.push("SPU 属性模板已解绑");
-      if (templateDetachment.SKU) issues.push("SKU 属性模板已解绑");
       const product = {
         spu,
         name: valueOf("formName"),
@@ -8128,78 +8131,33 @@
         productDesc: richTextValue("formProductDesc"),
         type,
         skuSummary: skuSummaryText(),
-        currency: "新积分",
+        currency: skuCurrencySummary(skuRows),
         delivery,
         state,
         exposure: "未投放",
         stock,
         cdkey: cdkeyState,
-        createdAt: editingProduct?.createdAt || nowText(),
         updatedAt: nowText(),
-        issues: [...new Set(issues)],
+        issues: state === "草稿" ? draftIssuesFromForm() : [],
         color: colorForProductType(type),
         tags: splitTagValues(valueOf("formTags")),
         cornerTags: valueOf("formCornerTags") ? [valueOf("formCornerTags")] : [],
-        spuTemplateId: boundSpuTemplate?.templateId || "",
-        spuTemplateName: boundSpuTemplate?.templateName || "",
-        skuTemplateId: boundSkuTemplate?.templateId || "",
-        skuTemplateName: boundSkuTemplate?.templateName || "",
-        templateDetachment,
+        spuTemplateId: spuTemplate?.templateId || "",
+        spuTemplateName: spuTemplate?.templateName || "",
         exchangeDisplayBase: Math.max(0, Number(valueOf("formExchangeDisplayBase") || 0) || 0),
         spuAttributeValues: normalizeSpuAttributeValues(type, spuAttrValues),
         remark: valueOf("formRemark"),
         exchangeDesc: richTextValue("formExchangeDesc"),
         skuAttrCodes: [...selectedSkuAttrCodes],
-        skuList: savedSkuList,
+        skuList: skuRows.map((row, index) => normalizeSkuRow({ ...row, delivery, skuId: `${spu}-SKU${String(index + 1).padStart(2, "0")}`, sort: row.sort ?? index + 1, skuAttrCodes: [...selectedSkuAttrCodes] }, type, index, selectedSkuAttrCodes)),
         inventoryRows: savedInventoryRows,
         logs: [
           { time: nowText(), user: "平台运营", type: editingProduct ? "编辑基础信息" : "新建商品", object: spu, before: editingProduct ? editingProduct.name : "-", after: valueOf("formName"), remark: state === "上架" ? "保存并上架" : "保存草稿" },
           { time: nowText(), user: "平台运营", type: "SKU 配置变更", object: `${spu} / SKU`, before: "-", after: skuSummaryText(), remark: "新建 / 编辑页保存" },
-          { time: nowText(), user: "平台运营", type: "履约方式变更", object: spu, before: "-", after: normalizeDelivery(delivery), remark: isCdkeyDelivery(delivery) ? "仅自动履约（CDKey）商品的 SKU 需要配置码池 ID" : "自动履约（虚拟道具）和手动履约（实物）无需在商品中心配置履约参数" },
-          ...(editingProduct?.logs || [])
+          { time: nowText(), user: "平台运营", type: "履约方式变更", object: spu, before: "-", after: normalizeDelivery(delivery), remark: isCdkeyDelivery(delivery) ? "仅自动履约（CDKey）商品的 SKU 需要配置码池 ID" : "自动履约（虚拟道具）和手动履约（实物）无需在商品中心配置履约参数" }
         ]
       };
       return product;
-    }
-
-    function initializeNewSkuInventoryRecords(product) {
-      product.skuList.forEach((sku, index) => {
-        if (inventoryRecords.some(record => record.skuId === sku.skuId)) return;
-        const row = product.inventoryRows?.[index];
-        if (!row) return;
-        const delivery = sku.delivery || product.delivery;
-        const pool = isCdkeyDelivery(delivery) ? getPoolById(sku.cdkeyPoolId || sku.deliveryParams?.cdkey?.poolId || "") : null;
-        const unlimited = row.stockMode === "不限量";
-        if (isCdkeyDelivery(delivery) && !pool) return;
-        if (!isCdkeyDelivery(delivery) && !unlimited && !/^[1-9]\d*$/.test(String(row.totalStock))) return;
-        const totalStock = pool ? Number(pool.total || 0) : (unlimited ? "不限量" : Number(row.totalStock || 0));
-        const availableStock = pool ? Number(pool.available || 0) : (unlimited ? "不限量" : Number(row.totalStock || 0));
-        const releases = unlimited ? [] : normalizeDailyReleaseRows(row.dailyReleases || []);
-        const todayLimit = releases.length ? Math.max(...releases.map(item => numberValue(item.qty))) : (unlimited ? "不限量" : "");
-        const record = makeInventoryRecord({
-          inventoryId: `INV-${sku.skuId}`,
-          spu: product.spu,
-          skuId: sku.skuId,
-          stockMode: pool ? "限量" : row.stockMode,
-          totalStock,
-          availableStock,
-          lockedStock: 0,
-          deductedStock: pool ? Number(pool.issued || 0) : 0,
-          dailyReleases: releases,
-          todayLimit,
-          todayRemaining: unlimited ? "不限量" : (todayLimit === "" ? "" : Math.min(numberValue(todayLimit), numberValue(availableStock))),
-          warningThreshold: unlimited ? 0 : Number(row.warningThreshold || 0),
-          cdkeyPoolId: pool?.id || "",
-          createdAt: nowText(),
-          updatedAt: nowText(),
-          lastSyncTime: nowText(),
-          remark: ""
-        });
-        inventoryRecords.unshift(record);
-        addInventoryFlow(record, "初始化", snapshotInventory(record), snapshotInventory(record), "新增 SKU 初始化库存", "", "系统");
-      });
-      visibleInventoryRecords = [...inventoryRecords];
-      syncProductStockSummaryByInventory(product.spu);
     }
 
     function draftIssuesFromForm() {
@@ -8210,9 +8168,7 @@
       if (!skuRows.length) issues.push("SKU 配置缺失");
       if (!getFormDelivery()) issues.push("履约方式缺失");
       if (isCdkeyDelivery(getFormDelivery()) && skuRows.some(s => !(s.cdkeyPoolId || s.deliveryParams?.cdkey?.poolId))) issues.push("CDKey 码池未配置");
-      if (!buildStockFromInventoryRows()) issues.push("库存来源与初始化缺失");
-      if (editingProduct?.templateDetachment?.SPU && !getSpuTemplate(valueOf("formType"))) issues.push("SPU 属性模板已解绑");
-      if (editingProduct?.templateDetachment?.SKU && !getSkuTemplate(valueOf("formType"))) issues.push("SKU 属性模板已解绑");
+      if (!buildStockFromInventoryRows()) issues.push("初始库存配置缺失");
       return issues;
     }
 
@@ -8224,7 +8180,6 @@
       } else {
         products.unshift(product);
       }
-      initializeNewSkuInventoryRecords(product);
       visibleProducts = [...products];
       renderTable();
       renderStats();
@@ -8346,28 +8301,25 @@
       skuRows.forEach((row, index) => {
         if (!/^[1-9]\d*$/.test(String(row.sort))) markInvalidElement(`[data-sku="${index}"][data-field="sort"]`);
         if (String(row.duration ?? "").trim() !== "" && !/^\d+$/.test(String(row.duration).trim())) markInvalidElement(`[data-sku="${index}"][data-field="duration"]`);
-        if (!/^[1-9]\d*$/.test(String(row.price))) markInvalidElement(`[data-sku="${index}"][data-field="price"]`);
-        if (normalizeSkuStrikePrice(row) && !/^[1-9]\d*$/.test(normalizeSkuStrikePrice(row))) markInvalidElement(`[data-sku="${index}"][data-field="strikePrice"]`);
+        if (skuPriceGroupErrors(row).length) markInvalidElement(`[data-edit-sku-price="${index}"]`);
         activeAttrs.forEach(attr => {
           if (attr.required !== false && !row.attributeValues?.[attr.code]) markInvalidElement(`[data-sku="${index}"][data-attr="${attr.code}"]`);
         });
         if (isCdkeyDelivery(getFormDelivery()) && !(row.cdkeyPoolId || row.deliveryParams?.cdkey?.poolId)) markInvalidElement(`[data-sku="${index}"][data-cdkey-pool="${index}"]`);
       });
       inventoryRows.forEach((row, index) => {
-        if (row._initializable === false) return;
         if (!isCdkeyInventoryRow(index, row) && row.stockMode === "限量" && !/^[1-9]\d*$/.test(String(row.totalStock))) markInvalidElement(`[data-inv="${index}"][data-inv-field="totalStock"]`);
       });
-      if ((formMode !== "edit" && !inventoryRows.length) || validateInventoryRows().length) document.getElementById("sectionInitialInventory")?.classList.add("invalid");
+      if (!inventoryRows.length || validateInventoryRows().length) document.getElementById("sectionInitialInventory")?.classList.add("invalid");
     }
     function getValidationFailures(product, fromForm) {
       const list = [];
       if (fromForm) {
         if (!valueOf("formName")) list.push(["基础信息", "商品对外名称缺失", "请补充商品对外名称"]);
         if (!valueOf("formRiskLevel")) list.push(["基础信息", "风险等级缺失", "请选择风险等级"]);
-        if (!valueOf("formDelivery")) list.push(["基础信息", "履约方式缺失", "请选择实际履约方式"]);
+        if (!valueOf("formDelivery")) list.push(["基础信息", "履约方式缺失", "请重新选择商品类型以自动匹配履约方式"]);
+        if (valueOf("formType") && valueOf("formDelivery") && !isDeliveryCompatibleWithType(valueOf("formType"), valueOf("formDelivery"))) list.push(["基础信息", "履约方式与商品类型不匹配", "请重新选择商品类型以自动匹配履约方式"]);
         if (!valueOf("formType")) list.push(["商品类型", "商品类型缺失", "请选择商品类型"]);
-        if (editingProduct?.templateDetachment?.SPU && !getSpuTemplate(valueOf("formType"))) list.push(["SPU 属性模板", "原模板已解绑且暂无可用模板", "请等待 SPU 属性模板重新上架后再编辑关联"]);
-        if (editingProduct?.templateDetachment?.SKU && !getSkuTemplate(valueOf("formType"))) list.push(["SKU 属性模板", "原模板已解绑且暂无可用模板", "请等待 SKU 属性模板重新上架后再编辑关联"]);
         if (valueOf("formExchangeDisplayBase") && !/^\d+$/.test(valueOf("formExchangeDisplayBase"))) list.push(["SPU 运营展示配置", "兑换量展示基数格式错误", "请填写 0 或正整数"]);
         validateSpuAttrValues().forEach(err => list.push([err.item, err.problem, err.suggestion]));
         if (!materialAssets.main.length) list.push(["商品素材", "商品头图缺失", "请上传商品头图"]);
@@ -8376,24 +8328,22 @@
         if (!skuRows.length) list.push(["SKU 配置", "未配置 SKU", "请至少配置 1 条 SKU"]);
         validateSkuRows().forEach(msg => {
           const item = msg.includes("属性") ? "SKU 属性值" : msg.includes("履约方式") ? "履约方式" : "SKU 配置";
-      const suggestion = msg.includes("属性") ? "请补充或调整 SKU 属性值" : msg.includes("履约方式") ? "请按系统履约方式枚举重新选择" : "请调整兑换价格、划线价或限兑配置";
+      const suggestion = msg.includes("属性") ? "请补充或调整 SKU 属性值" : msg.includes("履约方式") ? "请按系统履约方式枚举重新选择" : "请调整多币种价格或限兑配置";
           list.push([item, msg, suggestion]);
         });
         validateSkuCdkeyPools().forEach(err => list.push([err.item, err.problem, err.suggestion]));
         validateInventoryRows().forEach(err => list.push([err.item, err.problem, err.suggestion]));
       } else {
-        if (product.issues.includes("库存来源与初始化缺失")) list.push(["库存来源与初始化", "库存来源或初始库存缺失", "请在新建商品或编辑新增 SKU 时完成配置，存量 SKU 后续调整前往库存列表维护"]);
+        if (product.issues.includes("初始库存配置缺失")) list.push(["初始库存配置", "初始库存配置缺失或不完整", "请在新建商品时配置初始库存，后续调整前往库存列表维护"]);
         if (product.issues.includes("商品头图缺失")) list.push(["商品素材", "商品头图缺失", "请上传商品头图"]);
         if (product.issues.includes("商品说明缺失")) list.push(["商品素材", "商品说明缺失", "请补充商品说明富文本"]);
         if (product.issues.includes("权益素材缺失")) list.push(["虚拟权益素材", "虚拟装扮类商品缺少商品详情图", "请补充商品详情图"]);
         if (product.issues.includes("履约方式缺失")) list.push(["履约方式", "履约方式缺失", "请配置履约方式"]);
-        if (product.issues.includes("SPU 属性模板已解绑")) list.push(["SPU 属性模板", "属性模板已解绑", "请先编辑商品，重新设置 SPU 属性值并保存关联"]);
-        if (product.issues.includes("SKU 属性模板已解绑")) list.push(["SKU 属性模板", "属性模板已解绑", "请先编辑商品，重新设置 SKU 属性值并保存关联"]);
         if (product.issues.includes("CDKey 码池未配置")) list.push(["CDKey 码池", "CDKey SKU 未填写码池 ID", "请填写可用的 CDKey 码池 ID"]);
         if (product.cdkey === "码池未配置") list.push(["CDKey 码池", "CDKey SKU 未填写码池 ID", "请填写可用的 CDKey 码池 ID"]);
         if (product.cdkey === "码池不存在") list.push(["CDKey 码池", "CDKey SKU 配置的码池 ID 不存在", "请检查码池 ID 是否正确"]);
-        if (product.cdkey === "码池不可用") list.push(["CDKey 码池", "CDKey SKU 配置的码池不是上架状态", "请前往码池管理恢复码池状态；本期不支持更换已绑定码池"]);
-        if (product.cdkey === "CDKey 不足") list.push(["CDKey 码池", "CDKey SKU 码池可用数量不足", "请前往码池管理补充可用码"]);
+        if (product.cdkey === "码池不可用") list.push(["CDKey 码池", "CDKey SKU 配置的码池不是上架状态", "请更换上架状态的码池"]);
+        if (product.cdkey === "CDKey 不足") list.push(["CDKey 码池", "CDKey SKU 码池可用数量不足", "请补充码池或更换码池"]);
       }
       return list.map(([item, problem, suggestion]) => ({ item, problem, suggestion }));
     }
@@ -8434,9 +8384,6 @@
     function stateTag(state) {
       const cls = state === "上架" ? "green" : state === "草稿" ? "orange" : state === "下架" ? "" : "";
       return `<span class="tag ${cls}">${state}</span>`;
-    }
-    function isEditableLifecycleState(state) {
-      return state === "草稿" || state === "下架";
     }
     function deliveryTag(delivery) {
       const normalized = normalizeDelivery(delivery);
