@@ -1127,7 +1127,7 @@
         <div class="page-head">
           <div>
             <h1>订单列表</h1>
-            <div class="sub">订单状态按运营口径合并展示，详情保留技术状态；实物订单按地址和履约结果映射运营处理进度。</div>
+            <div class="sub">订单状态按运营口径合并展示，详情保留技术状态；实物订单按地址和履约结果映射履约进度。</div>
           </div>
           <div class="btn-row"><button class="btn" id="exportOrdersBtn">导出列表</button></div>
         </div>
@@ -1142,7 +1142,7 @@
               <div class="field"><label>货币类型</label><select id="mallOrderCurrencyFilter"><option value="">全部</option><option>积分</option><option>人民币</option></select></div>
               <div class="field"><label>支付方式</label><select id="mallOrderPaymentMethodFilter"><option value="">全部</option><option>积分支付</option><option>支付宝</option><option>微信支付</option></select></div>
               <div class="field"><label>履约方式</label><select id="mallOrderDeliveryFilter"><option value="">全部</option><option>自动履约（虚拟道具）</option><option>自动履约（CDKey）</option><option>手动履约（实物）</option></select></div>
-              <div class="field"><label>运营履约进度</label><select id="mallOrderFulfillmentProgressFilter"><option value="">全部</option><option>待用户填写地址</option><option>待运营发货</option><option>待履约</option><option>履约中</option><option>履约完成</option><option>履约异常</option></select></div>
+              <div class="field"><label>履约进度</label><select id="mallOrderFulfillmentProgressFilter"><option value="">全部</option><option>待用户填写地址</option><option>待运营发货</option><option>待履约</option><option>履约中</option><option>履约完成</option><option>履约异常</option></select></div>
             </div>
             <div class="filter-actions">
               <button class="btn primary" id="searchOrdersBtn">查询</button>
@@ -1162,7 +1162,7 @@
           <div class="table-head"><div><div class="table-title">订单列表</div><div class="table-meta">技术状态映射为运营状态展示；虚拟商品履约异常仅支持查看，由研发侧处理。</div></div><div class="table-meta" id="orderTableCount">共 0 条</div></div>
           <div class="table-wrap">
             <table class="order-management-table">
-              <thead><tr><th>订单号</th><th>用户ID</th><th>用户NN号</th><th>用户手机号</th><th>商品名称</th><th>数量</th><th>支付金额</th><th>支付方式</th><th>履约方式</th><th>订单状态</th><th>运营履约进度</th><th>失败/挂起原因</th><th>创建时间</th><th>更新时间</th><th>操作</th></tr></thead>
+              <thead><tr><th>订单号</th><th>用户ID</th><th>用户NN号</th><th>用户手机号</th><th>商品名称</th><th>数量</th><th>支付金额</th><th>支付方式</th><th>履约方式</th><th>订单状态</th><th>履约进度</th><th>失败/挂起原因</th><th>创建时间</th><th>更新时间</th><th>操作</th></tr></thead>
               <tbody id="orderManagementTbody"></tbody>
             </table>
           </div>
@@ -8992,7 +8992,7 @@
     function orderFulfillmentItems(order) {
       const items = [
         ["商品类型", order.productType || "-"], ["库存类型", order.inventoryType || "-"],
-        ["履约状态", fulfillmentStatusTag(order.fulfillmentStatus)], ["运营履约进度", fulfillmentProgressTag(order)],
+        ["履约状态", fulfillmentStatusTag(order.fulfillmentStatus)], ["履约进度", fulfillmentProgressTag(order)],
         ["用户获得形式", order.acquireForm || "-"], ["履约渠道", order.fulfillmentChannel || order.fulfill]
       ];
       if (order.productType === "CDKey") items.push(["CDKey 展示", order.maskedCdkey || "-"]);
@@ -9206,7 +9206,7 @@
         order.no, order.userId, order.nnNo, order.phone, order.product, order.quantity, formatOrderAmount(order), order.paymentMethod, order.fulfill, operationalOrderStatus(order), order.status,
         order.fulfillmentStatus, operationalFulfillmentProgress(order), order.reason, order.created, order.updated
       ]);
-      downloadPrototypeCsv("订单列表", ["订单号", "用户ID", "用户NN号", "用户手机号", "商品名称", "数量", "支付金额", "支付方式", "履约方式", "订单状态", "技术订单状态", "履约状态", "运营履约进度", "失败/挂起原因", "创建时间", "更新时间"], rows);
+      downloadPrototypeCsv("订单列表", ["订单号", "用户ID", "用户NN号", "用户手机号", "商品名称", "数量", "支付金额", "支付方式", "履约方式", "订单状态", "技术订单状态", "履约状态", "履约进度", "失败/挂起原因", "创建时间", "更新时间"], rows);
     }
     function stateTag(state) {
       const cls = state === "上架" ? "green" : state === "草稿" ? "orange" : state === "下架" ? "" : "";
