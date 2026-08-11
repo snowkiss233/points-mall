@@ -1127,7 +1127,7 @@
         <div class="page-head">
           <div>
             <h1>订单列表</h1>
-            <div class="sub">订单状态、支付信息与履约进度分离展示；实物订单按地址和履约结果映射运营处理进度。</div>
+            <div class="sub">订单状态按运营口径合并展示，详情保留技术状态；实物订单按地址和履约结果映射运营处理进度。</div>
           </div>
           <div class="btn-row"><button class="btn" id="exportOrdersBtn">导出列表</button></div>
         </div>
@@ -1137,7 +1137,7 @@
             <div class="filter-grid">
               <div class="field"><label>订单号</label><input id="mallOrderNoFilter" placeholder="如 ORD20260706002"></div>
               <div class="field"><label>用户ID/NN号/手机号</label><input id="mallOrderUserFilter" placeholder="输入用户标识"></div>
-              <div class="field"><label>订单状态</label><select id="mallOrderStatusFilter"><option value="">全部</option><option>待处理</option><option>处理中</option><option>待支付</option><option>支付失败</option><option>已支付</option><option>已完成</option><option>已关闭</option><option>已取消</option><option>异常</option></select></div>
+              <div class="field"><label>订单状态</label><select id="mallOrderStatusFilter"><option value="">全部</option><option>待支付</option><option>支付失败</option><option>已支付</option><option>已完成</option><option>已关闭</option><option>异常</option></select></div>
               <div class="field"><label>商品名称</label><input id="mallOrderProductFilter" placeholder="输入商品名称"></div>
               <div class="field"><label>货币类型</label><select id="mallOrderCurrencyFilter"><option value="">全部</option><option>积分</option><option>人民币</option></select></div>
               <div class="field"><label>支付方式</label><select id="mallOrderPaymentMethodFilter"><option value="">全部</option><option>积分支付</option><option>支付宝</option><option>微信支付</option></select></div>
@@ -1153,13 +1153,13 @@
 
         <section class="stats" aria-label="订单统计">
           <div class="stat"><div><div class="stat-name">订单总数</div><div class="stat-value" id="orderStatTotal">0</div></div><div class="stat-mark">单</div></div>
-          <div class="stat warning"><div><div class="stat-name">待处理订单</div><div class="stat-value" id="orderStatPending">0</div></div><div class="stat-mark">待</div></div>
+          <div class="stat warning"><div><div class="stat-name">待支付订单</div><div class="stat-value" id="orderStatPending">0</div></div><div class="stat-mark">待</div></div>
           <div class="stat danger"><div><div class="stat-name">履约异常</div><div class="stat-value" id="orderStatFailed">0</div></div><div class="stat-mark">异</div></div>
           <div class="stat"><div><div class="stat-name">实物待发货</div><div class="stat-value" id="orderStatPhysical">0</div></div><div class="stat-mark">货</div></div>
         </section>
 
         <section class="card">
-          <div class="table-head"><div><div class="table-title">订单列表</div><div class="table-meta">订单支付信息按货币类型、支付金额和支付方式独立展示；履约异常按原支付渠道退款。</div></div><div class="table-meta" id="orderTableCount">共 0 条</div></div>
+          <div class="table-head"><div><div class="table-title">订单列表</div><div class="table-meta">技术状态映射为运营状态展示；虚拟商品履约异常仅支持查看，由研发侧处理。</div></div><div class="table-meta" id="orderTableCount">共 0 条</div></div>
           <div class="table-wrap">
             <table class="order-management-table">
               <thead><tr><th>订单号</th><th>用户ID</th><th>用户NN号</th><th>用户手机号</th><th>商品名称</th><th>数量</th><th>货币类型</th><th>支付金额</th><th>支付方式</th><th>履约方式</th><th>订单状态</th><th>运营履约进度</th><th>收货信息</th><th>物流单号</th><th>失败/挂起原因</th><th>创建时间</th><th>更新时间</th><th>操作</th></tr></thead>
@@ -8881,7 +8881,7 @@
     }
 
     function canHandleOrderFulfillmentFailure(order) {
-      return isOrderFulfillmentFailed(order) && !["已关闭", "已取消"].includes(order.status);
+      return isPhysicalOrder(order) && isOrderFulfillmentFailed(order) && !["已关闭", "已取消"].includes(order.status);
     }
 
     function canShipPhysicalOrder(order) {
@@ -8889,11 +8889,19 @@
         && order.addressStatus === "已填写" && (!order.trackingNo || order.trackingNo === "-");
     }
 
-    function orderStatusTag(status) {
+    function operationalOrderStatus(order) {
+      const technicalStatus = typeof order === "string" ? order : order.status;
+      if (["待处理", "处理中", "待支付"].includes(technicalStatus)) return "待支付";
+      if (["已关闭", "已取消"].includes(technicalStatus)) return "已关闭";
+      return technicalStatus;
+    }
+
+    function orderStatusTag(status, technicalStatus = status) {
       const cls = status === "已完成" ? "green"
         : ["支付失败", "已关闭", "已取消", "异常"].includes(status) ? "red"
           : ["处理中", "已支付"].includes(status) ? "purple" : "orange";
-      return `<span class="tag ${cls}">${status}</span>`;
+      const title = technicalStatus !== status ? ` title="技术状态：${technicalStatus}"` : "";
+      return `<span class="tag ${cls}"${title}>${status}</span>`;
     }
 
     function fulfillmentStatusTag(status) {
@@ -8950,7 +8958,7 @@
       const fulfillmentProgress = valueOf("mallOrderFulfillmentProgressFilter");
       return mallOrders.filter(order => (!no || order.no.includes(no))
         && (!user || [order.userId, order.nnNo, order.phone].some(field => field.includes(user)))
-        && (!status || order.status === status)
+        && (!status || operationalOrderStatus(order) === status)
         && (!product || order.product.includes(product))
         && (!currencyType || order.currencyType === currencyType)
         && (!paymentMethod || order.paymentMethod === paymentMethod)
@@ -8964,14 +8972,14 @@
         <tr>
           <td>${order.no}</td><td>${order.userId}</td><td>${order.nnNo}</td><td>${order.phone}</td><td>${order.product}</td>
           <td>${order.quantity}</td><td>${order.currencyType}</td><td>${formatOrderAmount(order)}</td><td>${paymentMethodTag(order.paymentMethod)}</td>
-          <td>${deliveryTag(order.fulfill)}</td><td>${orderStatusTag(order.status)}</td>
+          <td>${deliveryTag(order.fulfill)}</td><td>${orderStatusTag(operationalOrderStatus(order), order.status)}</td>
           <td>${fulfillmentProgressTag(order)}</td><td>${orderShippingText(order)}</td><td>${isPhysicalOrder(order) ? order.trackingNo || "-" : "-"}</td>
           <td>${order.reason}</td><td>${order.created}</td><td>${order.updated}</td><td>${orderActionHtml(order)}</td>
         </tr>
       `).join("") : `<tr><td colspan="18"><div class="empty">当前筛选条件下暂无订单</div></td></tr>`;
       document.getElementById("orderTableCount").textContent = `共 ${rows.length} 条`;
       document.getElementById("orderStatTotal").textContent = rows.length;
-      document.getElementById("orderStatPending").textContent = rows.filter(order => ["待处理", "处理中", "待支付"].includes(order.status)).length;
+      document.getElementById("orderStatPending").textContent = rows.filter(order => operationalOrderStatus(order) === "待支付").length;
       document.getElementById("orderStatFailed").textContent = rows.filter(isOrderFulfillmentFailed).length;
       document.getElementById("orderStatPhysical").textContent = rows.filter(order => operationalFulfillmentProgress(order) === "待运营发货").length;
     }
@@ -8996,6 +9004,7 @@
       ];
       if (order.productType === "CDKey") items.push(["CDKey 展示", order.maskedCdkey || "-"]);
       if (order.productType === "虚拟道具") items.push(["背包权益", order.bagAsset || order.fulfillResult || "-"]);
+      if (!isPhysicalOrder(order) && isOrderFulfillmentFailed(order)) items.push(["异常处理方式", "研发侧处理（后台仅查看）"]);
       if (isPhysicalOrder(order)) items.push(
         ["收货信息状态", order.addressStatus || "-"],
         ["收货人", order.recipient || "-"], ["收货手机号", order.recipientPhone || "-"],
@@ -9010,7 +9019,8 @@
       document.getElementById("orderDetailTitle").textContent = `订单详情 · ${order.no}`;
       document.getElementById("orderDetailBody").innerHTML = `
         ${detailSection("订单概览", infoGrid([
-          ["订单状态", orderStatusTag(order.status)], ["用户", `${order.userId} / ${order.nnNo} / ${order.phone} / ${order.nick}`],
+          ["订单状态", orderStatusTag(operationalOrderStatus(order), order.status)], ["技术订单状态", orderStatusTag(order.status)],
+          ["用户", `${order.userId} / ${order.nnNo} / ${order.phone} / ${order.nick}`],
           ["商品", order.product], ["商品快照", order.productSnapshot], ["购买数量", `${order.quantity} 件`],
           ["货币类型", order.currencyType], ["单件支付金额", formatOrderAmount(order, order.unitAmount)],
           ["支付金额", formatOrderAmount(order)], ["支付方式", paymentMethodTag(order.paymentMethod)], ["履约方式", deliveryTag(order.fulfill)],
@@ -9200,11 +9210,11 @@
 
     function exportOrderManagementRecords() {
       const rows = getFilteredMallOrders().map(order => [
-        order.no, order.userId, order.nnNo, order.phone, order.product, order.quantity, order.currencyType, formatOrderAmount(order), order.paymentMethod, order.fulfill, order.status,
+        order.no, order.userId, order.nnNo, order.phone, order.product, order.quantity, order.currencyType, formatOrderAmount(order), order.paymentMethod, order.fulfill, operationalOrderStatus(order), order.status,
         order.fulfillmentStatus, operationalFulfillmentProgress(order), orderShippingText(order),
         isPhysicalOrder(order) ? order.trackingNo || "-" : "-", order.reason, order.created, order.updated
       ]);
-      downloadPrototypeCsv("订单列表", ["订单号", "用户ID", "用户NN号", "用户手机号", "商品名称", "数量", "货币类型", "支付金额", "支付方式", "履约方式", "订单状态", "履约状态", "运营履约进度", "收货信息", "物流单号", "失败/挂起原因", "创建时间", "更新时间"], rows);
+      downloadPrototypeCsv("订单列表", ["订单号", "用户ID", "用户NN号", "用户手机号", "商品名称", "数量", "货币类型", "支付金额", "支付方式", "履约方式", "订单状态", "技术订单状态", "履约状态", "运营履约进度", "收货信息", "物流单号", "失败/挂起原因", "创建时间", "更新时间"], rows);
     }
     function stateTag(state) {
       const cls = state === "上架" ? "green" : state === "草稿" ? "orange" : state === "下架" ? "" : "";
