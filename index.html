@@ -471,6 +471,37 @@
       min-width: 190px;
     }
     .action-list .btn.text { font-size: 13px; }
+    .points-flow-table { min-width: 1420px; }
+    .order-management-table { min-width: 2280px; }
+    .points-flow-table td,
+    .order-management-table td { white-space: nowrap; }
+    .order-management-table td:nth-child(5),
+    .order-management-table td:nth-child(12) {
+      white-space: normal;
+      min-width: 190px;
+    }
+    .amount.plus { color: var(--green); font-weight: 700; }
+    .amount.minus { color: var(--red); font-weight: 700; }
+    .points-account-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 2fr) minmax(220px, 1fr);
+      gap: 14px;
+      margin: 14px 0;
+    }
+    .points-balance-card {
+      border: 1px solid #bfdbfe;
+      background: linear-gradient(135deg, #eff6ff, #ffffff);
+      border-radius: var(--radius);
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .points-balance-card span { color: var(--muted); }
+    .points-balance-card strong { color: var(--primary); font-size: 32px; margin-top: 8px; }
+    .order-detail-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+    .audit-entry { padding: 10px 0; border-bottom: 1px solid var(--line); line-height: 1.7; }
+    .audit-entry:last-child { border-bottom: 0; }
     .empty {
       padding: 40px;
       text-align: center;
@@ -934,6 +965,7 @@
       .main { margin-left: 76px; width: calc(100% - 76px); }
       .filter-grid, .form-grid, .form-grid.three, .info-grid, .material-grid, .upload-row { grid-template-columns: 1fr; }
       .topbar { align-items: flex-start; height: auto; gap: 10px; padding: 12px; flex-direction: column; }
+      .points-account-layout { grid-template-columns: 1fr; }
       .global-search { width: 100%; }
       .top-actions { width: 100%; flex-wrap: wrap; }
     }
@@ -948,6 +980,10 @@
         <button class="nav-item active" data-menu="商品列表" id="menuProductList"><b>•</b><span>商品列表</span></button>
         <button class="nav-item" data-menu="商品属性模板" id="menuTemplate"><b>•</b><span>商品属性模板</span></button>
         <button class="nav-item" data-menu="商品投放管理" id="menuDisplay"><b>•</b><span>商品投放管理</span></button>
+        <div class="nav-title">积分管理</div>
+        <button class="nav-item" data-menu="积分流水记录" id="menuPointsFlow"><b>•</b><span>积分流水记录</span></button>
+        <div class="nav-title">订单管理</div>
+        <button class="nav-item" data-menu="订单列表" id="menuOrderManagement"><b>•</b><span>订单列表</span></button>
         <div class="nav-title">库存管理</div>
         <button class="nav-item" data-menu="库存列表" id="menuInventory"><b>•</b><span>库存列表</span></button>
         <div class="nav-title">履约记录</div>
@@ -1034,6 +1070,97 @@
                 </tr>
               </thead>
               <tbody id="productTbody"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <section id="pointsFlowPage" class="content" style="display:none">
+        <div class="page-head">
+          <div>
+            <h1>积分流水记录</h1>
+            <div class="sub">查询积分获取和消费流水，支持按用户、时间、来源和流水类型筛选。</div>
+          </div>
+          <div class="btn-row">
+            <button class="btn" id="openUserPointsBtn">用户积分查询</button>
+            <button class="btn primary" id="openAdjustPointsBtn">用户积分调整</button>
+            <button class="btn" id="exportPointsFlowBtn">导出列表</button>
+          </div>
+        </div>
+
+        <section class="card" aria-label="积分流水筛选区">
+          <div class="card-body">
+            <div class="filter-grid">
+              <div class="field"><label>流水ID</label><input id="pointFlowIdFilter" placeholder="如 FL20260706001"></div>
+              <div class="field"><label>用户ID/NN号/手机号</label><input id="pointFlowUserFilter" placeholder="输入用户标识"></div>
+              <div class="field"><label>流水类型</label><select id="pointFlowTypeFilter"><option value="">全部</option><option>获取</option><option>消费</option></select></div>
+              <div class="field"><label>来源类型</label><select id="pointFlowSourceFilter"><option value="">全部</option><option>任务领取</option><option>商城消费</option><option>订单退回</option><option>人工补发</option><option>人工扣减</option><option>活动增量</option></select></div>
+              <div class="field"><label>开始时间</label><input type="date" id="pointFlowStartFilter"></div>
+              <div class="field"><label>结束时间</label><input type="date" id="pointFlowEndFilter"></div>
+            </div>
+            <div class="filter-actions">
+              <button class="btn primary" id="searchPointsFlowBtn">查询</button>
+              <button class="btn" id="resetPointsFlowBtn">重置</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="stats" aria-label="积分流水统计">
+          <div class="stat"><div><div class="stat-name">流水总数</div><div class="stat-value" id="pointFlowStatTotal">0</div></div><div class="stat-mark">流</div></div>
+          <div class="stat"><div><div class="stat-name">获取记录</div><div class="stat-value" id="pointFlowStatGain">0</div></div><div class="stat-mark">得</div></div>
+          <div class="stat danger"><div><div class="stat-name">消费记录</div><div class="stat-value" id="pointFlowStatConsume">0</div></div><div class="stat-mark">消</div></div>
+          <div class="stat"><div><div class="stat-name">积分净变动</div><div class="stat-value" id="pointFlowStatNet">0</div></div><div class="stat-mark">净</div></div>
+        </section>
+
+        <section class="card">
+          <div class="table-head"><div><div class="table-title">积分流水记录列表</div><div class="table-meta">人工调整与失败订单退积分操作会同步生成流水，保留业务描述用于审计。</div></div><div class="table-meta" id="pointFlowTableCount">共 0 条</div></div>
+          <div class="table-wrap">
+            <table class="points-flow-table">
+              <thead><tr><th>流水ID</th><th>用户ID</th><th>用户NN号</th><th>用户手机号</th><th>流水类型</th><th>变动积分</th><th>变动后余额</th><th>来源类型</th><th>创建时间</th><th>业务描述</th></tr></thead>
+              <tbody id="pointFlowTbody"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <section id="orderManagementPage" class="content" style="display:none">
+        <div class="page-head">
+          <div>
+            <h1>订单列表</h1>
+            <div class="sub">查询订单主状态，处理发放失败订单及实物商品收货、发货流程。</div>
+          </div>
+          <div class="btn-row"><button class="btn" id="exportOrdersBtn">导出列表</button></div>
+        </div>
+
+        <section class="card" aria-label="订单筛选区">
+          <div class="card-body">
+            <div class="filter-grid">
+              <div class="field"><label>订单号</label><input id="mallOrderNoFilter" placeholder="如 ORD20260706002"></div>
+              <div class="field"><label>用户ID/NN号/手机号</label><input id="mallOrderUserFilter" placeholder="输入用户标识"></div>
+              <div class="field"><label>订单状态</label><select id="mallOrderStatusFilter"><option value="">全部</option><option>待处理</option><option>兑换失败</option><option>兑换成功</option><option>待发放</option><option>发放中</option><option>发放成功</option></select></div>
+              <div class="field"><label>商品名称</label><input id="mallOrderProductFilter" placeholder="输入商品名称"></div>
+              <div class="field"><label>履约方式</label><select id="mallOrderDeliveryFilter"><option value="">全部</option><option>自动履约（虚拟道具）</option><option>自动履约（CDKey）</option><option>手动履约（实物）</option></select></div>
+            </div>
+            <div class="filter-actions">
+              <button class="btn primary" id="searchOrdersBtn">查询</button>
+              <button class="btn" id="resetOrdersBtn">重置</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="stats" aria-label="订单统计">
+          <div class="stat"><div><div class="stat-name">订单总数</div><div class="stat-value" id="orderStatTotal">0</div></div><div class="stat-mark">单</div></div>
+          <div class="stat warning"><div><div class="stat-name">待处理订单</div><div class="stat-value" id="orderStatPending">0</div></div><div class="stat-mark">待</div></div>
+          <div class="stat danger"><div><div class="stat-name">履约异常</div><div class="stat-value" id="orderStatFailed">0</div></div><div class="stat-mark">异</div></div>
+          <div class="stat"><div><div class="stat-name">实物待发货</div><div class="stat-value" id="orderStatPhysical">0</div></div><div class="stat-mark">货</div></div>
+        </section>
+
+        <section class="card">
+          <div class="table-head"><div><div class="table-title">订单列表</div><div class="table-meta">失败订单支持重新发放或退回积分；已填写地址且未发货的实物订单支持修改地址和录入物流。</div></div><div class="table-meta" id="orderTableCount">共 0 条</div></div>
+          <div class="table-wrap">
+            <table class="order-management-table">
+              <thead><tr><th>订单号</th><th>用户ID</th><th>用户NN号</th><th>用户手机号</th><th>商品名称</th><th>消耗积分</th><th>履约方式</th><th>订单状态</th><th>履约进度</th><th>收货信息</th><th>物流单号</th><th>失败/挂起原因</th><th>创建时间</th><th>更新时间</th><th>操作</th></tr></thead>
+              <tbody id="orderManagementTbody"></tbody>
             </table>
           </div>
         </section>
@@ -2113,6 +2240,98 @@
     <div class="modal-foot"><button class="btn" data-close-modal="cdkeyDeleteModal">取消</button><button class="btn danger" id="confirmCdkeyDeleteBtn">确认删除</button></div>
   </section>
 
+  <aside class="drawer" id="orderDetailDrawer">
+    <div class="drawer-head">
+      <div class="drawer-title" id="orderDetailTitle">订单详情</div>
+      <div class="order-detail-actions" id="orderDetailActions"><button class="btn" data-close="orderDetailDrawer">关闭</button></div>
+    </div>
+    <div class="drawer-body" id="orderDetailBody"></div>
+  </aside>
+
+  <section class="modal wide" id="userPointsModal" role="dialog" aria-modal="true">
+    <div class="modal-head"><span>用户积分查询</span><button class="btn text" data-close-modal="userPointsModal">关闭</button></div>
+    <div class="modal-body">
+      <section class="card">
+        <div class="card-body">
+          <div class="filter-grid" style="grid-template-columns:minmax(260px,1fr) auto auto">
+            <div class="field"><label><span class="required-star">*</span>用户ID/NN号/手机号</label><input id="userPointsKeyword" value="U100862" placeholder="输入用户ID / NN号 / 手机号"></div>
+            <button class="btn primary" id="searchUserPointsBtn" style="align-self:end">查询</button>
+            <button class="btn" id="resetUserPointsBtn" style="align-self:end">重置</button>
+          </div>
+        </div>
+      </section>
+      <div class="points-account-layout">
+        <div class="card" style="margin:0"><div class="card-body"><div class="info-grid" id="userPointsInfoGrid"></div></div></div>
+        <div class="points-balance-card"><span>当前可用积分</span><strong id="userPointsBalance">0</strong></div>
+      </div>
+      <section class="card">
+        <div class="table-head"><div class="table-title">最近积分流水</div><button class="btn" id="exportUserPointsFlowBtn">导出流水</button></div>
+        <div class="table-wrap"><table class="points-flow-table"><thead><tr><th>流水ID</th><th>类型</th><th>变动积分</th><th>变动后余额</th><th>来源</th><th>时间</th><th>备注</th></tr></thead><tbody id="userPointsFlowTbody"></tbody></table></div>
+      </section>
+    </div>
+    <div class="modal-foot"><button class="btn" data-close-modal="userPointsModal">关闭</button></div>
+  </section>
+
+  <section class="modal wide" id="adjustPointsModal" role="dialog" aria-modal="true">
+    <div class="modal-head"><span>用户积分调整</span><button class="btn text" data-close-modal="adjustPointsModal">关闭</button></div>
+    <div class="modal-body">
+      <section class="card"><div class="card-body"><div class="filter-grid" style="grid-template-columns:minmax(260px,1fr) auto auto"><div class="field"><label><span class="required-star">*</span>用户ID/NN号/手机号</label><input id="adjustPointsKeyword" placeholder="输入用户ID / NN号 / 手机号"></div><button class="btn primary" id="searchAdjustPointsUserBtn" style="align-self:end">查询</button><button class="btn" id="resetAdjustPointsBtn" style="align-self:end">重置</button></div></div></section>
+      <section class="form-card" id="adjustPointsFormCard">
+        <h2>调整信息</h2>
+        <div class="body">
+          <div class="form-grid three">
+            <div class="field"><label>用户ID</label><input id="adjustPointsUserId" disabled></div>
+            <div class="field"><label>用户NN号</label><input id="adjustPointsNnNo" disabled></div>
+            <div class="field"><label>用户手机号</label><input id="adjustPointsPhone" disabled></div>
+            <div class="field"><label>当前可用积分</label><input id="adjustPointsCurrent" disabled></div>
+            <div class="field"><label><span class="required-star">*</span>调整类型</label><select id="adjustPointsType"><option>人工补发</option><option>人工扣减</option></select></div>
+            <div class="field"><label><span class="required-star">*</span>调整原因</label><select id="adjustPointsReason"><option>活动奖励补发</option><option>任务奖励漏发</option><option>兑换失败补偿</option><option>客服补偿</option><option>异常重复发放追回</option><option>违规获取积分扣减</option><option>运营配置错误修正</option><option>其他人工调整</option></select></div>
+            <div class="field"><label><span class="required-star">*</span>调整积分</label><input id="adjustPointsAmount" type="number" min="1" value="300"><div class="hint-text">仅支持正整数，扣减后积分不可小于 0。</div></div>
+            <div class="field" style="grid-column:1/-1"><label>备注</label><textarea id="adjustPointsRemark" maxlength="200" rows="3" placeholder="填写调整说明，最多200字">活动奖励补发</textarea></div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <div class="modal-foot"><button class="btn" data-close-modal="adjustPointsModal">取消</button><button class="btn primary" id="confirmAdjustPointsBtn" disabled>确认调整</button></div>
+  </section>
+
+  <section class="modal" id="orderActionConfirmModal" role="dialog" aria-modal="true">
+    <div class="modal-head"><span id="orderActionConfirmTitle">确认操作</span><button class="btn text" data-close-modal="orderActionConfirmModal">关闭</button></div>
+    <div class="modal-body"><div class="info-grid" id="orderActionConfirmInfo"></div><div class="alert warning" id="orderActionConfirmImpact" style="margin-top:14px"></div></div>
+    <div class="modal-foot"><button class="btn" data-close-modal="orderActionConfirmModal">取消</button><button class="btn primary" id="confirmOrderActionBtn">确认</button></div>
+  </section>
+
+  <section class="modal wide" id="logisticsModal" role="dialog" aria-modal="true">
+    <div class="modal-head"><span>录入物流单号</span><button class="btn text" data-close-modal="logisticsModal">关闭</button></div>
+    <div class="modal-body">
+      <div class="form-grid three">
+        <div class="field"><label>订单号</label><input id="logisticsOrderNo" disabled></div>
+        <div class="field"><label>用户</label><input id="logisticsUserInfo" disabled></div>
+        <div class="field"><label>收货人</label><input id="logisticsRecipient" disabled></div>
+        <div class="field"><label>收货手机号</label><input id="logisticsRecipientPhone" disabled></div>
+        <div class="field" style="grid-column:1/-1"><label>收货地址</label><input id="logisticsAddress" disabled></div>
+        <div class="field"><label><span class="required-star">*</span>物流公司</label><select id="logisticsCompanyInput"><option value="">请选择</option><option>顺丰速运</option><option>京东物流</option><option>中通快递</option><option>圆通速递</option><option>其他</option></select></div>
+        <div class="field"><label><span class="required-star">*</span>物流单号</label><input id="trackingNoInput" placeholder="输入物流单号"><div class="hint-text">确认后将同步更新订单履约状态。</div></div>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn" data-close-modal="logisticsModal">取消</button><button class="btn primary" id="confirmLogisticsBtn">确认发货</button></div>
+  </section>
+
+  <section class="modal wide" id="addressEditModal" role="dialog" aria-modal="true">
+    <div class="modal-head"><span>修改收货信息</span><button class="btn text" data-close-modal="addressEditModal">关闭</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="field"><label>订单号</label><input id="editAddressOrderNo" disabled></div>
+        <div class="field"><label>用户</label><input id="editAddressUserInfo" disabled></div>
+        <div class="field"><label><span class="required-star">*</span>收货人</label><input id="editRecipient" placeholder="输入收货人"></div>
+        <div class="field"><label><span class="required-star">*</span>收货手机号</label><input id="editRecipientPhone" placeholder="输入收货手机号"></div>
+        <div class="field" style="grid-column:1/-1"><label><span class="required-star">*</span>收货地址</label><textarea id="editAddress" maxlength="200" rows="3" placeholder="输入完整收货地址"></textarea></div>
+        <div class="field" style="grid-column:1/-1"><label><span class="required-star">*</span>修改原因</label><select id="editAddressReason"><option value="">请选择</option><option>用户申请修改</option><option>客服核实修正</option><option>地址格式补全</option><option>手机号更正</option><option>其他</option></select><div class="hint-text">仅未录入物流单号前允许修改，系统记录修改前后信息。</div></div>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn" data-close-modal="addressEditModal">取消</button><button class="btn primary" id="confirmAddressEditBtn">确认修改</button></div>
+  </section>
+
   <script>
     const productTypeOptions = ["虚拟装扮", "CDKEY", "实物"];
     const types = ["全部", ...productTypeOptions];
@@ -2126,6 +2345,30 @@
     const deliveryRecordStates = ["全部", "待履约", "已履约", "履约失败"];
     const businessSources = ["全部", "积分商城", "xx活动"];
     const allowedDeliveryOptions = [DELIVERY_AUTO_VIRTUAL, DELIVERY_AUTO_CDKEY, DELIVERY_MANUAL_PHYSICAL];
+    const pointUsers = [
+      { id: "U100862", nnNo: "NN100862", name: "李四", phone: "13888888888", register: "2025-08-15", points: 1500, updated: "2026-07-06 10:22:18" },
+      { id: "U100863", nnNo: "NN100863", name: "王五", phone: "13966666666", register: "2025-11-22", points: 820, updated: "2026-07-06 09:40:12" },
+      { id: "U100864", nnNo: "NN100864", name: "赵六", phone: "13733333333", register: "2026-01-09", points: 2450, updated: "2026-07-05 18:15:44" },
+      { id: "U100865", nnNo: "NN100865", name: "孙七", phone: "13677777777", register: "2026-02-18", points: 360, updated: "2026-07-04 10:00:09" },
+      { id: "U100866", nnNo: "NN100866", name: "周八", phone: "13588888888", register: "2026-03-02", points: 1200, updated: "2026-07-03 09:15:42" }
+    ];
+    let pointFlows = [
+      { id: "FL20260706001", userId: "U100862", nnNo: "NN100862", phone: "13888888888", type: "消费", amount: -500, balance: 1500, source: "商城消费", time: "2026-07-06 09:45:33", desc: "兑换NN加速器3天卡" },
+      { id: "FL20260705002", userId: "U100862", nnNo: "NN100862", phone: "13888888888", type: "获取", amount: 300, balance: 2000, source: "任务领取", time: "2026-07-05 12:05:47", desc: "每日任务完成" },
+      { id: "FL20260705003", userId: "U100863", nnNo: "NN100863", phone: "13966666666", type: "消费", amount: -800, balance: 820, source: "商城消费", time: "2026-07-05 08:30:15", desc: "兑换NN加速器7天卡" },
+      { id: "FL20260704004", userId: "U100864", nnNo: "NN100864", phone: "13733333333", type: "获取", amount: 1000, balance: 2450, source: "人工补发", time: "2026-07-04 15:30:22", desc: "客服补偿-系统异常" },
+      { id: "FL20260703005", userId: "U100862", nnNo: "NN100862", phone: "13888888888", type: "获取", amount: 500, balance: 1700, source: "活动增量", time: "2026-07-03 10:23:15", desc: "活动奖励发放" }
+    ];
+    let mallOrders = [
+      { no: "ORD20260706001", userId: "U100862", nnNo: "NN100862", phone: "13888888888", nick: "李四", product: "NN加速器3天卡", productSnapshot: "NN加速器3天卡 / 规格：3天 / 类型：CDKey", productType: "CDKey", inventoryType: "有限库存", acquireForm: "发放至用户背包，用户进入背包查看兑换码", fulfillmentChannel: "背包发放", points: 500, fulfill: DELIVERY_AUTO_CDKEY, status: "发放成功", display: "发放成功", reason: "-", pointsResult: "扣减成功：-500", stockResult: "库存确认成功", fulfillResult: "CDKey 发放成功", retrySummary: "无需重试", maskedCdkey: "NN3D-****-8K2Q", created: "2026-07-06 09:45:33", updated: "2026-07-06 09:45:58", completed: "2026-07-06 09:45:58" },
+      { no: "ORD20260706002", userId: "U100863", nnNo: "NN100863", phone: "13966666666", nick: "王五", product: "星耀头像框30天", productSnapshot: "星耀头像框30天 / 类型：虚拟道具 / 权益：社区身份装饰", productType: "虚拟道具", inventoryType: "无限库存", acquireForm: "发放至用户背包，用户在社区装扮中启用", fulfillmentChannel: "背包发放", points: 800, fulfill: DELIVERY_AUTO_VIRTUAL, status: "发放中", display: "处理中", reason: "背包发放超时，等待重试", pointsResult: "扣减成功：-800", stockResult: "无限库存，无需占用", fulfillResult: "履约超时，结果待确认", retrySummary: "等待重试，已重试 1/3", bagAsset: "头像框权益待确认", created: "2026-07-06 08:30:15", updated: "2026-07-06 08:36:20", completed: "-" },
+      { no: "ORD20260706003", userId: "U100864", nnNo: "NN100864", phone: "13733333333", nick: "赵六", product: "NN加速器30天卡", productSnapshot: "NN加速器30天卡 / 规格：30天 / 类型：CDKey", productType: "CDKey", inventoryType: "有限库存", acquireForm: "发放至用户背包，用户进入背包查看兑换码", fulfillmentChannel: "背包发放", points: 2000, fulfill: DELIVERY_AUTO_CDKEY, status: "兑换失败", display: "兑换失败", reason: "积分扣减失败，库存已释放", pointsResult: "扣减失败", stockResult: "库存已释放", fulfillResult: "未进入履约发放", retrySummary: "无需重试", maskedCdkey: "-", created: "2026-07-06 07:12:08", updated: "2026-07-06 07:12:21", completed: "2026-07-06 07:12:21" },
+      { no: "ORD20260705004", userId: "U100862", nnNo: "NN100862", phone: "13888888888", nick: "李四", product: "NN加速器7天卡", productSnapshot: "NN加速器7天卡 / 规格：7天 / 类型：CDKey", productType: "CDKey", inventoryType: "有限库存", acquireForm: "发放至用户背包，用户进入背包查看兑换码", fulfillmentChannel: "背包发放", points: 800, fulfill: DELIVERY_AUTO_CDKEY, status: "发放中", display: "发放失败", reason: "自动重试已达上限", pointsResult: "扣减成功：-800", stockResult: "库存已占用", fulfillResult: "发放失败，待人工核对", retrySummary: "已达自动重试上限 3/3", maskedCdkey: "-", created: "2026-07-05 16:20:10", updated: "2026-07-05 16:58:00", completed: "-" },
+      { no: "ORD20260704005", userId: "U100865", nnNo: "NN100865", phone: "13677777777", nick: "孙七", product: "NN定制鼠标垫", productSnapshot: "NN定制鼠标垫 / 类型：实物商品 / 规格：900x400mm", productType: "实物商品", inventoryType: "有限库存", acquireForm: "用户填写收货地址后发货", fulfillmentChannel: "实物履约 / 物流发货", fulfillmentStage: "待用户填写地址", addressStatus: "未填写", recipient: "-", recipientPhone: "-", address: "-", logisticsCompany: "-", trackingNo: "-", points: 500, fulfill: DELIVERY_MANUAL_PHYSICAL, status: "待发放", display: "待用户填写地址", reason: "等待用户在客户端订单填写收货地址", pointsResult: "扣减成功：-500", stockResult: "库存已占用：-1", fulfillResult: "待用户提交收货地址", retrySummary: "实物履约-地址未填写", created: "2026-07-04 10:00:00", updated: "2026-07-04 10:00:09", completed: "-" },
+      { no: "ORD20260703006", userId: "U100866", nnNo: "NN100866", phone: "13588888888", nick: "周八", product: "社区身份装饰权益", productSnapshot: "社区身份装饰权益 / 类型：虚拟道具 / 权益：身份标识与资料卡装饰", productType: "虚拟道具", inventoryType: "无限库存", acquireForm: "发放至用户背包，用户在社区身份装饰中启用", fulfillmentChannel: "背包发放", points: 500, fulfill: DELIVERY_AUTO_VIRTUAL, status: "发放成功", display: "发放成功", reason: "-", pointsResult: "扣减成功：-500", stockResult: "无限库存，无需占用", fulfillResult: "背包发放成功", retrySummary: "无需重试", bagAsset: "社区身份装饰权益 x1", created: "2026-07-03 09:15:42", updated: "2026-07-03 09:15:58", completed: "2026-07-03 09:15:58" },
+      { no: "ORD20260703007", userId: "U100863", nnNo: "NN100863", phone: "13966666666", nick: "王五", product: "NN定制抱枕", productSnapshot: "NN定制抱枕 / 类型：实物商品 / 规格：45x45cm", productType: "实物商品", inventoryType: "有限库存", acquireForm: "用户填写收货地址后发货", fulfillmentChannel: "实物履约 / 物流发货", fulfillmentStage: "待运营发货", addressStatus: "已填写", recipient: "王五", recipientPhone: "13966666666", address: "湖北省武汉市武昌区中南路街道 99号 1802", addressSubmittedAt: "2026-07-03 13:28:35", logisticsCompany: "-", trackingNo: "-", points: 1200, fulfill: DELIVERY_MANUAL_PHYSICAL, status: "待发放", display: "待运营发货", reason: "已收到收货地址，待运营线下发货并录入物流单号", pointsResult: "扣减成功：-1200", stockResult: "库存已占用：-1", fulfillResult: "已收到收货地址，待运营发货", retrySummary: "实物履约-待发货", created: "2026-07-03 13:22:00", updated: "2026-07-03 13:28:35", completed: "-" },
+      { no: "ORD20260702007", userId: "U100862", nnNo: "NN100862", phone: "13888888888", nick: "李四", product: "NN定制手办", productSnapshot: "NN定制手办 / 类型：实物商品 / 规格：标准款", productType: "实物商品", inventoryType: "有限库存", acquireForm: "用户填写收货地址后发货", fulfillmentChannel: "实物履约 / 物流发货", fulfillmentStage: "已发货", addressStatus: "已填写", recipient: "李四", recipientPhone: "13888888888", address: "湖北省武汉市江夏区藏龙岛产业园 B2-1508", addressSubmittedAt: "2026-07-02 14:26:18", logisticsCompany: "顺丰速运", trackingNo: "SF202607020088", points: 3000, fulfill: DELIVERY_MANUAL_PHYSICAL, status: "发放成功", display: "发放成功", reason: "-", pointsResult: "扣减成功：-3000", stockResult: "库存已扣减：-1", fulfillResult: "物流已发货", retrySummary: "手动履约完成", created: "2026-07-02 14:20:00", updated: "2026-07-02 18:05:10", completed: "2026-07-02 18:05:10" }
+    ];
     const cdkeyTypeOptions = ["加速器时长", "加速器时长（不可暂停）"];
     const skuCurrencyOptions = ["新积分", "N币", "RMB"];
     const skuCurrencyMeta = {
@@ -3242,6 +3485,8 @@
       renderDeliveryRecordStats();
       renderCdkeyPoolTable();
       renderCdkeyPoolStats();
+      renderPointsFlowTable();
+      renderOrderManagementTable();
       setupInputLimitObserver();
     }
 
@@ -3253,6 +3498,8 @@
       document.getElementById("menuProductList").addEventListener("click", showProductListPage);
       document.getElementById("menuTemplate").addEventListener("click", showTemplatePage);
       document.getElementById("menuDisplay").addEventListener("click", showDisplayPage);
+      document.getElementById("menuPointsFlow").addEventListener("click", showPointsFlowPage);
+      document.getElementById("menuOrderManagement").addEventListener("click", showOrderManagementPage);
       document.getElementById("menuInventory").addEventListener("click", showInventoryPage);
       document.getElementById("menuDeliveryRecord").addEventListener("click", showDeliveryRecordPage);
       document.getElementById("menuCdkeyPool").addEventListener("click", showCdkeyPoolPage);
@@ -3262,6 +3509,24 @@
       document.getElementById("inventoryFlowExportBtn").addEventListener("click", () => toast("库存流水导出任务已创建，可在下载中心查看。"));
       document.getElementById("exportDeliveryBtn").addEventListener("click", () => toast("导出任务已创建，可在下载中心查看。"));
       document.getElementById("exportCdkeyPoolBtn").addEventListener("click", () => toast("导出任务已创建，可在下载中心查看。"));
+      document.getElementById("searchPointsFlowBtn").addEventListener("click", renderPointsFlowTable);
+      document.getElementById("resetPointsFlowBtn").addEventListener("click", resetPointsFlowFilters);
+      document.getElementById("exportPointsFlowBtn").addEventListener("click", exportPointsFlowRecords);
+      document.getElementById("openUserPointsBtn").addEventListener("click", openUserPointsModal);
+      document.getElementById("openAdjustPointsBtn").addEventListener("click", openAdjustPointsModal);
+      document.getElementById("searchUserPointsBtn").addEventListener("click", searchUserPoints);
+      document.getElementById("resetUserPointsBtn").addEventListener("click", resetUserPointsQuery);
+      document.getElementById("exportUserPointsFlowBtn").addEventListener("click", exportCurrentUserPointsFlow);
+      document.getElementById("searchAdjustPointsUserBtn").addEventListener("click", searchAdjustPointsUser);
+      document.getElementById("resetAdjustPointsBtn").addEventListener("click", resetAdjustPointsForm);
+      document.getElementById("confirmAdjustPointsBtn").addEventListener("click", confirmAdjustPoints);
+      document.getElementById("searchOrdersBtn").addEventListener("click", renderOrderManagementTable);
+      document.getElementById("resetOrdersBtn").addEventListener("click", resetOrderManagementFilters);
+      document.getElementById("exportOrdersBtn").addEventListener("click", exportOrderManagementRecords);
+      document.getElementById("confirmOrderActionBtn").addEventListener("click", confirmOrderManagementAction);
+      document.getElementById("confirmAddressEditBtn").addEventListener("click", confirmOrderAddressEdit);
+      document.getElementById("confirmLogisticsBtn").addEventListener("click", confirmOrderLogistics);
+      document.body.addEventListener("click", handleOrderManagementActionClick);
       document.getElementById("inventorySearchBtn").addEventListener("click", applyInventoryFilters);
       document.getElementById("inventoryResetBtn").addEventListener("click", resetInventoryFilters);
       document.getElementById("inventoryToggleMoreBtn").addEventListener("click", toggleInventoryMoreFilters);
@@ -3423,6 +3688,8 @@
     function setActiveMenu(menu) {
       document.querySelectorAll(".nav-item").forEach(btn => btn.classList.toggle("active", btn.dataset.menu === menu));
       const crumbs = {
+        "积分流水记录": "积分管理 / 积分流水记录",
+        "订单列表": "订单管理 / 订单列表",
         "库存列表": "库存管理 / 库存列表",
         "履约记录列表": "履约记录 / 履约记录列表",
         "CDKey 码池列表": "CDKey 码池管理 / CDKey 码池列表"
@@ -3431,7 +3698,7 @@
     }
 
     function hideAllPages() {
-      ["listPage", "formPage", "templatePage", "templateFormPage", "displayPage", "displayFormPage", "inventoryPage", "deliveryRecordPage", "cdkeyPoolPage", "cdkeyPoolFormPage"].forEach(id => {
+      ["listPage", "pointsFlowPage", "orderManagementPage", "formPage", "templatePage", "templateFormPage", "displayPage", "displayFormPage", "inventoryPage", "deliveryRecordPage", "cdkeyPoolPage", "cdkeyPoolFormPage"].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = "none";
       });
@@ -3460,6 +3727,22 @@
       visibleDisplayConfigs = [...displayConfigs];
       renderDisplayTable();
       renderDisplayStats();
+      window.scrollTo(0,0);
+    }
+
+    function showPointsFlowPage() {
+      hideAllPages();
+      document.getElementById("pointsFlowPage").style.display = "block";
+      setActiveMenu("积分流水记录");
+      renderPointsFlowTable();
+      window.scrollTo(0,0);
+    }
+
+    function showOrderManagementPage() {
+      hideAllPages();
+      document.getElementById("orderManagementPage").style.display = "block";
+      setActiveMenu("订单列表");
+      renderOrderManagementTable();
       window.scrollTo(0,0);
     }
 
@@ -8374,6 +8657,491 @@
       if (!stock) return `<span class="tag orange">未配置</span>`;
       if (stock.unlimited) return `含不限量 SKU；限量可用 ${stock.available}，锁定 ${stock.locked}`;
       return `可用 ${stock.available}，锁定 ${stock.locked}`;
+    }
+    function formatPointsNumber(value) {
+      return Number(value || 0).toLocaleString("zh-CN");
+    }
+
+    function findPointUser(keyword) {
+      const value = String(keyword || "").trim();
+      if (!value) return null;
+      return pointUsers.find(user => [user.id, user.nnNo, user.phone, user.name].some(field => String(field).includes(value))) || null;
+    }
+
+    function getFilteredPointFlows() {
+      const flowId = valueOf("pointFlowIdFilter");
+      const userKeyword = valueOf("pointFlowUserFilter");
+      const type = valueOf("pointFlowTypeFilter");
+      const source = valueOf("pointFlowSourceFilter");
+      const start = valueOf("pointFlowStartFilter");
+      const end = valueOf("pointFlowEndFilter");
+      return pointFlows.filter(flow => {
+        const date = flow.time.slice(0, 10);
+        return (!flowId || flow.id.includes(flowId))
+          && (!userKeyword || [flow.userId, flow.nnNo, flow.phone].some(field => field.includes(userKeyword)))
+          && (!type || flow.type === type)
+          && (!source || flow.source === source)
+          && (!start || date >= start)
+          && (!end || date <= end);
+      });
+    }
+
+    function pointFlowTypeTag(type) {
+      return `<span class="tag ${type === "获取" ? "green" : "red"}">${type}</span>`;
+    }
+
+    function pointFlowAmount(flow) {
+      const sign = flow.amount > 0 ? "+" : "";
+      const cls = flow.amount > 0 ? "plus" : "minus";
+      return `<span class="amount ${cls}">${sign}${formatPointsNumber(flow.amount)}</span>`;
+    }
+
+    function renderPointsFlowTable() {
+      const rows = getFilteredPointFlows();
+      document.getElementById("pointFlowTbody").innerHTML = rows.length ? rows.map(flow => `
+        <tr>
+          <td>${flow.id}</td><td>${flow.userId}</td><td>${flow.nnNo}</td><td>${flow.phone}</td>
+          <td>${pointFlowTypeTag(flow.type)}</td><td>${pointFlowAmount(flow)}</td><td>${formatPointsNumber(flow.balance)}</td>
+          <td>${flow.source}</td><td>${flow.time}</td><td>${flow.desc}</td>
+        </tr>
+      `).join("") : `<tr><td colspan="10"><div class="empty">当前筛选条件下暂无积分流水</div></td></tr>`;
+      document.getElementById("pointFlowTableCount").textContent = `共 ${rows.length} 条`;
+      document.getElementById("pointFlowStatTotal").textContent = rows.length;
+      document.getElementById("pointFlowStatGain").textContent = rows.filter(flow => flow.type === "获取").length;
+      document.getElementById("pointFlowStatConsume").textContent = rows.filter(flow => flow.type === "消费").length;
+      const net = rows.reduce((sum, flow) => sum + Number(flow.amount || 0), 0);
+      document.getElementById("pointFlowStatNet").textContent = `${net > 0 ? "+" : ""}${formatPointsNumber(net)}`;
+    }
+
+    function resetPointsFlowFilters() {
+      ["pointFlowIdFilter", "pointFlowUserFilter", "pointFlowStartFilter", "pointFlowEndFilter"].forEach(id => document.getElementById(id).value = "");
+      ["pointFlowTypeFilter", "pointFlowSourceFilter"].forEach(id => document.getElementById(id).value = "");
+      renderPointsFlowTable();
+      toast("积分流水筛选项已重置。");
+    }
+
+    function userPointFlowRows(userId) {
+      return pointFlows.filter(flow => flow.userId === userId);
+    }
+
+    function renderUserPoints(user) {
+      const modal = document.getElementById("userPointsModal");
+      modal.dataset.userId = user.id;
+      document.getElementById("userPointsKeyword").value = user.id;
+      document.getElementById("userPointsInfoGrid").innerHTML = [
+        ["用户ID", user.id], ["NN号", user.nnNo], ["手机号", user.phone],
+        ["用户昵称", user.name], ["注册时间", user.register], ["账户状态", '<span class="tag green">正常</span>'],
+        ["更新时间", user.updated]
+      ].map(([label, value]) => `<div class="info-item"><div class="info-label">${label}</div><div class="info-value">${value}</div></div>`).join("");
+      document.getElementById("userPointsBalance").textContent = formatPointsNumber(user.points);
+      const rows = userPointFlowRows(user.id).slice(0, 12);
+      document.getElementById("userPointsFlowTbody").innerHTML = rows.length ? rows.map(flow => `
+        <tr><td>${flow.id}</td><td>${pointFlowTypeTag(flow.type)}</td><td>${pointFlowAmount(flow)}</td><td>${formatPointsNumber(flow.balance)}</td><td>${flow.source}</td><td>${flow.time}</td><td>${flow.desc}</td></tr>
+      `).join("") : `<tr><td colspan="7"><div class="empty">该用户暂无积分流水</div></td></tr>`;
+    }
+
+    function openUserPointsModal() {
+      const user = findPointUser(valueOf("pointFlowUserFilter")) || pointUsers[0];
+      renderUserPoints(user);
+      openModal("userPointsModal");
+    }
+
+    function searchUserPoints() {
+      const keyword = valueOf("userPointsKeyword");
+      if (!keyword) return toast("请输入用户ID、NN号或手机号。");
+      const user = findPointUser(keyword);
+      if (!user) return toast("未查询到用户。");
+      renderUserPoints(user);
+      toast("用户积分信息已刷新。");
+    }
+
+    function resetUserPointsQuery() {
+      renderUserPoints(pointUsers[0]);
+    }
+
+    function resetAdjustPointsForm() {
+      ["adjustPointsKeyword", "adjustPointsUserId", "adjustPointsNnNo", "adjustPointsPhone", "adjustPointsCurrent"].forEach(id => document.getElementById(id).value = "");
+      document.getElementById("adjustPointsType").value = "人工补发";
+      document.getElementById("adjustPointsReason").value = "活动奖励补发";
+      document.getElementById("adjustPointsAmount").value = "300";
+      document.getElementById("adjustPointsRemark").value = "活动奖励补发";
+      document.getElementById("confirmAdjustPointsBtn").disabled = true;
+    }
+
+    function renderAdjustPointsUser(user) {
+      document.getElementById("adjustPointsKeyword").value = user.id;
+      document.getElementById("adjustPointsUserId").value = user.id;
+      document.getElementById("adjustPointsNnNo").value = user.nnNo;
+      document.getElementById("adjustPointsPhone").value = user.phone;
+      document.getElementById("adjustPointsCurrent").value = formatPointsNumber(user.points);
+      document.getElementById("confirmAdjustPointsBtn").disabled = false;
+    }
+
+    function openAdjustPointsModal() {
+      resetAdjustPointsForm();
+      const user = findPointUser(valueOf("pointFlowUserFilter"));
+      if (user) renderAdjustPointsUser(user);
+      openModal("adjustPointsModal");
+    }
+
+    function searchAdjustPointsUser() {
+      const keyword = valueOf("adjustPointsKeyword");
+      if (!keyword) return toast("请输入用户ID、NN号或手机号。");
+      const user = findPointUser(keyword);
+      if (!user) {
+        resetAdjustPointsForm();
+        document.getElementById("adjustPointsKeyword").value = keyword;
+        return toast("未查询到用户。");
+      }
+      renderAdjustPointsUser(user);
+      toast("用户信息已带入。");
+    }
+
+    function confirmAdjustPoints() {
+      const user = pointUsers.find(item => item.id === valueOf("adjustPointsUserId"));
+      const type = valueOf("adjustPointsType");
+      const amount = Number(valueOf("adjustPointsAmount"));
+      if (!user) return toast("请先查询并选择用户。");
+      if (!Number.isInteger(amount) || amount <= 0) return toast("调整积分必须为正整数。");
+      if (type === "人工扣减" && amount > user.points) return toast("扣减后积分不可小于 0。");
+      const signedAmount = type === "人工扣减" ? -amount : amount;
+      const time = nowText();
+      user.points += signedAmount;
+      user.updated = time;
+      pointFlows.unshift({
+        id: `FL${Date.now()}`, userId: user.id, nnNo: user.nnNo, phone: user.phone,
+        type: signedAmount > 0 ? "获取" : "消费", amount: signedAmount, balance: user.points,
+        source: type, time, desc: `${valueOf("adjustPointsReason")}：${valueOf("adjustPointsRemark") || "无备注"}`
+      });
+      closeModal("adjustPointsModal");
+      renderPointsFlowTable();
+      toast(`${type}成功，积分流水已生成。`);
+    }
+
+    function prototypeCsvValue(value) {
+      return `"${String(value ?? "").replace(/"/g, '""')}"`;
+    }
+
+    function downloadPrototypeCsv(filenamePrefix, headers, rows) {
+      if (!rows.length) return toast("当前条件下没有可导出的数据。");
+      const lines = [headers, ...rows].map(row => row.map(prototypeCsvValue).join(","));
+      const blob = new Blob(["\ufeff" + lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${filenamePrefix}_${new Date().toISOString().slice(0, 10).replace(/-/g, "")}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      toast(`已导出 ${rows.length} 条数据。`);
+    }
+
+    function pointFlowExportRow(flow) {
+      return [flow.id, flow.userId, flow.nnNo, flow.phone, flow.type, flow.amount, flow.balance, flow.source, flow.time, flow.desc];
+    }
+
+    function exportPointsFlowRecords() {
+      downloadPrototypeCsv("积分流水记录", ["流水ID", "用户ID", "用户NN号", "用户手机号", "流水类型", "变动积分", "变动后余额", "来源类型", "创建时间", "业务描述"], getFilteredPointFlows().map(pointFlowExportRow));
+    }
+
+    function exportCurrentUserPointsFlow() {
+      const userId = document.getElementById("userPointsModal").dataset.userId || pointUsers[0].id;
+      downloadPrototypeCsv(`用户积分流水_${userId}`, ["流水ID", "用户ID", "用户NN号", "用户手机号", "流水类型", "变动积分", "变动后余额", "来源类型", "创建时间", "业务描述"], userPointFlowRows(userId).map(pointFlowExportRow));
+    }
+
+    function isPhysicalOrder(order) {
+      return order.fulfill === DELIVERY_MANUAL_PHYSICAL;
+    }
+
+    function isOrderFulfillmentFailed(order) {
+      return order.display === "发放失败" || String(order.fulfillResult).includes("发放失败") || String(order.retrySummary).includes("上限");
+    }
+
+    function canShipPhysicalOrder(order) {
+      return isPhysicalOrder(order) && order.status === "待发放" && order.addressStatus === "已填写" && (!order.trackingNo || order.trackingNo === "-");
+    }
+
+    function orderStatusTag(status) {
+      const cls = status === "发放成功" ? "green" : status === "兑换失败" ? "red" : ["发放中", "待处理"].includes(status) ? "purple" : "orange";
+      return `<span class="tag ${cls}">${status}</span>`;
+    }
+
+    function physicalStageTag(order) {
+      if (!isPhysicalOrder(order)) return "-";
+      const stage = order.fulfillmentStage || "-";
+      const cls = stage === "已发货" ? "green" : stage === "待运营发货" ? "purple" : "orange";
+      return `<span class="tag ${cls}">${stage}</span>`;
+    }
+
+    function orderShippingText(order) {
+      if (!isPhysicalOrder(order)) return "-";
+      if (order.addressStatus !== "已填写") return "未填写";
+      return `${order.recipient} / ${order.recipientPhone}`;
+    }
+
+    function orderActionHtml(order) {
+      const actions = [`<button class="btn text" data-mall-order-detail="${order.no}">详情</button>`];
+      if (isOrderFulfillmentFailed(order)) {
+        actions.push(`<button class="btn text" data-mall-order-retry="${order.no}">重新发放</button>`);
+        actions.push(`<button class="btn text danger" data-mall-order-refund="${order.no}">退回积分</button>`);
+      }
+      if (canShipPhysicalOrder(order)) {
+        actions.push(`<button class="btn text" data-mall-order-address="${order.no}">修改收货信息</button>`);
+        actions.push(`<button class="btn text" data-mall-order-ship="${order.no}">录入物流</button>`);
+      }
+      return `<div class="action-list">${actions.join("")}</div>`;
+    }
+
+    function getFilteredMallOrders() {
+      const no = valueOf("mallOrderNoFilter");
+      const user = valueOf("mallOrderUserFilter");
+      const status = valueOf("mallOrderStatusFilter");
+      const product = valueOf("mallOrderProductFilter");
+      const delivery = valueOf("mallOrderDeliveryFilter");
+      return mallOrders.filter(order => (!no || order.no.includes(no))
+        && (!user || [order.userId, order.nnNo, order.phone].some(field => field.includes(user)))
+        && (!status || order.status === status)
+        && (!product || order.product.includes(product))
+        && (!delivery || order.fulfill === delivery));
+    }
+
+    function renderOrderManagementTable() {
+      const rows = getFilteredMallOrders();
+      document.getElementById("orderManagementTbody").innerHTML = rows.length ? rows.map(order => `
+        <tr>
+          <td>${order.no}</td><td>${order.userId}</td><td>${order.nnNo}</td><td>${order.phone}</td><td>${order.product}</td>
+          <td>${formatPointsNumber(order.points)}</td><td>${deliveryTag(order.fulfill)}</td><td>${orderStatusTag(order.status)}</td>
+          <td>${physicalStageTag(order)}</td><td>${orderShippingText(order)}</td><td>${isPhysicalOrder(order) ? order.trackingNo || "-" : "-"}</td>
+          <td>${order.reason}</td><td>${order.created}</td><td>${order.updated}</td><td>${orderActionHtml(order)}</td>
+        </tr>
+      `).join("") : `<tr><td colspan="15"><div class="empty">当前筛选条件下暂无订单</div></td></tr>`;
+      document.getElementById("orderTableCount").textContent = `共 ${rows.length} 条`;
+      document.getElementById("orderStatTotal").textContent = rows.length;
+      document.getElementById("orderStatPending").textContent = rows.filter(order => ["待处理", "待发放", "发放中"].includes(order.status)).length;
+      document.getElementById("orderStatFailed").textContent = rows.filter(isOrderFulfillmentFailed).length;
+      document.getElementById("orderStatPhysical").textContent = rows.filter(canShipPhysicalOrder).length;
+    }
+
+    function resetOrderManagementFilters() {
+      ["mallOrderNoFilter", "mallOrderUserFilter", "mallOrderProductFilter", "mallOrderStatusFilter", "mallOrderDeliveryFilter"].forEach(id => document.getElementById(id).value = "");
+      renderOrderManagementTable();
+      toast("订单筛选项已重置。");
+    }
+
+    function orderAddressAuditHtml(order) {
+      const logs = order.addressEditLogs || [];
+      if (!logs.length) return '<div class="hint-text">暂无地址修改记录</div>';
+      return logs.map(log => `<div class="audit-entry"><strong>${log.time}</strong> · ${log.operator} · ${log.reason}<br>修改前：${log.before.recipient} / ${log.before.phone} / ${log.before.address}<br>修改后：${log.after.recipient} / ${log.after.phone} / ${log.after.address}</div>`).join("");
+    }
+
+    function orderFulfillmentItems(order) {
+      const items = [
+        ["商品类型", order.productType || "-"], ["库存类型", order.inventoryType || "-"],
+        ["用户获得形式", order.acquireForm || "-"], ["履约渠道", order.fulfillmentChannel || order.fulfill]
+      ];
+      if (order.productType === "CDKey") items.push(["CDKey 展示", order.maskedCdkey || "-"]);
+      if (order.productType === "虚拟道具") items.push(["背包权益", order.bagAsset || order.fulfillResult || "-"]);
+      if (isPhysicalOrder(order)) items.push(
+        ["收货信息状态", order.addressStatus || "-"], ["实物履约进度", order.fulfillmentStage || "-"],
+        ["收货人", order.recipient || "-"], ["收货手机号", order.recipientPhone || "-"],
+        ["收货地址", order.address || "-"], ["物流公司", order.logisticsCompany || "-"], ["物流单号", order.trackingNo || "-"]
+      );
+      return items;
+    }
+
+    function openOrderManagementDetail(orderNo) {
+      const order = mallOrders.find(item => item.no === orderNo);
+      if (!order) return;
+      document.getElementById("orderDetailTitle").textContent = `订单详情 · ${order.no}`;
+      document.getElementById("orderDetailBody").innerHTML = `
+        ${detailSection("订单概览", infoGrid([
+          ["订单状态", orderStatusTag(order.status)], ["履约方式", deliveryTag(order.fulfill)], ["消耗积分", formatPointsNumber(order.points)],
+          ["用户", `${order.userId} / ${order.nnNo} / ${order.phone} / ${order.nick}`], ["商品", order.product], ["商品快照", order.productSnapshot],
+          ["创建时间", order.created], ["更新时间", order.updated], ["完成时间", order.completed]
+        ]))}
+        ${detailSection("积分、库存与履约结果", infoGrid([
+          ["积分扣减结果", order.pointsResult], ["库存处理结果", order.stockResult], ["履约结果", order.fulfillResult],
+          ["重试记录", order.retrySummary], ["失败/挂起原因", order.reason]
+        ]))}
+        ${detailSection("履约信息", infoGrid(orderFulfillmentItems(order)))}
+        ${isPhysicalOrder(order) ? detailSection("收货信息修改审计", orderAddressAuditHtml(order)) : ""}
+      `;
+      const actions = [`<button class="btn" data-close-order-detail>关闭</button>`];
+      if (isOrderFulfillmentFailed(order)) {
+        actions.push(`<button class="btn primary" data-mall-order-retry="${order.no}">重新发放</button>`);
+        actions.push(`<button class="btn danger" data-mall-order-refund="${order.no}">退回积分</button>`);
+      }
+      if (canShipPhysicalOrder(order)) {
+        actions.push(`<button class="btn" data-mall-order-address="${order.no}">修改收货信息</button>`);
+        actions.push(`<button class="btn primary" data-mall-order-ship="${order.no}">录入物流单号</button>`);
+      }
+      document.getElementById("orderDetailActions").innerHTML = actions.join("");
+      closeAllLayers();
+      openDrawer("orderDetailDrawer");
+    }
+
+    function openOrderActionConfirm(action, orderNo) {
+      const order = mallOrders.find(item => item.no === orderNo);
+      if (!order || !isOrderFulfillmentFailed(order)) return toast("当前订单已不支持该处理动作。");
+      const isRefund = action === "refund";
+      const modal = document.getElementById("orderActionConfirmModal");
+      modal.dataset.action = action;
+      modal.dataset.orderNo = order.no;
+      document.getElementById("orderActionConfirmTitle").textContent = isRefund ? "确认退回积分" : "确认重新发放";
+      document.getElementById("orderActionConfirmInfo").innerHTML = [
+        ["订单号", order.no], ["商品", order.product], ["用户", `${order.userId} / ${order.nnNo} / ${order.phone}`]
+      ].map(([label, value]) => `<div class="info-item"><div class="info-label">${label}</div><div class="info-value">${value}</div></div>`).join("");
+      document.getElementById("orderActionConfirmImpact").textContent = isRefund
+        ? `将退回 ${formatPointsNumber(order.points)} 积分，订单变为兑换失败，并生成订单退回流水。`
+        : "将重新触发履约发放，订单保持发放中并等待新的履约结果。";
+      const button = document.getElementById("confirmOrderActionBtn");
+      button.textContent = isRefund ? "确认退回积分" : "确认重新发放";
+      button.classList.toggle("danger", isRefund);
+      button.classList.toggle("primary", !isRefund);
+      closeAllLayers();
+      openModal("orderActionConfirmModal");
+    }
+
+    function confirmOrderManagementAction() {
+      const modal = document.getElementById("orderActionConfirmModal");
+      const order = mallOrders.find(item => item.no === modal.dataset.orderNo);
+      if (!order) return;
+      const time = nowText();
+      if (modal.dataset.action === "retry") {
+        order.status = "发放中";
+        order.display = "处理中";
+        order.reason = "已触发重新发放，等待履约结果";
+        order.fulfillResult = "人工触发重新发放";
+        order.retrySummary = "人工重新发放 1 次";
+        order.updated = time;
+        closeModal("orderActionConfirmModal");
+        renderOrderManagementTable();
+        return toast("已触发重新发放。");
+      }
+      const user = pointUsers.find(item => item.id === order.userId);
+      if (user) {
+        user.points += order.points;
+        user.updated = time;
+      }
+      order.status = "兑换失败";
+      order.display = "兑换失败";
+      order.reason = "发放失败，已退回积分";
+      order.pointsResult = `已退回积分：+${order.points}`;
+      order.stockResult = "库存已释放";
+      order.fulfillResult = "放弃重新发放，已退回积分";
+      order.retrySummary = "人工退回积分";
+      order.updated = time;
+      order.completed = time;
+      pointFlows.unshift({
+        id: `FL${Date.now()}`, userId: order.userId, nnNo: order.nnNo, phone: order.phone,
+        type: "获取", amount: order.points, balance: user?.points || order.points,
+        source: "订单退回", time, desc: `发放失败退回积分：${order.product}`
+      });
+      closeModal("orderActionConfirmModal");
+      renderOrderManagementTable();
+      renderPointsFlowTable();
+      toast("积分已退回，流水已生成。");
+    }
+
+    function openOrderAddressEdit(orderNo) {
+      const order = mallOrders.find(item => item.no === orderNo);
+      if (!order || !canShipPhysicalOrder(order)) return toast("当前订单不支持修改收货信息。");
+      const modal = document.getElementById("addressEditModal");
+      modal.dataset.orderNo = order.no;
+      document.getElementById("editAddressOrderNo").value = order.no;
+      document.getElementById("editAddressUserInfo").value = `${order.userId} / ${order.nnNo} / ${order.phone}`;
+      document.getElementById("editRecipient").value = order.recipient || "";
+      document.getElementById("editRecipientPhone").value = order.recipientPhone || "";
+      document.getElementById("editAddress").value = order.address || "";
+      document.getElementById("editAddressReason").value = "";
+      closeAllLayers();
+      openModal("addressEditModal");
+    }
+
+    function confirmOrderAddressEdit() {
+      const order = mallOrders.find(item => item.no === document.getElementById("addressEditModal").dataset.orderNo);
+      if (!order || !canShipPhysicalOrder(order)) return toast("当前订单不支持修改收货信息。");
+      const recipient = valueOf("editRecipient");
+      const phone = valueOf("editRecipientPhone");
+      const address = valueOf("editAddress");
+      const reason = valueOf("editAddressReason");
+      if (!recipient || !/^1\d{10}$/.test(phone) || !address || !reason) return toast("请完整填写有效的收货信息和修改原因。");
+      const before = { recipient: order.recipient, phone: order.recipientPhone, address: order.address };
+      order.recipient = recipient;
+      order.recipientPhone = phone;
+      order.address = address;
+      order.addressEditLogs = order.addressEditLogs || [];
+      order.addressEditLogs.unshift({ time: nowText(), operator: "平台运营", reason, before, after: { recipient, phone, address } });
+      order.updated = nowText();
+      order.fulfillmentStage = "待运营发货";
+      order.reason = "收货信息已修正，待运营线下发货并录入物流单号";
+      order.fulfillResult = "已收到有效收货地址，待运营发货";
+      closeModal("addressEditModal");
+      renderOrderManagementTable();
+      toast("收货信息已修改并记录审计。");
+    }
+
+    function openOrderLogistics(orderNo) {
+      const order = mallOrders.find(item => item.no === orderNo);
+      if (!order || !canShipPhysicalOrder(order)) return toast("当前订单不支持录入物流。");
+      const modal = document.getElementById("logisticsModal");
+      modal.dataset.orderNo = order.no;
+      document.getElementById("logisticsOrderNo").value = order.no;
+      document.getElementById("logisticsUserInfo").value = `${order.userId} / ${order.nnNo} / ${order.phone}`;
+      document.getElementById("logisticsRecipient").value = order.recipient || "";
+      document.getElementById("logisticsRecipientPhone").value = order.recipientPhone || "";
+      document.getElementById("logisticsAddress").value = order.address || "";
+      document.getElementById("logisticsCompanyInput").value = order.logisticsCompany && order.logisticsCompany !== "-" ? order.logisticsCompany : "";
+      document.getElementById("trackingNoInput").value = order.trackingNo && order.trackingNo !== "-" ? order.trackingNo : "";
+      closeAllLayers();
+      openModal("logisticsModal");
+    }
+
+    function confirmOrderLogistics() {
+      const order = mallOrders.find(item => item.no === document.getElementById("logisticsModal").dataset.orderNo);
+      if (!order || !canShipPhysicalOrder(order)) return toast("当前订单不支持录入物流。");
+      const company = valueOf("logisticsCompanyInput");
+      const trackingNo = valueOf("trackingNoInput");
+      if (!company || !trackingNo) return toast("请选择物流公司并填写物流单号。");
+      const time = nowText();
+      order.status = "发放成功";
+      order.display = "发放成功";
+      order.fulfillmentStage = "已发货";
+      order.reason = "-";
+      order.fulfillResult = "已录入物流并发货";
+      order.retrySummary = "手动履约完成";
+      order.logisticsCompany = company;
+      order.trackingNo = trackingNo;
+      order.updated = time;
+      order.completed = time;
+      closeModal("logisticsModal");
+      renderOrderManagementTable();
+      toast("物流信息已录入，订单已更新为发放成功。");
+    }
+
+    function handleOrderManagementActionClick(event) {
+      const target = event.target;
+      const detail = target.closest("[data-mall-order-detail]");
+      if (detail) return openOrderManagementDetail(detail.dataset.mallOrderDetail);
+      const retry = target.closest("[data-mall-order-retry]");
+      if (retry) return openOrderActionConfirm("retry", retry.dataset.mallOrderRetry);
+      const refund = target.closest("[data-mall-order-refund]");
+      if (refund) return openOrderActionConfirm("refund", refund.dataset.mallOrderRefund);
+      const address = target.closest("[data-mall-order-address]");
+      if (address) return openOrderAddressEdit(address.dataset.mallOrderAddress);
+      const ship = target.closest("[data-mall-order-ship]");
+      if (ship) return openOrderLogistics(ship.dataset.mallOrderShip);
+      if (target.closest("[data-close-order-detail]")) closeDrawer("orderDetailDrawer");
+    }
+
+    function exportOrderManagementRecords() {
+      const rows = getFilteredMallOrders().map(order => [
+        order.no, order.userId, order.nnNo, order.phone, order.product, order.points, order.fulfill, order.status,
+        isPhysicalOrder(order) ? order.fulfillmentStage || "-" : "-", orderShippingText(order),
+        isPhysicalOrder(order) ? order.trackingNo || "-" : "-", order.reason, order.created, order.updated
+      ]);
+      downloadPrototypeCsv("订单列表", ["订单号", "用户ID", "用户NN号", "用户手机号", "商品名称", "消耗积分", "履约方式", "订单状态", "履约进度", "收货信息", "物流单号", "失败/挂起原因", "创建时间", "更新时间"], rows);
     }
     function stateTag(state) {
       const cls = state === "上架" ? "green" : state === "草稿" ? "orange" : state === "下架" ? "" : "";
