@@ -1063,7 +1063,7 @@
                   <div class="field"><label>商品对内名称</label><input id="formInternal" placeholder="请输入后台内部名称"></div>
                   <div class="field"><label><span class="required-star">*</span>商品类型</label><select id="formType"></select><div class="hint-text">本期仅支持虚拟装扮、CDKEY、实物三个一级类型。</div></div>
                   <div class="field"><label><span class="required-star">*</span>风险等级</label><select id="formRiskLevel"><option value="">请选择风险等级</option><option>高风险</option><option>低风险</option></select></div>
-                  <div class="field"><label><span class="required-star">*</span>履约方式</label><select id="formDelivery" disabled></select><div class="hint-text">由商品类型自动确定，不支持单独修改。</div></div>
+                  <div class="field"><label><span class="required-star">*</span>履约方式</label><select id="formDelivery"></select><div class="hint-text">履约方式独立配置，不与商品类型联动。</div></div>
                   <div class="field"><label>商品状态</label><input id="formState" value="草稿" disabled></div>
                   <div class="field" style="grid-column:1/-1"><label>商品副标题 / 描述文案</label><textarea id="formSubtitle" rows="3" placeholder="商品简短说明或权益描述"></textarea></div>
                 </div>
@@ -2476,7 +2476,7 @@
       const attrCodes = template.attributes.map(attr => attr.code);
       const sourceRows = sampleSkuValuesBySpu[spu] || (template.defaultSkuValues?.length ? template.defaultSkuValues : [makeEmptyAttributeValues(type, attrCodes)]);
       return sourceRows.map((values, index) => {
-        const row = makeSkuRow(spu, type, values, index + 1, delivery === "未配置" ? "" : normalizeDelivery(delivery) || getDefaultDeliveryByType(type), attrCodes, template);
+        const row = makeSkuRow(spu, type, values, index + 1, delivery === "未配置" ? "" : normalizeDelivery(delivery), attrCodes, template);
         row.prices = sampleSkuPrices(type, row.attributeValues, index + 1);
         syncLegacySkuPriceFields(row);
         if (isCdkeyDelivery(row.delivery)) {
@@ -2492,26 +2492,13 @@
       });
     }
 
-    function getDefaultDeliveryByType(type) {
-      const map = {
-        "虚拟装扮": DELIVERY_AUTO_VIRTUAL,
-        "CDKEY": DELIVERY_AUTO_CDKEY,
-        "实物": DELIVERY_MANUAL_PHYSICAL
-      };
-      return map[type] || DELIVERY_AUTO_VIRTUAL;
-    }
-
-    function isDeliveryCompatibleWithType(type, delivery) {
-      return normalizeDelivery(delivery) === getDefaultDeliveryByType(type);
-    }
-
-    function syncDeliveryByProductType(type) {
+    function setFormDeliveryOptions(selectedDelivery = "") {
       const select = document.getElementById("formDelivery");
       if (!select) return;
-      const delivery = getDefaultDeliveryByType(type);
-      select.innerHTML = `<option value="${delivery}">${delivery}</option>`;
-      select.value = delivery;
-      select.disabled = true;
+      const normalized = normalizeDelivery(selectedDelivery);
+      select.innerHTML = `<option value="">请选择履约方式</option>${allowedDeliveryOptions.map(delivery => `<option value="${delivery}">${delivery}</option>`).join("")}`;
+      select.value = allowedDeliveryOptions.includes(normalized) ? normalized : "";
+      select.disabled = false;
     }
 
     function colorForProductType(type) {
@@ -2748,7 +2735,7 @@
       const attrCodes = attrs.map(attr => attr.code);
       const template = getSkuTemplate(type);
       if (!template) return [];
-      const delivery = getDefaultDeliveryByType(type);
+      const delivery = getFormDelivery();
       const sourceRows = template.defaultSkuValues?.length ? template.defaultSkuValues : [makeEmptyAttributeValues(type, attrCodes)];
       const unique = new Set();
       const rows = [];
@@ -2802,6 +2789,7 @@
 
     function initialDeliveryParams(delivery) {
       delivery = normalizeDelivery(delivery);
+      if (!delivery) return {};
       if (isCdkeyDelivery(delivery)) {
         return { cdkey: {} };
       }
@@ -2907,7 +2895,7 @@
       const specType = normalizeSkuSpecType(row.specType || row.skuSpec || (legacyDuration && legacyDuration !== "永久" ? "天" : "无"));
       const duration = normalizeSkuDuration(specType, legacyDuration || "");
       const displayText = row.displayText || row.text || generateSkuDisplayText(attributeValues, type, codes, specType, duration);
-      const delivery = normalizeDelivery(row.delivery) || getDefaultDeliveryByType(type);
+      const delivery = normalizeDelivery(row.delivery);
       const cdkeyPoolId = row.cdkeyPoolId || row.deliveryParams?.cdkey?.poolId || "";
       const skuName = Object.prototype.hasOwnProperty.call(row, "skuName")
         ? row.skuName
@@ -3217,7 +3205,7 @@
       fillSelect("filterType", types);
       fillSelect("filterState", productStates);
       fillSelect("filterDelivery", deliveries);
-      fillSelect("formDelivery", allowedDeliveryOptions);
+      setFormDeliveryOptions();
       fillSelect("tmplFilterType", types);
       fillSelect("tmplFilterState", configStates);
       fillSelect("tmplFilterScope", templateScopes);
@@ -3312,6 +3300,7 @@
       document.getElementById("saveEnableBtn").addEventListener("click", handleFormEnable);
       document.getElementById("confirmEnableActionBtn").addEventListener("click", confirmEnableAction);
       document.getElementById("formType").addEventListener("change", onTypeChange);
+      document.getElementById("formDelivery").addEventListener("change", onDeliveryChange);
       ["input", "change"].forEach(eventName => {
         document.getElementById("formPage").addEventListener(eventName, event => {
           event.target.classList?.remove("invalid");
@@ -6127,7 +6116,7 @@
       if (!reason) return "当前履约记录无异常，仅用于查询归档。";
       if (reason.includes("CDKey 可用码不足")) return "请前往 CDKey 码池列表补货或检查码池状态。";
       if (reason.includes("码池不可用") || reason.includes("码池未上架")) return "请前往 CDKey 码池列表检查码池状态。";
-      if (reason.includes("履约方式未配置")) return "请回到商品列表重新选择商品类型，以自动匹配履约方式。";
+      if (reason.includes("履约方式未配置")) return "请回到商品列表配置履约方式。";
       if (reason.includes("库存锁定未释放")) return "请前往订单 / 履约后台或技术排查链路处理。";
       if (reason.includes("回调")) return "请联系技术排查权益服务回调。";
       if (isPhysicalDelivery(record.deliveryMethod)) return "请前往订单 / 履约后台处理。";
@@ -6957,7 +6946,7 @@
       document.getElementById("formRemark").value = product?.remark || "";
       updateFormTypes(false);
       document.getElementById("formType").value = product?.type || "虚拟装扮";
-      syncDeliveryByProductType(document.getElementById("formType").value);
+      setFormDeliveryOptions(product?.delivery || "");
       setDescriptionTags(product?.tags || ["新品", "限时"]);
       document.getElementById("formTagsInput").value = "";
       document.getElementById("formCornerTags").value = product?.cornerTags?.[0] || "热门";
@@ -7092,11 +7081,17 @@
       handleTemplateChange(true);
     }
 
+    function onDeliveryChange() {
+      syncSkuDeliveryFromForm();
+      syncInventoryRows(false);
+      renderSkuEdit();
+      renderInventoryConfig();
+    }
+
     function handleTemplateChange(resetSku = false) {
       const type = document.getElementById("formType").value;
       const template = getSkuTemplate(type);
       const tip = document.getElementById("templateTip");
-      syncDeliveryByProductType(type);
       if (resetSku) spuAttrValues = defaultSpuAttributeValues(type);
       if (!template) {
         tip.style.display = "none";
@@ -7508,7 +7503,7 @@
       const duplicate = signatures.find((signature, index) => signature && signatures.indexOf(signature) !== index);
       const invalidSort = skuRows.some(s => !/^[1-9]\d*$/.test(String(s.sort)));
       const priceErrors = [...new Set(skuRows.flatMap(skuPriceGroupErrors))];
-      const invalidDelivery = !allowedDeliveryOptions.includes(getFormDelivery()) || !isDeliveryCompatibleWithType(type, getFormDelivery());
+      const invalidDelivery = !allowedDeliveryOptions.includes(getFormDelivery());
       const invalidDuration = skuRows.some(s => {
         const value = String(s.duration ?? "").trim();
         return value !== "" && !/^\d+$/.test(value);
@@ -7522,7 +7517,7 @@
       if (invalidEnum) errors.push("SKU 枚举属性值不在模板可选值范围内。");
       if (duplicate) errors.push("SKU 属性值组合重复，请调整 SKU 属性值。");
       errors.push(...priceErrors);
-      if (invalidDelivery) errors.push("履约方式与商品类型不匹配。");
+      if (invalidDelivery) errors.push("请选择有效的履约方式。");
       document.getElementById("skuError").textContent = errors.join(" ");
       return errors;
     }
@@ -7532,7 +7527,7 @@
       const template = getSkuTemplate(type);
       const activeAttrs = getSelectedSkuAttrs(type);
       const attrCodes = activeAttrs.map(attr => attr.code);
-      const row = makeSkuRow("NEW", type, makeEmptyAttributeValues(type, attrCodes), skuRows.length + 1, getDefaultDeliveryByType(type), attrCodes, template);
+      const row = makeSkuRow("NEW", type, makeEmptyAttributeValues(type, attrCodes), skuRows.length + 1, getFormDelivery(), attrCodes, template);
       activeAttrs.forEach(attr => {
         if (attr.valueType !== "枚举") row.attributeValues[attr.code] = "";
       });
@@ -8317,8 +8312,7 @@
       if (fromForm) {
         if (!valueOf("formName")) list.push(["基础信息", "商品对外名称缺失", "请补充商品对外名称"]);
         if (!valueOf("formRiskLevel")) list.push(["基础信息", "风险等级缺失", "请选择风险等级"]);
-        if (!valueOf("formDelivery")) list.push(["基础信息", "履约方式缺失", "请重新选择商品类型以自动匹配履约方式"]);
-        if (valueOf("formType") && valueOf("formDelivery") && !isDeliveryCompatibleWithType(valueOf("formType"), valueOf("formDelivery"))) list.push(["基础信息", "履约方式与商品类型不匹配", "请重新选择商品类型以自动匹配履约方式"]);
+        if (!valueOf("formDelivery")) list.push(["基础信息", "履约方式缺失", "请选择履约方式"]);
         if (!valueOf("formType")) list.push(["商品类型", "商品类型缺失", "请选择商品类型"]);
         if (valueOf("formExchangeDisplayBase") && !/^\d+$/.test(valueOf("formExchangeDisplayBase"))) list.push(["SPU 运营展示配置", "兑换量展示基数格式错误", "请填写 0 或正整数"]);
         validateSpuAttrValues().forEach(err => list.push([err.item, err.problem, err.suggestion]));
