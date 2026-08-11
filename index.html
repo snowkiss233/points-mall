@@ -1162,7 +1162,7 @@
           <div class="table-head"><div><div class="table-title">订单列表</div><div class="table-meta">技术状态映射为运营状态展示；虚拟商品履约异常仅支持查看，由研发侧处理。</div></div><div class="table-meta" id="orderTableCount">共 0 条</div></div>
           <div class="table-wrap">
             <table class="order-management-table">
-              <thead><tr><th>订单号</th><th>用户ID</th><th>用户NN号</th><th>用户手机号</th><th>商品名称</th><th>数量</th><th>支付金额</th><th>支付方式</th><th>履约方式</th><th>订单状态</th><th>履约进度</th><th>失败/挂起原因</th><th>创建时间</th><th>更新时间</th><th>操作</th></tr></thead>
+              <thead><tr><th>订单号</th><th>用户ID</th><th>用户NN号</th><th>用户手机号</th><th>商品名称</th><th>数量</th><th>支付金额</th><th>支付方式</th><th>履约方式</th><th>订单状态</th><th>履约进度</th><th>异常原因</th><th>创建时间</th><th>更新时间</th><th>操作</th></tr></thead>
               <tbody id="orderManagementTbody"></tbody>
             </table>
           </div>
@@ -8928,6 +8928,16 @@
       return `<span class="tag ${cls}">${progress}</span>`;
     }
 
+    function shouldShowOrderException(order) {
+      return ["支付失败", "异常"].includes(operationalOrderStatus(order))
+        || operationalFulfillmentProgress(order) === "履约异常";
+    }
+
+    function orderExceptionReason(order) {
+      if (!shouldShowOrderException(order)) return "-";
+      return order.exceptionReason || order.reason || "-";
+    }
+
     function orderActionHtml(order) {
       const actions = [`<button class="btn text" data-mall-order-detail="${order.no}">详情</button>`];
       if (canHandleOrderFulfillmentFailure(order)) {
@@ -8967,13 +8977,13 @@
           <td>${order.no}</td><td>${order.userId}</td><td>${order.nnNo}</td><td>${order.phone}</td><td>${order.product}</td>
           <td>${order.quantity}</td><td>${formatOrderAmount(order)}</td><td>${paymentMethodTag(order.paymentMethod)}</td>
           <td>${deliveryTag(order.fulfill)}</td><td>${orderStatusTag(operationalOrderStatus(order), order.status)}</td>
-          <td>${fulfillmentProgressTag(order)}</td><td>${order.reason}</td><td>${order.created}</td><td>${order.updated}</td><td>${orderActionHtml(order)}</td>
+          <td>${fulfillmentProgressTag(order)}</td><td>${orderExceptionReason(order)}</td><td>${order.created}</td><td>${order.updated}</td><td>${orderActionHtml(order)}</td>
         </tr>
       `).join("") : `<tr><td colspan="15"><div class="empty">当前筛选条件下暂无订单</div></td></tr>`;
       document.getElementById("orderTableCount").textContent = `共 ${rows.length} 条`;
       document.getElementById("orderStatTotal").textContent = rows.length;
       document.getElementById("orderStatPending").textContent = rows.filter(order => operationalOrderStatus(order) === "待支付").length;
-      document.getElementById("orderStatFailed").textContent = rows.filter(isOrderFulfillmentFailed).length;
+      document.getElementById("orderStatFailed").textContent = rows.filter(order => operationalFulfillmentProgress(order) === "履约异常").length;
       document.getElementById("orderStatPhysical").textContent = rows.filter(order => operationalFulfillmentProgress(order) === "待运营发货").length;
     }
 
@@ -9021,7 +9031,7 @@
         ]))}
         ${detailSection("支付、库存与履约结果", infoGrid([
           ["支付结果", order.paymentResult], ["库存处理结果", order.stockResult], ["履约结果", order.fulfillResult],
-          ["重试记录", order.retrySummary], ["失败/挂起原因", order.reason]
+          ["重试记录", order.retrySummary], ["异常原因", orderExceptionReason(order)]
         ]))}
         ${detailSection("履约信息", infoGrid(orderFulfillmentItems(order)))}
         ${isPhysicalOrder(order) ? detailSection("收货信息修改审计", orderAddressAuditHtml(order)) : ""}
@@ -9204,9 +9214,9 @@
     function exportOrderManagementRecords() {
       const rows = getFilteredMallOrders().map(order => [
         order.no, order.userId, order.nnNo, order.phone, order.product, order.quantity, formatOrderAmount(order), order.paymentMethod, order.fulfill, operationalOrderStatus(order), order.status,
-        order.fulfillmentStatus, operationalFulfillmentProgress(order), order.reason, order.created, order.updated
+        order.fulfillmentStatus, operationalFulfillmentProgress(order), orderExceptionReason(order), order.created, order.updated
       ]);
-      downloadPrototypeCsv("订单列表", ["订单号", "用户ID", "用户NN号", "用户手机号", "商品名称", "数量", "支付金额", "支付方式", "履约方式", "订单状态", "技术订单状态", "履约状态", "履约进度", "失败/挂起原因", "创建时间", "更新时间"], rows);
+      downloadPrototypeCsv("订单列表", ["订单号", "用户ID", "用户NN号", "用户手机号", "商品名称", "数量", "支付金额", "支付方式", "履约方式", "订单状态", "技术订单状态", "履约状态", "履约进度", "异常原因", "创建时间", "更新时间"], rows);
     }
     function stateTag(state) {
       const cls = state === "上架" ? "green" : state === "草稿" ? "orange" : state === "下架" ? "" : "";
