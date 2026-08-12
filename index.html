@@ -2330,6 +2330,7 @@
         <div class="field"><label><span class="required-star">*</span>收货手机号</label><input id="editRecipientPhone" placeholder="输入收货手机号"></div>
         <div class="field" style="grid-column:1/-1"><label><span class="required-star">*</span>收货地址</label><textarea id="editAddress" maxlength="200" rows="3" placeholder="输入完整收货地址"></textarea></div>
         <div class="field" style="grid-column:1/-1"><label><span class="required-star">*</span>修改原因</label><select id="editAddressReason"><option value="">请选择</option><option>用户申请修改</option><option>客服核实修正</option><option>地址格式补全</option><option>手机号更正</option><option>其他</option></select><div class="hint-text">仅未录入物流单号前允许修改，系统记录修改前后信息。</div></div>
+        <div class="field" id="editAddressOtherReasonField" style="grid-column:1/-1" hidden><label><span class="required-star">*</span>其他原因说明</label><textarea id="editAddressOtherReason" maxlength="200" rows="3" placeholder="请输入修改收货信息的具体原因"></textarea><div class="hint-text">选择“其他”时必填，最多 200 个字符。</div></div>
       </div>
     </div>
     <div class="modal-foot"><button class="btn" data-close-modal="addressEditModal">取消</button><button class="btn primary" id="confirmAddressEditBtn">确认修改</button></div>
@@ -3528,6 +3529,7 @@
       document.getElementById("resetOrdersBtn").addEventListener("click", resetOrderManagementFilters);
       document.getElementById("exportOrdersBtn").addEventListener("click", exportOrderManagementRecords);
       document.getElementById("confirmOrderActionBtn").addEventListener("click", confirmOrderManagementAction);
+      document.getElementById("editAddressReason").addEventListener("change", toggleEditAddressOtherReason);
       document.getElementById("confirmAddressEditBtn").addEventListener("click", confirmOrderAddressEdit);
       document.getElementById("confirmLogisticsBtn").addEventListener("click", confirmOrderLogistics);
       document.body.addEventListener("click", handleOrderManagementActionClick);
@@ -9133,8 +9135,19 @@
       document.getElementById("editRecipientPhone").value = order.recipientPhone || "";
       document.getElementById("editAddress").value = order.address || "";
       document.getElementById("editAddressReason").value = "";
+      document.getElementById("editAddressOtherReason").value = "";
+      toggleEditAddressOtherReason();
       closeAllLayers();
       openModal("addressEditModal");
+    }
+
+    function toggleEditAddressOtherReason() {
+      const isOther = valueOf("editAddressReason") === "其他";
+      const field = document.getElementById("editAddressOtherReasonField");
+      const input = document.getElementById("editAddressOtherReason");
+      field.hidden = !isOther;
+      input.required = isOther;
+      if (!isOther) input.value = "";
     }
 
     function confirmOrderAddressEdit() {
@@ -9144,13 +9157,16 @@
       const phone = valueOf("editRecipientPhone");
       const address = valueOf("editAddress");
       const reason = valueOf("editAddressReason");
+      const otherReason = valueOf("editAddressOtherReason");
       if (!recipient || !/^1\d{10}$/.test(phone) || !address || !reason) return toast("请完整填写有效的收货信息和修改原因。");
+      if (reason === "其他" && !otherReason) return toast("请输入其他修改原因。");
+      const auditReason = reason === "其他" ? `其他：${otherReason}` : reason;
       const before = { recipient: order.recipient, phone: order.recipientPhone, address: order.address };
       order.recipient = recipient;
       order.recipientPhone = phone;
       order.address = address;
       order.addressEditLogs = order.addressEditLogs || [];
-      order.addressEditLogs.unshift({ time: nowText(), operator: "平台运营", reason, before, after: { recipient, phone, address } });
+      order.addressEditLogs.unshift({ time: nowText(), operator: "平台运营", reason: auditReason, reasonType: reason, reasonDetail: reason === "其他" ? otherReason : "", before, after: { recipient, phone, address } });
       order.updated = nowText();
       order.reason = "收货信息已修正，待运营线下发货并录入物流单号";
       order.fulfillResult = "已收到有效收货地址，待运营发货";
