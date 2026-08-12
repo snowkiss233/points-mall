@@ -1142,7 +1142,7 @@
               <div class="field"><label>货币类型</label><select id="mallOrderCurrencyFilter"><option value="">全部</option><option>积分</option><option>人民币</option></select></div>
               <div class="field"><label>支付方式</label><select id="mallOrderPaymentMethodFilter"><option value="">全部</option><option>积分支付</option><option>支付宝</option><option>微信支付</option></select></div>
               <div class="field"><label>履约方式</label><select id="mallOrderDeliveryFilter"><option value="">全部</option><option>自动履约（虚拟道具）</option><option>自动履约（CDKey）</option><option>手动履约（实物）</option></select></div>
-              <div class="field"><label>履约进度</label><select id="mallOrderFulfillmentProgressFilter"><option value="">全部</option><option>待用户填写地址</option><option>待运营发货</option><option>待履约</option><option>履约中</option><option>履约完成</option><option>履约异常</option></select></div>
+              <div class="field"><label>履约进度</label><select id="mallOrderFulfillmentProgressFilter"><option value="">全部</option><option>待履约</option><option>履约中</option><option>履约完成</option><option>履约异常</option></select></div>
             </div>
             <div class="filter-actions">
               <button class="btn primary" id="searchOrdersBtn">查询</button>
@@ -8954,6 +8954,15 @@
       return `<div class="action-list">${actions.join("")}</div>`;
     }
 
+    function matchesFulfillmentProgressFilter(order, fulfillmentProgress) {
+      if (!fulfillmentProgress) return true;
+      const progress = operationalFulfillmentProgress(order);
+      if (fulfillmentProgress === "待履约") {
+        return ["待履约", "待用户填写地址", "待运营发货"].includes(progress);
+      }
+      return progress === fulfillmentProgress;
+    }
+
     function getFilteredMallOrders() {
       const no = valueOf("mallOrderNoFilter");
       const user = valueOf("mallOrderUserFilter");
@@ -8970,7 +8979,7 @@
         && (!currencyType || order.currencyType === currencyType)
         && (!paymentMethod || order.paymentMethod === paymentMethod)
         && (!delivery || order.fulfill === delivery)
-        && (!fulfillmentProgress || operationalFulfillmentProgress(order) === fulfillmentProgress));
+        && matchesFulfillmentProgressFilter(order, fulfillmentProgress));
     }
 
     function renderOrderManagementTable() {
