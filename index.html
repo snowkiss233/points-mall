@@ -2313,7 +2313,7 @@
         <div class="field"><label>收货人</label><input id="logisticsRecipient" disabled></div>
         <div class="field"><label>收货手机号</label><input id="logisticsRecipientPhone" disabled></div>
         <div class="field" style="grid-column:1/-1"><label>收货地址</label><input id="logisticsAddress" disabled></div>
-        <div class="field"><label><span class="required-star">*</span>物流公司</label><select id="logisticsCompanyInput"><option value="">请选择</option><option>顺丰速运</option><option>京东物流</option><option>中通快递</option><option>圆通速递</option><option>其他</option></select></div>
+        <div class="field"><label><span class="required-star">*</span>物流公司</label><input id="logisticsCompanyInput" maxlength="50" placeholder="输入物流公司"></div>
         <div class="field"><label><span class="required-star">*</span>物流单号</label><input id="trackingNoInput" placeholder="输入物流单号"><div class="hint-text">确认后将同步更新订单履约状态。</div></div>
       </div>
     </div>
@@ -2443,6 +2443,7 @@
       deliveryFilterSku: { maxLength: 32 },
       deliveryFilterPool: { maxLength: 64 },
       deliveryFilterDelivered: { maxLength: 32 },
+      logisticsCompanyInput: { maxLength: 50 },
       cdkeyPoolFilterName: { maxLength: 50 },
       cdkeyPoolFilterId: { maxLength: 64 },
       cdkeyPoolFilterUpdated: { maxLength: 32 },
