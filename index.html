@@ -313,7 +313,7 @@
       border-collapse: collapse;
       width: 100%;
     }
-    .product-table { min-width: 1540px; }
+    .product-table { min-width: 1380px; }
     .template-table { min-width: 1500px; }
     .template-attr-table {
       min-width: 930px;
@@ -439,38 +439,14 @@
       font-size: 12px;
       white-space: nowrap;
     }
-    .price-pill.default {
-      border-color: #93c5fd;
-      background: var(--primary-weak);
-      color: #1d4ed8;
-    }
     .price-pill.point { border-color: #bfdbfe; background: #eff6ff; color: #1d4ed8; }
     .price-pill.coin { border-color: #ddd6fe; background: #f5f3ff; color: #6d28d9; }
     .price-pill.rmb { border-color: #bbf7d0; background: #ecfdf5; color: #15803d; }
-    .price-pill .default-mark {
-      font-size: 10px;
-      font-weight: 800;
-      opacity: .82;
-    }
     .price-config-cell { min-width: 260px; }
     .price-config-cell .btn { margin-top: 8px; }
-    .price-editor-table { min-width: 900px; }
+    .price-editor-table { min-width: 640px; }
     .price-editor-table td { vertical-align: middle; }
     .price-editor-table input[type="number"] { min-width: 130px; }
-    .price-route {
-      color: var(--muted);
-      font-size: 12px;
-      line-height: 1.5;
-    }
-    .price-preview {
-      margin-top: 14px;
-      padding: 14px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: #f8fafc;
-    }
-    .price-preview-title { font-weight: 800; margin-bottom: 8px; }
-    .price-preview-options { display: flex; flex-wrap: wrap; gap: 8px; }
     .tag {
       display: inline-flex;
       align-items: center;
@@ -495,6 +471,37 @@
       min-width: 190px;
     }
     .action-list .btn.text { font-size: 13px; }
+    .points-flow-table { min-width: 1420px; }
+    .order-management-table { min-width: 2220px; }
+    .points-flow-table td,
+    .order-management-table td { white-space: nowrap; }
+    .order-management-table td:nth-child(5),
+    .order-management-table td:nth-child(12) {
+      white-space: normal;
+      min-width: 190px;
+    }
+    .amount.plus { color: var(--green); font-weight: 700; }
+    .amount.minus { color: var(--red); font-weight: 700; }
+    .points-account-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 2fr) minmax(220px, 1fr);
+      gap: 14px;
+      margin: 14px 0;
+    }
+    .points-balance-card {
+      border: 1px solid #bfdbfe;
+      background: linear-gradient(135deg, #eff6ff, #ffffff);
+      border-radius: var(--radius);
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .points-balance-card span { color: var(--muted); }
+    .points-balance-card strong { color: var(--primary); font-size: 32px; margin-top: 8px; }
+    .order-detail-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+    .audit-entry { padding: 10px 0; border-bottom: 1px solid var(--line); line-height: 1.7; }
+    .audit-entry:last-child { border-bottom: 0; }
     .empty {
       padding: 40px;
       text-align: center;
@@ -958,6 +965,7 @@
       .main { margin-left: 76px; width: calc(100% - 76px); }
       .filter-grid, .form-grid, .form-grid.three, .info-grid, .material-grid, .upload-row { grid-template-columns: 1fr; }
       .topbar { align-items: flex-start; height: auto; gap: 10px; padding: 12px; flex-direction: column; }
+      .points-account-layout { grid-template-columns: 1fr; }
       .global-search { width: 100%; }
       .top-actions { width: 100%; flex-wrap: wrap; }
     }
@@ -972,6 +980,10 @@
         <button class="nav-item active" data-menu="商品列表" id="menuProductList"><b>•</b><span>商品列表</span></button>
         <button class="nav-item" data-menu="商品属性模板" id="menuTemplate"><b>•</b><span>商品属性模板</span></button>
         <button class="nav-item" data-menu="商品投放管理" id="menuDisplay"><b>•</b><span>商品投放管理</span></button>
+        <div class="nav-title">积分管理</div>
+        <button class="nav-item" data-menu="积分流水记录" id="menuPointsFlow"><b>•</b><span>积分流水记录</span></button>
+        <div class="nav-title">订单管理</div>
+        <button class="nav-item" data-menu="订单列表" id="menuOrderManagement"><b>•</b><span>订单列表</span></button>
         <div class="nav-title">库存管理</div>
         <button class="nav-item" data-menu="库存列表" id="menuInventory"><b>•</b><span>库存列表</span></button>
         <div class="nav-title">履约记录</div>
@@ -1049,7 +1061,6 @@
                   <th>商品信息</th>
                   <th>商品类型</th>
                   <th>SKU 摘要</th>
-                  <th>多币种价格</th>
                   <th>履约方式</th>
                   <th>商品状态</th>
                   <th>投放状态</th>
@@ -1059,6 +1070,101 @@
                 </tr>
               </thead>
               <tbody id="productTbody"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <section id="pointsFlowPage" class="content" style="display:none">
+        <div class="page-head">
+          <div>
+            <h1>积分流水记录</h1>
+            <div class="sub">查询积分获取和消费流水，支持按用户、时间、来源和流水类型筛选。</div>
+          </div>
+          <div class="btn-row">
+            <button class="btn" id="openUserPointsBtn">用户积分查询</button>
+            <button class="btn primary" id="openAdjustPointsBtn">用户积分调整</button>
+            <button class="btn" id="exportPointsFlowBtn">导出列表</button>
+          </div>
+        </div>
+
+        <section class="card" aria-label="积分流水筛选区">
+          <div class="card-body">
+            <div class="filter-grid">
+              <div class="field"><label>流水ID</label><input id="pointFlowIdFilter" placeholder="如 FL20260706001"></div>
+              <div class="field"><label>用户ID/NN号/手机号</label><input id="pointFlowUserFilter" placeholder="输入用户标识"></div>
+              <div class="field"><label>流水类型</label><select id="pointFlowTypeFilter"><option value="">全部</option><option>获取</option><option>消费</option></select></div>
+              <div class="field"><label>来源类型</label><select id="pointFlowSourceFilter"><option value="">全部</option><option>任务领取</option><option>商城消费</option><option>订单退回</option><option>人工补发</option><option>人工扣减</option><option>活动增量</option></select></div>
+              <div class="field"><label>开始时间</label><input type="date" id="pointFlowStartFilter"></div>
+              <div class="field"><label>结束时间</label><input type="date" id="pointFlowEndFilter"></div>
+            </div>
+            <div class="filter-actions">
+              <button class="btn primary" id="searchPointsFlowBtn">查询</button>
+              <button class="btn" id="resetPointsFlowBtn">重置</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="stats" aria-label="积分流水统计">
+          <div class="stat"><div><div class="stat-name">流水总数</div><div class="stat-value" id="pointFlowStatTotal">0</div></div><div class="stat-mark">流</div></div>
+          <div class="stat"><div><div class="stat-name">获取记录</div><div class="stat-value" id="pointFlowStatGain">0</div></div><div class="stat-mark">得</div></div>
+          <div class="stat danger"><div><div class="stat-name">消费记录</div><div class="stat-value" id="pointFlowStatConsume">0</div></div><div class="stat-mark">消</div></div>
+          <div class="stat"><div><div class="stat-name">积分净变动</div><div class="stat-value" id="pointFlowStatNet">0</div></div><div class="stat-mark">净</div></div>
+        </section>
+
+        <section class="card">
+          <div class="table-head"><div><div class="table-title">积分流水记录列表</div><div class="table-meta">人工调整与失败订单退积分操作会同步生成流水，保留业务描述用于审计。</div></div><div class="table-meta" id="pointFlowTableCount">共 0 条</div></div>
+          <div class="table-wrap">
+            <table class="points-flow-table">
+              <thead><tr><th>流水ID</th><th>用户ID</th><th>用户NN号</th><th>用户手机号</th><th>流水类型</th><th>变动积分</th><th>变动后余额</th><th>来源类型</th><th>创建时间</th><th>业务描述</th></tr></thead>
+              <tbody id="pointFlowTbody"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <section id="orderManagementPage" class="content" style="display:none">
+        <div class="page-head">
+          <div>
+            <h1>订单列表</h1>
+            <div class="sub">订单状态按运营口径合并展示，详情保留技术状态；实物订单按地址和履约结果映射履约进度。</div>
+          </div>
+          <div class="btn-row"><button class="btn" id="exportOrdersBtn">导出列表</button></div>
+        </div>
+
+        <section class="card" aria-label="订单筛选区">
+          <div class="card-body">
+            <div class="filter-grid">
+              <div class="field"><label>订单号</label><input id="mallOrderNoFilter" placeholder="如 ORD20260706002"></div>
+              <div class="field"><label>用户ID/NN号/手机号</label><input id="mallOrderUserFilter" placeholder="输入用户标识"></div>
+              <div class="field"><label>订单状态</label><select id="mallOrderStatusFilter"><option value="">全部</option><option>待支付</option><option>支付失败</option><option>已支付</option><option>已完成</option><option>已关闭</option><option>异常</option></select></div>
+              <div class="field"><label>商品名称</label><input id="mallOrderProductFilter" placeholder="输入商品名称"></div>
+              <div class="field"><label>货币类型</label><select id="mallOrderCurrencyFilter"><option value="">全部</option><option>积分</option><option>人民币</option></select></div>
+              <div class="field"><label>支付方式</label><select id="mallOrderPaymentMethodFilter"><option value="">全部</option><option>积分支付</option><option>支付宝</option><option>微信支付</option></select></div>
+              <div class="field"><label>履约方式</label><select id="mallOrderDeliveryFilter"><option value="">全部</option><option>自动履约（虚拟道具）</option><option>自动履约（CDKey）</option><option>手动履约（实物）</option></select></div>
+              <div class="field"><label>履约进度</label><select id="mallOrderFulfillmentProgressFilter"><option value="">全部</option><option>待履约</option><option>待补货</option><option>履约中</option><option>履约完成</option><option>履约异常</option></select></div>
+            </div>
+            <div class="filter-actions">
+              <button class="btn primary" id="searchOrdersBtn">查询</button>
+              <button class="btn" id="resetOrdersBtn">重置</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="stats" aria-label="订单统计">
+          <div class="stat"><div><div class="stat-name">订单总数</div><div class="stat-value" id="orderStatTotal">0</div></div><div class="stat-mark">单</div></div>
+          <div class="stat warning"><div><div class="stat-name">待支付订单</div><div class="stat-value" id="orderStatPending">0</div></div><div class="stat-mark">待</div></div>
+          <div class="stat danger"><div><div class="stat-name">履约异常</div><div class="stat-value" id="orderStatFailed">0</div></div><div class="stat-mark">异</div></div>
+          <div class="stat"><div><div class="stat-name">实物待发货</div><div class="stat-value" id="orderStatPhysical">0</div></div><div class="stat-mark">货</div></div>
+          <div class="stat warning"><div><div class="stat-name">待补货订单</div><div class="stat-value" id="orderStatBackorder">0</div></div><div class="stat-mark">补</div></div>
+        </section>
+
+        <section class="card">
+          <div class="table-head"><div><div class="table-title">订单列表</div><div class="table-meta">技术状态映射为运营状态展示；虚拟商品履约异常仅支持查看，由研发侧处理。</div></div><div class="table-meta" id="orderTableCount">共 0 条</div></div>
+          <div class="table-wrap">
+            <table class="order-management-table">
+              <thead><tr><th>订单号</th><th>业务来源</th><th>用户ID</th><th>用户NN号</th><th>用户手机号</th><th>商品名称</th><th>数量</th><th>下单场景</th><th>支付金额</th><th>支付方式</th><th>履约方式</th><th>订单状态</th><th>履约进度</th><th>待履约 / 异常原因</th><th>创建时间</th><th>更新时间</th><th>操作</th></tr></thead>
+              <tbody id="orderManagementTbody"></tbody>
             </table>
           </div>
         </section>
@@ -1088,7 +1194,7 @@
                   <div class="field"><label>商品对内名称</label><input id="formInternal" placeholder="请输入后台内部名称"></div>
                   <div class="field"><label><span class="required-star">*</span>商品类型</label><select id="formType"></select><div class="hint-text">本期仅支持虚拟装扮、CDKEY、实物三个一级类型。</div></div>
                   <div class="field"><label><span class="required-star">*</span>风险等级</label><select id="formRiskLevel"><option value="">请选择风险等级</option><option>高风险</option><option>低风险</option></select></div>
-                  <div class="field"><label><span class="required-star">*</span>履约方式</label><select id="formDelivery" disabled></select><div class="hint-text">由商品类型自动确定，不支持单独修改。</div></div>
+                  <div class="field"><label><span class="required-star">*</span>履约方式</label><select id="formDelivery"></select><div class="hint-text">履约方式独立配置，不与商品类型联动。</div></div>
                   <div class="field"><label>商品状态</label><input id="formState" value="草稿" disabled></div>
                   <div class="field" style="grid-column:1/-1"><label>商品副标题 / 描述文案</label><textarea id="formSubtitle" rows="3" placeholder="商品简短说明或权益描述"></textarea></div>
                 </div>
@@ -1214,7 +1320,7 @@
             <section class="form-card" id="sectionSku">
               <h2><span class="required-star">*</span>SKU 配置</h2>
               <div class="body">
-                <div class="alert info">单个 SKU 可同时配置积分、N币、RMB价格。三种价格独立维护，不按充值汇率自动换算；用户下单后锁定所选币种，本期不支持积分、N币、RMB组合支付。</div>
+                <div class="alert info">单个 SKU 可同时配置积分、N币、RMB价格。三种价格独立维护，不按充值汇率自动换算；用户下单后锁定所选币种。所有商品 SKU 均可配置下单策略；允许缺货下单时，订单支付成功后占用待履约额度，资源到位后自动或人工继续履约。</div>
                 <div class="btn-row" style="margin-bottom:10px">
                   <button class="btn primary" id="addSkuBtn" type="button">添加 SKU</button>
                   <button class="btn danger" id="clearSkuBtn" type="button">清空 SKU</button>
@@ -1447,14 +1553,14 @@
         <div class="page-head">
           <div>
             <h1>库存列表</h1>
-            <div class="sub">按商品 SKU 维度维护库存主数据、库存调整、库存流水和安全库存配置。</div>
+            <div class="sub">按商品 SKU 维度维护库存主数据，并查看下单策略、待履约责任和剩余额度。</div>
           </div>
           <div class="btn-row">
             <button class="btn" id="exportInventoryBtn">批量导出库存</button>
           </div>
         </div>
 
-        <div class="page-note">库存列表是商品创建后的库存主维护入口。商品新建页只支持首次初始化库存；商品创建后，库存调整、库存流水和安全库存配置统一在库存列表完成。库存按 SKU 维度管理，商品列表和商品详情不承接库存字段展示。</div>
+        <div class="page-note">库存列表按 SKU 维度展示真实库存与待履约责任。CDKey 商品的总码数、可用码数量以码池为唯一来源，不支持手工调整；待履约数量仅表示已支付但尚未完成履约的订单责任，不计入真实库存。</div>
 
         <section class="card" aria-label="库存筛选区">
           <div class="card-body">
@@ -1467,6 +1573,7 @@
             </div>
             <div class="filter-grid more-filters" id="inventoryMoreFilters">
               <div class="field"><label>CDKey 状态</label><select id="inventoryFilterCdkey"><option>全部</option><option>-</option><option>码池可用</option><option>CDKey 不足</option><option>码池未配置</option><option>码池不可用</option></select></div>
+              <div class="field"><label>下单策略</label><select id="inventoryFilterShortagePolicy"><option>全部</option><option>仅有货可下单</option><option>缺货可下单（进入待履约）</option></select></div>
               <div class="field"><label>创建时间</label><input id="inventoryFilterUpdated" placeholder="开始时间 - 结束时间"></div>
             </div>
             <div class="filter-actions">
@@ -1482,6 +1589,7 @@
           <div class="stat"><div><div class="stat-name">正常库存</div><div class="stat-value" id="inventoryStatNormal">0</div></div><div class="stat-mark">正</div></div>
           <div class="stat warning"><div><div class="stat-name">低库存</div><div class="stat-value" id="inventoryStatLow">0</div></div><div class="stat-mark">低</div></div>
           <div class="stat danger"><div><div class="stat-name">售罄</div><div class="stat-value" id="inventoryStatSoldOut">0</div></div><div class="stat-mark">售</div></div>
+          <div class="stat warning"><div><div class="stat-name">当前待履约数量</div><div class="stat-value" id="inventoryStatPending">0</div></div><div class="stat-mark">待</div></div>
         </section>
 
         <section class="card">
@@ -1510,6 +1618,9 @@
                   <th><button class="sort-head" type="button" data-inventory-sort="warningThreshold">安全库存阈值</button></th>
                   <th>库存状态</th>
                   <th>CDKey 状态</th>
+                  <th>下单策略</th>
+                  <th>待履约数量（当前 / 上限）</th>
+                  <th>剩余待履约额度</th>
                   <th>创建时间</th>
                   <th>最后操作人</th>
                   <th>操作</th>
@@ -1525,14 +1636,14 @@
         <div class="page-head">
           <div>
             <h1>履约记录列表</h1>
-            <div class="sub">查询商品兑换后的履约结果、关联订单、关联 SKU、履约方式、履约状态和异常原因。</div>
+            <div class="sub">查询商品兑换后的履约结果、等待原因、待履约截止时间和资源分配结果。</div>
           </div>
           <div class="btn-row">
             <button class="btn" id="exportDeliveryBtn">批量导出履约记录</button>
           </div>
         </div>
 
-        <div class="page-note">履约记录列表只用于查询履约结果，不提供重新履约、补偿履约、改状态、改库存、核销 CDKey、填写物流单号等处理动作。业务来源由调用方传入并贯穿履约记录与库存流水。履约失败或异常时，请根据异常原因前往库存列表、CDKey 码池列表、订单 / 履约后台或技术排查链路处理。</div>
+        <div class="page-note">履约记录列表只读展示履约任务。允许缺货下单时，资源不足记录为“待履约 + 等待补货”，不记为履约失败；CDKey 补货入库后按支付成功时间 FIFO 自动分配。真正的配置错误、回调失败或超过截止时间才进入异常处理。</div>
 
         <section class="card" aria-label="履约记录筛选区">
           <div class="card-body">
@@ -1548,6 +1659,7 @@
               <div class="field"><label>业务来源</label><select id="deliveryFilterSource"></select></div>
               <div class="field"><label>商品类型</label><select id="deliveryFilterType"></select></div>
               <div class="field"><label>履约方式</label><select id="deliveryFilterMethod"></select></div>
+              <div class="field"><label>履约等待原因</label><select id="deliveryFilterWaitingReason"><option>全部</option><option>等待CDKey补货</option><option>等待普通库存补货</option><option>等待人工履约</option></select></div>
               <div class="field"><label>CDKey 码池 ID</label><input id="deliveryFilterPool" placeholder="请输入码池 ID"></div>
               <div class="field"><label>履约时间</label><input id="deliveryFilterDelivered" placeholder="开始时间 - 结束时间"></div>
             </div>
@@ -1573,6 +1685,7 @@
                 <tr>
                   <th>兑换单号</th>
                   <th>订单号</th>
+                  <th>下单场景</th>
                   <th>业务来源</th>
                   <th>用户 ID</th>
                   <th>用户 NN号</th>
@@ -1587,6 +1700,9 @@
                   <th>消耗金额</th>
                   <th>履约方式</th>
                   <th>履约状态</th>
+                  <th>履约等待原因</th>
+                  <th>待履约截止时间</th>
+                  <th>队列序号</th>
                   <th>CDKey 摘要</th>
                   <th>失败原因</th>
                   <th>创建时间</th>
@@ -1612,7 +1728,7 @@
           </div>
         </div>
 
-        <div class="page-note">CDKey 码池用于承接履约方式为自动履约（CDKey）的商品履约能力。商品 SKU 只关联码池 ID；码池、补货记录、CDKey 明细和码池库存数量由本页面维护，商品侧只同步展示，不手动设置 CDKey 初始库存。CDKey 码池不维护商品基础信息、投放模板和履约记录处理动作。</div>
+        <div class="page-note">CDKey 码池是 CDKey 库存的唯一事实来源。商品 SKU 只关联码池 ID；缺码时若 SKU 允许缺货下单，订单占用待履约额度并进入等待队列。补货入库后系统按支付成功时间 FIFO 自动分配 CDKey，剩余码数再作为新订单可用库存。</div>
 
         <section class="card" aria-label="CDKey 码池筛选区">
           <div class="card-body">
@@ -1655,6 +1771,8 @@
                   <th>核销数量</th>
                   <th>过期数量</th>
                   <th>安全库存阈值</th>
+                  <th>待补货数量</th>
+                  <th>履约缺口</th>
                   <th>绑定商品ID</th>
                   <th>绑定 SKU ID</th>
                   <th>创建时间</th>
@@ -1994,19 +2112,14 @@
   <section class="modal wide" id="skuPriceModal" role="dialog" aria-modal="true">
     <div class="modal-head"><span id="skuPriceModalTitle">配置多币种价格</span><button class="btn text" data-close-modal="skuPriceModal">关闭</button></div>
     <div class="modal-body">
-      <div class="alert info">积分、N币、RMB均为独立商品价格。1 RMB = 10 N币仅用于N币充值，不用于自动生成商品价格；RMB价格代表用户可直接使用人民币购买商品。</div>
+      <div class="alert info">积分、N币、RMB均为独立商品价格，启用币种后需分别填写销售价格；所有商品统一按“积分 → N币 → RMB”的顺序展示已启用的币种价格。</div>
       <div class="table-wrap">
         <table class="price-editor-table">
-          <thead><tr><th>启用</th><th>计价币种</th><th>销售价格</th><th>划线价</th><th>默认展示价</th><th>支付路由说明</th></tr></thead>
+          <thead><tr><th>启用</th><th>计价币种</th><th>销售价格</th><th>划线价</th></tr></thead>
           <tbody id="skuPriceEditorBody"></tbody>
         </table>
       </div>
       <div class="error-text" id="skuPriceError"></div>
-      <div class="price-preview">
-        <div class="price-preview-title">客户端价格选择预览</div>
-        <div class="price-preview-options" id="skuPricePreview"></div>
-        <div class="hint-text">订单创建后锁定币种和价格。用户切换币种时，需要按新价格重新下单。</div>
-      </div>
     </div>
     <div class="modal-foot"><button class="btn" data-close-modal="skuPriceModal">取消</button><button class="btn primary" id="confirmSkuPriceBtn">保存价格配置</button></div>
   </section>
@@ -2143,6 +2256,99 @@
     <div class="modal-foot"><button class="btn" data-close-modal="cdkeyDeleteModal">取消</button><button class="btn danger" id="confirmCdkeyDeleteBtn">确认删除</button></div>
   </section>
 
+  <aside class="drawer" id="orderDetailDrawer">
+    <div class="drawer-head">
+      <div class="drawer-title" id="orderDetailTitle">订单详情</div>
+      <div class="order-detail-actions" id="orderDetailActions"><button class="btn" data-close="orderDetailDrawer">关闭</button></div>
+    </div>
+    <div class="drawer-body" id="orderDetailBody"></div>
+  </aside>
+
+  <section class="modal wide" id="userPointsModal" role="dialog" aria-modal="true">
+    <div class="modal-head"><span>用户积分查询</span><button class="btn text" data-close-modal="userPointsModal">关闭</button></div>
+    <div class="modal-body">
+      <section class="card">
+        <div class="card-body">
+          <div class="filter-grid" style="grid-template-columns:minmax(260px,1fr) auto auto">
+            <div class="field"><label><span class="required-star">*</span>用户ID/NN号/手机号</label><input id="userPointsKeyword" value="U100862" placeholder="输入用户ID / NN号 / 手机号"></div>
+            <button class="btn primary" id="searchUserPointsBtn" style="align-self:end">查询</button>
+            <button class="btn" id="resetUserPointsBtn" style="align-self:end">重置</button>
+          </div>
+        </div>
+      </section>
+      <div class="points-account-layout">
+        <div class="card" style="margin:0"><div class="card-body"><div class="info-grid" id="userPointsInfoGrid"></div></div></div>
+        <div class="points-balance-card"><span>当前可用积分</span><strong id="userPointsBalance">0</strong></div>
+      </div>
+      <section class="card">
+        <div class="table-head"><div class="table-title">最近积分流水</div><button class="btn" id="exportUserPointsFlowBtn">导出流水</button></div>
+        <div class="table-wrap"><table class="points-flow-table"><thead><tr><th>流水ID</th><th>类型</th><th>变动积分</th><th>变动后余额</th><th>来源</th><th>时间</th><th>备注</th></tr></thead><tbody id="userPointsFlowTbody"></tbody></table></div>
+      </section>
+    </div>
+    <div class="modal-foot"><button class="btn" data-close-modal="userPointsModal">关闭</button></div>
+  </section>
+
+  <section class="modal wide" id="adjustPointsModal" role="dialog" aria-modal="true">
+    <div class="modal-head"><span>用户积分调整</span><button class="btn text" data-close-modal="adjustPointsModal">关闭</button></div>
+    <div class="modal-body">
+      <section class="card"><div class="card-body"><div class="filter-grid" style="grid-template-columns:minmax(260px,1fr) auto auto"><div class="field"><label><span class="required-star">*</span>用户ID/NN号/手机号</label><input id="adjustPointsKeyword" placeholder="输入用户ID / NN号 / 手机号"></div><button class="btn primary" id="searchAdjustPointsUserBtn" style="align-self:end">查询</button><button class="btn" id="resetAdjustPointsBtn" style="align-self:end">重置</button></div></div></section>
+      <section class="form-card" id="adjustPointsFormCard">
+        <h2>调整信息</h2>
+        <div class="body">
+          <div class="form-grid three">
+            <div class="field"><label>用户ID</label><input id="adjustPointsUserId" disabled></div>
+            <div class="field"><label>用户NN号</label><input id="adjustPointsNnNo" disabled></div>
+            <div class="field"><label>用户手机号</label><input id="adjustPointsPhone" disabled></div>
+            <div class="field"><label>当前可用积分</label><input id="adjustPointsCurrent" disabled></div>
+            <div class="field"><label><span class="required-star">*</span>调整类型</label><select id="adjustPointsType"><option>人工补发</option><option>人工扣减</option></select></div>
+            <div class="field"><label><span class="required-star">*</span>调整原因</label><select id="adjustPointsReason"><option>活动奖励补发</option><option>任务奖励漏发</option><option>兑换失败补偿</option><option>客服补偿</option><option>异常重复发放追回</option><option>违规获取积分扣减</option><option>运营配置错误修正</option><option>其他人工调整</option></select></div>
+            <div class="field"><label><span class="required-star">*</span>调整积分</label><input id="adjustPointsAmount" type="number" min="1" value="300"><div class="hint-text">仅支持正整数，扣减后积分不可小于 0。</div></div>
+            <div class="field" style="grid-column:1/-1"><label>备注</label><textarea id="adjustPointsRemark" maxlength="200" rows="3" placeholder="填写调整说明，最多200字">活动奖励补发</textarea></div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <div class="modal-foot"><button class="btn" data-close-modal="adjustPointsModal">取消</button><button class="btn primary" id="confirmAdjustPointsBtn" disabled>确认调整</button></div>
+  </section>
+
+  <section class="modal" id="orderActionConfirmModal" role="dialog" aria-modal="true">
+    <div class="modal-head"><span id="orderActionConfirmTitle">确认操作</span><button class="btn text" data-close-modal="orderActionConfirmModal">关闭</button></div>
+    <div class="modal-body"><div class="info-grid" id="orderActionConfirmInfo"></div><div class="alert warning" id="orderActionConfirmImpact" style="margin-top:14px"></div></div>
+    <div class="modal-foot"><button class="btn" data-close-modal="orderActionConfirmModal">取消</button><button class="btn primary" id="confirmOrderActionBtn">确认</button></div>
+  </section>
+
+  <section class="modal wide" id="logisticsModal" role="dialog" aria-modal="true">
+    <div class="modal-head"><span>录入物流单号</span><button class="btn text" data-close-modal="logisticsModal">关闭</button></div>
+    <div class="modal-body">
+      <div class="form-grid three">
+        <div class="field"><label>订单号</label><input id="logisticsOrderNo" disabled></div>
+        <div class="field"><label>用户</label><input id="logisticsUserInfo" disabled></div>
+        <div class="field"><label>收货人</label><input id="logisticsRecipient" disabled></div>
+        <div class="field"><label>收货手机号</label><input id="logisticsRecipientPhone" disabled></div>
+        <div class="field" style="grid-column:1/-1"><label>收货地址</label><input id="logisticsAddress" disabled></div>
+        <div class="field"><label><span class="required-star">*</span>物流公司</label><input id="logisticsCompanyInput" maxlength="50" placeholder="输入物流公司"></div>
+        <div class="field"><label><span class="required-star">*</span>物流单号</label><input id="trackingNoInput" placeholder="输入物流单号"><div class="hint-text">确认后将同步更新订单履约状态。</div></div>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn" data-close-modal="logisticsModal">取消</button><button class="btn primary" id="confirmLogisticsBtn">确认发货</button></div>
+  </section>
+
+  <section class="modal wide" id="addressEditModal" role="dialog" aria-modal="true">
+    <div class="modal-head"><span>修改收货信息</span><button class="btn text" data-close-modal="addressEditModal">关闭</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="field"><label>订单号</label><input id="editAddressOrderNo" disabled></div>
+        <div class="field"><label>用户</label><input id="editAddressUserInfo" disabled></div>
+        <div class="field"><label><span class="required-star">*</span>收货人</label><input id="editRecipient" placeholder="输入收货人"></div>
+        <div class="field"><label><span class="required-star">*</span>收货手机号</label><input id="editRecipientPhone" placeholder="输入收货手机号"></div>
+        <div class="field" style="grid-column:1/-1"><label><span class="required-star">*</span>收货地址</label><textarea id="editAddress" maxlength="200" rows="3" placeholder="输入完整收货地址"></textarea></div>
+        <div class="field" style="grid-column:1/-1"><label><span class="required-star">*</span>修改原因</label><select id="editAddressReason"><option value="">请选择</option><option>用户申请修改</option><option>客服核实修正</option><option>地址格式补全</option><option>手机号更正</option><option>其他</option></select><div class="hint-text">仅未录入物流单号前允许修改，系统记录修改前后信息。</div></div>
+        <div class="field" id="editAddressOtherReasonField" style="grid-column:1/-1" hidden><label><span class="required-star">*</span>其他原因说明</label><textarea id="editAddressOtherReason" maxlength="200" rows="3" placeholder="请输入修改收货信息的具体原因"></textarea><div class="hint-text">选择“其他”时必填，最多 200 个字符。</div></div>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn" data-close-modal="addressEditModal">取消</button><button class="btn primary" id="confirmAddressEditBtn">确认修改</button></div>
+  </section>
+
   <script>
     const productTypeOptions = ["虚拟装扮", "CDKEY", "实物"];
     const types = ["全部", ...productTypeOptions];
@@ -2152,16 +2358,43 @@
     const DELIVERY_AUTO_VIRTUAL = "自动履约（虚拟道具）";
     const DELIVERY_AUTO_CDKEY = "自动履约（CDKey）";
     const DELIVERY_MANUAL_PHYSICAL = "手动履约（实物）";
+    const SHORTAGE_POLICY_STOCK_ONLY = "仅有货可下单";
+    const SHORTAGE_POLICY_ALLOW_BACKORDER = "缺货可下单（进入待履约）";
     const deliveries = ["全部", DELIVERY_AUTO_VIRTUAL, DELIVERY_AUTO_CDKEY, DELIVERY_MANUAL_PHYSICAL, "未配置"];
-    const deliveryRecordStates = ["全部", "待履约", "已履约", "履约失败"];
+    const deliveryRecordStates = ["全部", "待履约", "已履约", "履约失败", "已取消"];
     const businessSources = ["全部", "积分商城", "xx活动"];
     const allowedDeliveryOptions = [DELIVERY_AUTO_VIRTUAL, DELIVERY_AUTO_CDKEY, DELIVERY_MANUAL_PHYSICAL];
+    const pointUsers = [
+      { id: "U100862", nnNo: "NN100862", name: "李四", phone: "13888888888", register: "2025-08-15", points: 1500, updated: "2026-07-06 10:22:18" },
+      { id: "U100863", nnNo: "NN100863", name: "王五", phone: "13966666666", register: "2025-11-22", points: 820, updated: "2026-07-06 09:40:12" },
+      { id: "U100864", nnNo: "NN100864", name: "赵六", phone: "13733333333", register: "2026-01-09", points: 2450, updated: "2026-07-05 18:15:44" },
+      { id: "U100865", nnNo: "NN100865", name: "孙七", phone: "13677777777", register: "2026-02-18", points: 360, updated: "2026-07-04 10:00:09" },
+      { id: "U100866", nnNo: "NN100866", name: "周八", phone: "13588888888", register: "2026-03-02", points: 1200, updated: "2026-07-03 09:15:42" }
+    ];
+    let pointFlows = [
+      { id: "FL20260706001", userId: "U100862", nnNo: "NN100862", phone: "13888888888", type: "消费", amount: -500, balance: 1500, source: "商城消费", time: "2026-07-06 09:45:33", desc: "兑换NN加速器3天卡" },
+      { id: "FL20260705002", userId: "U100862", nnNo: "NN100862", phone: "13888888888", type: "获取", amount: 300, balance: 2000, source: "任务领取", time: "2026-07-05 12:05:47", desc: "每日任务完成" },
+      { id: "FL20260705003", userId: "U100863", nnNo: "NN100863", phone: "13966666666", type: "消费", amount: -800, balance: 820, source: "商城消费", time: "2026-07-05 08:30:15", desc: "兑换NN加速器7天卡" },
+      { id: "FL20260704004", userId: "U100864", nnNo: "NN100864", phone: "13733333333", type: "获取", amount: 1000, balance: 2450, source: "人工补发", time: "2026-07-04 15:30:22", desc: "客服补偿-系统异常" },
+      { id: "FL20260703005", userId: "U100862", nnNo: "NN100862", phone: "13888888888", type: "获取", amount: 500, balance: 1700, source: "活动增量", time: "2026-07-03 10:23:15", desc: "活动奖励发放" }
+    ];
+    let mallOrders = [
+      { no: "ORD20260706001", userId: "U100862", nnNo: "NN100862", phone: "13888888888", nick: "李四", product: "NN加速器3天卡", productSnapshot: "NN加速器3天卡 / 规格：3天 / 类型：CDKey", productType: "CDKey", quantity: 1, currencyType: "积分", paymentMethod: "积分支付", unitAmount: 500, paymentAmount: 500, inventoryType: "有限库存", acquireForm: "发放至用户背包，用户进入背包查看兑换码", fulfillmentChannel: "背包发放", fulfill: DELIVERY_AUTO_CDKEY, status: "已完成", fulfillmentStatus: "履约完成", reason: "-", paymentResult: "积分扣减成功：-500 积分", stockResult: "库存已扣减：-1", fulfillResult: "CDKey 发放成功", retrySummary: "无需重试", maskedCdkey: "NN3D-****-8K2Q", created: "2026-07-06 09:45:33", updated: "2026-07-06 09:45:58", completed: "2026-07-06 09:45:58" },
+      { no: "ORD20260706002", userId: "U100863", nnNo: "NN100863", phone: "13966666666", nick: "王五", product: "星耀头像框30天", productSnapshot: "星耀头像框30天 / 类型：虚拟道具 / 权益：社区身份装饰", productType: "虚拟道具", quantity: 1, currencyType: "人民币", paymentMethod: "微信支付", unitAmount: 12.9, paymentAmount: 12.9, inventoryType: "无限库存", acquireForm: "发放至用户背包，用户在社区装扮中启用", fulfillmentChannel: "背包发放", fulfill: DELIVERY_AUTO_VIRTUAL, status: "异常", fulfillmentStatus: "履约中", reason: "履约结果不确定，待人工确认", paymentResult: "微信支付成功：¥12.90", stockResult: "无限库存，无需占用", fulfillResult: "履约超时，结果待确认", retrySummary: "等待重试，已重试 1/3", bagAsset: "头像框权益待确认", created: "2026-07-06 08:30:15", updated: "2026-07-06 08:36:20", completed: "-" },
+      { no: "ORD20260706003", userId: "U100864", nnNo: "NN100864", phone: "13733333333", nick: "赵六", product: "NN加速器30天卡", productSnapshot: "NN加速器30天卡 / 规格：30天 / 类型：CDKey", productType: "CDKey", quantity: 1, currencyType: "人民币", paymentMethod: "支付宝", unitAmount: 29.9, paymentAmount: 29.9, inventoryType: "有限库存", acquireForm: "发放至用户背包，用户进入背包查看兑换码", fulfillmentChannel: "背包发放", fulfill: DELIVERY_AUTO_CDKEY, status: "支付失败", fulfillmentStatus: "-", reason: "支付宝支付失败，库存已释放", paymentResult: "支付宝支付失败", stockResult: "库存已释放", fulfillResult: "未进入履约发放", retrySummary: "无需重试", maskedCdkey: "-", created: "2026-07-06 07:12:08", updated: "2026-07-06 07:12:21", completed: "-" },
+      { no: "ORD20260705004", userId: "U100862", nnNo: "NN100862", phone: "13888888888", nick: "李四", product: "加速卡 7 天", productSnapshot: "加速卡 7 天 / 规格：7天 / 类型：CDKey", productType: "CDKey", quantity: 1, currencyType: "积分", paymentMethod: "积分支付", unitAmount: 800, paymentAmount: 800, inventoryType: "CDKey码池库存", acquireForm: "发放至用户背包，用户进入背包查看兑换码", fulfillmentChannel: "背包发放", fulfill: DELIVERY_AUTO_CDKEY, status: "已支付", fulfillmentStatus: "待履约", orderScene: "缺货下单", waitingReason: "等待CDKey补货", pendingQuantity: 1, maxPendingDurationSnapshot: 72, fulfillmentDeadlineAt: "2026-07-08 16:20:10", quotaReservationId: "PFR-20260705004", queueNo: 1, cdkeyPoolId: "ACCELERATOR_7D_POOL", reason: "等待CDKey补货", paymentResult: "积分扣减成功：-800 积分", stockResult: "未占用CDKey；已占用待履约额度：1", fulfillResult: "待码池补货后自动发放", retrySummary: "等待补货，不进入失败重试", maskedCdkey: "-", created: "2026-07-05 16:20:10", updated: "2026-07-05 16:20:18", completed: "-" },
+      { no: "ORD20260705005", userId: "U100863", nnNo: "NN100863", phone: "13966666666", nick: "王五", product: "星耀昵称挂件7天", productSnapshot: "星耀昵称挂件7天 / 类型：虚拟道具 / 权益：昵称装饰", productType: "虚拟道具", quantity: 1, currencyType: "人民币", paymentMethod: "支付宝", unitAmount: 6.9, paymentAmount: 6.9, inventoryType: "无限库存", acquireForm: "发放至用户背包，用户在社区装扮中启用", fulfillmentChannel: "背包发放", fulfill: DELIVERY_AUTO_VIRTUAL, status: "已支付", fulfillmentStatus: "履约失败", reason: "自动重试已达上限", paymentResult: "支付宝支付成功：¥6.90", stockResult: "无限库存，无需占用", fulfillResult: "履约失败，待人工处理", retrySummary: "已达自动重试上限 3/3", bagAsset: "-", created: "2026-07-05 15:08:20", updated: "2026-07-05 15:18:02", completed: "-" },
+      { no: "ORD20260704005", businessSource: "暑期周边兑换活动", userId: "U100865", nnNo: "NN100865", phone: "13677777777", nick: "孙七", product: "NN定制鼠标垫", productSnapshot: "NN定制鼠标垫 / 类型：实物商品 / 规格：900x400mm", productType: "实物商品", quantity: 1, currencyType: "人民币", paymentMethod: "支付宝", unitAmount: 49.9, paymentAmount: 49.9, inventoryType: "有限库存", acquireForm: "用户填写收货地址后发货", fulfillmentChannel: "实物履约 / 物流发货", addressStatus: "未填写", recipient: "-", recipientPhone: "-", address: "-", logisticsCompany: "-", trackingNo: "-", fulfill: DELIVERY_MANUAL_PHYSICAL, status: "已支付", fulfillmentStatus: "待履约", reason: "等待用户在客户端订单填写收货地址", paymentResult: "支付宝支付成功：¥49.90", stockResult: "库存已占用：1", fulfillResult: "待用户提交收货地址", retrySummary: "实物履约-地址未填写", created: "2026-07-04 10:00:00", updated: "2026-07-04 10:00:09", completed: "-" },
+      { no: "ORD20260703006", businessSource: "社区装扮焕新活动", userId: "U100866", nnNo: "NN100866", phone: "13588888888", nick: "周八", product: "社区身份装饰权益", productSnapshot: "社区身份装饰权益 / 类型：虚拟道具 / 权益：身份标识与资料卡装饰", productType: "虚拟道具", quantity: 1, currencyType: "积分", paymentMethod: "积分支付", unitAmount: 500, paymentAmount: 500, inventoryType: "无限库存", acquireForm: "发放至用户背包，用户在社区身份装饰中启用", fulfillmentChannel: "背包发放", fulfill: DELIVERY_AUTO_VIRTUAL, status: "已完成", fulfillmentStatus: "履约完成", reason: "-", paymentResult: "积分扣减成功：-500 积分", stockResult: "无限库存，无需占用", fulfillResult: "背包发放成功", retrySummary: "无需重试", bagAsset: "社区身份装饰权益 x1", created: "2026-07-03 09:15:42", updated: "2026-07-03 09:15:58", completed: "2026-07-03 09:15:58" },
+      { no: "ORD20260703007", userId: "U100863", nnNo: "NN100863", phone: "13966666666", nick: "王五", product: "NN定制抱枕", productSnapshot: "NN定制抱枕 / 类型：实物商品 / 规格：45x45cm", productType: "实物商品", quantity: 2, currencyType: "人民币", paymentMethod: "微信支付", unitAmount: 59.9, paymentAmount: 119.8, inventoryType: "有限库存", acquireForm: "用户填写收货地址后发货", fulfillmentChannel: "实物履约 / 物流发货", addressStatus: "已填写", recipient: "王五", recipientPhone: "13966666666", address: "湖北省武汉市武昌区中南路街道 99号 1802", addressSubmittedAt: "2026-07-03 13:28:35", logisticsCompany: "-", trackingNo: "-", fulfill: DELIVERY_MANUAL_PHYSICAL, status: "已支付", fulfillmentStatus: "待履约", reason: "已收到收货地址，待运营线下发货并录入物流单号", paymentResult: "微信支付成功：¥119.80", stockResult: "库存已占用：2", fulfillResult: "已收到收货地址，待运营发货", retrySummary: "实物履约-待发货", created: "2026-07-03 13:22:00", updated: "2026-07-03 13:28:35", completed: "-" },
+      { no: "ORD20260702007", userId: "U100862", nnNo: "NN100862", phone: "13888888888", nick: "李四", product: "NN定制手办", productSnapshot: "NN定制手办 / 类型：实物商品 / 规格：标准款", productType: "实物商品", quantity: 3, currencyType: "积分", paymentMethod: "积分支付", unitAmount: 1000, paymentAmount: 3000, inventoryType: "有限库存", acquireForm: "用户填写收货地址后发货", fulfillmentChannel: "实物履约 / 物流发货", addressStatus: "已填写", recipient: "李四", recipientPhone: "13888888888", address: "湖北省武汉市江夏区藏龙岛产业园 B2-1508", addressSubmittedAt: "2026-07-02 14:26:18", logisticsCompany: "顺丰速运", trackingNo: "SF202607020088", fulfill: DELIVERY_MANUAL_PHYSICAL, status: "已完成", fulfillmentStatus: "履约完成", reason: "-", paymentResult: "积分扣减成功：-3000 积分", stockResult: "库存已扣减：3", fulfillResult: "3 件商品已完成发货", retrySummary: "手动履约完成", created: "2026-07-02 14:20:00", updated: "2026-07-02 18:05:10", completed: "2026-07-02 18:05:10" }
+    ];
     const cdkeyTypeOptions = ["加速器时长", "加速器时长（不可暂停）"];
     const skuCurrencyOptions = ["新积分", "N币", "RMB"];
     const skuCurrencyMeta = {
-      "新积分": { code: "POINT", unit: "积分", precision: 0, css: "point", route: "内部积分钱包扣减" },
-      "N币": { code: "N_COIN", unit: "N币", precision: 0, css: "coin", route: "内部N币钱包扣减；余额不足可引导充值" },
-      "RMB": { code: "CNY", unit: "元", precision: 2, css: "rmb", route: "直接拉起RMB支付通道" }
+      "新积分": { code: "POINT", unit: "积分", precision: 0, css: "point" },
+      "N币": { code: "N_COIN", unit: "N币", precision: 0, css: "coin" },
+      "RMB": { code: "CNY", unit: "元", precision: 2, css: "rmb" }
     };
     const skuSpecTypes = ["无", "小时", "天", "个", "件"];
     const skuDurationOptionsByUnit = {
@@ -2225,6 +2458,7 @@
       deliveryFilterSku: { maxLength: 32 },
       deliveryFilterPool: { maxLength: 64 },
       deliveryFilterDelivered: { maxLength: 32 },
+      logisticsCompanyInput: { maxLength: 50 },
       cdkeyPoolFilterName: { maxLength: 50 },
       cdkeyPoolFilterId: { maxLength: 64 },
       cdkeyPoolFilterUpdated: { maxLength: 32 },
@@ -2336,7 +2570,7 @@
     let products = [
       makeProduct("SPU10001", "赛季限定头像框", "avatar_frame_s1", "限时兑换，佩戴后展示专属头像框", "虚拟装扮", "3 个 SKU：7天 / 30天 / 永久", DELIVERY_AUTO_VIRTUAL, "上架", "已投放 2 个模板", { total: 1200, available: 980, locked: 12, abnormal: 0, today: 180 }, "-", "2026-05-22 16:20", [], "blue"),
       makeProduct("SPU10002", "300 G-COIN", "pubg_gcoin_300", "PUBG 专属福利", "CDKEY", "1 个 SKU：300 G-COIN", DELIVERY_AUTO_CDKEY, "上架", "已投放 1 个模板", { total: 500, available: 320, locked: 8, abnormal: 0, today: 90 }, "码池可用", "2026-05-22 15:18", [], "purple"),
-      makeProduct("SPU10003", "加速卡 7 天", "accelerator_7d", "兑换后获得 7 天加速权益", "CDKEY", "1 个 SKU：7天", DELIVERY_AUTO_CDKEY, "上架", "已投放 1 个模板", { total: 180, available: 0, locked: 0, abnormal: 0, today: 0 }, "CDKey 不足", "2026-05-21 20:06", ["CDKey 码池可用数量不足"], "purple"),
+      makeProduct("SPU10003", "加速卡 7 天", "accelerator_7d", "兑换后获得 7 天加速权益", "CDKEY", "1 个 SKU：7天", DELIVERY_AUTO_CDKEY, "上架", "已投放 1 个模板", { total: 100, available: 0, locked: 0, abnormal: 0, today: 0 }, "CDKey 不足", "2026-05-21 20:06", [], "purple"),
       makeProduct("SPU10004", "NN 定制鼠标垫", "nn_mouse_pad", "实物周边，数量有限", "实物", "2 个 SKU：黑色 / 白色", DELIVERY_MANUAL_PHYSICAL, "草稿", "未投放", null, "-", "2026-05-21 14:40", [], "orange"),
       makeProduct("SPU10005", "昵称挂件-星光", "nickname_badge_star", "个性昵称展示挂件", "虚拟装扮", "2 个 SKU：7天 / 30天", DELIVERY_AUTO_VIRTUAL, "下架", "未投放", { total: 600, available: 500, locked: 0, abnormal: 0, today: 80 }, "-", "2026-05-20 18:12", [], "blue"),
       makeProduct("SPU10006", "靓号权益", "premium_number", "限量靓号权益", "虚拟装扮", "2 个 SKU：5位 / 6位", DELIVERY_AUTO_VIRTUAL, "草稿", "未投放", { total: 30, available: 20, locked: 1, abnormal: 0, today: 10 }, "-", "2026-05-20 11:25", ["商品头图缺失", "权益素材缺失"], "blue"),
@@ -2364,7 +2598,7 @@
       makeInventoryRecord({ inventoryId: "INV-SPU10001-SKU02", spu: "SPU10001", skuId: "SPU10001-SKU02", stockMode: "限量", totalStock: 500, availableStock: 430, lockedStock: 4, deductedStock: 66, abnormalLockedStock: 0, todayLimit: 180, todayRemaining: 128, dailyRefreshTimes: "10:00,17:00", warningThreshold: 50, lastSyncTime: "2026-05-22 16:20", updatedAt: "2026-05-22 16:20", remark: "头像框 30 天初始化库存" }),
       makeInventoryRecord({ inventoryId: "INV-SPU10001-SKU03", spu: "SPU10001", skuId: "SPU10001-SKU03", stockMode: "限量", totalStock: 200, availableStock: 130, lockedStock: 0, deductedStock: 70, abnormalLockedStock: 0, todayLimit: 80, todayRemaining: 52, warningThreshold: 30, lastSyncTime: "2026-05-22 16:20", updatedAt: "2026-05-22 16:20", remark: "头像框永久 SKU 初始化库存" }),
       makeInventoryRecord({ inventoryId: "INV-SPU10002-SKU01", spu: "SPU10002", skuId: "SPU10002-SKU01", stockMode: "限量", totalStock: 500, availableStock: 320, lockedStock: 8, deductedStock: 172, abnormalLockedStock: 0, todayLimit: 90, todayRemaining: 60, dailyRefreshTimes: "10:00,17:00", warningThreshold: 80, cdkeyPoolId: "PUBG_GCOIN_300_POOL", lastSyncTime: "2026-05-22 15:18", updatedAt: "2026-05-22 15:18", remark: "G-COIN CDKey SKU 初始化库存" }),
-      makeInventoryRecord({ inventoryId: "INV-SPU10003-SKU01", spu: "SPU10003", skuId: "SPU10003-SKU01", stockMode: "限量", totalStock: 180, availableStock: 0, lockedStock: 0, deductedStock: 180, abnormalLockedStock: 0, todayLimit: 60, todayRemaining: 0, dailyRefreshTimes: "10:00,17:00", warningThreshold: 30, cdkeyPoolId: "ACCELERATOR_7D_POOL", lastSyncTime: "2026-05-21 20:06", updatedAt: "2026-05-21 20:06", remark: "CDKey 码池可用数量不足" }),
+      makeInventoryRecord({ inventoryId: "INV-SPU10003-SKU01", spu: "SPU10003", skuId: "SPU10003-SKU01", stockMode: "限量", totalStock: 100, availableStock: 0, lockedStock: 0, deductedStock: 100, abnormalLockedStock: 0, todayLimit: 60, todayRemaining: 0, dailyRefreshTimes: "10:00,17:00", warningThreshold: 30, cdkeyPoolId: "ACCELERATOR_7D_POOL", lastSyncTime: "2026-05-21 20:06", updatedAt: "2026-05-21 20:06", remark: "真实库存来自CDKey码池；当前有1笔已支付订单等待补货" }),
       makeInventoryRecord({ inventoryId: "INV-SPU10004-SKU01", spu: "SPU10004", skuId: "SPU10004-SKU01", stockMode: "限量", totalStock: 120, availableStock: 118, lockedStock: 0, deductedStock: 2, abnormalLockedStock: 0, todayLimit: 40, todayRemaining: 38, warningThreshold: 10, lastSyncTime: "2026-05-21 14:40", updatedAt: "2026-05-21 14:40", remark: "黑色标准款初始化库存" }),
       makeInventoryRecord({ inventoryId: "INV-SPU10004-SKU02", spu: "SPU10004", skuId: "SPU10004-SKU02", stockMode: "限量", totalStock: 80, availableStock: 78, lockedStock: 0, deductedStock: 2, abnormalLockedStock: 0, todayLimit: 30, todayRemaining: 28, warningThreshold: 10, lastSyncTime: "2026-05-21 14:40", updatedAt: "2026-05-21 14:40", remark: "白色标准款初始化库存" }),
       makeInventoryRecord({ inventoryId: "INV-SPU10005-SKU01", spu: "SPU10005", skuId: "SPU10005-SKU01", stockMode: "限量", totalStock: 300, availableStock: 250, lockedStock: 0, deductedStock: 50, abnormalLockedStock: 0, todayLimit: 80, todayRemaining: 48, warningThreshold: 30, lastSyncTime: "2026-05-20 18:12", updatedAt: "2026-05-20 18:12", remark: "昵称挂件 7 天初始化库存" }),
@@ -2375,7 +2609,7 @@
     ];
     let deliveryRecords = [
       makeDeliveryRecord({ recordId: "DEL-202605220001", orderId: "ORD-202605220001", exchangeNo: "EXC-202605220001", userId: "10023888", spu: "SPU10002", skuId: "SPU10002-SKU01", deliveryMethod: DELIVERY_AUTO_CDKEY, deliveryState: "已履约", quantity: 3, payAmount: 9000, inventoryFlowId: "FLOW-000012", cdkeyPoolId: "PUBG_GCOIN_300_POOL", cdkeyBatchId: "BATCH-PUBG-202605-001", maskedCdkey: "PUBG-****-****-8K29", createdAt: "2026-05-22 16:20", deliveredAt: "2026-05-22 16:21", updatedAt: "2026-05-22 16:21", remark: "CDKey 已履约 3 个" }),
-      makeDeliveryRecord({ recordId: "DEL-202605220002", orderId: "ORD-202605220002", exchangeNo: "EXC-202605220002", userId: "10023889", spu: "SPU10003", skuId: "SPU10003-SKU01", deliveryMethod: DELIVERY_AUTO_CDKEY, deliveryState: "履约失败", payAmount: 800, inventoryFlowId: "FLOW-000013", cdkeyPoolId: "ACCELERATOR_7D_POOL", cdkeyBatchId: "BATCH-ACC-202605-001", maskedCdkey: "-", failureReason: "CDKey 可用码不足", createdAt: "2026-05-22 16:26", deliveredAt: "-", updatedAt: "2026-05-22 16:26", remark: "码池无可用码" }),
+      makeDeliveryRecord({ recordId: "DEL-202607050004", orderId: "ORD20260705004", exchangeNo: "EXC-202607050004", userId: "U100862", userNnNo: "NN100862", userPhone: "13888888888", spu: "SPU10003", skuId: "SPU10003-SKU01", deliveryMethod: DELIVERY_AUTO_CDKEY, deliveryState: "待履约", orderScene: "缺货下单", waitingReason: "等待CDKey补货", pendingQuantity: 1, queueNo: 1, quotaReservationId: "PFR-20260705004", fulfillmentDeadlineAt: "2026-07-08 16:20:10", payAmount: 800, inventoryFlowId: "-", cdkeyPoolId: "ACCELERATOR_7D_POOL", cdkeyBatchId: "", maskedCdkey: "-", failureReason: "", createdAt: "2026-07-05 16:20:18", deliveredAt: "-", updatedAt: "2026-07-05 16:20:18", remark: "支付成功，已占用待履约额度，等待码池补货" }),
       makeDeliveryRecord({ recordId: "DEL-202605220003", orderId: "ORD-202605220003", exchangeNo: "EXC-202605220003", businessSource: "xx活动", userId: "10023890", spu: "SPU10001", skuId: "SPU10001-SKU01", deliveryMethod: DELIVERY_AUTO_VIRTUAL, deliveryState: "已履约", payAmount: 800, inventoryFlowId: "FLOW-000014", autoResourceId: "RESOURCE_AVATAR_FRAME_7D", createdAt: "2026-05-22 17:10", deliveredAt: "2026-05-22 17:10", updatedAt: "2026-05-22 17:10", remark: "权益服务已履约" }),
       makeDeliveryRecord({ recordId: "DEL-202605220004", orderId: "ORD-202605220004", exchangeNo: "EXC-202605220004", userId: "10023891", spu: "SPU10007", skuId: "SPU10007-SKU01", deliveryMethod: DELIVERY_AUTO_VIRTUAL, deliveryState: "待履约", payAmount: 800, inventoryFlowId: "FLOW-000015", autoResourceId: "RESOURCE_ENTRANCE_EFFECT_7D", callbackState: "等待回调", createdAt: "2026-05-22 17:20", deliveredAt: "-", updatedAt: "2026-05-22 17:20", remark: "等待权益服务回调" }),
       makeDeliveryRecord({ recordId: "DEL-202605220005", orderId: "ORD-202605220005", exchangeNo: "EXC-202605220005", userId: "10023892", spu: "SPU10008", skuId: "SPU10008-SKU01", deliveryMethod: DELIVERY_AUTO_CDKEY, deliveryState: "履约失败", payAmount: 800, inventoryFlowId: "FLOW-000016", failureReason: "CDKey 码池未配置", createdAt: "2026-05-22 17:28", deliveredAt: "-", updatedAt: "2026-05-22 17:28", remark: "商品码池配置缺失" }),
@@ -2506,7 +2740,7 @@
       const attrCodes = template.attributes.map(attr => attr.code);
       const sourceRows = sampleSkuValuesBySpu[spu] || (template.defaultSkuValues?.length ? template.defaultSkuValues : [makeEmptyAttributeValues(type, attrCodes)]);
       return sourceRows.map((values, index) => {
-        const row = makeSkuRow(spu, type, values, index + 1, delivery === "未配置" ? "" : normalizeDelivery(delivery) || getDefaultDeliveryByType(type), attrCodes, template);
+        const row = makeSkuRow(spu, type, values, index + 1, delivery === "未配置" ? "" : normalizeDelivery(delivery), attrCodes, template);
         row.prices = sampleSkuPrices(type, row.attributeValues, index + 1);
         syncLegacySkuPriceFields(row);
         if (isCdkeyDelivery(row.delivery)) {
@@ -2518,30 +2752,22 @@
             row.deliveryParams.cdkey = poolToParams(pool);
           }
         }
+        if (spu === "SPU10003") {
+          row.shortageOrderPolicy = SHORTAGE_POLICY_ALLOW_BACKORDER;
+          row.pendingFulfillmentLimit = 50;
+          row.maxPendingDurationHours = 72;
+        }
         return row;
       });
     }
 
-    function getDefaultDeliveryByType(type) {
-      const map = {
-        "虚拟装扮": DELIVERY_AUTO_VIRTUAL,
-        "CDKEY": DELIVERY_AUTO_CDKEY,
-        "实物": DELIVERY_MANUAL_PHYSICAL
-      };
-      return map[type] || DELIVERY_AUTO_VIRTUAL;
-    }
-
-    function isDeliveryCompatibleWithType(type, delivery) {
-      return normalizeDelivery(delivery) === getDefaultDeliveryByType(type);
-    }
-
-    function syncDeliveryByProductType(type) {
+    function setFormDeliveryOptions(selectedDelivery = "") {
       const select = document.getElementById("formDelivery");
       if (!select) return;
-      const delivery = getDefaultDeliveryByType(type);
-      select.innerHTML = `<option value="${delivery}">${delivery}</option>`;
-      select.value = delivery;
-      select.disabled = true;
+      const normalized = normalizeDelivery(selectedDelivery);
+      select.innerHTML = `<option value="">请选择履约方式</option>${allowedDeliveryOptions.map(delivery => `<option value="${delivery}">${delivery}</option>`).join("")}`;
+      select.value = allowedDeliveryOptions.includes(normalized) ? normalized : "";
+      select.disabled = false;
     }
 
     function colorForProductType(type) {
@@ -2664,8 +2890,7 @@
         currency,
         enabled: currency === "新积分",
         amount: currency === "新积分" ? basePrice : "",
-        strikePrice: "",
-        isDefault: currency === "新积分"
+        strikePrice: ""
       }));
     }
 
@@ -2674,9 +2899,9 @@
       const nCoinAmount = type === "实物" ? 720 : type === "CDKEY" ? Math.max(68, Math.round(pointAmount / 9)) : 99 + (sort - 1) * 60;
       const rmbAmount = type === "实物" ? 68 : type === "CDKEY" ? Math.max(6.9, Number((pointAmount / 120).toFixed(2))) : Number((12.9 + (sort - 1) * 8).toFixed(2));
       return [
-        { currency: "新积分", enabled: true, amount: pointAmount, strikePrice: "", isDefault: true },
-        { currency: "N币", enabled: true, amount: nCoinAmount, strikePrice: "", isDefault: false },
-        { currency: "RMB", enabled: true, amount: rmbAmount, strikePrice: "", isDefault: false }
+        { currency: "新积分", enabled: true, amount: pointAmount, strikePrice: "" },
+        { currency: "N币", enabled: true, amount: nCoinAmount, strikePrice: "" },
+        { currency: "RMB", enabled: true, amount: rmbAmount, strikePrice: "" }
       ];
     }
 
@@ -2694,26 +2919,21 @@
           currency,
           enabled: source.length ? item.enabled !== false && (item.amount !== undefined || item.price !== undefined || Boolean(item.enabled)) : currency === legacyCurrency,
           amount: normalizePriceAmount(currency, amount),
-          strikePrice: strikePrice === "" || strikePrice === null || strikePrice === undefined ? "" : normalizePriceAmount(currency, strikePrice),
-          isDefault: source.length ? Boolean(item.isDefault) : currency === legacyCurrency
+          strikePrice: strikePrice === "" || strikePrice === null || strikePrice === undefined ? "" : normalizePriceAmount(currency, strikePrice)
         };
       });
-      const enabled = normalized.filter(price => price.enabled);
-      const defaultRows = enabled.filter(price => price.isDefault);
-      if (defaultRows.length !== 1) {
-        normalized.forEach(price => { price.isDefault = false; });
-        if (enabled[0]) enabled[0].isDefault = true;
-      }
       return normalized;
     }
 
     function enabledSkuPrices(row) {
-      return (row?.prices || []).filter(price => price.enabled);
+      const prices = row?.prices || [];
+      return skuCurrencyOptions
+        .map(currency => prices.find(price => price.currency === currency && price.enabled))
+        .filter(Boolean);
     }
 
-    function defaultSkuPriceEntry(row) {
-      const enabled = enabledSkuPrices(row);
-      return enabled.find(price => price.isDefault) || enabled[0] || null;
+    function firstDisplayedSkuPrice(row) {
+      return enabledSkuPrices(row)[0] || null;
     }
 
     function formatSkuPriceAmount(currency, amount) {
@@ -2724,15 +2944,15 @@
       return `${Math.round(value)} ${meta.unit}`;
     }
 
-    function pricePillHtml(price, showDefault = true) {
+    function pricePillHtml(price) {
       const meta = currencyMeta(price.currency);
-      return `<span class="price-pill ${meta.css} ${price.isDefault ? "default" : ""}"><b>${price.currency}</b>${formatSkuPriceAmount(price.currency, price.amount)}${showDefault && price.isDefault ? `<span class="default-mark">默认</span>` : ""}</span>`;
+      return `<span class="price-pill ${meta.css}"><b>${price.currency}</b>${formatSkuPriceAmount(price.currency, price.amount)}</span>`;
     }
 
-    function skuPriceSummary(row, showDefault = true) {
+    function skuPriceSummary(row) {
       const enabled = enabledSkuPrices(row);
       return enabled.length
-        ? `<div class="price-summary">${enabled.map(price => pricePillHtml(price, showDefault)).join("")}</div>`
+        ? `<div class="price-summary">${enabled.map(pricePillHtml).join("")}</div>`
         : `<span class="tag red">未配置价格</span>`;
     }
 
@@ -2767,12 +2987,11 @@
       if (enabled.some(price => !Number.isFinite(Number(price.amount)) || Number(price.amount) <= 0)) errors.push("已启用币种的销售价格必须大于0。");
       if (enabled.some(price => price.currency !== "RMB" && !/^[1-9]\d*$/.test(String(price.amount)))) errors.push("积分和N币价格必须为正整数。");
       if (enabled.some(price => price.strikePrice !== "" && (!Number.isFinite(Number(price.strikePrice)) || Number(price.strikePrice) <= Number(price.amount)))) errors.push("划线价必须大于销售价格。");
-      if (enabled.filter(price => price.isDefault).length !== 1) errors.push("必须选择一个已启用币种作为默认展示价。");
       return errors;
     }
 
     function syncLegacySkuPriceFields(row) {
-      const price = defaultSkuPriceEntry(row);
+      const price = firstDisplayedSkuPrice(row);
       row.currency = price?.currency || "新积分";
       row.price = price?.amount || "";
       row.strikePrice = price?.strikePrice || "";
@@ -2803,7 +3022,7 @@
       const attrCodes = attrs.map(attr => attr.code);
       const template = getSkuTemplate(type);
       if (!template) return [];
-      const delivery = getDefaultDeliveryByType(type);
+      const delivery = getFormDelivery();
       const sourceRows = template.defaultSkuValues?.length ? template.defaultSkuValues : [makeEmptyAttributeValues(type, attrCodes)];
       const unique = new Set();
       const rows = [];
@@ -2850,6 +3069,9 @@
         delivery,
         cdkeyPoolId: "",
         cdkeyPoolCheck: null,
+        shortageOrderPolicy: SHORTAGE_POLICY_STOCK_ONLY,
+        pendingFulfillmentLimit: 0,
+        maxPendingDurationHours: 0,
         deliveryParams: initialDeliveryParams(delivery),
         remark: "SKU 级配置"
       };
@@ -2857,6 +3079,7 @@
 
     function initialDeliveryParams(delivery) {
       delivery = normalizeDelivery(delivery);
+      if (!delivery) return {};
       if (isCdkeyDelivery(delivery)) {
         return { cdkey: {} };
       }
@@ -2916,14 +3139,62 @@
         return { status: "失败", ok: false, message: "码池不可用，不允许使用" };
       }
       if (pool.available <= 0) {
-        return { status: "失败", ok: false, message: "码池可用数量不足" };
+        return { status: "可用但缺码", ok: true, stockSufficient: false, message: "码池配置有效，当前可用数量为0", pool };
       }
-      return { status: "通过", ok: true, message: `码池可用，可用数量 ${pool.available}`, pool };
+      return { status: "通过", ok: true, stockSufficient: true, message: `码池可用，可用数量 ${pool.available}`, pool };
     }
 
     function deliveryParamSummary(row) {
       if (!isCdkeyDelivery(row.delivery)) return "无需配置";
       return row.cdkeyPoolId || row.deliveryParams?.cdkey?.poolId || "未填写";
+    }
+
+    function isBackorderAllowed(sku) {
+      return sku?.shortageOrderPolicy === SHORTAGE_POLICY_ALLOW_BACKORDER;
+    }
+
+    function shortageOrderPolicyText(sku) {
+      return isBackorderAllowed(sku) ? SHORTAGE_POLICY_ALLOW_BACKORDER : SHORTAGE_POLICY_STOCK_ONLY;
+    }
+
+    function skuPendingLimit(sku) {
+      return isBackorderAllowed(sku) ? Math.max(0, Number(sku?.pendingFulfillmentLimit || 0)) : 0;
+    }
+
+    function pendingDeliveryRecordsForSku(spu, skuId) {
+      return deliveryRecords.filter(record => record.spu === spu
+        && record.skuId === skuId
+        && record.deliveryState === "待履约"
+        && Boolean(record.waitingReason));
+    }
+
+    function currentPendingFulfillmentCount(record) {
+      return pendingDeliveryRecordsForSku(record.spu, record.skuId)
+        .reduce((total, item) => total + Number(item.pendingQuantity || item.quantity || 0), 0);
+    }
+
+    function pendingReservedCount(record) {
+      return Math.max(0, Number(record.pendingReservedCount || 0));
+    }
+
+    function remainingPendingQuota(record) {
+      const sku = getInventorySku(record);
+      return Math.max(skuPendingLimit(sku) - currentPendingFulfillmentCount(record) - pendingReservedCount(record), 0);
+    }
+
+    function pendingCdkeyRecordsForPool(poolId) {
+      return deliveryRecords.filter(record => record.cdkeyPoolId === poolId
+        && record.deliveryState === "待履约"
+        && record.waitingReason === "等待CDKey补货");
+    }
+
+    function pendingCdkeyCountForPool(poolId) {
+      return pendingCdkeyRecordsForPool(poolId)
+        .reduce((total, item) => total + Number(item.pendingQuantity || item.quantity || 0), 0);
+    }
+
+    function cdkeyFulfillmentGap(pool) {
+      return Math.max(pendingCdkeyCountForPool(pool.id) - Number(pool.available || 0), 0);
     }
 
     function defaultSkuPrice(type, attributeValues, sort) {
@@ -2962,7 +3233,7 @@
       const specType = normalizeSkuSpecType(row.specType || row.skuSpec || (legacyDuration && legacyDuration !== "永久" ? "天" : "无"));
       const duration = normalizeSkuDuration(specType, legacyDuration || "");
       const displayText = row.displayText || row.text || generateSkuDisplayText(attributeValues, type, codes, specType, duration);
-      const delivery = normalizeDelivery(row.delivery) || getDefaultDeliveryByType(type);
+      const delivery = normalizeDelivery(row.delivery);
       const cdkeyPoolId = row.cdkeyPoolId || row.deliveryParams?.cdkey?.poolId || "";
       const skuName = Object.prototype.hasOwnProperty.call(row, "skuName")
         ? row.skuName
@@ -2988,6 +3259,9 @@
         delivery,
         cdkeyPoolId,
         cdkeyPoolCheck: isCdkeyDelivery(delivery) && cdkeyPoolId ? checkCdkeyPool(cdkeyPoolId) : (row.cdkeyPoolCheck || null),
+        shortageOrderPolicy: row.shortageOrderPolicy === SHORTAGE_POLICY_ALLOW_BACKORDER ? SHORTAGE_POLICY_ALLOW_BACKORDER : SHORTAGE_POLICY_STOCK_ONLY,
+        pendingFulfillmentLimit: Number(row.pendingFulfillmentLimit || 0),
+        maxPendingDurationHours: Number(row.maxPendingDurationHours || 0),
         deliveryParams: normalizeDeliveryParams(row, delivery),
         remark: row.remark || "SKU 级配置"
       };
@@ -3272,7 +3546,7 @@
       fillSelect("filterType", types);
       fillSelect("filterState", productStates);
       fillSelect("filterDelivery", deliveries);
-      fillSelect("formDelivery", allowedDeliveryOptions);
+      setFormDeliveryOptions();
       fillSelect("tmplFilterType", types);
       fillSelect("tmplFilterState", configStates);
       fillSelect("tmplFilterScope", templateScopes);
@@ -3309,6 +3583,8 @@
       renderDeliveryRecordStats();
       renderCdkeyPoolTable();
       renderCdkeyPoolStats();
+      renderPointsFlowTable();
+      renderOrderManagementTable();
       setupInputLimitObserver();
     }
 
@@ -3320,6 +3596,8 @@
       document.getElementById("menuProductList").addEventListener("click", showProductListPage);
       document.getElementById("menuTemplate").addEventListener("click", showTemplatePage);
       document.getElementById("menuDisplay").addEventListener("click", showDisplayPage);
+      document.getElementById("menuPointsFlow").addEventListener("click", showPointsFlowPage);
+      document.getElementById("menuOrderManagement").addEventListener("click", showOrderManagementPage);
       document.getElementById("menuInventory").addEventListener("click", showInventoryPage);
       document.getElementById("menuDeliveryRecord").addEventListener("click", showDeliveryRecordPage);
       document.getElementById("menuCdkeyPool").addEventListener("click", showCdkeyPoolPage);
@@ -3329,6 +3607,25 @@
       document.getElementById("inventoryFlowExportBtn").addEventListener("click", () => toast("库存流水导出任务已创建，可在下载中心查看。"));
       document.getElementById("exportDeliveryBtn").addEventListener("click", () => toast("导出任务已创建，可在下载中心查看。"));
       document.getElementById("exportCdkeyPoolBtn").addEventListener("click", () => toast("导出任务已创建，可在下载中心查看。"));
+      document.getElementById("searchPointsFlowBtn").addEventListener("click", renderPointsFlowTable);
+      document.getElementById("resetPointsFlowBtn").addEventListener("click", resetPointsFlowFilters);
+      document.getElementById("exportPointsFlowBtn").addEventListener("click", exportPointsFlowRecords);
+      document.getElementById("openUserPointsBtn").addEventListener("click", openUserPointsModal);
+      document.getElementById("openAdjustPointsBtn").addEventListener("click", openAdjustPointsModal);
+      document.getElementById("searchUserPointsBtn").addEventListener("click", searchUserPoints);
+      document.getElementById("resetUserPointsBtn").addEventListener("click", resetUserPointsQuery);
+      document.getElementById("exportUserPointsFlowBtn").addEventListener("click", exportCurrentUserPointsFlow);
+      document.getElementById("searchAdjustPointsUserBtn").addEventListener("click", searchAdjustPointsUser);
+      document.getElementById("resetAdjustPointsBtn").addEventListener("click", resetAdjustPointsForm);
+      document.getElementById("confirmAdjustPointsBtn").addEventListener("click", confirmAdjustPoints);
+      document.getElementById("searchOrdersBtn").addEventListener("click", renderOrderManagementTable);
+      document.getElementById("resetOrdersBtn").addEventListener("click", resetOrderManagementFilters);
+      document.getElementById("exportOrdersBtn").addEventListener("click", exportOrderManagementRecords);
+      document.getElementById("confirmOrderActionBtn").addEventListener("click", confirmOrderManagementAction);
+      document.getElementById("editAddressReason").addEventListener("change", toggleEditAddressOtherReason);
+      document.getElementById("confirmAddressEditBtn").addEventListener("click", confirmOrderAddressEdit);
+      document.getElementById("confirmLogisticsBtn").addEventListener("click", confirmOrderLogistics);
+      document.body.addEventListener("click", handleOrderManagementActionClick);
       document.getElementById("inventorySearchBtn").addEventListener("click", applyInventoryFilters);
       document.getElementById("inventoryResetBtn").addEventListener("click", resetInventoryFilters);
       document.getElementById("inventoryToggleMoreBtn").addEventListener("click", toggleInventoryMoreFilters);
@@ -3367,6 +3664,7 @@
       document.getElementById("saveEnableBtn").addEventListener("click", handleFormEnable);
       document.getElementById("confirmEnableActionBtn").addEventListener("click", confirmEnableAction);
       document.getElementById("formType").addEventListener("change", onTypeChange);
+      document.getElementById("formDelivery").addEventListener("change", onDeliveryChange);
       ["input", "change"].forEach(eventName => {
         document.getElementById("formPage").addEventListener(eventName, event => {
           event.target.classList?.remove("invalid");
@@ -3489,6 +3787,8 @@
     function setActiveMenu(menu) {
       document.querySelectorAll(".nav-item").forEach(btn => btn.classList.toggle("active", btn.dataset.menu === menu));
       const crumbs = {
+        "积分流水记录": "积分管理 / 积分流水记录",
+        "订单列表": "订单管理 / 订单列表",
         "库存列表": "库存管理 / 库存列表",
         "履约记录列表": "履约记录 / 履约记录列表",
         "CDKey 码池列表": "CDKey 码池管理 / CDKey 码池列表"
@@ -3497,7 +3797,7 @@
     }
 
     function hideAllPages() {
-      ["listPage", "formPage", "templatePage", "templateFormPage", "displayPage", "displayFormPage", "inventoryPage", "deliveryRecordPage", "cdkeyPoolPage", "cdkeyPoolFormPage"].forEach(id => {
+      ["listPage", "pointsFlowPage", "orderManagementPage", "formPage", "templatePage", "templateFormPage", "displayPage", "displayFormPage", "inventoryPage", "deliveryRecordPage", "cdkeyPoolPage", "cdkeyPoolFormPage"].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = "none";
       });
@@ -3526,6 +3826,22 @@
       visibleDisplayConfigs = [...displayConfigs];
       renderDisplayTable();
       renderDisplayStats();
+      window.scrollTo(0,0);
+    }
+
+    function showPointsFlowPage() {
+      hideAllPages();
+      document.getElementById("pointsFlowPage").style.display = "block";
+      setActiveMenu("积分流水记录");
+      renderPointsFlowTable();
+      window.scrollTo(0,0);
+    }
+
+    function showOrderManagementPage() {
+      hideAllPages();
+      document.getElementById("orderManagementPage").style.display = "block";
+      setActiveMenu("订单列表");
+      renderOrderManagementTable();
       window.scrollTo(0,0);
     }
 
@@ -5050,6 +5366,7 @@
         warningThreshold: 0,
         alertEnabled: "是",
         alertReceivers: "平台运营",
+        pendingReservedCount: 0,
         remark: "初始化库存",
         ...record
       };
@@ -5381,8 +5698,8 @@
       const poolId = inventoryCdkeyPoolId(record);
       if (!poolId) return "码池未配置";
       const check = checkCdkeyPool(poolId);
-      if (check.ok) return "码池可用";
-      if (check.message.includes("可用数量不足")) return "CDKey 不足";
+      if (check.ok && check.stockSufficient !== false) return "码池可用";
+      if (check.stockSufficient === false) return "CDKey 不足";
       return "码池不可用";
     }
 
@@ -5483,6 +5800,7 @@
       document.getElementById("inventoryStatNormal").textContent = visibleInventoryRecords.filter(record => ["正常", "不限量"].includes(calculateInventoryState(record))).length;
       document.getElementById("inventoryStatLow").textContent = visibleInventoryRecords.filter(record => calculateInventoryState(record) === "低库存").length;
       document.getElementById("inventoryStatSoldOut").textContent = visibleInventoryRecords.filter(record => calculateInventoryState(record) === "售罄").length;
+      document.getElementById("inventoryStatPending").textContent = visibleInventoryRecords.reduce((total, record) => total + currentPendingFulfillmentCount(record), 0);
     }
 
     function renderInventoryTable() {
@@ -5490,7 +5808,7 @@
       updateInventorySortHeaders();
       document.getElementById("inventoryTableCount").textContent = `共 ${visibleInventoryRecords.length} 条`;
       if (!visibleInventoryRecords.length) {
-        body.innerHTML = `<tr><td colspan="17"><div class="empty">当前筛选条件下暂无库存记录</div></td></tr>`;
+        body.innerHTML = `<tr><td colspan="20"><div class="empty">当前筛选条件下暂无库存记录</div></td></tr>`;
         return;
       }
       const rows = sortedInventoryRecords(visibleInventoryRecords);
@@ -5515,6 +5833,9 @@
           <td>${inventoryWarningText(record)}</td>
           <td>${inventoryStateTag(record.stockState)}</td>
           <td>${cdkeyTag(cdkeyStatus)}</td>
+          <td>${shortageOrderPolicyText(sku)}</td>
+          <td>${isBackorderAllowed(sku) ? `${currentPendingFulfillmentCount(record)} / ${skuPendingLimit(sku)}` : "-"}</td>
+          <td>${isBackorderAllowed(sku) ? remainingPendingQuota(record) : "-"}</td>
           <td>${record.createdAt || record.updatedAt}</td>
           <td>${lastInventoryOperator(record)}</td>
           <td><div class="action-list">${inventoryRowActions(record)}</div></td>
@@ -5526,16 +5847,26 @@
     }
 
     function inventoryRowActions(record) {
-      const actions = [
-        `<button class="btn text" data-inventory-action="adjust" data-inventory-id="${record.inventoryId}">调整库存</button>`,
-        `<button class="btn text" data-inventory-action="flow" data-inventory-id="${record.inventoryId}">库存流水</button>`
-      ];
+      const product = getInventoryProduct(record);
+      const sku = getInventorySku(record);
+      const isCdkey = isCdkeyDelivery(sku?.delivery || product?.delivery);
+      const actions = [`<button class="btn text" data-inventory-action="detail" data-inventory-id="${record.inventoryId}">查看详情</button>`];
+      if (isCdkey) actions.push(`<button class="btn text" data-inventory-action="pool" data-inventory-id="${record.inventoryId}">查看码池 / 补货</button>`);
+      else actions.push(`<button class="btn text" data-inventory-action="adjust" data-inventory-id="${record.inventoryId}">调整库存</button>`);
+      actions.push(`<button class="btn text" data-inventory-action="flow" data-inventory-id="${record.inventoryId}">库存流水</button>`);
       return actions.join("");
     }
 
     function handleInventoryAction(action, inventoryId) {
+      if (action === "detail") openInventoryDetail(inventoryId);
       if (action === "adjust") openInventoryAdjustModal(inventoryId);
       if (action === "flow") openInventoryFlowDrawer(inventoryId);
+      if (action === "pool") {
+        const record = getInventoryRecordById(inventoryId);
+        const poolId = record ? inventoryCdkeyPoolId(record) : "";
+        if (!poolId) return toast("当前 SKU 尚未配置 CDKey 码池。");
+        openCdkeyPoolDetail(poolId);
+      }
     }
 
     function toggleInventoryMoreFilters() {
@@ -5551,6 +5882,7 @@
       const delivery = valueOf("inventoryFilterDelivery");
       const state = valueOf("inventoryFilterState");
       const cdkey = valueOf("inventoryFilterCdkey");
+      const shortagePolicy = valueOf("inventoryFilterShortagePolicy");
       const updated = valueOf("inventoryFilterUpdated");
       visibleInventoryRecords = inventoryRecords.filter(record => {
         const product = getInventoryProduct(record);
@@ -5562,8 +5894,9 @@
         const matchDelivery = delivery === "全部" || deliveryValue === delivery;
         const matchState = state === "全部" || calculateInventoryState(record) === state;
         const matchCdkey = cdkey === "全部" || inventoryCdkeyStatus(record) === cdkey;
+        const matchShortagePolicy = shortagePolicy === "全部" || shortageOrderPolicyText(sku) === shortagePolicy;
         const matchUpdated = !updated || String(record.createdAt || record.updatedAt).includes(updated);
-        return matchName && matchSpuSku && matchType && matchDelivery && matchState && matchCdkey && matchUpdated;
+        return matchName && matchSpuSku && matchType && matchDelivery && matchState && matchCdkey && matchShortagePolicy && matchUpdated;
       });
       renderInventoryTable();
       renderInventoryStats();
@@ -5572,7 +5905,7 @@
 
     function resetInventoryFilters() {
       ["inventoryFilterKeyword", "inventoryFilterSku", "inventoryFilterUpdated"].forEach(id => document.getElementById(id).value = "");
-      ["inventoryFilterType", "inventoryFilterDelivery", "inventoryFilterState", "inventoryFilterCdkey"].forEach(id => document.getElementById(id).value = "全部");
+      ["inventoryFilterType", "inventoryFilterDelivery", "inventoryFilterState", "inventoryFilterCdkey", "inventoryFilterShortagePolicy"].forEach(id => document.getElementById(id).value = "全部");
       visibleInventoryRecords = [...inventoryRecords];
       renderInventoryTable();
       renderInventoryStats();
@@ -5603,7 +5936,13 @@
           ["安全库存阈值", inventoryWarningText(record)],
           ["库存状态", calculateInventoryState(record)], ["最近同步时间", record.lastSyncTime], ["创建时间", record.createdAt || record.updatedAt], ["备注", record.remark || "-"]
         ]) + cdkeyNotice + physicalNotice)}
-        ${detailSection("库存计算说明", `<div class="alert info">可用库存用于兑换前锁定；锁定库存表示兑换流程中已占用但尚未最终扣减或释放的库存。库存告警按可用库存 / 总库存的百分比判断。</div><div class="hint-text">商品是否前台投放由商品投放管理决定，库存列表只影响商品是否具备可兑换库存。</div>`)}
+        ${detailSection("缺货下单与待履约额度", infoGrid([
+          ["下单策略", shortageOrderPolicyText(sku)], ["待履约数量上限", isBackorderAllowed(sku) ? skuPendingLimit(sku) : "-"],
+          ["待履约预占数量", isBackorderAllowed(sku) ? pendingReservedCount(record) : "-"], ["当前待履约数量", isBackorderAllowed(sku) ? currentPendingFulfillmentCount(record) : "-"],
+          ["剩余待履约额度", isBackorderAllowed(sku) ? remainingPendingQuota(record) : "-"], ["最长待履约时长", isBackorderAllowed(sku) ? `${sku.maxPendingDurationHours} 小时` : "-"],
+          ["到期处理", isBackorderAllowed(sku) ? "自动退款并关闭订单" : "-"]
+        ]) + `<div class="hint-text">待履约额度用于控制已收款但尚未交付的最大责任，不计入真实库存。支付成功后占用，履约成功、退款成功或订单关闭后释放。</div>`)}
+        ${detailSection("库存计算说明", `<div class="alert info">普通库存的可用库存用于兑换前锁定；CDKey 商品只锁定实际码，不锁定独立 SKU 库存。待补货订单只占用待履约额度。</div><div class="hint-text">商品是否前台投放由商品投放管理决定，库存列表只影响现货可用性和缺货下单额度。</div>`)}
         ${detailSection("最近库存流水", `${inventoryFlowTable(getInventoryFlows(record).slice(0, 5))}<div class="btn-row" style="margin-top:10px"><button class="btn" id="inventoryMoreFlowBtn">查看更多流水</button></div>`)}
       `;
       openDrawer("inventoryDetailDrawer");
@@ -5976,6 +6315,12 @@
         externalFulfillmentNo: "",
         externalFulfillmentState: "",
         callbackState: "",
+        orderScene: "现货下单",
+        waitingReason: "",
+        pendingQuantity: 0,
+        queueNo: "-",
+        quotaReservationId: "",
+        fulfillmentDeadlineAt: "",
         failureReason: "",
         userNnNo: userId ? `NN${userId.slice(-6)}` : "-",
         userPhone: userId ? `1380000${userTail}` : "-",
@@ -6003,10 +6348,19 @@
       return getDeliveryProduct(record)?.skuList?.find(sku => sku.skuId === record?.skuId);
     }
 
-    function deliveryStateTag(state) {
-      state = normalizeDeliveryRecordState(state);
-      const cls = state === "已履约" ? "green" : state === "履约失败" ? "red" : "blue";
+    function deliveryDisplayState(record) {
+      if (record.deliveryState === "待履约" && record.waitingReason) return "待补货";
+      return normalizeDeliveryRecordState(record.deliveryState);
+    }
+
+    function deliveryStateTag(record) {
+      const state = deliveryDisplayState(record);
+      const cls = state === "已履约" ? "green" : state === "履约失败" ? "red" : state === "待补货" ? "orange" : "blue";
       return `<span class="tag ${cls}">${state}</span>`;
+    }
+
+    function deliveryWaitOrFailureReason(record) {
+      return record.waitingReason || record.failureReason || "-";
     }
 
     function getCdkeysByDeliveryRecord(record) {
@@ -6050,7 +6404,7 @@
       const body = document.getElementById("deliveryRecordTbody");
       document.getElementById("deliveryTableCount").textContent = `共 ${visibleDeliveryRecords.length} 条`;
       if (!visibleDeliveryRecords.length) {
-        body.innerHTML = `<tr><td colspan="21"><div class="empty">当前筛选条件下暂无履约记录</div></td></tr>`;
+        body.innerHTML = `<tr><td colspan="25"><div class="empty">当前筛选条件下暂无履约记录</div></td></tr>`;
         return;
       }
       body.innerHTML = visibleDeliveryRecords.map(record => {
@@ -6059,6 +6413,7 @@
         return `<tr>
           <td><b>${record.exchangeNo}</b></td>
           <td>${record.orderId}</td>
+          <td>${record.orderScene || "现货下单"}</td>
           <td>${record.businessSource || "积分商城"}</td>
           <td>${record.userId}</td>
           <td>${record.userNnNo || "-"}</td>
@@ -6072,7 +6427,10 @@
           <td>${record.quantity}</td>
           <td>${record.payAmount}</td>
           <td>${deliveryTag(record.deliveryMethod)}</td>
-          <td>${deliveryStateTag(record.deliveryState)}</td>
+          <td>${deliveryStateTag(record)}</td>
+          <td>${record.waitingReason || "-"}</td>
+          <td>${record.fulfillmentDeadlineAt || "-"}</td>
+          <td>${record.queueNo || "-"}</td>
           <td>${deliveryCdkeySummary(record)}</td>
           <td>${record.failureReason || "-"}</td>
           <td>${record.createdAt}</td>
@@ -6102,6 +6460,7 @@
       const source = valueOf("deliveryFilterSource");
       const type = valueOf("deliveryFilterType");
       const method = valueOf("deliveryFilterMethod");
+      const waitingReason = valueOf("deliveryFilterWaitingReason");
       const poolId = valueOf("deliveryFilterPool").toUpperCase();
       const delivered = valueOf("deliveryFilterDelivered");
       visibleDeliveryRecords = deliveryRecords.filter(record => {
@@ -6115,6 +6474,7 @@
           && (source === "全部" || record.businessSource === source)
           && (type === "全部" || product?.type === type)
           && (method === "全部" || normalizeDelivery(record.deliveryMethod) === method)
+          && (waitingReason === "全部" || record.waitingReason === waitingReason)
           && (!poolId || record.cdkeyPoolId.toUpperCase().includes(poolId))
           && (!delivered || String(record.deliveredAt || "").includes(delivered));
       });
@@ -6125,7 +6485,7 @@
 
     function resetDeliveryRecordFilters() {
       ["deliveryFilterRecord", "deliveryFilterOrder", "deliveryFilterUser", "deliveryFilterProduct", "deliveryFilterSku", "deliveryFilterPool", "deliveryFilterDelivered"].forEach(id => document.getElementById(id).value = "");
-      ["deliveryFilterState", "deliveryFilterSource", "deliveryFilterType", "deliveryFilterMethod"].forEach(id => document.getElementById(id).value = "全部");
+      ["deliveryFilterState", "deliveryFilterSource", "deliveryFilterType", "deliveryFilterMethod", "deliveryFilterWaitingReason"].forEach(id => document.getElementById(id).value = "全部");
       visibleDeliveryRecords = [...deliveryRecords];
       renderDeliveryRecordTable();
       renderDeliveryRecordStats();
@@ -6143,7 +6503,9 @@
         ${detailSection("履约基础信息", infoGrid([
           ["兑换单号", record.exchangeNo], ["订单号", record.orderId], ["业务来源", record.businessSource || "积分商城"], ["内部履约记录 ID", record.recordId], ["用户 ID", record.userId],
           ["用户 NN号", record.userNnNo || "-"], ["用户手机号", record.userPhone || "-"],
-          ["履约状态", record.deliveryState], ["履约方式", normalizeDelivery(record.deliveryMethod)], ["创建时间", record.createdAt], ["履约时间", record.deliveredAt || "-"],
+          ["履约状态", record.deliveryState], ["运营展示状态", deliveryDisplayState(record)], ["下单场景", record.orderScene || "现货下单"], ["履约方式", normalizeDelivery(record.deliveryMethod)],
+          ["履约等待原因", record.waitingReason || "-"], ["待履约数量", record.pendingQuantity || "-"], ["待履约截止时间", record.fulfillmentDeadlineAt || "-"], ["履约队列序号", record.queueNo || "-"],
+          ["待履约额度占用记录ID", record.quotaReservationId || "-"], ["创建时间", record.createdAt], ["履约时间", record.deliveredAt || "-"],
           ["操作人", record.operator], ["备注", record.remark || "-"]
         ]))}
         ${detailSection("商品与 SKU 信息", infoGrid([
@@ -6154,7 +6516,7 @@
         ]) + `<div class="hint-text">商品与 SKU 信息来自商品列表，履约记录只读展示，不维护商品基础信息、SKU 属性、履约方式和 CDKey 码池 ID。</div>`)}
         ${detailSection("履约链路信息", deliveryChainDetail(record))}
         ${detailSection("关联库存与流水", infoGrid([
-          ["关联库存流水 ID", record.inventoryFlowId || "-"], ["库存变更类型", record.deliveryState === "已履约" ? "确认扣减" : "锁定 / 异常"],
+          ["关联库存流水 ID", record.inventoryFlowId || "-"], ["库存变更类型", record.orderScene === "缺货下单" && record.deliveryState !== "已履约" ? "未占用实际库存；占用待履约额度" : record.deliveryState === "已履约" ? "确认扣减" : "锁定 / 异常"],
           ["SPU ID", record.spu], ["SKU ID", record.skuId], ["锁定库存", inventory?.lockedStock ?? "-"]
         ]) + `<div class="hint-text">库存处理请前往库存列表查看库存主数据和库存流水，履约记录列表不提供库存调整动作。</div>`)}
         ${detailSection("处理建议", `<div class="alert info">${deliveryAdvice(record)}</div>`)}
@@ -6179,10 +6541,12 @@
 
     function deliveryAdvice(record) {
       const reason = record.failureReason || "";
+      if (record.waitingReason === "等待CDKey补货") return "该记录属于正常待履约，请前往 CDKey 码池补货；入库后系统将按支付成功时间 FIFO 自动发放。";
+      if (record.waitingReason) return `该记录正在${record.waitingReason}，请在待履约截止时间前补充资源或完成履约。`;
       if (!reason) return "当前履约记录无异常，仅用于查询归档。";
       if (reason.includes("CDKey 可用码不足")) return "请前往 CDKey 码池列表补货或检查码池状态。";
       if (reason.includes("码池不可用") || reason.includes("码池未上架")) return "请前往 CDKey 码池列表检查码池状态。";
-      if (reason.includes("履约方式未配置")) return "请回到商品列表重新选择商品类型，以自动匹配履约方式。";
+      if (reason.includes("履约方式未配置")) return "请回到商品列表配置履约方式。";
       if (reason.includes("库存锁定未释放")) return "请前往订单 / 履约后台或技术排查链路处理。";
       if (reason.includes("回调")) return "请联系技术排查权益服务回调。";
       if (isPhysicalDelivery(record.deliveryMethod)) return "请前往订单 / 履约后台处理。";
@@ -6192,7 +6556,7 @@
     function deliveryLogs(record) {
       const result = [
         { time: record.createdAt, user: "系统", type: "创建履约记录", object: record.recordId, before: "-", after: record.deliveryState, remark: "订单进入待履约链路" },
-        { time: record.createdAt, user: "系统", type: record.deliveryState === "履约失败" ? "库存锁定失败" : "库存锁定成功", object: record.inventoryFlowId || "-", before: "-", after: "已关联库存流水", remark: "关联库存流水" }
+        { time: record.createdAt, user: "系统", type: record.orderScene === "缺货下单" ? "占用待履约额度" : record.deliveryState === "履约失败" ? "库存锁定失败" : "库存锁定成功", object: record.quotaReservationId || record.inventoryFlowId || "-", before: "-", after: record.orderScene === "缺货下单" ? `占用 ${record.pendingQuantity || record.quantity}` : "已关联库存流水", remark: record.waitingReason || "关联库存流水" }
       ];
       if (record.deliveryState === "已履约") result.push({ time: record.deliveredAt, user: "系统", type: "已履约", object: record.recordId, before: "待履约", after: "已履约", remark: record.remark });
       if (record.deliveryState === "履约失败") result.push({ time: record.updatedAt, user: "系统", type: "履约失败", object: record.recordId, before: "待履约", after: "履约失败", remark: record.failureReason });
@@ -6259,7 +6623,6 @@
     function cdkeyPoolSelectableError(pool, currentSkuId = "") {
       if (!pool) return "码池不存在";
       if (pool.state !== "上架") return "仅上架状态码池可选择";
-      if (numberValue(pool.available) <= 0) return "可用码数量为 0";
       return cdkeyPoolBindingError(pool.id, currentSkuId);
     }
 
@@ -6285,7 +6648,7 @@
       const body = document.getElementById("cdkeyPoolTbody");
       document.getElementById("cdkeyPoolTableCount").textContent = `共 ${visibleCdkeyPools.length} 条`;
       if (!visibleCdkeyPools.length) {
-        body.innerHTML = `<tr><td colspan="16"><div class="empty">当前筛选条件下暂无 CDKey 码池</div></td></tr>`;
+        body.innerHTML = `<tr><td colspan="18"><div class="empty">当前筛选条件下暂无 CDKey 码池</div></td></tr>`;
         return;
       }
       body.innerHTML = visibleCdkeyPools.map(pool => {
@@ -6294,7 +6657,7 @@
           <td><b>${pool.id}</b></td><td>${pool.name}</td><td>${cdkeyPoolStateTag(pool.state)}</td><td>${pool.source || "-"}</td>
           <td>${cdkeyTypeText(pool)}</td>
           <td>${pool.total}</td><td>${pool.available}</td><td>${pool.issued}</td><td>${pool.voided}</td><td>${pool.expired || 0}</td>
-          <td>${percentText(pool.alertThreshold)}</td><td>${bound?.product?.spu || "-"}</td><td>${bound?.sku?.skuId || "-"}</td><td>${pool.createdAt || pool.updatedAt}</td>
+          <td>${percentText(pool.alertThreshold)}</td><td>${pendingCdkeyCountForPool(pool.id)}</td><td>${cdkeyFulfillmentGap(pool)}</td><td>${bound?.product?.spu || "-"}</td><td>${bound?.sku?.skuId || "-"}</td><td>${pool.createdAt || pool.updatedAt}</td>
           <td>${lastCdkeyOperator(pool)}</td>
           <td><div class="action-list">${cdkeyPoolActions(pool)}</div></td>
         </tr>`;
@@ -6569,8 +6932,8 @@
         ]))}
         ${detailSection("码池数量统计", infoGrid([
           ["总码数", pool.total], ["可用码数量", pool.available], ["已履约数量", pool.issued],
-          ["核销数量", pool.voided], ["过期数量", pool.expired || 0]
-        ]))}
+          ["核销数量", pool.voided], ["过期数量", pool.expired || 0], ["待补货数量", pendingCdkeyCountForPool(pool.id)], ["履约缺口", cdkeyFulfillmentGap(pool)]
+        ]) + `<div class="alert info">待补货数量是已支付未发放的订单责任，不属于码池库存；补货后优先自动履约，剩余码才计入可供新订单使用的可用码数量。</div>`)}
         ${detailSection("绑定SKU", boundSkuTable(getBoundSkuByPool(pool.id)))}
       `;
       openDrawer("cdkeyPoolDetailDrawer");
@@ -6581,7 +6944,7 @@
       if (!pool) return;
       if (pool.source !== "接口生成码") return toast("该码池为手工上传码类型，不支持接口生成码。");
       selectedCdkeyPool = pool;
-      document.getElementById("cdkeyGenerateInfo").innerHTML = infoGrid([["码池 ID", pool.id], ["码池名称", pool.name], ["码池类型", pool.source], ["CDKey 类型", cdkeyTypeText(pool)], ["当前可用码数量", pool.available], ["当前码池状态", pool.state]]);
+      document.getElementById("cdkeyGenerateInfo").innerHTML = infoGrid([["码池 ID", pool.id], ["码池名称", pool.name], ["码池类型", pool.source], ["CDKey 类型", cdkeyTypeText(pool)], ["当前可用码数量", pool.available], ["待补货数量", pendingCdkeyCountForPool(pool.id)], ["当前履约缺口", cdkeyFulfillmentGap(pool)], ["当前码池状态", pool.state]]) + `<div class="alert info">补货入库后，系统会优先按支付成功时间 FIFO 自动发放待补货订单，剩余 CDKey 才进入新订单可用库存。</div>`;
       document.getElementById("cdkeyGenerateBatchList").innerHTML = cdkeyBatchTable(getCdkeyBatchesByPool(pool.id), false, true);
       ["cdkeyGenerateName", "cdkeyGenerateCount", "cdkeyGenerateExpire"].forEach(id => document.getElementById(id).value = "");
       openModal("cdkeyGenerateModal");
@@ -6596,9 +6959,9 @@
       const expireAt = valueOf("cdkeyGenerateExpire");
       if (!name) return toast("请输入补货名称。");
       if (!Number.isInteger(count) || count <= 0 || count > 99999) return toast("生成数量必须为 1-99999 的正整数。");
-      createCdkeyBatchAndCodes(pool, name, "接口生成码", count, "接口生成补货", expireAt);
+      const fulfilledCount = createCdkeyBatchAndCodes(pool, name, "接口生成码", count, "接口生成补货", expireAt);
       closeModal("cdkeyGenerateModal");
-      toast("接口生成补货记录已创建，码池数量已更新。");
+      toast(`接口生成补货完成；自动履约 ${fulfilledCount} 笔待补货订单。`);
     }
 
     function openCdkeyUploadModal(poolId) {
@@ -6606,7 +6969,7 @@
       if (!pool) return;
       if (pool.source !== "手工上传码") return toast("该码池为接口生成码类型，不支持手工上传码。");
       selectedCdkeyPool = pool;
-      document.getElementById("cdkeyUploadInfo").innerHTML = infoGrid([["码池 ID", pool.id], ["码池名称", pool.name], ["码池类型", pool.source], ["CDKey 类型", cdkeyTypeText(pool)], ["当前可用码数量", pool.available], ["当前码池状态", pool.state]]);
+      document.getElementById("cdkeyUploadInfo").innerHTML = infoGrid([["码池 ID", pool.id], ["码池名称", pool.name], ["码池类型", pool.source], ["CDKey 类型", cdkeyTypeText(pool)], ["当前可用码数量", pool.available], ["待补货数量", pendingCdkeyCountForPool(pool.id)], ["当前履约缺口", cdkeyFulfillmentGap(pool)], ["当前码池状态", pool.state]]) + `<div class="alert info">补货入库后，系统会优先按支付成功时间 FIFO 自动发放待补货订单，剩余 CDKey 才进入新订单可用库存。</div>`;
       document.getElementById("cdkeyUploadBatchList").innerHTML = cdkeyBatchTable(getCdkeyBatchesByPool(pool.id), false, true);
       ["cdkeyUploadName", "cdkeyUploadExpire"].forEach(id => document.getElementById(id).value = "");
       openModal("cdkeyUploadModal");
@@ -6620,9 +6983,9 @@
       const count = 100;
       const expireAt = valueOf("cdkeyUploadExpire");
       if (!name) return toast("请输入补货名称。");
-      createCdkeyBatchAndCodes(pool, name, "手工上传码", count, "手工上传补货", expireAt);
+      const fulfilledCount = createCdkeyBatchAndCodes(pool, name, "手工上传码", count, "手工上传补货", expireAt);
       closeModal("cdkeyUploadModal");
-      toast("手工上传补货记录已入库，码池数量已更新。");
+      toast(`手工上传补货完成；自动履约 ${fulfilledCount} 笔待补货订单。`);
     }
 
     function createCdkeyBatchAndCodes(pool, name, source, count, reason, expireAt = "") {
@@ -6636,10 +6999,73 @@
       pool.available += count;
       pool.updatedAt = nowText();
       addCdkeyLog(pool.id, source === "接口生成码" ? "接口生成补货" : "手工上传补货", "-", `${name} / ${count} 个`, reason);
+      const fulfilledCount = allocatePendingCdkeyDeliveries(pool.id);
       syncCdkeyStatusByPool(pool.id);
       renderCdkeyPoolTable();
       renderCdkeyPoolStats();
       renderPoolTable();
+      renderDeliveryRecordTable();
+      renderInventoryTable();
+      renderInventoryStats();
+      renderOrderManagementTable();
+      return fulfilledCount;
+    }
+
+    function allocatePendingCdkeyDeliveries(poolId) {
+      const pool = getPoolById(poolId);
+      if (!pool || pool.state !== "上架") return 0;
+      const queue = pendingCdkeyRecordsForPool(poolId).sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)));
+      let fulfilledCount = 0;
+      queue.forEach(record => {
+        const quantity = Math.max(1, Number(record.pendingQuantity || record.quantity || 1));
+        const codes = getCdkeyCodesByPool(poolId).filter(code => code.state === "未使用").slice(0, quantity);
+        if (Number(pool.available || 0) < quantity || codes.length < quantity) return;
+        const fulfilledAt = nowText();
+        codes.forEach(code => {
+          code.state = "已履约";
+          code.deliveryRecordId = record.recordId;
+          code.exchangeNo = record.exchangeNo;
+          code.orderId = record.orderId;
+          code.issuedAt = fulfilledAt;
+          code.updatedAt = fulfilledAt;
+          const batch = cdkeyBatches.find(item => item.batchId === code.batchId);
+          if (batch) {
+            batch.available = Math.max(0, Number(batch.available || 0) - 1);
+            batch.issued = Number(batch.issued || 0) + 1;
+            batch.updatedAt = fulfilledAt;
+          }
+        });
+        pool.available = Math.max(0, Number(pool.available || 0) - quantity);
+        pool.issued = Number(pool.issued || 0) + quantity;
+        pool.updatedAt = fulfilledAt;
+        record.deliveryState = "已履约";
+        record.waitingReason = "";
+        record.failureReason = "";
+        record.cdkeyBatchId = codes[0]?.batchId || "";
+        record.maskedCdkey = codes[0]?.maskedCdkey || "-";
+        record.deliveredAt = fulfilledAt;
+        record.updatedAt = fulfilledAt;
+        record.remark = `CDKey 补货后自动发放 ${quantity} 个；待履约额度已释放`;
+        const order = mallOrders.find(item => item.no === record.orderId);
+        if (order) {
+          order.status = "已完成";
+          order.fulfillmentStatus = "履约完成";
+          order.waitingReason = "";
+          order.reason = "-";
+          order.maskedCdkey = record.maskedCdkey;
+          order.stockResult = `CDKey 码池补货后分配：-${quantity}`;
+          order.fulfillResult = `CDKey 自动发放成功：${quantity} 个`;
+          order.retrySummary = "补货事件触发自动履约，无需失败重试";
+          order.updated = fulfilledAt;
+          order.completed = fulfilledAt;
+        }
+        fulfilledCount += 1;
+      });
+      pendingCdkeyRecordsForPool(poolId)
+        .sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)))
+        .forEach((record, index) => record.queueNo = index + 1);
+      if (fulfilledCount) addCdkeyLog(poolId, "补货触发自动履约", "待补货", `已履约 ${fulfilledCount} 笔`, "按支付成功时间 FIFO 分配 CDKey");
+      return fulfilledCount;
     }
 
     function openCdkeyBatchDrawer(poolId) {
@@ -6817,16 +7243,28 @@
         const statuses = product.skuList.filter(sku => isCdkeyDelivery(sku.delivery)).map(sku => {
           const skuPoolId = sku.cdkeyPoolId || sku.deliveryParams?.cdkey?.poolId || "";
           const check = checkCdkeyPool(skuPoolId);
-          if (check.ok) return "码池可用";
-          if (check.message.includes("可用数量不足")) return "CDKey 不足";
+          if (check.ok && check.stockSufficient !== false) return "码池可用";
+          if (check.stockSufficient === false) return "CDKey 不足";
           if (!skuPoolId) return "码池未配置";
           return "码池不可用";
         });
         product.cdkey = statuses.includes("CDKey 不足") ? "CDKey 不足" : statuses.find(status => status !== "码池可用") || "码池可用";
       });
       inventoryRecords.forEach(record => {
-        if (inventoryCdkeyPoolId(record) === poolId) record.updatedAt = nowText();
+        if (inventoryCdkeyPoolId(record) !== poolId) return;
+        const pool = getPoolById(poolId);
+        if (!pool) return;
+        record.stockMode = "限量";
+        record.totalStock = Number(pool.total || 0);
+        record.availableStock = Number(pool.available || 0);
+        record.lockedStock = getCdkeyCodesByPool(poolId).filter(code => code.state === "已锁定").length;
+        record.deductedStock = Number(pool.issued || 0);
+        record.lastSyncTime = nowText();
+        record.updatedAt = record.lastSyncTime;
+        record.stockState = calculateInventoryState(record);
       });
+      const affectedSpus = [...new Set(inventoryRecords.filter(record => inventoryCdkeyPoolId(record) === poolId).map(record => record.spu))];
+      affectedSpus.forEach(syncProductStockSummaryByInventory);
     }
 
     function syncAllCdkeyStatus() {
@@ -6861,7 +7299,7 @@
       const body = document.getElementById("productTbody");
       document.getElementById("tableCount").textContent = `共 ${visibleProducts.length} 条`;
       if (!visibleProducts.length) {
-        body.innerHTML = `<tr><td colspan="11"><div class="empty">当前筛选条件下暂无商品</div></td></tr>`;
+        body.innerHTML = `<tr><td colspan="10"><div class="empty">当前筛选条件下暂无商品</div></td></tr>`;
         return;
       }
       body.innerHTML = visibleProducts.map(p => `
@@ -6879,7 +7317,6 @@
           </td>
           <td>${p.type}</td>
           <td>${p.skuSummary}</td>
-          <td>${productPriceSummary(p)}</td>
           <td>${deliveryTag(p.delivery)}</td>
           <td>${stateTag(p.state)}</td>
           <td>${p.exposure.startsWith("已投放") ? `<span class="tag green">${p.exposure}</span>` : `<span class="tag orange">${p.exposure}</span>`}</td>
@@ -6980,8 +7417,8 @@
       const codes = attrCodes || deriveSkuAttrCodes({ skuList: rows }, type);
       const normalizedRows = rows.map((row, index) => normalizeSkuRow(row, type, index, codes));
       return `<div class="table-wrap"><table><thead><tr>
-        <th>SKU ID</th><th>SKU 名称</th><th>SKU 属性模板</th><th>SKU 属性值</th><th>计量单位 / 数值</th><th>排序（越大越靠前）</th><th>多币种价格</th><th>履约方式</th><th>CDKey 码池 ID</th><th>每人总兑换次数</th><th>每人每日兑换次数</th><th>SKU 备注</th>
-        </tr></thead><tbody>${normalizedRows.map(s => `<tr><td>${s.skuId}</td><td>${s.skuName}</td><td>${s.templateName}</td><td>${formatSkuAttributeValues(s, type, codes)}</td><td>${skuSpecText(s)}</td><td>${s.sort}</td><td>${skuPriceSummary(s)}</td><td>${normalizeDelivery(s.delivery) || "未配置"}</td><td>${deliveryParamSummary(s)}</td><td>${s.totalLimit}</td><td>${s.dayLimit}</td><td>${s.remark}</td></tr>`).join("")}</tbody></table></div>`;
+        <th>SKU ID</th><th>SKU 名称</th><th>SKU 属性模板</th><th>SKU 属性值</th><th>计量单位 / 数值</th><th>排序（越大越靠前）</th><th>多币种价格</th><th>履约方式</th><th>CDKey 码池 ID</th><th>下单策略</th><th>待履约数量上限</th><th>最长待履约时长</th><th>每人总兑换次数</th><th>每人每日兑换次数</th><th>SKU 备注</th>
+        </tr></thead><tbody>${normalizedRows.map(s => `<tr><td>${s.skuId}</td><td>${s.skuName}</td><td>${s.templateName}</td><td>${formatSkuAttributeValues(s, type, codes)}</td><td>${skuSpecText(s)}</td><td>${s.sort}</td><td>${skuPriceSummary(s)}</td><td>${normalizeDelivery(s.delivery) || "未配置"}</td><td>${deliveryParamSummary(s)}</td><td>${shortageOrderPolicyText(s)}</td><td>${isBackorderAllowed(s) ? s.pendingFulfillmentLimit : "-"}</td><td>${isBackorderAllowed(s) ? `${s.maxPendingDurationHours} 小时` : "-"}</td><td>${s.totalLimit}</td><td>${s.dayLimit}</td><td>${s.remark}</td></tr>`).join("")}</tbody></table></div>`;
     }
     function exposureDetail(product) {
       return infoGrid([
@@ -7013,7 +7450,7 @@
       document.getElementById("formRemark").value = product?.remark || "";
       updateFormTypes(false);
       document.getElementById("formType").value = product?.type || "虚拟装扮";
-      syncDeliveryByProductType(document.getElementById("formType").value);
+      setFormDeliveryOptions(product?.delivery || "");
       setDescriptionTags(product?.tags || ["新品", "限时"]);
       document.getElementById("formTagsInput").value = "";
       document.getElementById("formCornerTags").value = product?.cornerTags?.[0] || "热门";
@@ -7148,11 +7585,17 @@
       handleTemplateChange(true);
     }
 
+    function onDeliveryChange() {
+      syncSkuDeliveryFromForm();
+      syncInventoryRows(false);
+      renderSkuEdit();
+      renderInventoryConfig();
+    }
+
     function handleTemplateChange(resetSku = false) {
       const type = document.getElementById("formType").value;
       const template = getSkuTemplate(type);
       const tip = document.getElementById("templateTip");
-      syncDeliveryByProductType(type);
       if (resetSku) spuAttrValues = defaultSpuAttributeValues(type);
       if (!template) {
         tip.style.display = "none";
@@ -7360,7 +7803,7 @@
       const template = getSkuTemplate(type);
       const activeAttrs = getSelectedSkuAttrs(type);
       const dynamicHeaders = activeAttrs.map(attr => `<th>${attr.required === false ? "" : `<span class="required-star">*</span>`}${attr.name}</th>`).join("");
-      head.innerHTML = `<th>SKU 名称</th><th><span class="required-star">*</span>排序<br><span class="minor">越大越靠前</span></th><th><span class="required-star">*</span>计量单位</th><th>数值</th><th><span class="required-star">*</span>多币种价格<br><span class="minor">积分 / N币 / RMB</span></th><th>CDKey 码池 ID</th><th>每人总兑换次数</th><th>每人每日兑换次数</th>${dynamicHeaders}<th>SKU 备注</th><th>操作</th>`;
+      head.innerHTML = `<th>SKU 名称</th><th><span class="required-star">*</span>排序<br><span class="minor">越大越靠前</span></th><th><span class="required-star">*</span>计量单位</th><th>数值</th><th><span class="required-star">*</span>多币种价格<br><span class="minor">积分 / N币 / RMB</span></th><th>CDKey 码池 ID</th><th><span class="required-star">*</span>下单策略</th><th>待履约数量上限</th><th>最长待履约时长（小时）</th><th>每人总兑换次数</th><th>每人每日兑换次数</th>${dynamicHeaders}<th>SKU 备注</th><th>操作</th>`;
       const attrCodes = activeAttrs.map(attr => attr.code);
       syncSkuDeliveryFromForm();
       skuRows = skuRows.map((row, index) => normalizeSkuRow(row, type, index, attrCodes));
@@ -7372,6 +7815,7 @@
             : `<input class="mini-input" type="text" data-sku="${i}" data-attr="${attr.code}" value="${value}">`;
           return `<td>${control}</td>`;
         }).join("");
+        const backorderEnabled = isBackorderAllowed(s);
         return `
           <tr>
             <td><input class="mini-input" data-sku="${i}" data-field="skuName" value="${s.skuName || ""}" placeholder="非必填"></td>
@@ -7380,13 +7824,16 @@
             <td><input class="mini-input" type="number" min="0" step="1" data-sku="${i}" data-field="duration" value="${s.duration ?? ""}" placeholder="0或正整数"></td>
             <td class="price-config-cell">${skuPriceSummary(s)}<button class="btn text" type="button" data-edit-sku-price="${i}">配置多币种价格</button></td>
             <td>${cdkeyPoolEditor(s, i)}</td>
+            <td><select class="mini-input" data-sku="${i}" data-field="shortageOrderPolicy"><option ${!backorderEnabled ? "selected" : ""}>${SHORTAGE_POLICY_STOCK_ONLY}</option><option ${backorderEnabled ? "selected" : ""}>${SHORTAGE_POLICY_ALLOW_BACKORDER}</option></select>${backorderEnabled ? `<div class="minor">到期未履约自动退款并关闭订单</div>` : ""}</td>
+            <td><input class="mini-input" type="number" min="1" data-sku="${i}" data-field="pendingFulfillmentLimit" value="${backorderEnabled ? s.pendingFulfillmentLimit : ""}" ${backorderEnabled ? "" : "disabled"} placeholder="正整数"></td>
+            <td><input class="mini-input" type="number" min="1" data-sku="${i}" data-field="maxPendingDurationHours" value="${backorderEnabled ? s.maxPendingDurationHours : ""}" ${backorderEnabled ? "" : "disabled"} placeholder="正整数"></td>
             <td><input class="mini-input" type="number" data-sku="${i}" data-field="totalLimit" value="${s.totalLimit}"></td>
             <td><input class="mini-input" type="number" data-sku="${i}" data-field="dayLimit" value="${s.dayLimit}"></td>
             ${attrCells}
             <td><input class="mini-input" data-sku="${i}" data-field="remark" value="${s.remark || ""}"></td>
             <td><button class="btn text" data-copy-sku="${i}">复制</button><button class="btn text" data-del-sku="${i}">删除</button></td>
           </tr>`;
-      }).join("") : `<tr><td colspan="${10 + activeAttrs.length}"><div class="empty">请添加至少 1 条 SKU。</div></td></tr>`;
+      }).join("") : `<tr><td colspan="${13 + activeAttrs.length}"><div class="empty">请添加至少 1 条 SKU。</div></td></tr>`;
       body.querySelectorAll("[data-attr]").forEach(el => el.addEventListener("input", updateSkuFromInput));
       body.querySelectorAll("select[data-attr]").forEach(el => el.addEventListener("change", updateSkuFromInput));
       body.querySelectorAll("[data-field]").forEach(el => el.addEventListener("input", updateSkuFromInput));
@@ -7420,17 +7867,14 @@
         const disabled = price.enabled ? "" : "disabled";
         return `<tr>
           <td><label class="check-pill"><input type="checkbox" data-price-index="${index}" data-price-field="enabled" ${price.enabled ? "checked" : ""}>启用</label></td>
-          <td><span class="price-pill ${meta.css}"><b>${price.currency}</b></span><div class="minor">${meta.code} · 精度${meta.precision}</div></td>
-          <td><input type="number" min="${meta.precision === 2 ? ".01" : "1"}" step="${step}" data-price-index="${index}" data-price-field="amount" value="${price.amount ?? ""}" ${disabled}><div class="minor">${meta.precision === 2 ? "前台按元展示，服务端按分存储" : `仅支持正整数${meta.unit}`}</div></td>
+          <td><span class="price-pill ${meta.css}"><b>${price.currency}</b></span></td>
+          <td><input type="number" min="${meta.precision === 2 ? ".01" : "1"}" step="${step}" data-price-index="${index}" data-price-field="amount" value="${price.amount ?? ""}" ${disabled}><div class="minor">${meta.precision === 2 ? "最多支持2位小数" : `仅支持正整数${meta.unit}`}</div></td>
           <td><input type="number" min="${meta.precision === 2 ? ".01" : "1"}" step="${step}" data-price-index="${index}" data-price-field="strikePrice" value="${price.strikePrice ?? ""}" placeholder="非必填" ${disabled}><div class="minor">填写时必须大于销售价格</div></td>
-          <td><label class="check-pill"><input type="radio" name="defaultSkuPrice" data-price-index="${index}" data-price-field="isDefault" ${price.isDefault ? "checked" : ""} ${disabled}>默认</label></td>
-          <td><div class="price-route">${meta.route}</div></td>
         </tr>`;
       }).join("");
       body.querySelectorAll("[data-price-index]").forEach(control => {
         control.addEventListener(control.type === "number" ? "input" : "change", updateSkuPriceDraft);
       });
-      renderSkuPricePreview();
       validateSkuPriceDraft();
     }
 
@@ -7441,30 +7885,11 @@
       if (!price) return;
       if (field === "enabled") {
         price.enabled = event.target.checked;
-        if (!price.enabled && price.isDefault) {
-          price.isDefault = false;
-          const nextDefault = skuPriceDraft.find(item => item.enabled);
-          if (nextDefault) nextDefault.isDefault = true;
-        }
-        if (price.enabled && !skuPriceDraft.some(item => item.enabled && item.isDefault)) price.isDefault = true;
-        renderSkuPriceEditor();
-        return;
-      }
-      if (field === "isDefault") {
-        skuPriceDraft.forEach(item => { item.isDefault = false; });
-        price.enabled = true;
-        price.isDefault = true;
         renderSkuPriceEditor();
         return;
       }
       price[field] = event.target.value;
-      renderSkuPricePreview();
       validateSkuPriceDraft();
-    }
-
-    function renderSkuPricePreview() {
-      const preview = document.getElementById("skuPricePreview");
-      preview.innerHTML = skuPriceSummary({ prices: skuPriceDraft });
     }
 
     function validateSkuPriceDraft() {
@@ -7496,7 +7921,8 @@
     function cdkeyPoolEditor(row, index) {
       if (!isCdkeyDelivery(row.delivery)) return `<span class="minor">无需配置</span>`;
       const check = row.cdkeyPoolCheck || (row.cdkeyPoolId ? checkCdkeyPool(row.cdkeyPoolId) : null);
-      const tag = check ? `<span class="tag ${check.ok ? "green" : "red"}">${check.status}</span>` : `<span class="tag orange">未校验</span>`;
+      const tagClass = !check?.ok ? "red" : check.stockSufficient === false ? "orange" : "green";
+      const tag = check ? `<span class="tag ${tagClass}">${check.status}</span>` : `<span class="tag orange">未校验</span>`;
       const message = check ? check.message : "请输入码池 ID 后校验";
       return `
         <input class="mini-input" data-sku="${index}" data-cdkey-pool="${index}" placeholder="请输入码池 ID" value="${row.cdkeyPoolId || ""}">
@@ -7525,6 +7951,18 @@
         return;
       }
       skuRows[index][field] = e.target.value;
+      if (field === "shortageOrderPolicy") {
+        if (isBackorderAllowed(skuRows[index])) {
+          skuRows[index].pendingFulfillmentLimit = Number(skuRows[index].pendingFulfillmentLimit || 50);
+          skuRows[index].maxPendingDurationHours = Number(skuRows[index].maxPendingDurationHours || 72);
+        } else {
+          skuRows[index].pendingFulfillmentLimit = 0;
+          skuRows[index].maxPendingDurationHours = 0;
+        }
+        renderSkuEdit();
+        renderInventoryConfig();
+        return;
+      }
       if (field === "specType") {
         skuRows[index].specType = normalizeSkuSpecType(e.target.value);
         skuRows[index].duration = normalizeSkuDuration(skuRows[index].specType, skuRows[index].duration || "");
@@ -7577,7 +8015,7 @@
       }
       renderSkuEdit();
       renderInventoryConfig();
-      toast(row.cdkeyPoolCheck.ok ? `已校验通过：${row.cdkeyPoolCheck.pool.name}，可用 ${row.cdkeyPoolCheck.pool.available}` : row.cdkeyPoolCheck.message);
+      toast(row.cdkeyPoolCheck.ok ? `码池配置有效：${row.cdkeyPoolCheck.pool.name}，可用 ${row.cdkeyPoolCheck.pool.available}` : row.cdkeyPoolCheck.message);
     }
 
     function validateSkuRows() {
@@ -7587,21 +8025,24 @@
       const duplicate = signatures.find((signature, index) => signature && signatures.indexOf(signature) !== index);
       const invalidSort = skuRows.some(s => !/^[1-9]\d*$/.test(String(s.sort)));
       const priceErrors = [...new Set(skuRows.flatMap(skuPriceGroupErrors))];
-      const invalidDelivery = !allowedDeliveryOptions.includes(getFormDelivery()) || !isDeliveryCompatibleWithType(type, getFormDelivery());
+      const invalidDelivery = !allowedDeliveryOptions.includes(getFormDelivery());
       const invalidDuration = skuRows.some(s => {
         const value = String(s.duration ?? "").trim();
         return value !== "" && !/^\d+$/.test(value);
       });
       const missingRequiredAttr = skuRows.some(s => activeAttrs.some(attr => attr.required !== false && !s.attributeValues?.[attr.code]));
       const invalidEnum = skuRows.some(s => activeAttrs.some(attr => attr.valueType === "枚举" && s.attributeValues?.[attr.code] && !skuAttrOptions(attr).includes(s.attributeValues[attr.code])));
+      const invalidBackorderConfig = skuRows.some(s => isBackorderAllowed(s)
+        && (!/^[1-9]\d*$/.test(String(s.pendingFulfillmentLimit)) || !/^[1-9]\d*$/.test(String(s.maxPendingDurationHours))));
       const errors = [];
       if (invalidSort) errors.push("排序必须为正整数，数值越大越靠前。");
       if (invalidDuration) errors.push("SKU 数值必须为0或正整数。");
       if (missingRequiredAttr) errors.push("必填 SKU 属性项未填写。");
       if (invalidEnum) errors.push("SKU 枚举属性值不在模板可选值范围内。");
+      if (invalidBackorderConfig) errors.push("允许缺货下单时，待履约数量上限和最长待履约时长必须为正整数。");
       if (duplicate) errors.push("SKU 属性值组合重复，请调整 SKU 属性值。");
       errors.push(...priceErrors);
-      if (invalidDelivery) errors.push("履约方式与商品类型不匹配。");
+      if (invalidDelivery) errors.push("请选择有效的履约方式。");
       document.getElementById("skuError").textContent = errors.join(" ");
       return errors;
     }
@@ -7611,7 +8052,7 @@
       const template = getSkuTemplate(type);
       const activeAttrs = getSelectedSkuAttrs(type);
       const attrCodes = activeAttrs.map(attr => attr.code);
-      const row = makeSkuRow("NEW", type, makeEmptyAttributeValues(type, attrCodes), skuRows.length + 1, getDefaultDeliveryByType(type), attrCodes, template);
+      const row = makeSkuRow("NEW", type, makeEmptyAttributeValues(type, attrCodes), skuRows.length + 1, getFormDelivery(), attrCodes, template);
       activeAttrs.forEach(attr => {
         if (attr.valueType !== "枚举") row.attributeValues[attr.code] = "";
       });
@@ -7757,7 +8198,7 @@
       const sku = skuRows[index];
       if (!sku || !isCdkeyDelivery(sku.delivery)) return "";
       const check = sku.cdkeyPoolCheck || (sku.cdkeyPoolId ? checkCdkeyPool(sku.cdkeyPoolId) : null);
-      if (check?.ok) return `<div class="minor">已关联码池 ${sku.cdkeyPoolId}，总码数 ${check.pool.total} / 可用码 ${check.pool.available}；库存由 CDKey 码池列表同步。</div>`;
+      if (check?.ok) return `<div class="minor">已关联码池 ${sku.cdkeyPoolId}，总码数 ${check.pool.total} / 可用码 ${check.pool.available}；库存由 CDKey 码池列表同步。${check.stockSufficient === false ? "当前缺码，是否可继续下单由下单策略决定。" : ""}</div>`;
       return `<div class="minor">CDKey SKU 库存模式固定为限量；请先在 SKU 配置中填写并校验可用的 CDKey 码池 ID，绑定后库存由码池列表同步。</div>`;
     }
 
@@ -7978,7 +8419,7 @@
           return;
         }
 
-        if (pool.available <= 0) {
+        if (pool.available <= 0 && !isBackorderAllowed(row)) {
           errors.push({ item: "CDKey 码池", problem: `SKU「${skuName}」配置的码池可用数量不足`, suggestion: "请补充码池或更换码池" });
           return;
         }
@@ -8381,6 +8822,8 @@
         if (!/^[1-9]\d*$/.test(String(row.sort))) markInvalidElement(`[data-sku="${index}"][data-field="sort"]`);
         if (String(row.duration ?? "").trim() !== "" && !/^\d+$/.test(String(row.duration).trim())) markInvalidElement(`[data-sku="${index}"][data-field="duration"]`);
         if (skuPriceGroupErrors(row).length) markInvalidElement(`[data-edit-sku-price="${index}"]`);
+        if (isBackorderAllowed(row) && !/^[1-9]\d*$/.test(String(row.pendingFulfillmentLimit))) markInvalidElement(`[data-sku="${index}"][data-field="pendingFulfillmentLimit"]`);
+        if (isBackorderAllowed(row) && !/^[1-9]\d*$/.test(String(row.maxPendingDurationHours))) markInvalidElement(`[data-sku="${index}"][data-field="maxPendingDurationHours"]`);
         activeAttrs.forEach(attr => {
           if (attr.required !== false && !row.attributeValues?.[attr.code]) markInvalidElement(`[data-sku="${index}"][data-attr="${attr.code}"]`);
         });
@@ -8396,8 +8839,7 @@
       if (fromForm) {
         if (!valueOf("formName")) list.push(["基础信息", "商品对外名称缺失", "请补充商品对外名称"]);
         if (!valueOf("formRiskLevel")) list.push(["基础信息", "风险等级缺失", "请选择风险等级"]);
-        if (!valueOf("formDelivery")) list.push(["基础信息", "履约方式缺失", "请重新选择商品类型以自动匹配履约方式"]);
-        if (valueOf("formType") && valueOf("formDelivery") && !isDeliveryCompatibleWithType(valueOf("formType"), valueOf("formDelivery"))) list.push(["基础信息", "履约方式与商品类型不匹配", "请重新选择商品类型以自动匹配履约方式"]);
+        if (!valueOf("formDelivery")) list.push(["基础信息", "履约方式缺失", "请选择履约方式"]);
         if (!valueOf("formType")) list.push(["商品类型", "商品类型缺失", "请选择商品类型"]);
         if (valueOf("formExchangeDisplayBase") && !/^\d+$/.test(valueOf("formExchangeDisplayBase"))) list.push(["SPU 运营展示配置", "兑换量展示基数格式错误", "请填写 0 或正整数"]);
         validateSpuAttrValues().forEach(err => list.push([err.item, err.problem, err.suggestion]));
@@ -8407,7 +8849,7 @@
         if (!skuRows.length) list.push(["SKU 配置", "未配置 SKU", "请至少配置 1 条 SKU"]);
         validateSkuRows().forEach(msg => {
           const item = msg.includes("属性") ? "SKU 属性值" : msg.includes("履约方式") ? "履约方式" : "SKU 配置";
-      const suggestion = msg.includes("属性") ? "请补充或调整 SKU 属性值" : msg.includes("履约方式") ? "请按系统履约方式枚举重新选择" : "请调整多币种价格、默认展示价或限兑配置";
+      const suggestion = msg.includes("属性") ? "请补充或调整 SKU 属性值" : msg.includes("履约方式") ? "请按系统履约方式枚举重新选择" : "请调整多币种价格或限兑配置";
           list.push([item, msg, suggestion]);
         });
         validateSkuCdkeyPools().forEach(err => list.push([err.item, err.problem, err.suggestion]));
@@ -8422,7 +8864,7 @@
         if (product.cdkey === "码池未配置") list.push(["CDKey 码池", "CDKey SKU 未填写码池 ID", "请填写可用的 CDKey 码池 ID"]);
         if (product.cdkey === "码池不存在") list.push(["CDKey 码池", "CDKey SKU 配置的码池 ID 不存在", "请检查码池 ID 是否正确"]);
         if (product.cdkey === "码池不可用") list.push(["CDKey 码池", "CDKey SKU 配置的码池不是上架状态", "请更换上架状态的码池"]);
-        if (product.cdkey === "CDKey 不足") list.push(["CDKey 码池", "CDKey SKU 码池可用数量不足", "请补充码池或更换码池"]);
+        if (product.cdkey === "CDKey 不足" && !product.skuList.some(isBackorderAllowed)) list.push(["CDKey 码池", "CDKey SKU 码池可用数量不足", "请补充码池、配置缺货可下单或更换码池"]);
       }
       return list.map(([item, problem, suggestion]) => ({ item, problem, suggestion }));
     }
@@ -8459,6 +8901,624 @@
       if (!stock) return `<span class="tag orange">未配置</span>`;
       if (stock.unlimited) return `含不限量 SKU；限量可用 ${stock.available}，锁定 ${stock.locked}`;
       return `可用 ${stock.available}，锁定 ${stock.locked}`;
+    }
+    function formatPointsNumber(value) {
+      return Number(value || 0).toLocaleString("zh-CN");
+    }
+
+    function findPointUser(keyword) {
+      const value = String(keyword || "").trim();
+      if (!value) return null;
+      return pointUsers.find(user => [user.id, user.nnNo, user.phone, user.name].some(field => String(field).includes(value))) || null;
+    }
+
+    function getFilteredPointFlows() {
+      const flowId = valueOf("pointFlowIdFilter");
+      const userKeyword = valueOf("pointFlowUserFilter");
+      const type = valueOf("pointFlowTypeFilter");
+      const source = valueOf("pointFlowSourceFilter");
+      const start = valueOf("pointFlowStartFilter");
+      const end = valueOf("pointFlowEndFilter");
+      return pointFlows.filter(flow => {
+        const date = flow.time.slice(0, 10);
+        return (!flowId || flow.id.includes(flowId))
+          && (!userKeyword || [flow.userId, flow.nnNo, flow.phone].some(field => field.includes(userKeyword)))
+          && (!type || flow.type === type)
+          && (!source || flow.source === source)
+          && (!start || date >= start)
+          && (!end || date <= end);
+      });
+    }
+
+    function pointFlowTypeTag(type) {
+      return `<span class="tag ${type === "获取" ? "green" : "red"}">${type}</span>`;
+    }
+
+    function pointFlowAmount(flow) {
+      const sign = flow.amount > 0 ? "+" : "";
+      const cls = flow.amount > 0 ? "plus" : "minus";
+      return `<span class="amount ${cls}">${sign}${formatPointsNumber(flow.amount)}</span>`;
+    }
+
+    function renderPointsFlowTable() {
+      const rows = getFilteredPointFlows();
+      document.getElementById("pointFlowTbody").innerHTML = rows.length ? rows.map(flow => `
+        <tr>
+          <td>${flow.id}</td><td>${flow.userId}</td><td>${flow.nnNo}</td><td>${flow.phone}</td>
+          <td>${pointFlowTypeTag(flow.type)}</td><td>${pointFlowAmount(flow)}</td><td>${formatPointsNumber(flow.balance)}</td>
+          <td>${flow.source}</td><td>${flow.time}</td><td>${flow.desc}</td>
+        </tr>
+      `).join("") : `<tr><td colspan="10"><div class="empty">当前筛选条件下暂无积分流水</div></td></tr>`;
+      document.getElementById("pointFlowTableCount").textContent = `共 ${rows.length} 条`;
+      document.getElementById("pointFlowStatTotal").textContent = rows.length;
+      document.getElementById("pointFlowStatGain").textContent = rows.filter(flow => flow.type === "获取").length;
+      document.getElementById("pointFlowStatConsume").textContent = rows.filter(flow => flow.type === "消费").length;
+      const net = rows.reduce((sum, flow) => sum + Number(flow.amount || 0), 0);
+      document.getElementById("pointFlowStatNet").textContent = `${net > 0 ? "+" : ""}${formatPointsNumber(net)}`;
+    }
+
+    function resetPointsFlowFilters() {
+      ["pointFlowIdFilter", "pointFlowUserFilter", "pointFlowStartFilter", "pointFlowEndFilter"].forEach(id => document.getElementById(id).value = "");
+      ["pointFlowTypeFilter", "pointFlowSourceFilter"].forEach(id => document.getElementById(id).value = "");
+      renderPointsFlowTable();
+      toast("积分流水筛选项已重置。");
+    }
+
+    function userPointFlowRows(userId) {
+      return pointFlows.filter(flow => flow.userId === userId);
+    }
+
+    function renderUserPoints(user) {
+      const modal = document.getElementById("userPointsModal");
+      modal.dataset.userId = user.id;
+      document.getElementById("userPointsKeyword").value = user.id;
+      document.getElementById("userPointsInfoGrid").innerHTML = [
+        ["用户ID", user.id], ["NN号", user.nnNo], ["手机号", user.phone],
+        ["用户昵称", user.name], ["注册时间", user.register], ["账户状态", '<span class="tag green">正常</span>'],
+        ["更新时间", user.updated]
+      ].map(([label, value]) => `<div class="info-item"><div class="info-label">${label}</div><div class="info-value">${value}</div></div>`).join("");
+      document.getElementById("userPointsBalance").textContent = formatPointsNumber(user.points);
+      const rows = userPointFlowRows(user.id).slice(0, 12);
+      document.getElementById("userPointsFlowTbody").innerHTML = rows.length ? rows.map(flow => `
+        <tr><td>${flow.id}</td><td>${pointFlowTypeTag(flow.type)}</td><td>${pointFlowAmount(flow)}</td><td>${formatPointsNumber(flow.balance)}</td><td>${flow.source}</td><td>${flow.time}</td><td>${flow.desc}</td></tr>
+      `).join("") : `<tr><td colspan="7"><div class="empty">该用户暂无积分流水</div></td></tr>`;
+    }
+
+    function openUserPointsModal() {
+      const user = findPointUser(valueOf("pointFlowUserFilter")) || pointUsers[0];
+      renderUserPoints(user);
+      openModal("userPointsModal");
+    }
+
+    function searchUserPoints() {
+      const keyword = valueOf("userPointsKeyword");
+      if (!keyword) return toast("请输入用户ID、NN号或手机号。");
+      const user = findPointUser(keyword);
+      if (!user) return toast("未查询到用户。");
+      renderUserPoints(user);
+      toast("用户积分信息已刷新。");
+    }
+
+    function resetUserPointsQuery() {
+      renderUserPoints(pointUsers[0]);
+    }
+
+    function resetAdjustPointsForm() {
+      ["adjustPointsKeyword", "adjustPointsUserId", "adjustPointsNnNo", "adjustPointsPhone", "adjustPointsCurrent"].forEach(id => document.getElementById(id).value = "");
+      document.getElementById("adjustPointsType").value = "人工补发";
+      document.getElementById("adjustPointsReason").value = "活动奖励补发";
+      document.getElementById("adjustPointsAmount").value = "300";
+      document.getElementById("adjustPointsRemark").value = "活动奖励补发";
+      document.getElementById("confirmAdjustPointsBtn").disabled = true;
+    }
+
+    function renderAdjustPointsUser(user) {
+      document.getElementById("adjustPointsKeyword").value = user.id;
+      document.getElementById("adjustPointsUserId").value = user.id;
+      document.getElementById("adjustPointsNnNo").value = user.nnNo;
+      document.getElementById("adjustPointsPhone").value = user.phone;
+      document.getElementById("adjustPointsCurrent").value = formatPointsNumber(user.points);
+      document.getElementById("confirmAdjustPointsBtn").disabled = false;
+    }
+
+    function openAdjustPointsModal() {
+      resetAdjustPointsForm();
+      const user = findPointUser(valueOf("pointFlowUserFilter"));
+      if (user) renderAdjustPointsUser(user);
+      openModal("adjustPointsModal");
+    }
+
+    function searchAdjustPointsUser() {
+      const keyword = valueOf("adjustPointsKeyword");
+      if (!keyword) return toast("请输入用户ID、NN号或手机号。");
+      const user = findPointUser(keyword);
+      if (!user) {
+        resetAdjustPointsForm();
+        document.getElementById("adjustPointsKeyword").value = keyword;
+        return toast("未查询到用户。");
+      }
+      renderAdjustPointsUser(user);
+      toast("用户信息已带入。");
+    }
+
+    function confirmAdjustPoints() {
+      const user = pointUsers.find(item => item.id === valueOf("adjustPointsUserId"));
+      const type = valueOf("adjustPointsType");
+      const amount = Number(valueOf("adjustPointsAmount"));
+      if (!user) return toast("请先查询并选择用户。");
+      if (!Number.isInteger(amount) || amount <= 0) return toast("调整积分必须为正整数。");
+      if (type === "人工扣减" && amount > user.points) return toast("扣减后积分不可小于 0。");
+      const signedAmount = type === "人工扣减" ? -amount : amount;
+      const time = nowText();
+      user.points += signedAmount;
+      user.updated = time;
+      pointFlows.unshift({
+        id: `FL${Date.now()}`, userId: user.id, nnNo: user.nnNo, phone: user.phone,
+        type: signedAmount > 0 ? "获取" : "消费", amount: signedAmount, balance: user.points,
+        source: type, time, desc: `${valueOf("adjustPointsReason")}：${valueOf("adjustPointsRemark") || "无备注"}`
+      });
+      closeModal("adjustPointsModal");
+      renderPointsFlowTable();
+      toast(`${type}成功，积分流水已生成。`);
+    }
+
+    function prototypeCsvValue(value) {
+      return `"${String(value ?? "").replace(/"/g, '""')}"`;
+    }
+
+    function downloadPrototypeCsv(filenamePrefix, headers, rows) {
+      if (!rows.length) return toast("当前条件下没有可导出的数据。");
+      const lines = [headers, ...rows].map(row => row.map(prototypeCsvValue).join(","));
+      const blob = new Blob(["\ufeff" + lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${filenamePrefix}_${new Date().toISOString().slice(0, 10).replace(/-/g, "")}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      toast(`已导出 ${rows.length} 条数据。`);
+    }
+
+    function pointFlowExportRow(flow) {
+      return [flow.id, flow.userId, flow.nnNo, flow.phone, flow.type, flow.amount, flow.balance, flow.source, flow.time, flow.desc];
+    }
+
+    function exportPointsFlowRecords() {
+      downloadPrototypeCsv("积分流水记录", ["流水ID", "用户ID", "用户NN号", "用户手机号", "流水类型", "变动积分", "变动后余额", "来源类型", "创建时间", "业务描述"], getFilteredPointFlows().map(pointFlowExportRow));
+    }
+
+    function exportCurrentUserPointsFlow() {
+      const userId = document.getElementById("userPointsModal").dataset.userId || pointUsers[0].id;
+      downloadPrototypeCsv(`用户积分流水_${userId}`, ["流水ID", "用户ID", "用户NN号", "用户手机号", "流水类型", "变动积分", "变动后余额", "来源类型", "创建时间", "业务描述"], userPointFlowRows(userId).map(pointFlowExportRow));
+    }
+
+    function isPhysicalOrder(order) {
+      return order.fulfill === DELIVERY_MANUAL_PHYSICAL;
+    }
+
+    function isPointsOrder(order) {
+      return order.currencyType === "积分";
+    }
+
+    function formatOrderAmount(order, amount = order.paymentAmount) {
+      const numericAmount = Number(amount || 0);
+      return isPointsOrder(order) ? `${formatPointsNumber(numericAmount)} 积分` : `¥${numericAmount.toFixed(2)}`;
+    }
+
+    function paymentMethodTag(method) {
+      const cls = method === "微信支付" ? "green" : method === "支付宝" ? "purple" : "blue";
+      return `<span class="tag ${cls}">${method || "-"}</span>`;
+    }
+
+    function refundActionLabel(order) {
+      return isPointsOrder(order) ? "退回积分" : "原路退款";
+    }
+
+    function isOrderFulfillmentFailed(order) {
+      return order.fulfillmentStatus === "履约失败";
+    }
+
+    function canHandleOrderFulfillmentFailure(order) {
+      return isPhysicalOrder(order) && isOrderFulfillmentFailed(order) && !["已关闭", "已取消"].includes(order.status);
+    }
+
+    function canRefundBackorder(order) {
+      return order.orderScene === "缺货下单" && order.status === "已支付" && order.fulfillmentStatus === "待履约";
+    }
+
+    function canShipPhysicalOrder(order) {
+      return isPhysicalOrder(order) && order.status === "已支付" && order.fulfillmentStatus === "待履约"
+        && order.addressStatus === "已填写" && (!order.trackingNo || order.trackingNo === "-");
+    }
+
+    function operationalOrderStatus(order) {
+      const technicalStatus = typeof order === "string" ? order : order.status;
+      if (["待处理", "处理中", "待支付"].includes(technicalStatus)) return "待支付";
+      if (["已关闭", "已取消"].includes(technicalStatus)) return "已关闭";
+      return technicalStatus;
+    }
+
+    function orderStatusTag(status, technicalStatus = status) {
+      const cls = status === "已完成" ? "green"
+        : ["支付失败", "已关闭", "已取消", "异常"].includes(status) ? "red"
+          : ["处理中", "已支付"].includes(status) ? "purple" : "orange";
+      const title = technicalStatus !== status ? ` title="技术状态：${technicalStatus}"` : "";
+      return `<span class="tag ${cls}"${title}>${status}</span>`;
+    }
+
+    function fulfillmentStatusTag(status) {
+      if (!status || status === "-") return "-";
+      const cls = status === "履约完成" ? "green" : status === "履约失败" ? "red"
+        : status === "履约中" ? "purple" : status === "无需履约" ? "blue" : "orange";
+      return `<span class="tag ${cls}">${status || "-"}</span>`;
+    }
+
+    function operationalFulfillmentProgress(order) {
+      if (order.fulfillmentStatus === "履约失败" || order.status === "异常") return "履约异常";
+      if (order.fulfillmentStatus === "待履约" && order.waitingReason) return "待补货";
+      if (!isPhysicalOrder(order)) return order.fulfillmentStatus || "-";
+      if (order.fulfillmentStatus === "履约完成") return "履约完成";
+      if (order.fulfillmentStatus === "无需履约") return "-";
+      if (order.addressStatus !== "已填写") return "待用户填写地址";
+      return "待运营发货";
+    }
+
+    function fulfillmentProgressTag(order) {
+      const progress = operationalFulfillmentProgress(order);
+      if (progress === "-") return "-";
+      const cls = progress === "履约完成" ? "green" : progress === "履约异常" ? "red"
+        : ["待运营发货", "履约中"].includes(progress) ? "purple" : "orange";
+      return `<span class="tag ${cls}">${progress}</span>`;
+    }
+
+    function shouldShowOrderException(order) {
+      return ["支付失败", "异常"].includes(operationalOrderStatus(order))
+        || operationalFulfillmentProgress(order) === "履约异常";
+    }
+
+    function orderExceptionReason(order) {
+      if (!shouldShowOrderException(order)) return "-";
+      return order.exceptionReason || order.reason || "-";
+    }
+
+    function orderOperationalReason(order) {
+      return order.waitingReason || orderExceptionReason(order);
+    }
+
+    function orderActionHtml(order) {
+      const actions = [`<button class="btn text" data-mall-order-detail="${order.no}">详情</button>`];
+      if (canHandleOrderFulfillmentFailure(order)) {
+        actions.push(`<button class="btn text" data-mall-order-retry="${order.no}">重新发放</button>`);
+        actions.push(`<button class="btn text danger" data-mall-order-refund="${order.no}">${refundActionLabel(order)}</button>`);
+      }
+      if (canRefundBackorder(order)) actions.push(`<button class="btn text danger" data-mall-order-refund="${order.no}">${refundActionLabel(order)}并关闭</button>`);
+      if (canShipPhysicalOrder(order)) {
+        actions.push(`<button class="btn text" data-mall-order-address="${order.no}">修改收货信息</button>`);
+        actions.push(`<button class="btn text" data-mall-order-ship="${order.no}">录入物流</button>`);
+      }
+      return `<div class="action-list">${actions.join("")}</div>`;
+    }
+
+    function orderBusinessSource(order) {
+      return order.businessSource || "积分商城";
+    }
+
+    function matchesFulfillmentProgressFilter(order, fulfillmentProgress) {
+      if (!fulfillmentProgress) return true;
+      const progress = operationalFulfillmentProgress(order);
+      if (fulfillmentProgress === "待履约") {
+        return ["待履约", "待补货", "待用户填写地址", "待运营发货"].includes(progress);
+      }
+      return progress === fulfillmentProgress;
+    }
+
+    function getFilteredMallOrders() {
+      const no = valueOf("mallOrderNoFilter");
+      const user = valueOf("mallOrderUserFilter");
+      const status = valueOf("mallOrderStatusFilter");
+      const product = valueOf("mallOrderProductFilter");
+      const currencyType = valueOf("mallOrderCurrencyFilter");
+      const paymentMethod = valueOf("mallOrderPaymentMethodFilter");
+      const delivery = valueOf("mallOrderDeliveryFilter");
+      const fulfillmentProgress = valueOf("mallOrderFulfillmentProgressFilter");
+      return mallOrders.filter(order => (!no || order.no.includes(no))
+        && (!user || [order.userId, order.nnNo, order.phone].some(field => field.includes(user)))
+        && (!status || operationalOrderStatus(order) === status)
+        && (!product || order.product.includes(product))
+        && (!currencyType || order.currencyType === currencyType)
+        && (!paymentMethod || order.paymentMethod === paymentMethod)
+        && (!delivery || order.fulfill === delivery)
+        && matchesFulfillmentProgressFilter(order, fulfillmentProgress));
+    }
+
+    function renderOrderManagementTable() {
+      const rows = getFilteredMallOrders();
+      document.getElementById("orderManagementTbody").innerHTML = rows.length ? rows.map(order => `
+        <tr>
+          <td>${order.no}</td><td>${orderBusinessSource(order)}</td><td>${order.userId}</td><td>${order.nnNo}</td><td>${order.phone}</td><td>${order.product}</td>
+          <td>${order.quantity}</td><td>${order.orderScene || "现货下单"}</td><td>${formatOrderAmount(order)}</td><td>${paymentMethodTag(order.paymentMethod)}</td>
+          <td>${deliveryTag(order.fulfill)}</td><td>${orderStatusTag(operationalOrderStatus(order), order.status)}</td>
+          <td>${fulfillmentProgressTag(order)}</td><td>${orderOperationalReason(order)}</td><td>${order.created}</td><td>${order.updated}</td><td>${orderActionHtml(order)}</td>
+        </tr>
+      `).join("") : `<tr><td colspan="17"><div class="empty">当前筛选条件下暂无订单</div></td></tr>`;
+      document.getElementById("orderTableCount").textContent = `共 ${rows.length} 条`;
+      document.getElementById("orderStatTotal").textContent = rows.length;
+      document.getElementById("orderStatPending").textContent = rows.filter(order => operationalOrderStatus(order) === "待支付").length;
+      document.getElementById("orderStatFailed").textContent = rows.filter(order => operationalFulfillmentProgress(order) === "履约异常").length;
+      document.getElementById("orderStatPhysical").textContent = rows.filter(order => operationalFulfillmentProgress(order) === "待运营发货").length;
+      document.getElementById("orderStatBackorder").textContent = rows.filter(order => operationalFulfillmentProgress(order) === "待补货").length;
+    }
+
+    function resetOrderManagementFilters() {
+      ["mallOrderNoFilter", "mallOrderUserFilter", "mallOrderProductFilter", "mallOrderStatusFilter", "mallOrderCurrencyFilter", "mallOrderPaymentMethodFilter", "mallOrderDeliveryFilter", "mallOrderFulfillmentProgressFilter"].forEach(id => document.getElementById(id).value = "");
+      renderOrderManagementTable();
+      toast("订单筛选项已重置。");
+    }
+
+    function orderAddressAuditHtml(order) {
+      const logs = order.addressEditLogs || [];
+      if (!logs.length) return '<div class="hint-text">暂无地址修改记录</div>';
+      return logs.map(log => `<div class="audit-entry"><strong>${log.time}</strong> · ${log.operator} · ${log.reason}<br>修改前：${log.before.recipient} / ${log.before.phone} / ${log.before.address}<br>修改后：${log.after.recipient} / ${log.after.phone} / ${log.after.address}</div>`).join("");
+    }
+
+    function orderFulfillmentItems(order) {
+      const items = [
+        ["商品类型", order.productType || "-"], ["库存类型", order.inventoryType || "-"],
+        ["履约状态", fulfillmentStatusTag(order.fulfillmentStatus)], ["履约进度", fulfillmentProgressTag(order)],
+        ["用户获得形式", order.acquireForm || "-"], ["履约渠道", order.fulfillmentChannel || order.fulfill]
+      ];
+      if (order.orderScene === "缺货下单") items.push(
+        ["下单场景", order.orderScene], ["履约等待原因", order.waitingReason || "-"], ["待履约数量", order.pendingQuantity || order.quantity],
+        ["最长待履约时长快照", `${order.maxPendingDurationSnapshot || "-"} 小时`], ["待履约截止时间", order.fulfillmentDeadlineAt || "-"],
+        ["待履约额度占用记录ID", order.quotaReservationId || "-"], ["履约队列序号", order.queueNo || "-"]
+      );
+      if (order.productType === "CDKey") items.push(["CDKey 展示", order.maskedCdkey || "-"]);
+      if (order.productType === "虚拟道具") items.push(["背包权益", order.bagAsset || order.fulfillResult || "-"]);
+      if (!isPhysicalOrder(order) && isOrderFulfillmentFailed(order)) items.push(["异常处理方式", "研发侧处理（后台仅查看）"]);
+      if (isPhysicalOrder(order)) items.push(
+        ["收货信息状态", order.addressStatus || "-"],
+        ["收货人", order.recipient || "-"], ["收货手机号", order.recipientPhone || "-"],
+        ["收货地址", order.address || "-"], ["物流公司", order.logisticsCompany || "-"], ["物流单号", order.trackingNo || "-"]
+      );
+      return items;
+    }
+
+    function openOrderManagementDetail(orderNo) {
+      const order = mallOrders.find(item => item.no === orderNo);
+      if (!order) return;
+      document.getElementById("orderDetailTitle").textContent = `订单详情 · ${order.no}`;
+      document.getElementById("orderDetailBody").innerHTML = `
+        ${detailSection("订单概览", infoGrid([
+          ["订单状态", orderStatusTag(operationalOrderStatus(order), order.status)], ["技术订单状态", orderStatusTag(order.status)],
+          ["业务来源", orderBusinessSource(order)],
+          ["用户", `${order.userId} / ${order.nnNo} / ${order.phone} / ${order.nick}`],
+          ["商品", order.product], ["商品快照", order.productSnapshot], ["购买数量", `${order.quantity} 件`],
+          ["货币类型", order.currencyType], ["单件支付金额", formatOrderAmount(order, order.unitAmount)],
+          ["支付金额", formatOrderAmount(order)], ["支付方式", paymentMethodTag(order.paymentMethod)], ["履约方式", deliveryTag(order.fulfill)],
+          ["创建时间", order.created], ["更新时间", order.updated], ["完成时间", order.completed]
+        ]))}
+        ${detailSection("支付、库存与履约结果", infoGrid([
+          ["支付结果", order.paymentResult], ["库存处理结果", order.stockResult], ["履约结果", order.fulfillResult],
+          ["重试记录", order.retrySummary], ["待履约原因", order.waitingReason || "-"], ["异常原因", orderExceptionReason(order)]
+        ]))}
+        ${detailSection("履约信息", infoGrid(orderFulfillmentItems(order)))}
+        ${isPhysicalOrder(order) ? detailSection("收货信息修改审计", orderAddressAuditHtml(order)) : ""}
+      `;
+      const actions = [`<button class="btn" data-close-order-detail>关闭</button>`];
+      if (canHandleOrderFulfillmentFailure(order)) {
+        actions.push(`<button class="btn primary" data-mall-order-retry="${order.no}">重新发放</button>`);
+        actions.push(`<button class="btn danger" data-mall-order-refund="${order.no}">${refundActionLabel(order)}</button>`);
+      }
+      if (canRefundBackorder(order)) actions.push(`<button class="btn danger" data-mall-order-refund="${order.no}">${refundActionLabel(order)}并关闭</button>`);
+      if (canShipPhysicalOrder(order)) {
+        actions.push(`<button class="btn" data-mall-order-address="${order.no}">修改收货信息</button>`);
+        actions.push(`<button class="btn primary" data-mall-order-ship="${order.no}">录入物流单号</button>`);
+      }
+      document.getElementById("orderDetailActions").innerHTML = actions.join("");
+      closeAllLayers();
+      openDrawer("orderDetailDrawer");
+    }
+
+    function openOrderActionConfirm(action, orderNo) {
+      const order = mallOrders.find(item => item.no === orderNo);
+      const isRefund = action === "refund";
+      if (!order) return toast("当前订单已不支持该处理动作。");
+      const actionAllowed = isRefund ? (canHandleOrderFulfillmentFailure(order) || canRefundBackorder(order)) : canHandleOrderFulfillmentFailure(order);
+      if (!actionAllowed) return toast("当前订单已不支持该处理动作。");
+      const refundLabel = refundActionLabel(order);
+      const modal = document.getElementById("orderActionConfirmModal");
+      modal.dataset.action = action;
+      modal.dataset.orderNo = order.no;
+      document.getElementById("orderActionConfirmTitle").textContent = isRefund ? `确认${refundLabel}` : "确认重新发放";
+      document.getElementById("orderActionConfirmInfo").innerHTML = [
+        ["订单号", order.no], ["商品", order.product], ["购买数量", `${order.quantity} 件`],
+        ["货币类型", order.currencyType], ["支付金额", formatOrderAmount(order)], ["支付方式", order.paymentMethod],
+        ["用户", `${order.userId} / ${order.nnNo} / ${order.phone}`]
+      ].map(([label, value]) => `<div class="info-item"><div class="info-label">${label}</div><div class="info-value">${value}</div></div>`).join("");
+      document.getElementById("orderActionConfirmImpact").textContent = isRefund
+        ? isPointsOrder(order)
+          ? `将退回 ${formatOrderAmount(order)}，订单状态变为已关闭，并生成积分退回流水；如为缺货下单，将同步释放待履约额度。`
+          : `将通过${order.paymentMethod}原路退回 ${formatOrderAmount(order)}，订单状态变为已关闭；如为缺货下单，将同步释放待履约额度。`
+        : "将新建一次履约任务，订单状态保持已支付，履约状态进入履约中；原失败记录继续保留。";
+      const button = document.getElementById("confirmOrderActionBtn");
+      button.textContent = isRefund ? `确认${refundLabel}` : "确认重新发放";
+      button.classList.toggle("danger", isRefund);
+      button.classList.toggle("primary", !isRefund);
+      closeAllLayers();
+      openModal("orderActionConfirmModal");
+    }
+
+    function confirmOrderManagementAction() {
+      const modal = document.getElementById("orderActionConfirmModal");
+      const order = mallOrders.find(item => item.no === modal.dataset.orderNo);
+      if (!order) return;
+      const time = nowText();
+      if (modal.dataset.action === "retry") {
+        order.status = "已支付";
+        order.fulfillmentStatus = "履约中";
+        order.reason = "已新建履约任务，等待新的履约结果";
+        order.fulfillResult = "人工新建履约任务";
+        order.retrySummary = "人工重新履约 1 次；原失败记录已保留";
+        order.updated = time;
+        closeModal("orderActionConfirmModal");
+        renderOrderManagementTable();
+        return toast("已触发重新发放。");
+      }
+      const isPointsRefund = isPointsOrder(order);
+      const isBackorderRefund = canRefundBackorder(order);
+      const user = isPointsRefund ? pointUsers.find(item => item.id === order.userId) : null;
+      if (user) {
+        user.points += order.paymentAmount;
+        user.updated = time;
+      }
+      order.status = "已关闭";
+      order.waitingReason = "";
+      order.reason = isBackorderRefund
+        ? (isPointsRefund ? "待补货期间已退回积分并关闭订单" : `待补货期间已通过${order.paymentMethod}原路退款并关闭订单`)
+        : (isPointsRefund ? "履约失败，已退回积分并关闭订单" : `履约失败，已通过${order.paymentMethod}原路退款并关闭订单`);
+      order.paymentResult = isPointsRefund
+        ? `已退回积分：+${formatPointsNumber(order.paymentAmount)} 积分`
+        : `${order.paymentMethod}原路退款成功：${formatOrderAmount(order)}`;
+      order.stockResult = isBackorderRefund ? "待履约额度已释放；未占用实际库存" : "库存已释放";
+      order.fulfillResult = isBackorderRefund ? "待补货履约任务已取消" : isPointsRefund ? "放弃重新发放，已退回积分" : "放弃重新发放，已原路退款";
+      order.retrySummary = isPointsRefund ? "人工退回积分" : `人工发起${order.paymentMethod}原路退款`;
+      order.updated = time;
+      order.completed = time;
+      const deliveryRecord = deliveryRecords.find(record => record.orderId === order.no && record.deliveryState === "待履约");
+      if (deliveryRecord) {
+        deliveryRecord.deliveryState = "已取消";
+        deliveryRecord.waitingReason = "";
+        deliveryRecord.updatedAt = time;
+        deliveryRecord.remark = "订单退款关闭，待履约额度已释放";
+      }
+      if (isPointsRefund) {
+        pointFlows.unshift({
+          id: `FL${Date.now()}`, userId: order.userId, nnNo: order.nnNo, phone: order.phone,
+          type: "获取", amount: order.paymentAmount, balance: user ? user.points : order.paymentAmount,
+          source: "订单退回", time, desc: `发放失败退回积分：${order.product}`
+        });
+      }
+      closeModal("orderActionConfirmModal");
+      renderOrderManagementTable();
+      renderDeliveryRecordTable();
+      renderInventoryTable();
+      renderInventoryStats();
+      renderCdkeyPoolTable();
+      if (isPointsRefund) renderPointsFlowTable();
+      toast(isPointsRefund ? "积分已退回，流水已生成。" : `已通过${order.paymentMethod}原路退款。`);
+    }
+
+    function openOrderAddressEdit(orderNo) {
+      const order = mallOrders.find(item => item.no === orderNo);
+      if (!order || !canShipPhysicalOrder(order)) return toast("当前订单不支持修改收货信息。");
+      const modal = document.getElementById("addressEditModal");
+      modal.dataset.orderNo = order.no;
+      document.getElementById("editAddressOrderNo").value = order.no;
+      document.getElementById("editAddressUserInfo").value = `${order.userId} / ${order.nnNo} / ${order.phone}`;
+      document.getElementById("editRecipient").value = order.recipient || "";
+      document.getElementById("editRecipientPhone").value = order.recipientPhone || "";
+      document.getElementById("editAddress").value = order.address || "";
+      document.getElementById("editAddressReason").value = "";
+      document.getElementById("editAddressOtherReason").value = "";
+      toggleEditAddressOtherReason();
+      closeAllLayers();
+      openModal("addressEditModal");
+    }
+
+    function toggleEditAddressOtherReason() {
+      const isOther = valueOf("editAddressReason") === "其他";
+      const field = document.getElementById("editAddressOtherReasonField");
+      const input = document.getElementById("editAddressOtherReason");
+      field.hidden = !isOther;
+      input.required = isOther;
+      if (!isOther) input.value = "";
+    }
+
+    function confirmOrderAddressEdit() {
+      const order = mallOrders.find(item => item.no === document.getElementById("addressEditModal").dataset.orderNo);
+      if (!order || !canShipPhysicalOrder(order)) return toast("当前订单不支持修改收货信息。");
+      const recipient = valueOf("editRecipient");
+      const phone = valueOf("editRecipientPhone");
+      const address = valueOf("editAddress");
+      const reason = valueOf("editAddressReason");
+      const otherReason = valueOf("editAddressOtherReason");
+      if (!recipient || !/^1\d{10}$/.test(phone) || !address || !reason) return toast("请完整填写有效的收货信息和修改原因。");
+      if (reason === "其他" && !otherReason) return toast("请输入其他修改原因。");
+      const auditReason = reason === "其他" ? `其他：${otherReason}` : reason;
+      const before = { recipient: order.recipient, phone: order.recipientPhone, address: order.address };
+      order.recipient = recipient;
+      order.recipientPhone = phone;
+      order.address = address;
+      order.addressEditLogs = order.addressEditLogs || [];
+      order.addressEditLogs.unshift({ time: nowText(), operator: "平台运营", reason: auditReason, reasonType: reason, reasonDetail: reason === "其他" ? otherReason : "", before, after: { recipient, phone, address } });
+      order.updated = nowText();
+      order.reason = "收货信息已修正，待运营线下发货并录入物流单号";
+      order.fulfillResult = "已收到有效收货地址，待运营发货";
+      closeModal("addressEditModal");
+      renderOrderManagementTable();
+      toast("收货信息已修改并记录审计。");
+    }
+
+    function openOrderLogistics(orderNo) {
+      const order = mallOrders.find(item => item.no === orderNo);
+      if (!order || !canShipPhysicalOrder(order)) return toast("当前订单不支持录入物流。");
+      const modal = document.getElementById("logisticsModal");
+      modal.dataset.orderNo = order.no;
+      document.getElementById("logisticsOrderNo").value = order.no;
+      document.getElementById("logisticsUserInfo").value = `${order.userId} / ${order.nnNo} / ${order.phone}`;
+      document.getElementById("logisticsRecipient").value = order.recipient || "";
+      document.getElementById("logisticsRecipientPhone").value = order.recipientPhone || "";
+      document.getElementById("logisticsAddress").value = order.address || "";
+      document.getElementById("logisticsCompanyInput").value = order.logisticsCompany && order.logisticsCompany !== "-" ? order.logisticsCompany : "";
+      document.getElementById("trackingNoInput").value = order.trackingNo && order.trackingNo !== "-" ? order.trackingNo : "";
+      closeAllLayers();
+      openModal("logisticsModal");
+    }
+
+    function confirmOrderLogistics() {
+      const order = mallOrders.find(item => item.no === document.getElementById("logisticsModal").dataset.orderNo);
+      if (!order || !canShipPhysicalOrder(order)) return toast("当前订单不支持录入物流。");
+      const company = valueOf("logisticsCompanyInput");
+      const trackingNo = valueOf("trackingNoInput");
+      if (!company || !trackingNo) return toast("请选择物流公司并填写物流单号。");
+      const time = nowText();
+      order.status = "已完成";
+      order.fulfillmentStatus = "履约完成";
+      order.reason = "-";
+      order.fulfillResult = `${order.quantity} 件商品已录入物流并完成履约`;
+      order.retrySummary = "手动履约完成";
+      order.logisticsCompany = company;
+      order.trackingNo = trackingNo;
+      order.updated = time;
+      order.completed = time;
+      closeModal("logisticsModal");
+      renderOrderManagementTable();
+      toast("物流信息已录入，订单已更新为已完成。");
+    }
+
+    function handleOrderManagementActionClick(event) {
+      const target = event.target;
+      const detail = target.closest("[data-mall-order-detail]");
+      if (detail) return openOrderManagementDetail(detail.dataset.mallOrderDetail);
+      const retry = target.closest("[data-mall-order-retry]");
+      if (retry) return openOrderActionConfirm("retry", retry.dataset.mallOrderRetry);
+      const refund = target.closest("[data-mall-order-refund]");
+      if (refund) return openOrderActionConfirm("refund", refund.dataset.mallOrderRefund);
+      const address = target.closest("[data-mall-order-address]");
+      if (address) return openOrderAddressEdit(address.dataset.mallOrderAddress);
+      const ship = target.closest("[data-mall-order-ship]");
+      if (ship) return openOrderLogistics(ship.dataset.mallOrderShip);
+      if (target.closest("[data-close-order-detail]")) closeDrawer("orderDetailDrawer");
+    }
+
+    function exportOrderManagementRecords() {
+      const rows = getFilteredMallOrders().map(order => [
+        order.no, orderBusinessSource(order), order.userId, order.nnNo, order.phone, order.product, order.quantity, order.orderScene || "现货下单", formatOrderAmount(order), order.paymentMethod, order.fulfill, operationalOrderStatus(order), order.status,
+        order.fulfillmentStatus, operationalFulfillmentProgress(order), order.waitingReason || "-", order.pendingQuantity || 0, order.fulfillmentDeadlineAt || "-", order.quotaReservationId || "-", orderExceptionReason(order), order.created, order.updated
+      ]);
+      downloadPrototypeCsv("订单列表", ["订单号", "业务来源", "用户ID", "用户NN号", "用户手机号", "商品名称", "数量", "下单场景", "支付金额", "支付方式", "履约方式", "订单状态", "技术订单状态", "履约状态", "履约进度", "履约等待原因", "待履约数量", "待履约截止时间", "待履约额度占用记录ID", "异常原因", "创建时间", "更新时间"], rows);
     }
     function stateTag(state) {
       const cls = state === "上架" ? "green" : state === "草稿" ? "orange" : state === "下架" ? "" : "";
