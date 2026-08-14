@@ -2318,7 +2318,7 @@
   </section>
 
   <section class="modal wide" id="logisticsModal" role="dialog" aria-modal="true">
-    <div class="modal-head"><span>录入物流单号</span><button class="btn text" data-close-modal="logisticsModal">关闭</button></div>
+    <div class="modal-head"><span>发货</span><button class="btn text" data-close-modal="logisticsModal">关闭</button></div>
     <div class="modal-body">
       <div class="form-grid three">
         <div class="field"><label>订单号</label><input id="logisticsOrderNo" disabled></div>
@@ -2327,7 +2327,7 @@
         <div class="field"><label>收货手机号</label><input id="logisticsRecipientPhone" disabled></div>
         <div class="field" style="grid-column:1/-1"><label>收货地址</label><input id="logisticsAddress" disabled></div>
         <div class="field"><label><span class="required-star">*</span>物流公司</label><input id="logisticsCompanyInput" maxlength="50" placeholder="输入物流公司"></div>
-        <div class="field"><label><span class="required-star">*</span>物流单号</label><input id="trackingNoInput" placeholder="输入物流单号"><div class="hint-text">确认后将同步更新订单履约状态。</div></div>
+        <div class="field"><label><span class="required-star">*</span>物流单号</label><input id="trackingNoInput" placeholder="输入物流单号"><div class="hint-text">确认发货后将同步更新订单履约状态。</div></div>
       </div>
     </div>
     <div class="modal-foot"><button class="btn" data-close-modal="logisticsModal">取消</button><button class="btn primary" id="confirmLogisticsBtn">确认发货</button></div>
@@ -2342,7 +2342,7 @@
         <div class="field"><label><span class="required-star">*</span>收货人</label><input id="editRecipient" placeholder="输入收货人"></div>
         <div class="field"><label><span class="required-star">*</span>收货手机号</label><input id="editRecipientPhone" placeholder="输入收货手机号"></div>
         <div class="field" style="grid-column:1/-1"><label><span class="required-star">*</span>收货地址</label><textarea id="editAddress" maxlength="200" rows="3" placeholder="输入完整收货地址"></textarea></div>
-        <div class="field" style="grid-column:1/-1"><label><span class="required-star">*</span>修改原因</label><select id="editAddressReason"><option value="">请选择</option><option>用户申请修改</option><option>客服核实修正</option><option>地址格式补全</option><option>手机号更正</option><option>其他</option></select><div class="hint-text">仅未录入物流单号前允许修改，系统记录修改前后信息。</div></div>
+        <div class="field" style="grid-column:1/-1"><label><span class="required-star">*</span>修改原因</label><select id="editAddressReason"><option value="">请选择</option><option>用户申请修改</option><option>客服核实修正</option><option>地址格式补全</option><option>手机号更正</option><option>其他</option></select><div class="hint-text">仅发货前允许修改，系统记录修改前后信息。</div></div>
         <div class="field" id="editAddressOtherReasonField" style="grid-column:1/-1" hidden><label><span class="required-star">*</span>其他原因说明</label><textarea id="editAddressOtherReason" maxlength="200" rows="3" placeholder="请输入修改收货信息的具体原因"></textarea><div class="hint-text">选择“其他”时必填，最多 200 个字符。</div></div>
       </div>
     </div>
@@ -2387,7 +2387,7 @@
       { no: "ORD20260705005", userId: "U100863", nnNo: "NN100863", phone: "13966666666", nick: "王五", product: "星耀昵称挂件7天", productSnapshot: "星耀昵称挂件7天 / 类型：虚拟道具 / 权益：昵称装饰", productType: "虚拟道具", quantity: 1, currencyType: "人民币", paymentMethod: "支付宝", unitAmount: 6.9, paymentAmount: 6.9, inventoryType: "无限库存", acquireForm: "发放至用户背包，用户在社区装扮中启用", fulfillmentChannel: "背包发放", fulfill: DELIVERY_AUTO_VIRTUAL, status: "已支付", fulfillmentStatus: "履约失败", reason: "自动重试已达上限", paymentResult: "支付宝支付成功：¥6.90", stockResult: "无限库存，无需占用", fulfillResult: "履约失败，待人工处理", retrySummary: "已达自动重试上限 3/3", bagAsset: "-", created: "2026-07-05 15:08:20", updated: "2026-07-05 15:18:02", completed: "-" },
       { no: "ORD20260704005", businessSource: "暑期周边兑换活动", userId: "U100865", nnNo: "NN100865", phone: "13677777777", nick: "孙七", product: "NN定制鼠标垫", productSnapshot: "NN定制鼠标垫 / 类型：实物商品 / 规格：900x400mm", productType: "实物商品", quantity: 1, currencyType: "人民币", paymentMethod: "支付宝", unitAmount: 49.9, paymentAmount: 49.9, inventoryType: "有限库存", acquireForm: "用户填写收货地址后发货", fulfillmentChannel: "实物履约 / 物流发货", addressStatus: "未填写", recipient: "-", recipientPhone: "-", address: "-", logisticsCompany: "-", trackingNo: "-", fulfill: DELIVERY_MANUAL_PHYSICAL, status: "已支付", fulfillmentStatus: "待履约", reason: "等待用户在客户端订单填写收货地址", paymentResult: "支付宝支付成功：¥49.90", stockResult: "库存已占用：1", fulfillResult: "待用户提交收货地址", retrySummary: "实物履约-地址未填写", created: "2026-07-04 10:00:00", updated: "2026-07-04 10:00:09", completed: "-" },
       { no: "ORD20260703006", businessSource: "社区装扮焕新活动", userId: "U100866", nnNo: "NN100866", phone: "13588888888", nick: "周八", product: "社区身份装饰权益", productSnapshot: "社区身份装饰权益 / 类型：虚拟道具 / 权益：身份标识与资料卡装饰", productType: "虚拟道具", quantity: 1, currencyType: "积分", paymentMethod: "积分支付", unitAmount: 500, paymentAmount: 500, inventoryType: "无限库存", acquireForm: "发放至用户背包，用户在社区身份装饰中启用", fulfillmentChannel: "背包发放", fulfill: DELIVERY_AUTO_VIRTUAL, status: "已完成", fulfillmentStatus: "履约完成", reason: "-", paymentResult: "积分扣减成功：-500 积分", stockResult: "无限库存，无需占用", fulfillResult: "背包发放成功", retrySummary: "无需重试", bagAsset: "社区身份装饰权益 x1", created: "2026-07-03 09:15:42", updated: "2026-07-03 09:15:58", completed: "2026-07-03 09:15:58" },
-      { no: "ORD20260703007", userId: "U100863", nnNo: "NN100863", phone: "13966666666", nick: "王五", product: "NN定制抱枕", productSnapshot: "NN定制抱枕 / 类型：实物商品 / 规格：45x45cm", productType: "实物商品", quantity: 2, currencyType: "人民币", paymentMethod: "微信支付", unitAmount: 59.9, paymentAmount: 119.8, inventoryType: "有限库存", acquireForm: "用户填写收货地址后发货", fulfillmentChannel: "实物履约 / 物流发货", addressStatus: "已填写", recipient: "王五", recipientPhone: "13966666666", address: "湖北省武汉市武昌区中南路街道 99号 1802", addressSubmittedAt: "2026-07-03 13:28:35", logisticsCompany: "-", trackingNo: "-", fulfill: DELIVERY_MANUAL_PHYSICAL, status: "已支付", fulfillmentStatus: "待履约", reason: "已收到收货地址，待运营线下发货并录入物流单号", paymentResult: "微信支付成功：¥119.80", stockResult: "库存已占用：2", fulfillResult: "已收到收货地址，待运营发货", retrySummary: "实物履约-待发货", created: "2026-07-03 13:22:00", updated: "2026-07-03 13:28:35", completed: "-" },
+      { no: "ORD20260703007", userId: "U100863", nnNo: "NN100863", phone: "13966666666", nick: "王五", product: "NN定制抱枕", productSnapshot: "NN定制抱枕 / 类型：实物商品 / 规格：45x45cm", productType: "实物商品", quantity: 2, currencyType: "人民币", paymentMethod: "微信支付", unitAmount: 59.9, paymentAmount: 119.8, inventoryType: "有限库存", acquireForm: "用户填写收货地址后发货", fulfillmentChannel: "实物履约 / 物流发货", addressStatus: "已填写", recipient: "王五", recipientPhone: "13966666666", address: "湖北省武汉市武昌区中南路街道 99号 1802", addressSubmittedAt: "2026-07-03 13:28:35", logisticsCompany: "-", trackingNo: "-", fulfill: DELIVERY_MANUAL_PHYSICAL, status: "已支付", fulfillmentStatus: "待履约", reason: "已收到收货地址，待运营发货", paymentResult: "微信支付成功：¥119.80", stockResult: "库存已占用：2", fulfillResult: "已收到收货地址，待运营发货", retrySummary: "实物履约-待发货", created: "2026-07-03 13:22:00", updated: "2026-07-03 13:28:35", completed: "-" },
       { no: "ORD20260702007", userId: "U100862", nnNo: "NN100862", phone: "13888888888", nick: "李四", product: "NN定制手办", productSnapshot: "NN定制手办 / 类型：实物商品 / 规格：标准款", productType: "实物商品", quantity: 3, currencyType: "积分", paymentMethod: "积分支付", unitAmount: 1000, paymentAmount: 3000, inventoryType: "有限库存", acquireForm: "用户填写收货地址后发货", fulfillmentChannel: "实物履约 / 物流发货", addressStatus: "已填写", recipient: "李四", recipientPhone: "13888888888", address: "湖北省武汉市江夏区藏龙岛产业园 B2-1508", addressSubmittedAt: "2026-07-02 14:26:18", logisticsCompany: "顺丰速运", trackingNo: "SF202607020088", fulfill: DELIVERY_MANUAL_PHYSICAL, status: "已完成", fulfillmentStatus: "履约完成", reason: "-", paymentResult: "积分扣减成功：-3000 积分", stockResult: "库存已扣减：3", fulfillResult: "3 件商品已完成发货", retrySummary: "手动履约完成", created: "2026-07-02 14:20:00", updated: "2026-07-02 18:05:10", completed: "2026-07-02 18:05:10" }
     ];
     const cdkeyTypeOptions = ["加速器时长", "加速器时长（不可暂停）"];
@@ -9345,7 +9345,7 @@
       if (canRefundBackorder(order)) actions.push(`<button class="btn text danger" data-mall-order-refund="${order.no}">${refundActionLabel(order)}并关闭</button>`);
       if (canShipPhysicalOrder(order)) {
         actions.push(`<button class="btn text" data-mall-order-address="${order.no}">修改收货信息</button>`);
-        actions.push(`<button class="btn text" data-mall-order-ship="${order.no}">录入物流</button>`);
+        actions.push(`<button class="btn text" data-mall-order-ship="${order.no}">发货</button>`);
       }
       return `<div class="action-list">${actions.join("")}</div>`;
     }
@@ -9464,7 +9464,7 @@
       if (canRefundBackorder(order)) actions.push(`<button class="btn danger" data-mall-order-refund="${order.no}">${refundActionLabel(order)}并关闭</button>`);
       if (canShipPhysicalOrder(order)) {
         actions.push(`<button class="btn" data-mall-order-address="${order.no}">修改收货信息</button>`);
-        actions.push(`<button class="btn primary" data-mall-order-ship="${order.no}">录入物流单号</button>`);
+        actions.push(`<button class="btn primary" data-mall-order-ship="${order.no}">发货</button>`);
       }
       document.getElementById("orderDetailActions").innerHTML = actions.join("");
       closeAllLayers();
@@ -9604,7 +9604,7 @@
       order.addressEditLogs = order.addressEditLogs || [];
       order.addressEditLogs.unshift({ time: nowText(), operator: "平台运营", reason: auditReason, reasonType: reason, reasonDetail: reason === "其他" ? otherReason : "", before, after: { recipient, phone, address } });
       order.updated = nowText();
-      order.reason = "收货信息已修正，待运营线下发货并录入物流单号";
+      order.reason = "收货信息已修正，待运营发货";
       order.fulfillResult = "已收到有效收货地址，待运营发货";
       closeModal("addressEditModal");
       renderOrderManagementTable();
@@ -9613,7 +9613,7 @@
 
     function openOrderLogistics(orderNo) {
       const order = mallOrders.find(item => item.no === orderNo);
-      if (!order || !canShipPhysicalOrder(order)) return toast("当前订单不支持录入物流。");
+      if (!order || !canShipPhysicalOrder(order)) return toast("当前订单不支持发货。");
       const modal = document.getElementById("logisticsModal");
       modal.dataset.orderNo = order.no;
       document.getElementById("logisticsOrderNo").value = order.no;
@@ -9629,15 +9629,15 @@
 
     function confirmOrderLogistics() {
       const order = mallOrders.find(item => item.no === document.getElementById("logisticsModal").dataset.orderNo);
-      if (!order || !canShipPhysicalOrder(order)) return toast("当前订单不支持录入物流。");
+      if (!order || !canShipPhysicalOrder(order)) return toast("当前订单不支持发货。");
       const company = valueOf("logisticsCompanyInput");
       const trackingNo = valueOf("trackingNoInput");
-      if (!company || !trackingNo) return toast("请选择物流公司并填写物流单号。");
+      if (!company || !trackingNo) return toast("请填写物流公司和物流单号。");
       const time = nowText();
       order.status = "已完成";
       order.fulfillmentStatus = "履约完成";
       order.reason = "-";
-      order.fulfillResult = `${order.quantity} 件商品已录入物流并完成履约`;
+      order.fulfillResult = `${order.quantity} 件商品已发货并完成履约`;
       order.retrySummary = "手动履约完成";
       order.logisticsCompany = company;
       order.trackingNo = trackingNo;
