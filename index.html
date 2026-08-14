@@ -2397,6 +2397,8 @@
       "RMB": { code: "CNY", unit: "元", precision: 2, css: "rmb" }
     };
     const skuSpecTypes = ["无", "小时", "天", "个", "件"];
+    const skuValidityTypes = ["限时", "永久"];
+    const skuTimeSpecTypes = ["小时", "天"];
     const skuDurationOptionsByUnit = {
       "小时": ["1小时", "3小时", "6小时", "12小时", "24小时"],
       "天": ["7天", "15天", "30天", "永久"]
@@ -2852,6 +2854,44 @@
       return skuSpecTypes.includes(value) ? value : "无";
     }
 
+    function isVirtualSkuValidityType(type) {
+      return type === "虚拟装扮";
+    }
+
+    function normalizeSkuValidityType(value, type, legacyDuration = "", specType = "无") {
+      if (!isVirtualSkuValidityType(type)) return "";
+      if (skuValidityTypes.includes(value)) return value;
+      const raw = String(legacyDuration ?? "").trim();
+      return raw === "永久" || (normalizeSkuSpecType(specType) === "无" && raw === "0") ? "永久" : "限时";
+    }
+
+    function skuMeasureTemplateAttr(type, attrCodes = null) {
+      return getConfigurableSkuAttributes(type).find(attr => (!attrCodes || attrCodes.includes(attr.code)) && isSkuMeasureTemplateAttr(attr));
+    }
+
+    function syncSkuValidityFields(row, type) {
+      if (!row) return row;
+      if (!isVirtualSkuValidityType(type)) {
+        row.validityType = "";
+        return row;
+      }
+      const measureAttr = skuMeasureTemplateAttr(type, row.skuAttrCodes);
+      const legacyDuration = measureAttr ? row.attributeValues?.[measureAttr.code] : row.duration;
+      row.validityType = normalizeSkuValidityType(row.validityType, type, legacyDuration, row.specType);
+      if (row.validityType === "永久") {
+        row.specType = "无";
+        row.duration = "";
+        if (measureAttr) row.attributeValues[measureAttr.code] = "永久";
+        return row;
+      }
+      row.specType = skuTimeSpecTypes.includes(row.specType) ? row.specType : "天";
+      row.duration = normalizeSkuDuration(row.specType, row.duration);
+      if (measureAttr) {
+        row.attributeValues[measureAttr.code] = /^[1-9]\d*$/.test(String(row.duration)) ? `${row.duration}${row.specType}` : "";
+      }
+      return row;
+    }
+
     function durationOptionsForUnit(unit) {
       return skuDurationOptionsByUnit[normalizeSkuSpecType(unit)] || [];
     }
@@ -3030,12 +3070,13 @@
         const picked = pickAttributeValues(type, Object.fromEntries(attrCodes
           .filter(code => values?.[code] !== undefined && values?.[code] !== null && values?.[code] !== "")
           .map(code => [code, values[code]])), attrCodes);
-        const specType = values?.duration && values.duration !== "永久" ? "天" : "无";
-        const duration = normalizeSkuDuration(specType, values.duration);
-        const key = [...attrCodes.map(code => picked[code]), specType, duration].join("|");
+        const validityType = normalizeSkuValidityType(values?.validityType, type, values?.duration, values?.duration === "永久" ? "无" : "天");
+        const specType = validityType === "永久" ? "无" : "天";
+        const duration = validityType === "永久" ? "" : normalizeSkuDuration(specType, values.duration);
+        const key = [validityType, ...attrCodes.map(code => picked[code]), specType, duration].join("|");
         if (unique.has(key)) return;
         unique.add(key);
-        rows.push(makeSkuRow(spu, type, { ...picked, specType, skuDuration: duration }, rows.length + 1, delivery, attrCodes, template));
+        rows.push(makeSkuRow(spu, type, { ...picked, validityType, specType, skuDuration: duration }, rows.length + 1, delivery, attrCodes, template));
       });
       return rows.length ? rows : [makeSkuRow(spu, type, makeEmptyAttributeValues(type, attrCodes), 1, delivery, attrCodes, template)];
     }
@@ -3045,21 +3086,23 @@
       const template = templateOverride || getSkuTemplate(type);
       const codes = attrCodes || skuAttrCodesForRows(type);
       const attributeValues = pickAttributeValues(type, values, codes);
-      const specType = normalizeSkuSpecType(values?.specType || values?.skuSpec || (values?.duration && values.duration !== "永久" ? "天" : "无"));
-      const duration = normalizeSkuDuration(specType, values?.duration || values?.skuDuration || "");
-      const displayText = generateSkuDisplayText(attributeValues, type, codes, specType, duration);
-      return {
+      const rawDuration = values?.duration || values?.skuDuration || "";
+      const specType = normalizeSkuSpecType(values?.specType || values?.skuSpec || (rawDuration && rawDuration !== "永久" ? "天" : "无"));
+      const duration = normalizeSkuDuration(specType, rawDuration);
+      const validityType = normalizeSkuValidityType(values?.validityType, type, values?.duration || rawDuration, specType);
+      const row = {
         skuId: `${spu}-SKU${String(sort).padStart(2, "0")}`,
-        skuName: `${type}${displayText && displayText !== "无规格" ? `-${displayText}` : ` SKU${sort}`}`,
+        skuName: "",
         templateId: template?.templateId || "",
         templateName: template?.templateName || "未加载模板",
         skuAttrCodes: [...codes],
         attributeValues,
         specType,
         duration,
+        validityType,
         currency: normalizeSkuCurrency(values?.currency || "新积分"),
         prices: defaultSkuPrices(type, attributeValues, sort),
-        displayText,
+        displayText: "",
         manualDisplay: false,
         sort,
         price: defaultSkuPrice(type, attributeValues, sort),
@@ -3075,6 +3118,10 @@
         deliveryParams: initialDeliveryParams(delivery),
         remark: "SKU 级配置"
       };
+      syncSkuValidityFields(row, type);
+      row.displayText = generateSkuDisplayText(row.attributeValues, type, codes, row.specType, row.duration, row.validityType);
+      row.skuName = `${type}${row.displayText && row.displayText !== "无规格" ? `-${row.displayText}` : ` SKU${sort}`}`;
+      return row;
     }
 
     function initialDeliveryParams(delivery) {
@@ -3232,7 +3279,9 @@
       const legacyDuration = row.duration || row.skuDuration || row.attributeValues?.duration || row.value;
       const specType = normalizeSkuSpecType(row.specType || row.skuSpec || (legacyDuration && legacyDuration !== "永久" ? "天" : "无"));
       const duration = normalizeSkuDuration(specType, legacyDuration || "");
-      const displayText = row.displayText || row.text || generateSkuDisplayText(attributeValues, type, codes, specType, duration);
+      const validitySource = row.attributeValues?.duration || legacyDuration;
+      const validityType = normalizeSkuValidityType(row.validityType, type, validitySource, specType);
+      const displayText = row.displayText || row.text || generateSkuDisplayText(attributeValues, type, codes, specType, duration, validityType);
       const delivery = normalizeDelivery(row.delivery);
       const cdkeyPoolId = row.cdkeyPoolId || row.deliveryParams?.cdkey?.poolId || "";
       const skuName = Object.prototype.hasOwnProperty.call(row, "skuName")
@@ -3247,6 +3296,7 @@
         attributeValues,
         specType,
         duration,
+        validityType,
         currency: normalizeSkuCurrency(row.currency),
         prices: normalizeSkuPrices(row, type, attributeValues, index + 1),
         displayText,
@@ -3265,17 +3315,23 @@
         deliveryParams: normalizeDeliveryParams(row, delivery),
         remark: row.remark || "SKU 级配置"
       };
+      syncSkuValidityFields(normalizedRow, type);
+      if (!normalizedRow.manualDisplay) {
+        normalizedRow.displayText = generateSkuDisplayText(normalizedRow.attributeValues, type, codes, normalizedRow.specType, normalizedRow.duration, normalizedRow.validityType);
+      }
       return syncLegacySkuPriceFields(normalizedRow);
     }
 
-    function generateSkuDisplayText(attributeValues, type, attrCodes = null, specType = "无", duration = "") {
+    function generateSkuDisplayText(attributeValues, type, attrCodes = null, specType = "无", duration = "", validityType = "") {
       const attrs = attrCodes
         ? getConfigurableSkuAttributes(type).filter(attr => attrCodes.includes(attr.code))
         : getSelectedSkuAttrs(type);
       const parts = attrs
         .map(attr => attrValueWithUnit(attributeValues?.[attr.code], attr))
         .filter(Boolean);
-      if (!attrs.some(isSkuMeasureTemplateAttr)) {
+      if (isVirtualSkuValidityType(type) && validityType === "永久" && !parts.includes("永久")) {
+        parts.unshift("永久");
+      } else if (!attrs.some(isSkuMeasureTemplateAttr)) {
         if (shouldShowDuration(specType) && duration !== "") parts.unshift(skuMeasureText(specType, duration));
         else if (specType && specType !== "无") parts.unshift(specType);
       }
@@ -3287,17 +3343,20 @@
       if (!isSkuMeasureTemplateAttr(attr)) return;
       const value = String(row.attributeValues?.[attrCode] || "").trim();
       if (!value) {
-        row.specType = "无";
+        row.validityType = isVirtualSkuValidityType(type) ? "限时" : row.validityType;
+        row.specType = isVirtualSkuValidityType(type) ? "天" : "无";
         row.duration = "";
         return;
       }
       if (value === "永久") {
+        row.validityType = isVirtualSkuValidityType(type) ? "永久" : row.validityType;
         row.specType = "无";
-        row.duration = "0";
+        row.duration = "";
         return;
       }
       const match = value.match(/^(\d+)(小时|天|个|件)$/);
       if (match) {
+        row.validityType = isVirtualSkuValidityType(type) ? "限时" : row.validityType;
         row.duration = match[1];
         row.specType = match[2];
       }
@@ -3456,6 +3515,7 @@
       if (control.dataset.spuAttr !== undefined) return { maxLength: 50 };
       if (control.dataset.attr !== undefined) return { maxLength: 50 };
       if (control.dataset.cdkeyPool !== undefined) return { maxLength: 64 };
+      if (control.dataset.positiveDuration !== undefined) return { min: 1, max: 999999 };
       if (control.dataset.sku !== undefined) {
         if (field === "skuName") return { maxLength: 30 };
         if (field === "sort") return { min: 1, max: 9999 };
@@ -7802,13 +7862,14 @@
       const type = document.getElementById("formType").value;
       const template = getSkuTemplate(type);
       const activeAttrs = getSelectedSkuAttrs(type);
-      const dynamicHeaders = activeAttrs.map(attr => `<th>${attr.required === false ? "" : `<span class="required-star">*</span>`}${attr.name}</th>`).join("");
-      head.innerHTML = `<th>SKU 名称</th><th><span class="required-star">*</span>排序<br><span class="minor">越大越靠前</span></th><th><span class="required-star">*</span>计量单位</th><th>数值</th><th><span class="required-star">*</span>多币种价格<br><span class="minor">积分 / N币 / RMB</span></th><th>CDKey 码池 ID</th><th><span class="required-star">*</span>下单策略</th><th>待履约数量上限</th><th>最长待履约时长（小时）</th><th>每人总兑换次数</th><th>每人每日兑换次数</th>${dynamicHeaders}<th>SKU 备注</th><th>操作</th>`;
+      const editableAttrs = activeAttrs.filter(attr => !isSkuMeasureTemplateAttr(attr));
+      const dynamicHeaders = editableAttrs.map(attr => `<th>${attr.required === false ? "" : `<span class="required-star">*</span>`}${attr.name}</th>`).join("");
+      head.innerHTML = `<th>SKU 名称</th><th><span class="required-star">*</span>排序<br><span class="minor">越大越靠前</span></th><th>有效期类型<br><span class="minor">虚拟商品必填</span></th><th>数值</th><th>计量单位</th><th><span class="required-star">*</span>多币种价格<br><span class="minor">积分 / N币 / RMB</span></th><th>CDKey 码池 ID</th><th><span class="required-star">*</span>下单策略</th><th>待履约数量上限</th><th>最长待履约时长（小时）</th><th>每人总兑换次数</th><th>每人每日兑换次数</th>${dynamicHeaders}<th>SKU 备注</th><th>操作</th>`;
       const attrCodes = activeAttrs.map(attr => attr.code);
       syncSkuDeliveryFromForm();
       skuRows = skuRows.map((row, index) => normalizeSkuRow(row, type, index, attrCodes));
       body.innerHTML = skuRows.length ? skuRows.map((s, i) => {
-        const attrCells = activeAttrs.map(attr => {
+        const attrCells = editableAttrs.map(attr => {
           const value = s.attributeValues[attr.code] || "";
           const control = attr.valueType === "枚举"
             ? `<select class="mini-input" data-sku="${i}" data-attr="${attr.code}">${attr.required === false ? `<option value="" ${value === "" ? "selected" : ""}>请选择</option>` : ""}${skuAttrOptions(attr).map(opt => `<option value="${opt}" ${opt === value ? "selected" : ""}>${opt}</option>`).join("")}</select>`
@@ -7816,12 +7877,24 @@
           return `<td>${control}</td>`;
         }).join("");
         const backorderEnabled = isBackorderAllowed(s);
+        const usesValidityType = isVirtualSkuValidityType(type);
+        const permanent = usesValidityType && s.validityType === "永久";
+        const validityTypeCell = usesValidityType
+          ? `<select class="mini-input" style="min-width:72px" data-sku="${i}" data-field="validityType">${skuValidityTypes.map(item => `<option value="${item}" ${item === s.validityType ? "selected" : ""}>${item}</option>`).join("")}</select>`
+          : `<span class="minor">不适用</span>`;
+        const durationCell = usesValidityType
+          ? `<input class="mini-input" style="min-width:84px" type="number" min="1" step="1" data-positive-duration data-sku="${i}" data-field="duration" value="${permanent ? "" : (s.duration ?? "")}" ${permanent ? "disabled" : ""} placeholder="${permanent ? "永久无需填写" : "请输入正整数"}">`
+          : `<input class="mini-input" style="min-width:84px" type="number" min="0" step="1" data-sku="${i}" data-field="duration" value="${s.duration ?? ""}" placeholder="0或正整数">`;
+        const specTypeCell = usesValidityType
+          ? `<select class="mini-input" style="min-width:88px" data-sku="${i}" data-field="specType" ${permanent ? "disabled" : ""}>${permanent ? `<option value="">无需填写</option>` : skuTimeSpecTypes.map(item => `<option value="${item}" ${item === s.specType ? "selected" : ""}>${item}</option>`).join("")}</select>`
+          : `<select class="mini-input" style="min-width:88px" data-sku="${i}" data-field="specType">${skuSpecTypes.map(item => `<option value="${item}" ${item === s.specType ? "selected" : ""}>${item}</option>`).join("")}</select>`;
         return `
           <tr>
             <td><input class="mini-input" data-sku="${i}" data-field="skuName" value="${s.skuName || ""}" placeholder="非必填"></td>
             <td><input class="mini-input" type="number" min="1" data-sku="${i}" data-field="sort" value="${s.sort}" placeholder="正整数"></td>
-            <td><select class="mini-input" data-sku="${i}" data-field="specType">${skuSpecTypes.map(item => `<option value="${item}" ${item === s.specType ? "selected" : ""}>${item}</option>`).join("")}</select></td>
-            <td><input class="mini-input" type="number" min="0" step="1" data-sku="${i}" data-field="duration" value="${s.duration ?? ""}" placeholder="0或正整数"></td>
+            <td>${validityTypeCell}</td>
+            <td>${durationCell}</td>
+            <td>${specTypeCell}</td>
             <td class="price-config-cell">${skuPriceSummary(s)}<button class="btn text" type="button" data-edit-sku-price="${i}">配置多币种价格</button></td>
             <td>${cdkeyPoolEditor(s, i)}</td>
             <td><select class="mini-input" data-sku="${i}" data-field="shortageOrderPolicy"><option ${!backorderEnabled ? "selected" : ""}>${SHORTAGE_POLICY_STOCK_ONLY}</option><option ${backorderEnabled ? "selected" : ""}>${SHORTAGE_POLICY_ALLOW_BACKORDER}</option></select>${backorderEnabled ? `<div class="minor">到期未履约自动退款并关闭订单</div>` : ""}</td>
@@ -7833,10 +7906,10 @@
             <td><input class="mini-input" data-sku="${i}" data-field="remark" value="${s.remark || ""}"></td>
             <td><button class="btn text" data-copy-sku="${i}">复制</button><button class="btn text" data-del-sku="${i}">删除</button></td>
           </tr>`;
-      }).join("") : `<tr><td colspan="${13 + activeAttrs.length}"><div class="empty">请添加至少 1 条 SKU。</div></td></tr>`;
-      body.querySelectorAll("[data-attr]").forEach(el => el.addEventListener("input", updateSkuFromInput));
+      }).join("") : `<tr><td colspan="${14 + editableAttrs.length}"><div class="empty">请添加至少 1 条 SKU。</div></td></tr>`;
+      body.querySelectorAll("[data-attr]:not(select)").forEach(el => el.addEventListener("input", updateSkuFromInput));
       body.querySelectorAll("select[data-attr]").forEach(el => el.addEventListener("change", updateSkuFromInput));
-      body.querySelectorAll("[data-field]").forEach(el => el.addEventListener("input", updateSkuFromInput));
+      body.querySelectorAll("[data-field]:not(select)").forEach(el => el.addEventListener("input", updateSkuFromInput));
       body.querySelectorAll("select[data-field]").forEach(el => el.addEventListener("change", updateSkuFromInput));
       body.querySelectorAll("[data-copy-sku]").forEach(btn => btn.addEventListener("click", () => copySkuRow(Number(btn.dataset.copySku))));
       body.querySelectorAll("[data-del-sku]").forEach(btn => btn.addEventListener("click", () => { skuRows.splice(Number(btn.dataset.delSku), 1); syncInventoryRows(true); renderSkuEdit(); renderInventoryConfig(); validateSkuRows(); }));
@@ -7944,13 +8017,45 @@
       if (attrCode) {
         skuRows[index].attributeValues[attrCode] = e.target.value;
         syncSkuMeasureFromTemplateAttr(skuRows[index], type, attrCode);
-        if (!skuRows[index].manualDisplay) skuRows[index].displayText = generateSkuDisplayText(skuRows[index].attributeValues, type, skuRows[index].skuAttrCodes || skuAttrCodesForRows(type), skuRows[index].specType, skuRows[index].duration);
+        syncSkuValidityFields(skuRows[index], type);
+        if (!skuRows[index].manualDisplay) skuRows[index].displayText = generateSkuDisplayText(skuRows[index].attributeValues, type, skuRows[index].skuAttrCodes || skuAttrCodesForRows(type), skuRows[index].specType, skuRows[index].duration, skuRows[index].validityType);
         syncInventoryRows(false);
         renderSkuEdit();
         renderInventoryConfig();
         return;
       }
       skuRows[index][field] = e.target.value;
+      if (field === "validityType") {
+        skuRows[index].validityType = skuValidityTypes.includes(e.target.value) ? e.target.value : "限时";
+        if (skuRows[index].validityType === "永久") {
+          skuRows[index].specType = "无";
+          skuRows[index].duration = "";
+        } else {
+          skuRows[index].specType = "天";
+          skuRows[index].duration = "";
+        }
+        syncSkuValidityFields(skuRows[index], type);
+        if (!skuRows[index].manualDisplay) skuRows[index].displayText = generateSkuDisplayText(skuRows[index].attributeValues, type, skuRows[index].skuAttrCodes || skuAttrCodesForRows(type), skuRows[index].specType, skuRows[index].duration, skuRows[index].validityType);
+        const tableRow = e.target.closest("tr");
+        const durationControl = tableRow?.querySelector('[data-field="duration"]');
+        const specTypeControl = tableRow?.querySelector('[data-field="specType"]');
+        const permanent = skuRows[index].validityType === "永久";
+        if (durationControl) {
+          durationControl.value = "";
+          durationControl.disabled = permanent;
+          durationControl.placeholder = permanent ? "永久无需填写" : "请输入正整数";
+        }
+        if (specTypeControl) {
+          specTypeControl.disabled = permanent;
+          specTypeControl.innerHTML = permanent
+            ? `<option value="">无需填写</option>`
+            : skuTimeSpecTypes.map(item => `<option value="${item}" ${item === skuRows[index].specType ? "selected" : ""}>${item}</option>`).join("");
+        }
+        syncInventoryRows(false);
+        renderInventoryConfig();
+        validateSkuRows();
+        return;
+      }
       if (field === "shortageOrderPolicy") {
         if (isBackorderAllowed(skuRows[index])) {
           skuRows[index].pendingFulfillmentLimit = Number(skuRows[index].pendingFulfillmentLimit || 50);
@@ -7966,7 +8071,8 @@
       if (field === "specType") {
         skuRows[index].specType = normalizeSkuSpecType(e.target.value);
         skuRows[index].duration = normalizeSkuDuration(skuRows[index].specType, skuRows[index].duration || "");
-        if (!skuRows[index].manualDisplay) skuRows[index].displayText = generateSkuDisplayText(skuRows[index].attributeValues, type, skuRows[index].skuAttrCodes || skuAttrCodesForRows(type), skuRows[index].specType, skuRows[index].duration);
+        syncSkuValidityFields(skuRows[index], type);
+        if (!skuRows[index].manualDisplay) skuRows[index].displayText = generateSkuDisplayText(skuRows[index].attributeValues, type, skuRows[index].skuAttrCodes || skuAttrCodesForRows(type), skuRows[index].specType, skuRows[index].duration, skuRows[index].validityType);
         syncInventoryRows(false);
         renderSkuEdit();
         renderInventoryConfig();
@@ -7974,7 +8080,8 @@
       }
       if (field === "duration") {
         skuRows[index].duration = normalizeSkuDuration(skuRows[index].specType, e.target.value);
-        if (!skuRows[index].manualDisplay) skuRows[index].displayText = generateSkuDisplayText(skuRows[index].attributeValues, type, skuRows[index].skuAttrCodes || skuAttrCodesForRows(type), skuRows[index].specType, skuRows[index].duration);
+        syncSkuValidityFields(skuRows[index], type);
+        if (!skuRows[index].manualDisplay) skuRows[index].displayText = generateSkuDisplayText(skuRows[index].attributeValues, type, skuRows[index].skuAttrCodes || skuAttrCodesForRows(type), skuRows[index].specType, skuRows[index].duration, skuRows[index].validityType);
         syncInventoryRows(false);
         renderInventoryConfig();
         validateSkuRows();
@@ -8021,22 +8128,26 @@
     function validateSkuRows() {
       const type = document.getElementById("formType").value;
       const activeAttrs = getSelectedSkuAttrs(type);
-      const signatures = skuRows.map(s => [s.specType || "无", s.duration || "", ...activeAttrs.map(attr => String(s.attributeValues?.[attr.code] || "").trim())].join("|"));
+      const validationAttrs = activeAttrs.filter(attr => !isSkuMeasureTemplateAttr(attr));
+      const signatures = skuRows.map(s => [s.validityType || "", s.specType || "无", s.duration || "", ...validationAttrs.map(attr => String(s.attributeValues?.[attr.code] || "").trim())].join("|"));
       const duplicate = signatures.find((signature, index) => signature && signatures.indexOf(signature) !== index);
       const invalidSort = skuRows.some(s => !/^[1-9]\d*$/.test(String(s.sort)));
       const priceErrors = [...new Set(skuRows.flatMap(skuPriceGroupErrors))];
       const invalidDelivery = !allowedDeliveryOptions.includes(getFormDelivery());
       const invalidDuration = skuRows.some(s => {
         const value = String(s.duration ?? "").trim();
-        return value !== "" && !/^\d+$/.test(value);
+        if (!isVirtualSkuValidityType(type)) return value !== "" && !/^\d+$/.test(value);
+        if (!skuValidityTypes.includes(s.validityType)) return true;
+        if (s.validityType === "永久") return value !== "" || s.specType !== "无";
+        return !/^[1-9]\d*$/.test(value) || !skuTimeSpecTypes.includes(s.specType);
       });
-      const missingRequiredAttr = skuRows.some(s => activeAttrs.some(attr => attr.required !== false && !s.attributeValues?.[attr.code]));
-      const invalidEnum = skuRows.some(s => activeAttrs.some(attr => attr.valueType === "枚举" && s.attributeValues?.[attr.code] && !skuAttrOptions(attr).includes(s.attributeValues[attr.code])));
+      const missingRequiredAttr = skuRows.some(s => validationAttrs.some(attr => attr.required !== false && !s.attributeValues?.[attr.code]));
+      const invalidEnum = skuRows.some(s => validationAttrs.some(attr => attr.valueType === "枚举" && s.attributeValues?.[attr.code] && !skuAttrOptions(attr).includes(s.attributeValues[attr.code])));
       const invalidBackorderConfig = skuRows.some(s => isBackorderAllowed(s)
         && (!/^[1-9]\d*$/.test(String(s.pendingFulfillmentLimit)) || !/^[1-9]\d*$/.test(String(s.maxPendingDurationHours))));
       const errors = [];
       if (invalidSort) errors.push("排序必须为正整数，数值越大越靠前。");
-      if (invalidDuration) errors.push("SKU 数值必须为0或正整数。");
+      if (invalidDuration) errors.push(isVirtualSkuValidityType(type) ? "限时 SKU 必须填写正整数数值，并选择小时或天；永久 SKU 无需填写数值和计量单位。" : "SKU 数值必须为0或正整数。");
       if (missingRequiredAttr) errors.push("必填 SKU 属性项未填写。");
       if (invalidEnum) errors.push("SKU 枚举属性值不在模板可选值范围内。");
       if (invalidBackorderConfig) errors.push("允许缺货下单时，待履约数量上限和最长待履约时长必须为正整数。");
@@ -8056,7 +8167,8 @@
       activeAttrs.forEach(attr => {
         if (attr.valueType !== "枚举") row.attributeValues[attr.code] = "";
       });
-      row.displayText = generateSkuDisplayText(row.attributeValues, type, attrCodes, row.specType, row.duration);
+      syncSkuValidityFields(row, type);
+      row.displayText = generateSkuDisplayText(row.attributeValues, type, attrCodes, row.specType, row.duration, row.validityType);
       skuRows.push(row);
       syncInventoryRows(false);
       renderSkuEdit();
@@ -8817,10 +8929,16 @@
       if (virtualTypes.includes(type) && !materialAssets.detail.length) markInvalidAsset("detail");
       if (!richTextPlain("formProductDesc")) markInvalidElement("#formProductDesc");
       if (!skuRows.length) document.getElementById("sectionSku")?.classList.add("invalid");
-      const activeAttrs = getSelectedSkuAttrs(type);
+      const activeAttrs = getSelectedSkuAttrs(type).filter(attr => !isSkuMeasureTemplateAttr(attr));
       skuRows.forEach((row, index) => {
         if (!/^[1-9]\d*$/.test(String(row.sort))) markInvalidElement(`[data-sku="${index}"][data-field="sort"]`);
-        if (String(row.duration ?? "").trim() !== "" && !/^\d+$/.test(String(row.duration).trim())) markInvalidElement(`[data-sku="${index}"][data-field="duration"]`);
+        if (isVirtualSkuValidityType(type)) {
+          if (!skuValidityTypes.includes(row.validityType)) markInvalidElement(`[data-sku="${index}"][data-field="validityType"]`);
+          if (row.validityType === "限时" && !/^[1-9]\d*$/.test(String(row.duration ?? "").trim())) markInvalidElement(`[data-sku="${index}"][data-field="duration"]`);
+          if (row.validityType === "限时" && !skuTimeSpecTypes.includes(row.specType)) markInvalidElement(`[data-sku="${index}"][data-field="specType"]`);
+        } else if (String(row.duration ?? "").trim() !== "" && !/^\d+$/.test(String(row.duration).trim())) {
+          markInvalidElement(`[data-sku="${index}"][data-field="duration"]`);
+        }
         if (skuPriceGroupErrors(row).length) markInvalidElement(`[data-edit-sku-price="${index}"]`);
         if (isBackorderAllowed(row) && !/^[1-9]\d*$/.test(String(row.pendingFulfillmentLimit))) markInvalidElement(`[data-sku="${index}"][data-field="pendingFulfillmentLimit"]`);
         if (isBackorderAllowed(row) && !/^[1-9]\d*$/.test(String(row.maxPendingDurationHours))) markInvalidElement(`[data-sku="${index}"][data-field="maxPendingDurationHours"]`);
