@@ -1127,7 +1127,7 @@
         <div class="page-head">
           <div>
             <h1>订单列表</h1>
-            <div class="sub">订单状态按运营口径合并展示，详情保留技术状态；实物订单按地址和履约结果映射履约进度。</div>
+            <div class="sub">订单状态按运营口径合并展示，详情保留技术状态；履约状态保持主状态，等待事项、部分履约数量及异常原因统一在“履约说明”中展示。</div>
           </div>
           <div class="btn-row"><button class="btn" id="exportOrdersBtn">导出列表</button></div>
         </div>
@@ -1142,7 +1142,7 @@
               <div class="field"><label>货币类型</label><select id="mallOrderCurrencyFilter"><option value="">全部</option><option>积分</option><option>人民币</option></select></div>
               <div class="field"><label>支付方式</label><select id="mallOrderPaymentMethodFilter"><option value="">全部</option><option>积分支付</option><option>支付宝</option><option>微信支付</option></select></div>
               <div class="field"><label>履约方式</label><select id="mallOrderDeliveryFilter"><option value="">全部</option><option>自动履约（虚拟道具）</option><option>自动履约（CDKey）</option><option>手动履约（实物）</option></select></div>
-              <div class="field"><label>履约进度</label><select id="mallOrderFulfillmentProgressFilter"><option value="">全部</option><option>待履约</option><option>待补货</option><option>履约中</option><option>履约完成</option><option>履约异常</option></select></div>
+              <div class="field"><label>履约状态</label><select id="mallOrderFulfillmentProgressFilter"><option value="">全部</option><option>待履约</option><option>履约中</option><option>履约完成</option><option>履约异常</option></select></div>
             </div>
             <div class="filter-actions">
               <button class="btn primary" id="searchOrdersBtn">查询</button>
@@ -1163,7 +1163,7 @@
           <div class="table-head"><div><div class="table-title">订单列表</div><div class="table-meta">技术状态映射为运营状态展示；虚拟商品履约异常仅支持查看，由研发侧处理。</div></div><div class="table-meta" id="orderTableCount">共 0 条</div></div>
           <div class="table-wrap">
             <table class="order-management-table">
-              <thead><tr><th>订单号</th><th>业务来源</th><th>用户ID</th><th>用户NN号</th><th>用户手机号</th><th>商品名称</th><th>数量</th><th>下单场景</th><th>支付金额</th><th>支付方式</th><th>履约方式</th><th>订单状态</th><th>履约进度</th><th>待履约 / 异常原因</th><th>创建时间</th><th>更新时间</th><th>操作</th></tr></thead>
+              <thead><tr><th>订单号</th><th>业务来源</th><th>用户ID</th><th>用户NN号</th><th>用户手机号</th><th>商品名称</th><th>数量</th><th>下单场景</th><th>支付金额</th><th>支付方式</th><th>履约方式</th><th>订单状态</th><th>履约状态</th><th>履约说明</th><th>创建时间</th><th>更新时间</th><th>操作</th></tr></thead>
               <tbody id="orderManagementTbody"></tbody>
             </table>
           </div>
@@ -2383,6 +2383,7 @@
       { no: "ORD20260706002", userId: "U100863", nnNo: "NN100863", phone: "13966666666", nick: "王五", product: "星耀头像框30天", productSnapshot: "星耀头像框30天 / 类型：虚拟道具 / 权益：社区身份装饰", productType: "虚拟道具", quantity: 1, currencyType: "人民币", paymentMethod: "微信支付", unitAmount: 12.9, paymentAmount: 12.9, inventoryType: "无限库存", acquireForm: "发放至用户背包，用户在社区装扮中启用", fulfillmentChannel: "背包发放", fulfill: DELIVERY_AUTO_VIRTUAL, status: "异常", fulfillmentStatus: "履约中", reason: "履约结果不确定，待人工确认", paymentResult: "微信支付成功：¥12.90", stockResult: "无限库存，无需占用", fulfillResult: "履约超时，结果待确认", retrySummary: "等待重试，已重试 1/3", bagAsset: "头像框权益待确认", created: "2026-07-06 08:30:15", updated: "2026-07-06 08:36:20", completed: "-" },
       { no: "ORD20260706003", userId: "U100864", nnNo: "NN100864", phone: "13733333333", nick: "赵六", product: "NN加速器30天卡", productSnapshot: "NN加速器30天卡 / 规格：30天 / 类型：CDKey", productType: "CDKey", quantity: 1, currencyType: "人民币", paymentMethod: "支付宝", unitAmount: 29.9, paymentAmount: 29.9, inventoryType: "有限库存", acquireForm: "发放至用户背包，用户进入背包查看兑换码", fulfillmentChannel: "背包发放", fulfill: DELIVERY_AUTO_CDKEY, status: "支付失败", fulfillmentStatus: "-", reason: "支付宝支付失败，库存已释放", paymentResult: "支付宝支付失败", stockResult: "库存已释放", fulfillResult: "未进入履约发放", retrySummary: "无需重试", maskedCdkey: "-", created: "2026-07-06 07:12:08", updated: "2026-07-06 07:12:21", completed: "-" },
       { no: "ORD20260705004", userId: "U100862", nnNo: "NN100862", phone: "13888888888", nick: "李四", product: "加速卡 7 天", productSnapshot: "加速卡 7 天 / 规格：7天 / 类型：CDKey", productType: "CDKey", quantity: 1, currencyType: "积分", paymentMethod: "积分支付", unitAmount: 800, paymentAmount: 800, inventoryType: "CDKey码池库存", acquireForm: "发放至用户背包，用户进入背包查看兑换码", fulfillmentChannel: "背包发放", fulfill: DELIVERY_AUTO_CDKEY, status: "已支付", fulfillmentStatus: "待履约", orderScene: "缺货下单", waitingReason: "等待CDKey补货", pendingQuantity: 1, maxPendingDurationSnapshot: 72, fulfillmentDeadlineAt: "2026-07-08 16:20:10", quotaReservationId: "PFR-20260705004", queueNo: 1, cdkeyPoolId: "ACCELERATOR_7D_POOL", reason: "等待CDKey补货", paymentResult: "积分扣减成功：-800 积分", stockResult: "未占用CDKey；已占用待履约额度：1", fulfillResult: "待码池补货后自动发放", retrySummary: "等待补货，不进入失败重试", maskedCdkey: "-", created: "2026-07-05 16:20:10", updated: "2026-07-05 16:20:18", completed: "-" },
+      { no: "ORD20260705006", businessSource: "积分商城", userId: "U100867", nnNo: "NN100867", phone: "13488888888", nick: "吴九", product: "NN加速器7天卡", productSnapshot: "NN加速器7天卡 / 规格：7天 / 类型：CDKey", productType: "CDKey", quantity: 10, currencyType: "积分", paymentMethod: "积分支付", unitAmount: 800, paymentAmount: 8000, inventoryType: "CDKey码池库存", acquireForm: "发放至用户背包，用户进入背包查看兑换码", fulfillmentChannel: "背包发放", fulfill: DELIVERY_AUTO_CDKEY, status: "已支付", fulfillmentStatus: "履约中", orderScene: "缺货下单", fulfilledQuantity: 5, pendingQuantity: 5, waitingReason: "剩余5个等待CDKey补货", maxPendingDurationSnapshot: 72, fulfillmentDeadlineAt: "2026-07-08 15:30:10", quotaReservationId: "PFR-20260705006", queueNo: 2, cdkeyPoolId: "ACCELERATOR_7D_POOL", reason: "已履约5个，剩余5个等待CDKey补货", paymentResult: "积分扣减成功：-8000 积分", stockResult: "已扣减5个CDKey；剩余5个待补货", fulfillResult: "已自动发放5个CDKey，剩余5个待履约", retrySummary: "剩余数量等待补货，不进入失败重试", maskedCdkey: "已发放5个（详情见履约记录）", created: "2026-07-05 15:30:10", updated: "2026-07-05 15:35:22", completed: "-" },
       { no: "ORD20260705005", userId: "U100863", nnNo: "NN100863", phone: "13966666666", nick: "王五", product: "星耀昵称挂件7天", productSnapshot: "星耀昵称挂件7天 / 类型：虚拟道具 / 权益：昵称装饰", productType: "虚拟道具", quantity: 1, currencyType: "人民币", paymentMethod: "支付宝", unitAmount: 6.9, paymentAmount: 6.9, inventoryType: "无限库存", acquireForm: "发放至用户背包，用户在社区装扮中启用", fulfillmentChannel: "背包发放", fulfill: DELIVERY_AUTO_VIRTUAL, status: "已支付", fulfillmentStatus: "履约失败", reason: "自动重试已达上限", paymentResult: "支付宝支付成功：¥6.90", stockResult: "无限库存，无需占用", fulfillResult: "履约失败，待人工处理", retrySummary: "已达自动重试上限 3/3", bagAsset: "-", created: "2026-07-05 15:08:20", updated: "2026-07-05 15:18:02", completed: "-" },
       { no: "ORD20260704005", businessSource: "暑期周边兑换活动", userId: "U100865", nnNo: "NN100865", phone: "13677777777", nick: "孙七", product: "NN定制鼠标垫", productSnapshot: "NN定制鼠标垫 / 类型：实物商品 / 规格：900x400mm", productType: "实物商品", quantity: 1, currencyType: "人民币", paymentMethod: "支付宝", unitAmount: 49.9, paymentAmount: 49.9, inventoryType: "有限库存", acquireForm: "用户填写收货地址后发货", fulfillmentChannel: "实物履约 / 物流发货", addressStatus: "未填写", recipient: "-", recipientPhone: "-", address: "-", logisticsCompany: "-", trackingNo: "-", fulfill: DELIVERY_MANUAL_PHYSICAL, status: "已支付", fulfillmentStatus: "待履约", reason: "等待用户在客户端订单填写收货地址", paymentResult: "支付宝支付成功：¥49.90", stockResult: "库存已占用：1", fulfillResult: "待用户提交收货地址", retrySummary: "实物履约-地址未填写", created: "2026-07-04 10:00:00", updated: "2026-07-04 10:00:09", completed: "-" },
       { no: "ORD20260703006", businessSource: "社区装扮焕新活动", userId: "U100866", nnNo: "NN100866", phone: "13588888888", nick: "周八", product: "社区身份装饰权益", productSnapshot: "社区身份装饰权益 / 类型：虚拟道具 / 权益：身份标识与资料卡装饰", productType: "虚拟道具", quantity: 1, currencyType: "积分", paymentMethod: "积分支付", unitAmount: 500, paymentAmount: 500, inventoryType: "无限库存", acquireForm: "发放至用户背包，用户在社区身份装饰中启用", fulfillmentChannel: "背包发放", fulfill: DELIVERY_AUTO_VIRTUAL, status: "已完成", fulfillmentStatus: "履约完成", reason: "-", paymentResult: "积分扣减成功：-500 积分", stockResult: "无限库存，无需占用", fulfillResult: "背包发放成功", retrySummary: "无需重试", bagAsset: "社区身份装饰权益 x1", created: "2026-07-03 09:15:42", updated: "2026-07-03 09:15:58", completed: "2026-07-03 09:15:58" },
@@ -9286,19 +9287,16 @@
 
     function operationalFulfillmentProgress(order) {
       if (order.fulfillmentStatus === "履约失败" || order.status === "异常") return "履约异常";
-      if (order.fulfillmentStatus === "待履约" && order.waitingReason) return "待补货";
-      if (!isPhysicalOrder(order)) return order.fulfillmentStatus || "-";
       if (order.fulfillmentStatus === "履约完成") return "履约完成";
       if (order.fulfillmentStatus === "无需履约") return "-";
-      if (order.addressStatus !== "已填写") return "待用户填写地址";
-      return "待运营发货";
+      return order.fulfillmentStatus || "-";
     }
 
     function fulfillmentProgressTag(order) {
       const progress = operationalFulfillmentProgress(order);
       if (progress === "-") return "-";
       const cls = progress === "履约完成" ? "green" : progress === "履约异常" ? "red"
-        : ["待运营发货", "履约中"].includes(progress) ? "purple" : "orange";
+        : progress === "履约中" ? "purple" : "orange";
       return `<span class="tag ${cls}">${progress}</span>`;
     }
 
@@ -9312,8 +9310,30 @@
       return order.exceptionReason || order.reason || "-";
     }
 
-    function orderOperationalReason(order) {
-      return order.waitingReason || orderExceptionReason(order);
+    function fulfilledOrderQuantity(order) {
+      return Math.max(0, Number(order.fulfilledQuantity || 0));
+    }
+
+    function pendingOrderQuantity(order) {
+      if (order.pendingQuantity !== undefined && order.pendingQuantity !== null) return Math.max(0, Number(order.pendingQuantity || 0));
+      return Math.max(0, Number(order.quantity || 0) - fulfilledOrderQuantity(order));
+    }
+
+    function isPartiallyFulfilledOrder(order) {
+      return order.fulfillmentStatus === "履约中" && fulfilledOrderQuantity(order) > 0 && pendingOrderQuantity(order) > 0;
+    }
+
+    function orderFulfillmentDescription(order) {
+      if (isPartiallyFulfilledOrder(order)) {
+        return `部分履约：已履约 ${fulfilledOrderQuantity(order)}/${Number(order.quantity || 0)}，剩余 ${pendingOrderQuantity(order)} 待履约`;
+      }
+      if (shouldShowOrderException(order)) return orderExceptionReason(order);
+      if (order.waitingReason) return order.waitingReason;
+      if (operationalFulfillmentProgress(order) === "待履约") {
+        if (isPhysicalOrder(order)) return order.addressStatus === "已填写" ? "待运营发货" : "待用户填写地址";
+        return order.reason && order.reason !== "-" ? order.reason : "待系统履约";
+      }
+      return order.reason && order.reason !== "-" ? order.reason : "-";
     }
 
     function orderActionHtml(order) {
@@ -9336,11 +9356,7 @@
 
     function matchesFulfillmentProgressFilter(order, fulfillmentProgress) {
       if (!fulfillmentProgress) return true;
-      const progress = operationalFulfillmentProgress(order);
-      if (fulfillmentProgress === "待履约") {
-        return ["待履约", "待补货", "待用户填写地址", "待运营发货"].includes(progress);
-      }
-      return progress === fulfillmentProgress;
+      return operationalFulfillmentProgress(order) === fulfillmentProgress;
     }
 
     function getFilteredMallOrders() {
@@ -9369,7 +9385,7 @@
           <td>${order.no}</td><td>${orderBusinessSource(order)}</td><td>${order.userId}</td><td>${order.nnNo}</td><td>${order.phone}</td><td>${order.product}</td>
           <td>${order.quantity}</td><td>${order.orderScene || "现货下单"}</td><td>${formatOrderAmount(order)}</td><td>${paymentMethodTag(order.paymentMethod)}</td>
           <td>${deliveryTag(order.fulfill)}</td><td>${orderStatusTag(operationalOrderStatus(order), order.status)}</td>
-          <td>${fulfillmentProgressTag(order)}</td><td>${orderOperationalReason(order)}</td><td>${order.created}</td><td>${order.updated}</td><td>${orderActionHtml(order)}</td>
+          <td>${fulfillmentProgressTag(order)}</td><td>${orderFulfillmentDescription(order)}</td><td>${order.created}</td><td>${order.updated}</td><td>${orderActionHtml(order)}</td>
         </tr>
       `).join("") : `<tr><td colspan="17"><div class="empty">当前筛选条件下暂无订单</div></td></tr>`;
       document.getElementById("orderTableCount").textContent = `共 ${rows.length} 条`;
@@ -9395,14 +9411,19 @@
     function orderFulfillmentItems(order) {
       const items = [
         ["商品类型", order.productType || "-"], ["库存类型", order.inventoryType || "-"],
-        ["履约状态", fulfillmentStatusTag(order.fulfillmentStatus)], ["履约进度", fulfillmentProgressTag(order)],
+        ["技术履约状态", fulfillmentStatusTag(order.fulfillmentStatus)], ["履约状态", fulfillmentProgressTag(order)],
+        ["履约说明", orderFulfillmentDescription(order)],
         ["用户获得形式", order.acquireForm || "-"], ["履约渠道", order.fulfillmentChannel || order.fulfill]
       ];
-      if (order.orderScene === "缺货下单") items.push(
-        ["下单场景", order.orderScene], ["履约等待原因", order.waitingReason || "-"], ["待履约数量", order.pendingQuantity || order.quantity],
-        ["最长待履约时长快照", `${order.maxPendingDurationSnapshot || "-"} 小时`], ["待履约截止时间", order.fulfillmentDeadlineAt || "-"],
-        ["待履约额度占用记录ID", order.quotaReservationId || "-"], ["履约队列序号", order.queueNo || "-"]
-      );
+      if (isPartiallyFulfilledOrder(order)) items.push(["已履约数量", fulfilledOrderQuantity(order)], ["剩余待履约数量", pendingOrderQuantity(order)]);
+      if (order.orderScene === "缺货下单") {
+        items.push(["下单场景", order.orderScene], ["履约等待原因", order.waitingReason || "-"]);
+        if (!isPartiallyFulfilledOrder(order)) items.push(["待履约数量", pendingOrderQuantity(order)]);
+        items.push(
+          ["最长待履约时长快照", `${order.maxPendingDurationSnapshot || "-"} 小时`], ["待履约截止时间", order.fulfillmentDeadlineAt || "-"],
+          ["待履约额度占用记录ID", order.quotaReservationId || "-"], ["履约队列序号", order.queueNo || "-"]
+        );
+      }
       if (order.productType === "CDKey") items.push(["CDKey 展示", order.maskedCdkey || "-"]);
       if (order.productType === "虚拟道具") items.push(["背包权益", order.bagAsset || order.fulfillResult || "-"]);
       if (!isPhysicalOrder(order) && isOrderFulfillmentFailed(order)) items.push(["异常处理方式", "研发侧处理（后台仅查看）"]);
@@ -9645,9 +9666,9 @@
     function exportOrderManagementRecords() {
       const rows = getFilteredMallOrders().map(order => [
         order.no, orderBusinessSource(order), order.userId, order.nnNo, order.phone, order.product, order.quantity, order.orderScene || "现货下单", formatOrderAmount(order), order.paymentMethod, order.fulfill, operationalOrderStatus(order), order.status,
-        order.fulfillmentStatus, operationalFulfillmentProgress(order), order.waitingReason || "-", order.pendingQuantity || 0, order.fulfillmentDeadlineAt || "-", order.quotaReservationId || "-", orderExceptionReason(order), order.created, order.updated
+        order.fulfillmentStatus, operationalFulfillmentProgress(order), orderFulfillmentDescription(order), fulfilledOrderQuantity(order), pendingOrderQuantity(order), order.fulfillmentDeadlineAt || "-", order.quotaReservationId || "-", order.created, order.updated
       ]);
-      downloadPrototypeCsv("订单列表", ["订单号", "业务来源", "用户ID", "用户NN号", "用户手机号", "商品名称", "数量", "下单场景", "支付金额", "支付方式", "履约方式", "订单状态", "技术订单状态", "履约状态", "履约进度", "履约等待原因", "待履约数量", "待履约截止时间", "待履约额度占用记录ID", "异常原因", "创建时间", "更新时间"], rows);
+      downloadPrototypeCsv("订单列表", ["订单号", "业务来源", "用户ID", "用户NN号", "用户手机号", "商品名称", "数量", "下单场景", "支付金额", "支付方式", "履约方式", "订单状态", "技术订单状态", "技术履约状态", "履约状态", "履约说明", "已履约数量", "待履约数量", "待履约截止时间", "待履约额度占用记录ID", "创建时间", "更新时间"], rows);
     }
     function stateTag(state) {
       const cls = state === "上架" ? "green" : state === "草稿" ? "orange" : state === "下架" ? "" : "";
