@@ -7869,10 +7869,13 @@
       const activeAttrs = getSelectedSkuAttrs(type);
       const editableAttrs = activeAttrs.filter(attr => !isSkuMeasureTemplateAttr(attr));
       const dynamicHeaders = editableAttrs.map(attr => `<th>${attr.required === false ? "" : `<span class="required-star">*</span>`}${attr.name}</th>`).join("");
-      head.innerHTML = `<th>SKU 名称</th><th><span class="required-star">*</span>排序<br><span class="minor">越大越靠前</span></th><th><span class="required-star">*</span>计量单位</th><th>有效期类型<br><span class="minor">小时/天必填</span></th><th>数值<br><span class="minor">限时必填</span></th><th><span class="required-star">*</span>多币种价格<br><span class="minor">积分 / N币 / RMB</span></th><th>CDKey 码池 ID</th><th><span class="required-star">*</span>下单策略</th><th>待履约数量上限</th><th>最长待履约时长（小时）</th><th>每人总兑换次数</th><th>每人每日兑换次数</th>${dynamicHeaders}<th>SKU 备注</th><th>操作</th>`;
       const attrCodes = activeAttrs.map(attr => attr.code);
       syncSkuDeliveryFromForm();
       skuRows = skuRows.map((row, index) => normalizeSkuRow(row, type, index, attrCodes));
+      const showValidityTypeColumn = skuRows.some(row => isTimeSkuSpecType(row.specType));
+      const validityTypeHeader = showValidityTypeColumn ? `<th>有效期类型<br><span class="minor">小时/天必填</span></th>` : "";
+      const durationHeader = showValidityTypeColumn ? `<th>数值<br><span class="minor">限时必填</span></th>` : `<th>数值</th>`;
+      head.innerHTML = `<th>SKU 名称</th><th><span class="required-star">*</span>排序<br><span class="minor">越大越靠前</span></th><th><span class="required-star">*</span>计量单位</th>${validityTypeHeader}${durationHeader}<th><span class="required-star">*</span>多币种价格<br><span class="minor">积分 / N币 / RMB</span></th><th>CDKey 码池 ID</th><th><span class="required-star">*</span>下单策略</th><th>待履约数量上限</th><th>最长待履约时长（小时）</th><th>每人总兑换次数</th><th>每人每日兑换次数</th>${dynamicHeaders}<th>SKU 备注</th><th>操作</th>`;
       body.innerHTML = skuRows.length ? skuRows.map((s, i) => {
         const attrCells = editableAttrs.map(attr => {
           const value = s.attributeValues[attr.code] || "";
@@ -7887,7 +7890,8 @@
         const limited = usesValidityType && s.validityType === "限时";
         const validityTypeCell = usesValidityType
           ? `<select class="mini-input" style="min-width:88px" data-sku="${i}" data-field="validityType"><option value="" ${s.validityType ? "" : "selected"}>请选择</option>${skuValidityTypes.map(item => `<option value="${item}" ${item === s.validityType ? "selected" : ""}>${item}</option>`).join("")}</select>`
-          : `<span class="minor">不适用</span>`;
+          : "";
+        const validityTypeColumnCell = showValidityTypeColumn ? `<td>${validityTypeCell}</td>` : "";
         const durationCell = usesValidityType
           ? `<input class="mini-input" style="min-width:104px" type="number" min="1" step="1" data-positive-duration data-sku="${i}" data-field="duration" value="${limited ? (s.duration ?? "") : ""}" ${limited ? "" : "disabled"} placeholder="${permanent ? "永久无需填写" : limited ? "请输入正整数" : "请先选择有效期类型"}">`
           : `<input class="mini-input" style="min-width:84px" type="number" min="0" step="1" data-sku="${i}" data-field="duration" value="${s.duration ?? ""}" placeholder="0或正整数">`;
@@ -7897,7 +7901,7 @@
             <td><input class="mini-input" data-sku="${i}" data-field="skuName" value="${s.skuName || ""}" placeholder="非必填"></td>
             <td><input class="mini-input" type="number" min="1" data-sku="${i}" data-field="sort" value="${s.sort}" placeholder="正整数"></td>
             <td>${specTypeCell}</td>
-            <td>${validityTypeCell}</td>
+            ${validityTypeColumnCell}
             <td>${durationCell}</td>
             <td class="price-config-cell">${skuPriceSummary(s)}<button class="btn text" type="button" data-edit-sku-price="${i}">配置多币种价格</button></td>
             <td>${cdkeyPoolEditor(s, i)}</td>
@@ -7910,7 +7914,7 @@
             <td><input class="mini-input" data-sku="${i}" data-field="remark" value="${s.remark || ""}"></td>
             <td><button class="btn text" data-copy-sku="${i}">复制</button><button class="btn text" data-del-sku="${i}">删除</button></td>
           </tr>`;
-      }).join("") : `<tr><td colspan="${14 + editableAttrs.length}"><div class="empty">请添加至少 1 条 SKU。</div></td></tr>`;
+      }).join("") : `<tr><td colspan="${13 + (showValidityTypeColumn ? 1 : 0) + editableAttrs.length}"><div class="empty">请添加至少 1 条 SKU。</div></td></tr>`;
       body.querySelectorAll("[data-attr]:not(select)").forEach(el => el.addEventListener("input", updateSkuFromInput));
       body.querySelectorAll("select[data-attr]").forEach(el => el.addEventListener("change", updateSkuFromInput));
       body.querySelectorAll("[data-field]:not(select)").forEach(el => el.addEventListener("input", updateSkuFromInput));
