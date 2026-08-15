@@ -1127,7 +1127,7 @@
         <div class="page-head">
           <div>
             <h1>订单列表</h1>
-            <div class="sub">订单状态按运营口径合并展示，详情保留技术状态；履约状态保持主状态，等待事项、部分履约数量及异常原因统一在“履约说明”中展示。</div>
+            <div class="sub">订单状态按运营口径合并展示，详情保留技术状态；实物订单发货后保持“履约中”，待订单服务回写确认收货结果。</div>
           </div>
           <div class="btn-row"><button class="btn" id="exportOrdersBtn">导出列表</button></div>
         </div>
@@ -2329,6 +2329,7 @@
         <div class="field"><label><span class="required-star">*</span>物流公司</label><input id="logisticsCompanyInput" maxlength="50" placeholder="输入物流公司"></div>
         <div class="field"><label><span class="required-star">*</span>物流单号</label><input id="trackingNoInput" placeholder="输入物流单号"><div class="hint-text">确认发货后将同步更新订单履约状态。</div></div>
       </div>
+      <div class="alert info" style="margin-top:14px">发货后订单状态保持“已支付”，履约状态更新为“履约中”；用户手动或系统自动确认收货的结果由订单服务回写，管理后台不提供确认收货操作。</div>
     </div>
     <div class="modal-foot"><button class="btn" data-close-modal="logisticsModal">取消</button><button class="btn primary" id="confirmLogisticsBtn">确认发货</button></div>
   </section>
@@ -2388,7 +2389,8 @@
       { no: "ORD20260704005", businessSource: "暑期周边兑换活动", userId: "U100865", nnNo: "NN100865", phone: "13677777777", nick: "孙七", product: "NN定制鼠标垫", productSnapshot: "NN定制鼠标垫 / 类型：实物商品 / 规格：900x400mm", productType: "实物商品", quantity: 1, currencyType: "人民币", paymentMethod: "支付宝", unitAmount: 49.9, paymentAmount: 49.9, inventoryType: "有限库存", acquireForm: "用户填写收货地址后发货", fulfillmentChannel: "实物履约 / 物流发货", addressStatus: "未填写", recipient: "-", recipientPhone: "-", address: "-", logisticsCompany: "-", trackingNo: "-", fulfill: DELIVERY_MANUAL_PHYSICAL, status: "已支付", fulfillmentStatus: "待履约", reason: "等待用户在客户端订单填写收货地址", paymentResult: "支付宝支付成功：¥49.90", stockResult: "库存已占用：1", fulfillResult: "待用户提交收货地址", retrySummary: "实物履约-地址未填写", created: "2026-07-04 10:00:00", updated: "2026-07-04 10:00:09", completed: "-" },
       { no: "ORD20260703006", businessSource: "社区装扮焕新活动", userId: "U100866", nnNo: "NN100866", phone: "13588888888", nick: "周八", product: "社区身份装饰权益", productSnapshot: "社区身份装饰权益 / 类型：虚拟道具 / 权益：身份标识与资料卡装饰", productType: "虚拟道具", quantity: 1, currencyType: "积分", paymentMethod: "积分支付", unitAmount: 500, paymentAmount: 500, inventoryType: "无限库存", acquireForm: "发放至用户背包，用户在社区身份装饰中启用", fulfillmentChannel: "背包发放", fulfill: DELIVERY_AUTO_VIRTUAL, status: "已完成", fulfillmentStatus: "履约完成", reason: "-", paymentResult: "积分扣减成功：-500 积分", stockResult: "无限库存，无需占用", fulfillResult: "背包发放成功", retrySummary: "无需重试", bagAsset: "社区身份装饰权益 x1", created: "2026-07-03 09:15:42", updated: "2026-07-03 09:15:58", completed: "2026-07-03 09:15:58" },
       { no: "ORD20260703007", userId: "U100863", nnNo: "NN100863", phone: "13966666666", nick: "王五", product: "NN定制抱枕", productSnapshot: "NN定制抱枕 / 类型：实物商品 / 规格：45x45cm", productType: "实物商品", quantity: 2, currencyType: "人民币", paymentMethod: "微信支付", unitAmount: 59.9, paymentAmount: 119.8, inventoryType: "有限库存", acquireForm: "用户填写收货地址后发货", fulfillmentChannel: "实物履约 / 物流发货", addressStatus: "已填写", recipient: "王五", recipientPhone: "13966666666", address: "湖北省武汉市武昌区中南路街道 99号 1802", addressSubmittedAt: "2026-07-03 13:28:35", logisticsCompany: "-", trackingNo: "-", fulfill: DELIVERY_MANUAL_PHYSICAL, status: "已支付", fulfillmentStatus: "待履约", reason: "已收到收货地址，待运营发货", paymentResult: "微信支付成功：¥119.80", stockResult: "库存已占用：2", fulfillResult: "已收到收货地址，待运营发货", retrySummary: "实物履约-待发货", created: "2026-07-03 13:22:00", updated: "2026-07-03 13:28:35", completed: "-" },
-      { no: "ORD20260702007", userId: "U100862", nnNo: "NN100862", phone: "13888888888", nick: "李四", product: "NN定制手办", productSnapshot: "NN定制手办 / 类型：实物商品 / 规格：标准款", productType: "实物商品", quantity: 3, currencyType: "积分", paymentMethod: "积分支付", unitAmount: 1000, paymentAmount: 3000, inventoryType: "有限库存", acquireForm: "用户填写收货地址后发货", fulfillmentChannel: "实物履约 / 物流发货", addressStatus: "已填写", recipient: "李四", recipientPhone: "13888888888", address: "湖北省武汉市江夏区藏龙岛产业园 B2-1508", addressSubmittedAt: "2026-07-02 14:26:18", logisticsCompany: "顺丰速运", trackingNo: "SF202607020088", fulfill: DELIVERY_MANUAL_PHYSICAL, status: "已完成", fulfillmentStatus: "履约完成", reason: "-", paymentResult: "积分扣减成功：-3000 积分", stockResult: "库存已扣减：3", fulfillResult: "3 件商品已完成发货", retrySummary: "手动履约完成", created: "2026-07-02 14:20:00", updated: "2026-07-02 18:05:10", completed: "2026-07-02 18:05:10" }
+      { no: "ORD20260702008", userId: "U100868", nnNo: "NN100868", phone: "13388888888", nick: "郑十", product: "NN定制马克杯", productSnapshot: "NN定制马克杯 / 类型：实物商品 / 规格：标准款", productType: "实物商品", quantity: 1, currencyType: "人民币", paymentMethod: "微信支付", unitAmount: 39.9, paymentAmount: 39.9, inventoryType: "有限库存", acquireForm: "用户填写收货地址后发货", fulfillmentChannel: "实物履约 / 物流发货", addressStatus: "已填写", recipient: "郑十", recipientPhone: "13388888888", address: "湖北省武汉市洪山区关山街道 66 号 1203", addressSubmittedAt: "2026-07-02 18:50:12", logisticsCompany: "京东物流", trackingNo: "JD202607020166", shippedAt: "2026-07-02 19:10:20", receivedAt: "-", fulfill: DELIVERY_MANUAL_PHYSICAL, status: "已支付", fulfillmentStatus: "履约中", reason: "待用户确认收货", paymentResult: "微信支付成功：¥39.90", stockResult: "库存已扣减：1", fulfillResult: "1 件商品已发货，待用户确认收货", retrySummary: "实物履约-待确认收货", created: "2026-07-02 18:45:00", updated: "2026-07-02 19:10:20", completed: "-" },
+      { no: "ORD20260702007", userId: "U100862", nnNo: "NN100862", phone: "13888888888", nick: "李四", product: "NN定制手办", productSnapshot: "NN定制手办 / 类型：实物商品 / 规格：标准款", productType: "实物商品", quantity: 3, currencyType: "积分", paymentMethod: "积分支付", unitAmount: 1000, paymentAmount: 3000, inventoryType: "有限库存", acquireForm: "用户填写收货地址后发货", fulfillmentChannel: "实物履约 / 物流发货", addressStatus: "已填写", recipient: "李四", recipientPhone: "13888888888", address: "湖北省武汉市江夏区藏龙岛产业园 B2-1508", addressSubmittedAt: "2026-07-02 14:26:18", logisticsCompany: "顺丰速运", trackingNo: "SF202607020088", shippedAt: "2026-07-02 18:05:10", receivedAt: "2026-07-05 18:05:10", fulfill: DELIVERY_MANUAL_PHYSICAL, status: "已完成", fulfillmentStatus: "履约完成", reason: "-", paymentResult: "积分扣减成功：-3000 积分", stockResult: "库存已扣减：3", fulfillResult: "3 件商品已确认收货，履约完成", retrySummary: "订单服务已回写确认收货结果", created: "2026-07-02 14:20:00", updated: "2026-07-05 18:05:10", completed: "2026-07-05 18:05:10" }
     ];
     const cdkeyTypeOptions = ["加速器时长", "加速器时长（不可暂停）"];
     const skuCurrencyOptions = ["新积分", "N币", "RMB"];
@@ -9311,22 +9313,31 @@
     }
 
     function fulfilledOrderQuantity(order) {
-      return Math.max(0, Number(order.fulfilledQuantity || 0));
+      const total = Math.max(0, Number(order.quantity || 0));
+      if (order.fulfillmentStatus === "履约完成" || order.fulfillmentStatus === "无需履约") return total;
+      return Math.min(total, Math.max(0, Number(order.fulfilledQuantity || 0)));
     }
 
     function pendingOrderQuantity(order) {
-      if (order.pendingQuantity !== undefined && order.pendingQuantity !== null) return Math.max(0, Number(order.pendingQuantity || 0));
-      return Math.max(0, Number(order.quantity || 0) - fulfilledOrderQuantity(order));
+      const total = Math.max(0, Number(order.quantity || 0));
+      if (order.fulfillmentStatus === "履约完成" || order.fulfillmentStatus === "无需履约") return 0;
+      if (order.pendingQuantity !== undefined && order.pendingQuantity !== null) return Math.min(total, Math.max(0, Number(order.pendingQuantity || 0)));
+      return Math.max(0, total - fulfilledOrderQuantity(order));
     }
 
     function isPartiallyFulfilledOrder(order) {
       return order.fulfillmentStatus === "履约中" && fulfilledOrderQuantity(order) > 0 && pendingOrderQuantity(order) > 0;
     }
 
+    function isAwaitingReceiptOrder(order) {
+      return isPhysicalOrder(order) && order.fulfillmentStatus === "履约中" && order.trackingNo && order.trackingNo !== "-";
+    }
+
     function orderFulfillmentDescription(order) {
       if (isPartiallyFulfilledOrder(order)) {
         return `部分履约：已履约 ${fulfilledOrderQuantity(order)}/${Number(order.quantity || 0)}，剩余 ${pendingOrderQuantity(order)} 待履约`;
       }
+      if (isAwaitingReceiptOrder(order)) return "待用户确认收货";
       if (shouldShowOrderException(order)) return orderExceptionReason(order);
       if (order.waitingReason) return order.waitingReason;
       if (operationalFulfillmentProgress(order) === "待履约") {
@@ -9430,7 +9441,8 @@
       if (isPhysicalOrder(order)) items.push(
         ["收货信息状态", order.addressStatus || "-"],
         ["收货人", order.recipient || "-"], ["收货手机号", order.recipientPhone || "-"],
-        ["收货地址", order.address || "-"], ["物流公司", order.logisticsCompany || "-"], ["物流单号", order.trackingNo || "-"]
+        ["收货地址", order.address || "-"], ["物流公司", order.logisticsCompany || "-"], ["物流单号", order.trackingNo || "-"],
+        ["发货时间", order.shippedAt || "-"], ["确认收货时间", order.receivedAt || "-"]
       );
       return items;
     }
@@ -9634,18 +9646,20 @@
       const trackingNo = valueOf("trackingNoInput");
       if (!company || !trackingNo) return toast("请填写物流公司和物流单号。");
       const time = nowText();
-      order.status = "已完成";
-      order.fulfillmentStatus = "履约完成";
-      order.reason = "-";
-      order.fulfillResult = `${order.quantity} 件商品已发货并完成履约`;
-      order.retrySummary = "手动履约完成";
+      order.status = "已支付";
+      order.fulfillmentStatus = "履约中";
+      order.reason = "待用户确认收货";
+      order.fulfillResult = `${order.quantity} 件商品已发货，待用户确认收货`;
+      order.retrySummary = "实物履约-待确认收货";
       order.logisticsCompany = company;
       order.trackingNo = trackingNo;
+      order.shippedAt = time;
+      order.receivedAt = "-";
       order.updated = time;
-      order.completed = time;
+      order.completed = "-";
       closeModal("logisticsModal");
       renderOrderManagementTable();
-      toast("物流信息已录入，订单已更新为已完成。");
+      toast("发货成功，订单进入待用户确认收货。");
     }
 
     function handleOrderManagementActionClick(event) {
