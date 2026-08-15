@@ -1636,14 +1636,14 @@
         <div class="page-head">
           <div>
             <h1>履约记录列表</h1>
-            <div class="sub">查询商品兑换后的履约结果、等待原因、待履约截止时间和资源分配结果。</div>
+            <div class="sub">查询商品兑换后的履约结果、等待原因和资源分配结果。</div>
           </div>
           <div class="btn-row">
             <button class="btn" id="exportDeliveryBtn">批量导出履约记录</button>
           </div>
         </div>
 
-        <div class="page-note">履约记录列表只读展示履约任务。允许缺货下单时，资源不足记录为“待履约 + 等待补货”，不记为履约失败；CDKey 补货入库后按支付成功时间 FIFO 自动分配。真正的配置错误、回调失败或超过截止时间才进入异常处理。</div>
+        <div class="page-note">履约记录列表只读展示履约任务。允许缺货下单时，资源不足记录为“待履约 + 等待补货”，不记为履约失败；CDKey 补货入库后按支付成功时间 FIFO 自动分配。真正的配置错误或回调失败才进入异常处理。</div>
 
         <section class="card" aria-label="履约记录筛选区">
           <div class="card-body">
@@ -1701,7 +1701,6 @@
                   <th>履约方式</th>
                   <th>履约状态</th>
                   <th>履约等待原因</th>
-                  <th>待履约截止时间</th>
                   <th>队列序号</th>
                   <th>CDKey 摘要</th>
                   <th>失败原因</th>
@@ -2383,8 +2382,8 @@
       { no: "ORD20260706001", userId: "U100862", nnNo: "NN100862", phone: "13888888888", nick: "李四", product: "NN加速器3天卡", productSnapshot: "NN加速器3天卡 / 规格：3天 / 类型：CDKey", productType: "CDKey", quantity: 1, currencyType: "积分", paymentMethod: "积分支付", unitAmount: 500, paymentAmount: 500, inventoryType: "有限库存", acquireForm: "发放至用户背包，用户进入背包查看兑换码", fulfillmentChannel: "背包发放", fulfill: DELIVERY_AUTO_CDKEY, status: "已完成", fulfillmentStatus: "履约完成", reason: "-", paymentResult: "积分扣减成功：-500 积分", stockResult: "库存已扣减：-1", fulfillResult: "CDKey 发放成功", retrySummary: "无需重试", maskedCdkey: "NN3D-****-8K2Q", created: "2026-07-06 09:45:33", updated: "2026-07-06 09:45:58", completed: "2026-07-06 09:45:58" },
       { no: "ORD20260706002", userId: "U100863", nnNo: "NN100863", phone: "13966666666", nick: "王五", product: "星耀头像框30天", productSnapshot: "星耀头像框30天 / 类型：虚拟道具 / 权益：社区身份装饰", productType: "虚拟道具", quantity: 1, currencyType: "人民币", paymentMethod: "微信支付", unitAmount: 12.9, paymentAmount: 12.9, inventoryType: "无限库存", acquireForm: "发放至用户背包，用户在社区装扮中启用", fulfillmentChannel: "背包发放", fulfill: DELIVERY_AUTO_VIRTUAL, status: "异常", fulfillmentStatus: "履约中", reason: "履约结果不确定，待人工确认", paymentResult: "微信支付成功：¥12.90", stockResult: "无限库存，无需占用", fulfillResult: "履约超时，结果待确认", retrySummary: "等待重试，已重试 1/3", bagAsset: "头像框权益待确认", created: "2026-07-06 08:30:15", updated: "2026-07-06 08:36:20", completed: "-" },
       { no: "ORD20260706003", userId: "U100864", nnNo: "NN100864", phone: "13733333333", nick: "赵六", product: "NN加速器30天卡", productSnapshot: "NN加速器30天卡 / 规格：30天 / 类型：CDKey", productType: "CDKey", quantity: 1, currencyType: "人民币", paymentMethod: "支付宝", unitAmount: 29.9, paymentAmount: 29.9, inventoryType: "有限库存", acquireForm: "发放至用户背包，用户进入背包查看兑换码", fulfillmentChannel: "背包发放", fulfill: DELIVERY_AUTO_CDKEY, status: "支付失败", fulfillmentStatus: "-", reason: "支付宝支付失败，库存已释放", paymentResult: "支付宝支付失败", stockResult: "库存已释放", fulfillResult: "未进入履约发放", retrySummary: "无需重试", maskedCdkey: "-", created: "2026-07-06 07:12:08", updated: "2026-07-06 07:12:21", completed: "-" },
-      { no: "ORD20260705004", userId: "U100862", nnNo: "NN100862", phone: "13888888888", nick: "李四", product: "加速卡 7 天", productSnapshot: "加速卡 7 天 / 规格：7天 / 类型：CDKey", productType: "CDKey", quantity: 1, currencyType: "积分", paymentMethod: "积分支付", unitAmount: 800, paymentAmount: 800, inventoryType: "CDKey码池库存", acquireForm: "发放至用户背包，用户进入背包查看兑换码", fulfillmentChannel: "背包发放", fulfill: DELIVERY_AUTO_CDKEY, status: "已支付", fulfillmentStatus: "待履约", orderScene: "缺货下单", waitingReason: "等待CDKey补货", pendingQuantity: 1, maxPendingDurationSnapshot: 72, fulfillmentDeadlineAt: "2026-07-08 16:20:10", quotaReservationId: "PFR-20260705004", queueNo: 1, cdkeyPoolId: "ACCELERATOR_7D_POOL", reason: "等待CDKey补货", paymentResult: "积分扣减成功：-800 积分", stockResult: "未占用CDKey；已占用待履约额度：1", fulfillResult: "待码池补货后自动发放", retrySummary: "等待补货，不进入失败重试", maskedCdkey: "-", created: "2026-07-05 16:20:10", updated: "2026-07-05 16:20:18", completed: "-" },
-      { no: "ORD20260705006", businessSource: "积分商城", userId: "U100867", nnNo: "NN100867", phone: "13488888888", nick: "吴九", product: "NN加速器7天卡", productSnapshot: "NN加速器7天卡 / 规格：7天 / 类型：CDKey", productType: "CDKey", quantity: 10, currencyType: "积分", paymentMethod: "积分支付", unitAmount: 800, paymentAmount: 8000, inventoryType: "CDKey码池库存", acquireForm: "发放至用户背包，用户进入背包查看兑换码", fulfillmentChannel: "背包发放", fulfill: DELIVERY_AUTO_CDKEY, status: "已支付", fulfillmentStatus: "履约中", orderScene: "缺货下单", fulfilledQuantity: 5, pendingQuantity: 5, waitingReason: "剩余5个等待CDKey补货", maxPendingDurationSnapshot: 72, fulfillmentDeadlineAt: "2026-07-08 15:30:10", quotaReservationId: "PFR-20260705006", queueNo: 2, cdkeyPoolId: "ACCELERATOR_7D_POOL", reason: "已履约5个，剩余5个等待CDKey补货", paymentResult: "积分扣减成功：-8000 积分", stockResult: "已扣减5个CDKey；剩余5个待补货", fulfillResult: "已自动发放5个CDKey，剩余5个待履约", retrySummary: "剩余数量等待补货，不进入失败重试", maskedCdkey: "已发放5个（详情见履约记录）", created: "2026-07-05 15:30:10", updated: "2026-07-05 15:35:22", completed: "-" },
+      { no: "ORD20260705004", userId: "U100862", nnNo: "NN100862", phone: "13888888888", nick: "李四", product: "加速卡 7 天", productSnapshot: "加速卡 7 天 / 规格：7天 / 类型：CDKey", productType: "CDKey", quantity: 1, currencyType: "积分", paymentMethod: "积分支付", unitAmount: 800, paymentAmount: 800, inventoryType: "CDKey码池库存", acquireForm: "发放至用户背包，用户进入背包查看兑换码", fulfillmentChannel: "背包发放", fulfill: DELIVERY_AUTO_CDKEY, status: "已支付", fulfillmentStatus: "待履约", orderScene: "缺货下单", waitingReason: "等待CDKey补货", pendingQuantity: 1, quotaReservationId: "PFR-20260705004", queueNo: 1, cdkeyPoolId: "ACCELERATOR_7D_POOL", reason: "等待CDKey补货", paymentResult: "积分扣减成功：-800 积分", stockResult: "未占用CDKey；已占用待履约额度：1", fulfillResult: "待码池补货后自动发放", retrySummary: "等待补货，不进入失败重试", maskedCdkey: "-", created: "2026-07-05 16:20:10", updated: "2026-07-05 16:20:18", completed: "-" },
+      { no: "ORD20260705006", businessSource: "积分商城", userId: "U100867", nnNo: "NN100867", phone: "13488888888", nick: "吴九", product: "NN加速器7天卡", productSnapshot: "NN加速器7天卡 / 规格：7天 / 类型：CDKey", productType: "CDKey", quantity: 10, currencyType: "积分", paymentMethod: "积分支付", unitAmount: 800, paymentAmount: 8000, inventoryType: "CDKey码池库存", acquireForm: "发放至用户背包，用户进入背包查看兑换码", fulfillmentChannel: "背包发放", fulfill: DELIVERY_AUTO_CDKEY, status: "已支付", fulfillmentStatus: "履约中", orderScene: "缺货下单", fulfilledQuantity: 5, pendingQuantity: 5, waitingReason: "剩余5个等待CDKey补货", quotaReservationId: "PFR-20260705006", queueNo: 2, cdkeyPoolId: "ACCELERATOR_7D_POOL", reason: "已履约5个，剩余5个等待CDKey补货", paymentResult: "积分扣减成功：-8000 积分", stockResult: "已扣减5个CDKey；剩余5个待补货", fulfillResult: "已自动发放5个CDKey，剩余5个待履约", retrySummary: "剩余数量等待补货，不进入失败重试", maskedCdkey: "已发放5个（详情见履约记录）", created: "2026-07-05 15:30:10", updated: "2026-07-05 15:35:22", completed: "-" },
       { no: "ORD20260705005", userId: "U100863", nnNo: "NN100863", phone: "13966666666", nick: "王五", product: "星耀昵称挂件7天", productSnapshot: "星耀昵称挂件7天 / 类型：虚拟道具 / 权益：昵称装饰", productType: "虚拟道具", quantity: 1, currencyType: "人民币", paymentMethod: "支付宝", unitAmount: 6.9, paymentAmount: 6.9, inventoryType: "无限库存", acquireForm: "发放至用户背包，用户在社区装扮中启用", fulfillmentChannel: "背包发放", fulfill: DELIVERY_AUTO_VIRTUAL, status: "已支付", fulfillmentStatus: "履约失败", reason: "自动重试已达上限", paymentResult: "支付宝支付成功：¥6.90", stockResult: "无限库存，无需占用", fulfillResult: "履约失败，待人工处理", retrySummary: "已达自动重试上限 3/3", bagAsset: "-", created: "2026-07-05 15:08:20", updated: "2026-07-05 15:18:02", completed: "-" },
       { no: "ORD20260704005", businessSource: "暑期周边兑换活动", userId: "U100865", nnNo: "NN100865", phone: "13677777777", nick: "孙七", product: "NN定制鼠标垫", productSnapshot: "NN定制鼠标垫 / 类型：实物商品 / 规格：900x400mm", productType: "实物商品", quantity: 1, currencyType: "人民币", paymentMethod: "支付宝", unitAmount: 49.9, paymentAmount: 49.9, inventoryType: "有限库存", acquireForm: "用户填写收货地址后发货", fulfillmentChannel: "实物履约 / 物流发货", addressStatus: "未填写", recipient: "-", recipientPhone: "-", address: "-", logisticsCompany: "-", trackingNo: "-", fulfill: DELIVERY_MANUAL_PHYSICAL, status: "已支付", fulfillmentStatus: "待履约", reason: "等待用户在客户端订单填写收货地址", paymentResult: "支付宝支付成功：¥49.90", stockResult: "库存已占用：1", fulfillResult: "待用户提交收货地址", retrySummary: "实物履约-地址未填写", created: "2026-07-04 10:00:00", updated: "2026-07-04 10:00:09", completed: "-" },
       { no: "ORD20260703006", businessSource: "社区装扮焕新活动", userId: "U100866", nnNo: "NN100866", phone: "13588888888", nick: "周八", product: "社区身份装饰权益", productSnapshot: "社区身份装饰权益 / 类型：虚拟道具 / 权益：身份标识与资料卡装饰", productType: "虚拟道具", quantity: 1, currencyType: "积分", paymentMethod: "积分支付", unitAmount: 500, paymentAmount: 500, inventoryType: "无限库存", acquireForm: "发放至用户背包，用户在社区身份装饰中启用", fulfillmentChannel: "背包发放", fulfill: DELIVERY_AUTO_VIRTUAL, status: "已完成", fulfillmentStatus: "履约完成", reason: "-", paymentResult: "积分扣减成功：-500 积分", stockResult: "无限库存，无需占用", fulfillResult: "背包发放成功", retrySummary: "无需重试", bagAsset: "社区身份装饰权益 x1", created: "2026-07-03 09:15:42", updated: "2026-07-03 09:15:58", completed: "2026-07-03 09:15:58" },
@@ -2614,7 +2613,7 @@
     ];
     let deliveryRecords = [
       makeDeliveryRecord({ recordId: "DEL-202605220001", orderId: "ORD-202605220001", exchangeNo: "EXC-202605220001", userId: "10023888", spu: "SPU10002", skuId: "SPU10002-SKU01", deliveryMethod: DELIVERY_AUTO_CDKEY, deliveryState: "已履约", quantity: 3, payAmount: 9000, inventoryFlowId: "FLOW-000012", cdkeyPoolId: "PUBG_GCOIN_300_POOL", cdkeyBatchId: "BATCH-PUBG-202605-001", maskedCdkey: "PUBG-****-****-8K29", createdAt: "2026-05-22 16:20", deliveredAt: "2026-05-22 16:21", updatedAt: "2026-05-22 16:21", remark: "CDKey 已履约 3 个" }),
-      makeDeliveryRecord({ recordId: "DEL-202607050004", orderId: "ORD20260705004", exchangeNo: "EXC-202607050004", userId: "U100862", userNnNo: "NN100862", userPhone: "13888888888", spu: "SPU10003", skuId: "SPU10003-SKU01", deliveryMethod: DELIVERY_AUTO_CDKEY, deliveryState: "待履约", orderScene: "缺货下单", waitingReason: "等待CDKey补货", pendingQuantity: 1, queueNo: 1, quotaReservationId: "PFR-20260705004", fulfillmentDeadlineAt: "2026-07-08 16:20:10", payAmount: 800, inventoryFlowId: "-", cdkeyPoolId: "ACCELERATOR_7D_POOL", cdkeyBatchId: "", maskedCdkey: "-", failureReason: "", createdAt: "2026-07-05 16:20:18", deliveredAt: "-", updatedAt: "2026-07-05 16:20:18", remark: "支付成功，已占用待履约额度，等待码池补货" }),
+      makeDeliveryRecord({ recordId: "DEL-202607050004", orderId: "ORD20260705004", exchangeNo: "EXC-202607050004", userId: "U100862", userNnNo: "NN100862", userPhone: "13888888888", spu: "SPU10003", skuId: "SPU10003-SKU01", deliveryMethod: DELIVERY_AUTO_CDKEY, deliveryState: "待履约", orderScene: "缺货下单", waitingReason: "等待CDKey补货", pendingQuantity: 1, queueNo: 1, quotaReservationId: "PFR-20260705004", payAmount: 800, inventoryFlowId: "-", cdkeyPoolId: "ACCELERATOR_7D_POOL", cdkeyBatchId: "", maskedCdkey: "-", failureReason: "", createdAt: "2026-07-05 16:20:18", deliveredAt: "-", updatedAt: "2026-07-05 16:20:18", remark: "支付成功，已占用待履约额度，等待码池补货" }),
       makeDeliveryRecord({ recordId: "DEL-202605220003", orderId: "ORD-202605220003", exchangeNo: "EXC-202605220003", businessSource: "xx活动", userId: "10023890", spu: "SPU10001", skuId: "SPU10001-SKU01", deliveryMethod: DELIVERY_AUTO_VIRTUAL, deliveryState: "已履约", payAmount: 800, inventoryFlowId: "FLOW-000014", autoResourceId: "RESOURCE_AVATAR_FRAME_7D", createdAt: "2026-05-22 17:10", deliveredAt: "2026-05-22 17:10", updatedAt: "2026-05-22 17:10", remark: "权益服务已履约" }),
       makeDeliveryRecord({ recordId: "DEL-202605220004", orderId: "ORD-202605220004", exchangeNo: "EXC-202605220004", userId: "10023891", spu: "SPU10007", skuId: "SPU10007-SKU01", deliveryMethod: DELIVERY_AUTO_VIRTUAL, deliveryState: "待履约", payAmount: 800, inventoryFlowId: "FLOW-000015", autoResourceId: "RESOURCE_ENTRANCE_EFFECT_7D", callbackState: "等待回调", createdAt: "2026-05-22 17:20", deliveredAt: "-", updatedAt: "2026-05-22 17:20", remark: "等待权益服务回调" }),
       makeDeliveryRecord({ recordId: "DEL-202605220005", orderId: "ORD-202605220005", exchangeNo: "EXC-202605220005", userId: "10023892", spu: "SPU10008", skuId: "SPU10008-SKU01", deliveryMethod: DELIVERY_AUTO_CDKEY, deliveryState: "履约失败", payAmount: 800, inventoryFlowId: "FLOW-000016", failureReason: "CDKey 码池未配置", createdAt: "2026-05-22 17:28", deliveredAt: "-", updatedAt: "2026-05-22 17:28", remark: "商品码池配置缺失" }),
@@ -2760,7 +2759,6 @@
         if (spu === "SPU10003") {
           row.shortageOrderPolicy = SHORTAGE_POLICY_ALLOW_BACKORDER;
           row.pendingFulfillmentLimit = 50;
-          row.maxPendingDurationHours = 72;
         }
         return row;
       });
@@ -3123,7 +3121,6 @@
         cdkeyPoolCheck: null,
         shortageOrderPolicy: SHORTAGE_POLICY_STOCK_ONLY,
         pendingFulfillmentLimit: 0,
-        maxPendingDurationHours: 0,
         deliveryParams: initialDeliveryParams(delivery),
         remark: "SKU 级配置"
       };
@@ -3320,7 +3317,6 @@
         cdkeyPoolCheck: isCdkeyDelivery(delivery) && cdkeyPoolId ? checkCdkeyPool(cdkeyPoolId) : (row.cdkeyPoolCheck || null),
         shortageOrderPolicy: row.shortageOrderPolicy === SHORTAGE_POLICY_ALLOW_BACKORDER ? SHORTAGE_POLICY_ALLOW_BACKORDER : SHORTAGE_POLICY_STOCK_ONLY,
         pendingFulfillmentLimit: Number(row.pendingFulfillmentLimit || 0),
-        maxPendingDurationHours: Number(row.maxPendingDurationHours || 0),
         deliveryParams: normalizeDeliveryParams(row, delivery),
         remark: row.remark || "SKU 级配置"
       };
@@ -6007,8 +6003,7 @@
         ${detailSection("缺货下单与待履约额度", infoGrid([
           ["下单策略", shortageOrderPolicyText(sku)], ["待履约数量上限", isBackorderAllowed(sku) ? skuPendingLimit(sku) : "-"],
           ["待履约预占数量", isBackorderAllowed(sku) ? pendingReservedCount(record) : "-"], ["当前待履约数量", isBackorderAllowed(sku) ? currentPendingFulfillmentCount(record) : "-"],
-          ["剩余待履约额度", isBackorderAllowed(sku) ? remainingPendingQuota(record) : "-"], ["最长待履约时长", isBackorderAllowed(sku) ? `${sku.maxPendingDurationHours} 小时` : "-"],
-          ["到期处理", isBackorderAllowed(sku) ? "自动退款并关闭订单" : "-"]
+          ["剩余待履约额度", isBackorderAllowed(sku) ? remainingPendingQuota(record) : "-"]
         ]) + `<div class="hint-text">待履约额度用于控制已收款但尚未交付的最大责任，不计入真实库存。支付成功后占用，履约成功、退款成功或订单关闭后释放。</div>`)}
         ${detailSection("库存计算说明", `<div class="alert info">普通库存的可用库存用于兑换前锁定；CDKey 商品只锁定实际码，不锁定独立 SKU 库存。待补货订单只占用待履约额度。</div><div class="hint-text">商品是否前台投放由商品投放管理决定，库存列表只影响现货可用性和缺货下单额度。</div>`)}
         ${detailSection("最近库存流水", `${inventoryFlowTable(getInventoryFlows(record).slice(0, 5))}<div class="btn-row" style="margin-top:10px"><button class="btn" id="inventoryMoreFlowBtn">查看更多流水</button></div>`)}
@@ -6388,7 +6383,6 @@
         pendingQuantity: 0,
         queueNo: "-",
         quotaReservationId: "",
-        fulfillmentDeadlineAt: "",
         failureReason: "",
         userNnNo: userId ? `NN${userId.slice(-6)}` : "-",
         userPhone: userId ? `1380000${userTail}` : "-",
@@ -6472,7 +6466,7 @@
       const body = document.getElementById("deliveryRecordTbody");
       document.getElementById("deliveryTableCount").textContent = `共 ${visibleDeliveryRecords.length} 条`;
       if (!visibleDeliveryRecords.length) {
-        body.innerHTML = `<tr><td colspan="25"><div class="empty">当前筛选条件下暂无履约记录</div></td></tr>`;
+        body.innerHTML = `<tr><td colspan="24"><div class="empty">当前筛选条件下暂无履约记录</div></td></tr>`;
         return;
       }
       body.innerHTML = visibleDeliveryRecords.map(record => {
@@ -6497,7 +6491,6 @@
           <td>${deliveryTag(record.deliveryMethod)}</td>
           <td>${deliveryStateTag(record)}</td>
           <td>${record.waitingReason || "-"}</td>
-          <td>${record.fulfillmentDeadlineAt || "-"}</td>
           <td>${record.queueNo || "-"}</td>
           <td>${deliveryCdkeySummary(record)}</td>
           <td>${record.failureReason || "-"}</td>
@@ -6572,7 +6565,7 @@
           ["兑换单号", record.exchangeNo], ["订单号", record.orderId], ["业务来源", record.businessSource || "积分商城"], ["内部履约记录 ID", record.recordId], ["用户 ID", record.userId],
           ["用户 NN号", record.userNnNo || "-"], ["用户手机号", record.userPhone || "-"],
           ["履约状态", record.deliveryState], ["运营展示状态", deliveryDisplayState(record)], ["下单场景", record.orderScene || "现货下单"], ["履约方式", normalizeDelivery(record.deliveryMethod)],
-          ["履约等待原因", record.waitingReason || "-"], ["待履约数量", record.pendingQuantity || "-"], ["待履约截止时间", record.fulfillmentDeadlineAt || "-"], ["履约队列序号", record.queueNo || "-"],
+          ["履约等待原因", record.waitingReason || "-"], ["待履约数量", record.pendingQuantity || "-"], ["履约队列序号", record.queueNo || "-"],
           ["待履约额度占用记录ID", record.quotaReservationId || "-"], ["创建时间", record.createdAt], ["履约时间", record.deliveredAt || "-"],
           ["操作人", record.operator], ["备注", record.remark || "-"]
         ]))}
@@ -6610,7 +6603,7 @@
     function deliveryAdvice(record) {
       const reason = record.failureReason || "";
       if (record.waitingReason === "等待CDKey补货") return "该记录属于正常待履约，请前往 CDKey 码池补货；入库后系统将按支付成功时间 FIFO 自动发放。";
-      if (record.waitingReason) return `该记录正在${record.waitingReason}，请在待履约截止时间前补充资源或完成履约。`;
+      if (record.waitingReason) return `该记录正在${record.waitingReason}，请补充对应资源或完成履约。`;
       if (!reason) return "当前履约记录无异常，仅用于查询归档。";
       if (reason.includes("CDKey 可用码不足")) return "请前往 CDKey 码池列表补货或检查码池状态。";
       if (reason.includes("码池不可用") || reason.includes("码池未上架")) return "请前往 CDKey 码池列表检查码池状态。";
@@ -7485,8 +7478,8 @@
       const codes = attrCodes || deriveSkuAttrCodes({ skuList: rows }, type);
       const normalizedRows = rows.map((row, index) => normalizeSkuRow(row, type, index, codes));
       return `<div class="table-wrap"><table><thead><tr>
-        <th>SKU ID</th><th>SKU 名称</th><th>SKU 属性模板</th><th>SKU 属性值</th><th>计量单位 / 数值</th><th>排序（越大越靠前）</th><th>多币种价格</th><th>履约方式</th><th>CDKey 码池 ID</th><th>下单策略</th><th>待履约数量上限</th><th>最长待履约时长</th><th>每人总兑换次数</th><th>每人每日兑换次数</th><th>SKU 备注</th>
-        </tr></thead><tbody>${normalizedRows.map(s => `<tr><td>${s.skuId}</td><td>${s.skuName}</td><td>${s.templateName}</td><td>${formatSkuAttributeValues(s, type, codes)}</td><td>${skuSpecText(s)}</td><td>${s.sort}</td><td>${skuPriceSummary(s)}</td><td>${normalizeDelivery(s.delivery) || "未配置"}</td><td>${deliveryParamSummary(s)}</td><td>${shortageOrderPolicyText(s)}</td><td>${isBackorderAllowed(s) ? s.pendingFulfillmentLimit : "-"}</td><td>${isBackorderAllowed(s) ? `${s.maxPendingDurationHours} 小时` : "-"}</td><td>${s.totalLimit}</td><td>${s.dayLimit}</td><td>${s.remark}</td></tr>`).join("")}</tbody></table></div>`;
+        <th>SKU ID</th><th>SKU 名称</th><th>SKU 属性模板</th><th>SKU 属性值</th><th>计量单位 / 数值</th><th>排序（越大越靠前）</th><th>多币种价格</th><th>履约方式</th><th>CDKey 码池 ID</th><th>下单策略</th><th>待履约数量上限</th><th>每人总兑换次数</th><th>每人每日兑换次数</th><th>SKU 备注</th>
+        </tr></thead><tbody>${normalizedRows.map(s => `<tr><td>${s.skuId}</td><td>${s.skuName}</td><td>${s.templateName}</td><td>${formatSkuAttributeValues(s, type, codes)}</td><td>${skuSpecText(s)}</td><td>${s.sort}</td><td>${skuPriceSummary(s)}</td><td>${normalizeDelivery(s.delivery) || "未配置"}</td><td>${deliveryParamSummary(s)}</td><td>${shortageOrderPolicyText(s)}</td><td>${isBackorderAllowed(s) ? s.pendingFulfillmentLimit : "-"}</td><td>${s.totalLimit}</td><td>${s.dayLimit}</td><td>${s.remark}</td></tr>`).join("")}</tbody></table></div>`;
     }
     function exposureDetail(product) {
       return infoGrid([
@@ -7878,7 +7871,7 @@
       const showValidityTypeColumn = skuRows.some(row => isTimeSkuSpecType(row.specType));
       const validityTypeHeader = showValidityTypeColumn ? `<th>有效期类型<br><span class="minor">小时/天必填</span></th>` : "";
       const durationHeader = showValidityTypeColumn ? `<th>数值<br><span class="minor">限时必填</span></th>` : `<th>数值</th>`;
-      head.innerHTML = `<th>SKU 名称</th><th><span class="required-star">*</span>排序<br><span class="minor">越大越靠前</span></th><th><span class="required-star">*</span>计量单位</th>${validityTypeHeader}${durationHeader}<th><span class="required-star">*</span>多币种价格<br><span class="minor">积分 / N币 / RMB</span></th><th>CDKey 码池 ID</th><th><span class="required-star">*</span>下单策略</th><th>待履约数量上限</th><th>最长待履约时长（小时）</th><th>每人总兑换次数</th><th>每人每日兑换次数</th>${dynamicHeaders}<th>SKU 备注</th><th>操作</th>`;
+      head.innerHTML = `<th>SKU 名称</th><th><span class="required-star">*</span>排序<br><span class="minor">越大越靠前</span></th><th><span class="required-star">*</span>计量单位</th>${validityTypeHeader}${durationHeader}<th><span class="required-star">*</span>多币种价格<br><span class="minor">积分 / N币 / RMB</span></th><th>CDKey 码池 ID</th><th><span class="required-star">*</span>下单策略</th><th>待履约数量上限</th><th>每人总兑换次数</th><th>每人每日兑换次数</th>${dynamicHeaders}<th>SKU 备注</th><th>操作</th>`;
       body.innerHTML = skuRows.length ? skuRows.map((s, i) => {
         const attrCells = editableAttrs.map(attr => {
           const value = s.attributeValues[attr.code] || "";
@@ -7908,16 +7901,15 @@
             <td>${durationCell}</td>
             <td class="price-config-cell">${skuPriceSummary(s)}<button class="btn text" type="button" data-edit-sku-price="${i}">配置多币种价格</button></td>
             <td>${cdkeyPoolEditor(s, i)}</td>
-            <td><select class="mini-input" data-sku="${i}" data-field="shortageOrderPolicy"><option ${!backorderEnabled ? "selected" : ""}>${SHORTAGE_POLICY_STOCK_ONLY}</option><option ${backorderEnabled ? "selected" : ""}>${SHORTAGE_POLICY_ALLOW_BACKORDER}</option></select>${backorderEnabled ? `<div class="minor">到期未履约自动退款并关闭订单</div>` : ""}</td>
+            <td><select class="mini-input" data-sku="${i}" data-field="shortageOrderPolicy"><option ${!backorderEnabled ? "selected" : ""}>${SHORTAGE_POLICY_STOCK_ONLY}</option><option ${backorderEnabled ? "selected" : ""}>${SHORTAGE_POLICY_ALLOW_BACKORDER}</option></select></td>
             <td><input class="mini-input" type="number" min="1" data-sku="${i}" data-field="pendingFulfillmentLimit" value="${backorderEnabled ? s.pendingFulfillmentLimit : ""}" ${backorderEnabled ? "" : "disabled"} placeholder="正整数"></td>
-            <td><input class="mini-input" type="number" min="1" data-sku="${i}" data-field="maxPendingDurationHours" value="${backorderEnabled ? s.maxPendingDurationHours : ""}" ${backorderEnabled ? "" : "disabled"} placeholder="正整数"></td>
             <td><input class="mini-input" type="number" data-sku="${i}" data-field="totalLimit" value="${s.totalLimit}"></td>
             <td><input class="mini-input" type="number" data-sku="${i}" data-field="dayLimit" value="${s.dayLimit}"></td>
             ${attrCells}
             <td><input class="mini-input" data-sku="${i}" data-field="remark" value="${s.remark || ""}"></td>
             <td><button class="btn text" data-copy-sku="${i}">复制</button><button class="btn text" data-del-sku="${i}">删除</button></td>
           </tr>`;
-      }).join("") : `<tr><td colspan="${13 + (showValidityTypeColumn ? 1 : 0) + editableAttrs.length}"><div class="empty">请添加至少 1 条 SKU。</div></td></tr>`;
+      }).join("") : `<tr><td colspan="${12 + (showValidityTypeColumn ? 1 : 0) + editableAttrs.length}"><div class="empty">请添加至少 1 条 SKU。</div></td></tr>`;
       body.querySelectorAll("[data-attr]:not(select)").forEach(el => el.addEventListener("input", updateSkuFromInput));
       body.querySelectorAll("select[data-attr]").forEach(el => el.addEventListener("change", updateSkuFromInput));
       body.querySelectorAll("[data-field]:not(select)").forEach(el => el.addEventListener("input", updateSkuFromInput));
@@ -8059,10 +8051,8 @@
       if (field === "shortageOrderPolicy") {
         if (isBackorderAllowed(skuRows[index])) {
           skuRows[index].pendingFulfillmentLimit = Number(skuRows[index].pendingFulfillmentLimit || 50);
-          skuRows[index].maxPendingDurationHours = Number(skuRows[index].maxPendingDurationHours || 72);
         } else {
           skuRows[index].pendingFulfillmentLimit = 0;
-          skuRows[index].maxPendingDurationHours = 0;
         }
         renderSkuEdit();
         renderInventoryConfig();
@@ -8157,7 +8147,7 @@
       const missingRequiredAttr = skuRows.some(s => validationAttrs.some(attr => attr.required !== false && !s.attributeValues?.[attr.code]));
       const invalidEnum = skuRows.some(s => validationAttrs.some(attr => attr.valueType === "枚举" && s.attributeValues?.[attr.code] && !skuAttrOptions(attr).includes(s.attributeValues[attr.code])));
       const invalidBackorderConfig = skuRows.some(s => isBackorderAllowed(s)
-        && (!/^[1-9]\d*$/.test(String(s.pendingFulfillmentLimit)) || !/^[1-9]\d*$/.test(String(s.maxPendingDurationHours))));
+        && !/^[1-9]\d*$/.test(String(s.pendingFulfillmentLimit)));
       const errors = [];
       if (invalidSort) errors.push("排序必须为正整数，数值越大越靠前。");
       if (missingValidityType) errors.push("计量单位为小时或天时，必须选择有效期类型。");
@@ -8165,7 +8155,7 @@
       if (invalidNonTimeDuration) errors.push("SKU 数值必须为0或正整数。");
       if (missingRequiredAttr) errors.push("必填 SKU 属性项未填写。");
       if (invalidEnum) errors.push("SKU 枚举属性值不在模板可选值范围内。");
-      if (invalidBackorderConfig) errors.push("允许缺货下单时，待履约数量上限和最长待履约时长必须为正整数。");
+      if (invalidBackorderConfig) errors.push("允许缺货下单时，待履约数量上限必须为正整数。");
       if (duplicate) errors.push("SKU 属性值组合重复，请调整 SKU 属性值。");
       errors.push(...priceErrors);
       if (invalidDelivery) errors.push("请选择有效的履约方式。");
@@ -8955,7 +8945,6 @@
         }
         if (skuPriceGroupErrors(row).length) markInvalidElement(`[data-edit-sku-price="${index}"]`);
         if (isBackorderAllowed(row) && !/^[1-9]\d*$/.test(String(row.pendingFulfillmentLimit))) markInvalidElement(`[data-sku="${index}"][data-field="pendingFulfillmentLimit"]`);
-        if (isBackorderAllowed(row) && !/^[1-9]\d*$/.test(String(row.maxPendingDurationHours))) markInvalidElement(`[data-sku="${index}"][data-field="maxPendingDurationHours"]`);
         activeAttrs.forEach(attr => {
           if (attr.required !== false && !row.attributeValues?.[attr.code]) markInvalidElement(`[data-sku="${index}"][data-attr="${attr.code}"]`);
         });
@@ -9431,7 +9420,6 @@
         items.push(["下单场景", order.orderScene], ["履约等待原因", order.waitingReason || "-"]);
         if (!isPartiallyFulfilledOrder(order)) items.push(["待履约数量", pendingOrderQuantity(order)]);
         items.push(
-          ["最长待履约时长快照", `${order.maxPendingDurationSnapshot || "-"} 小时`], ["待履约截止时间", order.fulfillmentDeadlineAt || "-"],
           ["待履约额度占用记录ID", order.quotaReservationId || "-"], ["履约队列序号", order.queueNo || "-"]
         );
       }
@@ -9680,9 +9668,9 @@
     function exportOrderManagementRecords() {
       const rows = getFilteredMallOrders().map(order => [
         order.no, orderBusinessSource(order), order.userId, order.nnNo, order.phone, order.product, order.quantity, order.orderScene || "现货下单", formatOrderAmount(order), order.paymentMethod, order.fulfill, operationalOrderStatus(order), order.status,
-        order.fulfillmentStatus, operationalFulfillmentProgress(order), orderFulfillmentDescription(order), fulfilledOrderQuantity(order), pendingOrderQuantity(order), order.fulfillmentDeadlineAt || "-", order.quotaReservationId || "-", order.created, order.updated
+        order.fulfillmentStatus, operationalFulfillmentProgress(order), orderFulfillmentDescription(order), fulfilledOrderQuantity(order), pendingOrderQuantity(order), order.quotaReservationId || "-", order.created, order.updated
       ]);
-      downloadPrototypeCsv("订单列表", ["订单号", "业务来源", "用户ID", "用户NN号", "用户手机号", "商品名称", "数量", "下单场景", "支付金额", "支付方式", "履约方式", "订单状态", "技术订单状态", "技术履约状态", "履约状态", "履约说明", "已履约数量", "待履约数量", "待履约截止时间", "待履约额度占用记录ID", "创建时间", "更新时间"], rows);
+      downloadPrototypeCsv("订单列表", ["订单号", "业务来源", "用户ID", "用户NN号", "用户手机号", "商品名称", "数量", "下单场景", "支付金额", "支付方式", "履约方式", "订单状态", "技术订单状态", "技术履约状态", "履约状态", "履约说明", "已履约数量", "待履约数量", "待履约额度占用记录ID", "创建时间", "更新时间"], rows);
     }
     function stateTag(state) {
       const cls = state === "上架" ? "green" : state === "草稿" ? "orange" : state === "下架" ? "" : "";
