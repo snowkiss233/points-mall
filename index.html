@@ -9413,7 +9413,8 @@
         ["商品类型", order.productType || "-"], ["库存类型", order.inventoryType || "-"],
         ["技术履约状态", fulfillmentStatusTag(order.fulfillmentStatus)], ["履约状态", fulfillmentProgressTag(order)],
         ["履约说明", orderFulfillmentDescription(order)],
-        ["用户获得形式", order.acquireForm || "-"], ["履约渠道", order.fulfillmentChannel || order.fulfill]
+        ["用户获得形式", order.acquireForm || "-"], ["履约渠道", order.fulfillmentChannel || order.fulfill],
+        ["重试记录", order.retrySummary || "-"], ["异常原因", orderExceptionReason(order)]
       ];
       if (isPartiallyFulfilledOrder(order)) items.push(["已履约数量", fulfilledOrderQuantity(order)], ["剩余待履约数量", pendingOrderQuantity(order)]);
       if (order.orderScene === "缺货下单") {
@@ -9449,9 +9450,8 @@
           ["支付金额", formatOrderAmount(order)], ["支付方式", paymentMethodTag(order.paymentMethod)], ["履约方式", deliveryTag(order.fulfill)],
           ["创建时间", order.created], ["更新时间", order.updated], ["完成时间", order.completed]
         ]))}
-        ${detailSection("支付、库存与履约结果", infoGrid([
-          ["支付结果", order.paymentResult], ["库存处理结果", order.stockResult], ["履约结果", order.fulfillResult],
-          ["重试记录", order.retrySummary], ["待履约原因", order.waitingReason || "-"], ["异常原因", orderExceptionReason(order)]
+        ${detailSection("支付与库存处理", infoGrid([
+          ["支付结果", order.paymentResult], ["库存处理结果", order.stockResult]
         ]))}
         ${detailSection("履约信息", infoGrid(orderFulfillmentItems(order)))}
         ${isPhysicalOrder(order) ? detailSection("收货信息修改审计", orderAddressAuditHtml(order)) : ""}
