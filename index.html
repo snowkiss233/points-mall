@@ -9581,8 +9581,8 @@
           ["支付结果", order.paymentResult], ["库存处理结果", order.stockResult]
         ]))}
         ${detailSection("履约信息汇总", infoGrid(orderFulfillmentSummaryItems(order)))}
-        ${isPhysicalOrder(order) ? detailSection("收货及物流信息", infoGrid(orderPhysicalShippingItems(order))) : ""}
         ${detailSection("履约明细", orderFulfillmentDetailTable(order))}
+        ${isPhysicalOrder(order) ? detailSection("收货及物流信息", infoGrid(orderPhysicalShippingItems(order))) : ""}
         ${isPhysicalOrder(order) ? detailSection("收货信息修改审计", orderAddressAuditHtml(order)) : ""}
       `;
       const actions = [`<button class="btn" data-close-order-detail>关闭</button>`];
