@@ -330,7 +330,7 @@
     .template-attr-table th:nth-child(5),
     .template-attr-table td:nth-child(5) { width: 190px; }
     .sku-attr-select-table { min-width: 900px; }
-    .order-fulfillment-detail-table { min-width: 760px; }
+    .order-fulfillment-detail-table { min-width: 620px; }
     .checkbox-grid {
       display: flex;
       gap: 10px;
@@ -571,6 +571,26 @@
       padding: 11px 14px;
       font-size: 15px;
       border-bottom: 1px solid var(--line);
+    }
+    .drawer-section-heading {
+      background: #f8fafc;
+      padding: 11px 14px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .drawer-section .drawer-section-heading h3 {
+      background: transparent;
+      padding: 0;
+      border-bottom: 0;
+    }
+    .drawer-section-summary {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap;
     }
     .section-content { padding: 14px; }
     .info-grid {
@@ -9483,6 +9503,13 @@
       return "未发放";
     }
 
+    function pendingChildDescription(order) {
+      if (isPhysicalOrder(order)) return order.addressStatus === "已填写" ? "待运营发货" : "待用户填写地址";
+      if (order.productType === "CDKey") return order.orderScene === "缺货下单" ? "等待CDKey补货" : "待系统发放";
+      if (order.productType === "虚拟道具") return "待系统发放";
+      return order.orderScene === "缺货下单" ? "等待库存补货" : "待系统履约";
+    }
+
     function orderChildFulfillmentRows(order) {
       const total = Math.max(1, Number(order.quantity || 1));
       const fulfilledCount = fulfilledOrderQuantity(order);
@@ -9496,10 +9523,10 @@
         if (order.fulfillmentStatus === "无需履约") return { childNo, sequence: index + 1, status: "无需履约", description: "该商品无需履约", result: "无需履约" };
         if (index < fulfilledCount) return { childNo, sequence: index + 1, status: "履约完成", description: isPhysicalOrder(order) ? "用户已确认收货" : "履约完成", result: fulfilledChildResult(order) };
         if (fulfillmentException) return { childNo, sequence: index + 1, status: "履约异常", description: orderExceptionReason(order), result: order.fulfillResult || "履约失败" };
-        if (isPartial) return { childNo, sequence: index + 1, status: "待履约", description: order.waitingReason || orderFulfillmentDescription(order), result: pendingChildResult(order) };
+        if (isPartial) return { childNo, sequence: index + 1, status: "待履约", description: pendingChildDescription(order), result: pendingChildResult(order) };
         if (isAwaitingReceiptOrder(order)) return { childNo, sequence: index + 1, status: "履约中", description: "已统一发货，待用户确认收货", result: "已统一发货" };
-        if (order.fulfillmentStatus === "履约中") return { childNo, sequence: index + 1, status: "履约中", description: orderFulfillmentDescription(order), result: order.fulfillResult || "履约处理中" };
-        return { childNo, sequence: index + 1, status: "待履约", description: orderFulfillmentDescription(order), result: pendingChildResult(order) };
+        if (order.fulfillmentStatus === "履约中") return { childNo, sequence: index + 1, status: "履约中", description: "履约处理中", result: order.fulfillResult || "履约处理中" };
+        return { childNo, sequence: index + 1, status: "待履约", description: pendingChildDescription(order), result: pendingChildResult(order) };
       });
     }
 
@@ -9549,10 +9576,22 @@
 
     function orderFulfillmentDetailTable(order) {
       const rows = orderChildFulfillmentRows(order);
-      return `<div class="hint-text" style="margin-bottom:10px">父订单按单数量 SKU 拆分；每个子订单数量固定为 1，子订单履约状态为最终业务口径。</div>
-        <div class="table-wrap"><table class="order-fulfillment-detail-table"><thead><tr><th>子订单号</th><th>序号</th><th>数量</th><th>履约状态</th><th>履约说明</th><th>履约结果</th></tr></thead><tbody>
-        ${rows.map(row => `<tr><td>${row.childNo}</td><td>${row.sequence}</td><td>1</td><td>${childFulfillmentStatusTag(row.status)}</td><td>${row.description || "-"}</td><td>${row.result || "-"}</td></tr>`).join("")}
+      return `<div class="hint-text" style="margin-bottom:10px">父订单按单数量 SKU 拆分；每个子订单代表 1 个 SKU 数量，履约说明和履约结果仅描述当前子订单。</div>
+        <div class="table-wrap"><table class="order-fulfillment-detail-table"><thead><tr><th>子订单号</th><th>履约说明</th><th>履约结果</th></tr></thead><tbody>
+        ${rows.map(row => `<tr><td>${row.childNo}</td><td>${row.description || "-"}</td><td>${row.result || "-"}</td></tr>`).join("")}
         </tbody></table></div>`;
+    }
+
+    function orderFulfillmentDetailSection(order) {
+      const rows = orderChildFulfillmentRows(order);
+      const fulfilledCount = rows.filter(row => row.status === "履约完成").length;
+      return `<section class="drawer-section">
+        <div class="drawer-section-heading">
+          <h3>履约明细</h3>
+          <span class="drawer-section-summary">已履约 ${fulfilledCount} / 全部 ${rows.length}</span>
+        </div>
+        <div class="section-content">${orderFulfillmentDetailTable(order)}</div>
+      </section>`;
     }
 
     function openOrderManagementDetail(orderNo) {
@@ -9573,7 +9612,7 @@
           ["支付结果", order.paymentResult], ["库存处理结果", order.stockResult]
         ]))}
         ${detailSection("履约信息汇总", infoGrid(orderFulfillmentSummaryItems(order)))}
-        ${detailSection("履约明细", orderFulfillmentDetailTable(order))}
+        ${orderFulfillmentDetailSection(order)}
         ${isPhysicalOrder(order) ? detailSection("收货及物流信息", infoGrid(orderPhysicalShippingItems(order))) : ""}
         ${isPhysicalOrder(order) ? detailSection("收货信息修改审计", orderAddressAuditHtml(order)) : ""}
       `;
