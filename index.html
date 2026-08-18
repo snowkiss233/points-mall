@@ -473,7 +473,7 @@
     }
     .action-list .btn.text { font-size: 13px; }
     .points-flow-table { min-width: 1420px; }
-    .order-management-table { min-width: 2220px; }
+    .order-management-table { min-width: 1940px; }
     .points-flow-table td,
     .order-management-table td { white-space: nowrap; }
     .order-management-table td:nth-child(5),
@@ -1128,7 +1128,7 @@
         <div class="page-head">
           <div>
             <h1>订单列表</h1>
-            <div class="sub">订单状态按运营口径合并展示，详情保留技术状态；实物订单发货后保持“履约中”，待订单服务回写确认收货结果。</div>
+            <div class="sub">父订单列表仅展示父订单自身的订单与支付信息；子订单履约状态、履约说明及履约结果在订单详情的“履约明细”中查看。</div>
           </div>
           <div class="btn-row"><button class="btn" id="exportOrdersBtn">导出列表</button></div>
         </div>
@@ -1143,7 +1143,6 @@
               <div class="field"><label>货币类型</label><select id="mallOrderCurrencyFilter"><option value="">全部</option><option>积分</option><option>人民币</option></select></div>
               <div class="field"><label>支付方式</label><select id="mallOrderPaymentMethodFilter"><option value="">全部</option><option>积分支付</option><option>支付宝</option><option>微信支付</option></select></div>
               <div class="field"><label>履约方式</label><select id="mallOrderDeliveryFilter"><option value="">全部</option><option>自动履约（虚拟道具）</option><option>自动履约（CDKey）</option><option>手动履约（实物）</option></select></div>
-              <div class="field"><label>履约状态</label><select id="mallOrderFulfillmentProgressFilter"><option value="">全部</option><option>待履约</option><option>履约中</option><option>履约完成</option><option>履约异常</option></select></div>
             </div>
             <div class="filter-actions">
               <button class="btn primary" id="searchOrdersBtn">查询</button>
@@ -1161,10 +1160,10 @@
         </section>
 
         <section class="card">
-          <div class="table-head"><div><div class="table-title">订单列表</div><div class="table-meta">技术状态映射为运营状态展示；虚拟商品履约异常仅支持查看，由研发侧处理。</div></div><div class="table-meta" id="orderTableCount">共 0 条</div></div>
+          <div class="table-head"><div><div class="table-title">订单列表</div><div class="table-meta">列表按父订单号展示；履约信息按单数量 SKU 拆分后在订单详情中查看。</div></div><div class="table-meta" id="orderTableCount">共 0 条</div></div>
           <div class="table-wrap">
             <table class="order-management-table">
-              <thead><tr><th>订单号</th><th>业务来源</th><th>用户ID</th><th>用户NN号</th><th>用户手机号</th><th>商品名称</th><th>数量</th><th>下单场景</th><th>支付金额</th><th>支付方式</th><th>履约方式</th><th>订单状态</th><th>履约状态</th><th>履约说明</th><th>创建时间</th><th>更新时间</th><th>操作</th></tr></thead>
+              <thead><tr><th>订单号</th><th>业务来源</th><th>用户ID</th><th>用户NN号</th><th>用户手机号</th><th>商品名称</th><th>数量</th><th>下单场景</th><th>支付金额</th><th>支付方式</th><th>履约方式</th><th>订单状态</th><th>创建时间</th><th>更新时间</th><th>操作</th></tr></thead>
               <tbody id="orderManagementTbody"></tbody>
             </table>
           </div>
@@ -9412,11 +9411,6 @@
       return order.businessSource || "积分商城";
     }
 
-    function matchesFulfillmentProgressFilter(order, fulfillmentProgress) {
-      if (!fulfillmentProgress) return true;
-      return operationalFulfillmentProgress(order) === fulfillmentProgress;
-    }
-
     function getFilteredMallOrders() {
       const no = valueOf("mallOrderNoFilter");
       const user = valueOf("mallOrderUserFilter");
@@ -9425,15 +9419,13 @@
       const currencyType = valueOf("mallOrderCurrencyFilter");
       const paymentMethod = valueOf("mallOrderPaymentMethodFilter");
       const delivery = valueOf("mallOrderDeliveryFilter");
-      const fulfillmentProgress = valueOf("mallOrderFulfillmentProgressFilter");
       return mallOrders.filter(order => (!no || order.no.includes(no))
         && (!user || [order.userId, order.nnNo, order.phone].some(field => field.includes(user)))
         && (!status || operationalOrderStatus(order) === status)
         && (!product || order.product.includes(product))
         && (!currencyType || order.currencyType === currencyType)
         && (!paymentMethod || order.paymentMethod === paymentMethod)
-        && (!delivery || order.fulfill === delivery)
-        && matchesFulfillmentProgressFilter(order, fulfillmentProgress));
+        && (!delivery || order.fulfill === delivery));
     }
 
     function renderOrderManagementTable() {
@@ -9443,9 +9435,9 @@
           <td>${order.no}</td><td>${orderBusinessSource(order)}</td><td>${order.userId}</td><td>${order.nnNo}</td><td>${order.phone}</td><td>${order.product}</td>
           <td>${order.quantity}</td><td>${order.orderScene || "现货下单"}</td><td>${formatOrderAmount(order)}</td><td>${paymentMethodTag(order.paymentMethod)}</td>
           <td>${deliveryTag(order.fulfill)}</td><td>${orderStatusTag(operationalOrderStatus(order), order.status)}</td>
-          <td>${fulfillmentProgressTag(order)}</td><td>${orderFulfillmentDescription(order)}</td><td>${order.created}</td><td>${order.updated}</td><td>${orderActionHtml(order)}</td>
+          <td>${order.created}</td><td>${order.updated}</td><td>${orderActionHtml(order)}</td>
         </tr>
-      `).join("") : `<tr><td colspan="17"><div class="empty">当前筛选条件下暂无订单</div></td></tr>`;
+      `).join("") : `<tr><td colspan="15"><div class="empty">当前筛选条件下暂无订单</div></td></tr>`;
       document.getElementById("orderTableCount").textContent = `共 ${rows.length} 条`;
       document.getElementById("orderStatTotal").textContent = rows.length;
       document.getElementById("orderStatPending").textContent = rows.filter(order => operationalOrderStatus(order) === "待支付").length;
@@ -9455,7 +9447,7 @@
     }
 
     function resetOrderManagementFilters() {
-      ["mallOrderNoFilter", "mallOrderUserFilter", "mallOrderProductFilter", "mallOrderStatusFilter", "mallOrderCurrencyFilter", "mallOrderPaymentMethodFilter", "mallOrderDeliveryFilter", "mallOrderFulfillmentProgressFilter"].forEach(id => document.getElementById(id).value = "");
+      ["mallOrderNoFilter", "mallOrderUserFilter", "mallOrderProductFilter", "mallOrderStatusFilter", "mallOrderCurrencyFilter", "mallOrderPaymentMethodFilter", "mallOrderDeliveryFilter"].forEach(id => document.getElementById(id).value = "");
       renderOrderManagementTable();
       toast("订单筛选项已重置。");
     }
@@ -9797,9 +9789,9 @@
     function exportOrderManagementRecords() {
       const rows = getFilteredMallOrders().map(order => [
         order.no, orderBusinessSource(order), order.userId, order.nnNo, order.phone, order.product, order.quantity, order.orderScene || "现货下单", formatOrderAmount(order), order.paymentMethod, order.fulfill, operationalOrderStatus(order), order.status,
-        order.fulfillmentStatus, operationalFulfillmentProgress(order), orderFulfillmentDescription(order), fulfilledOrderQuantity(order), pendingOrderQuantity(order), order.quotaReservationId || "-", order.created, order.updated
+        fulfilledOrderQuantity(order), pendingOrderQuantity(order), order.quotaReservationId || "-", order.created, order.updated
       ]);
-      downloadPrototypeCsv("订单列表", ["订单号", "业务来源", "用户ID", "用户NN号", "用户手机号", "商品名称", "数量", "下单场景", "支付金额", "支付方式", "履约方式", "订单状态", "技术订单状态", "技术履约状态", "履约状态", "履约说明", "已履约数量", "待履约数量", "待履约额度占用记录ID", "创建时间", "更新时间"], rows);
+      downloadPrototypeCsv("订单列表", ["订单号", "业务来源", "用户ID", "用户NN号", "用户手机号", "商品名称", "数量", "下单场景", "支付金额", "支付方式", "履约方式", "订单状态", "技术订单状态", "已履约数量", "待履约数量", "待履约额度占用记录ID", "创建时间", "更新时间"], rows);
     }
     function stateTag(state) {
       const cls = state === "上架" ? "green" : state === "草稿" ? "orange" : state === "下架" ? "" : "";
