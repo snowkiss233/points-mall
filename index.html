@@ -9530,30 +9530,6 @@
       });
     }
 
-    function orderFulfillmentProgressSummary(order) {
-      const rows = orderChildFulfillmentRows(order);
-      const labels = ["履约完成", "履约中", "待履约", "履约异常", "未进入履约", "无需履约"];
-      return labels.map(label => {
-        const count = rows.filter(row => row.status === label).length;
-        return count ? `${label} ${count}` : "";
-      }).filter(Boolean).join("，") || "-";
-    }
-
-    function orderAggregateFulfillmentTag(order) {
-      const progress = operationalFulfillmentProgress(order);
-      return progress === "-" ? childFulfillmentStatusTag("未进入履约") : fulfillmentProgressTag(order);
-    }
-
-    function orderFulfillmentSummaryItems(order) {
-      const items = [
-        ["商品类型", order.productType || "-"], ["库存类型", order.inventoryType || "-"],
-        ["子订单数量", `${Math.max(1, Number(order.quantity || 1))} 笔`], ["履约状态（汇总）", orderAggregateFulfillmentTag(order)]
-      ];
-      if (operationalFulfillmentProgress(order) === "履约异常") items.push(["异常原因汇总", orderExceptionReason(order)]);
-      if (!isPhysicalOrder(order) && isOrderFulfillmentFailed(order)) items.push(["异常处理方式", "研发侧处理（后台仅查看）"]);
-      return items;
-    }
-
     function orderPhysicalShippingItems(order) {
       const receiverInfo = order.addressStatus === "已填写"
         ? `${order.recipient || "-"} / ${order.recipientPhone || "-"} / ${order.address || "-"}`
@@ -9601,7 +9577,6 @@
         ${detailSection("支付与库存处理", infoGrid([
           ["支付结果", order.paymentResult], ["库存处理结果", order.stockResult]
         ]))}
-        ${detailSection("履约信息汇总", infoGrid(orderFulfillmentSummaryItems(order)))}
         ${orderFulfillmentDetailSection(order)}
         ${isPhysicalOrder(order) ? detailSection("收货及物流信息", infoGrid(orderPhysicalShippingItems(order))) : ""}
         ${isPhysicalOrder(order) ? detailSection("收货信息修改审计", orderAddressAuditHtml(order)) : ""}
