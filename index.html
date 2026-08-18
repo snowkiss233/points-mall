@@ -9547,19 +9547,9 @@
     function orderFulfillmentSummaryItems(order) {
       const items = [
         ["商品类型", order.productType || "-"], ["库存类型", order.inventoryType || "-"],
-        ["子订单数量", `${Math.max(1, Number(order.quantity || 1))} 笔`], ["履约状态（汇总）", orderAggregateFulfillmentTag(order)],
-        ["履约进度", orderFulfillmentProgressSummary(order)], ["履约说明（汇总）", orderFulfillmentDescription(order)],
-        ["用户获得形式", order.acquireForm || "-"], ["履约渠道", order.fulfillmentChannel || order.fulfill],
+        ["子订单数量", `${Math.max(1, Number(order.quantity || 1))} 笔`], ["履约状态（汇总）", orderAggregateFulfillmentTag(order)]
       ];
       if (operationalFulfillmentProgress(order) === "履约异常") items.push(["异常原因汇总", orderExceptionReason(order)]);
-      if (isPartiallyFulfilledOrder(order)) items.push(["已履约数量", fulfilledOrderQuantity(order)], ["剩余待履约数量", pendingOrderQuantity(order)]);
-      if (order.orderScene === "缺货下单") {
-        items.push(["下单场景", order.orderScene], ["履约等待原因", order.waitingReason || "-"]);
-        if (!isPartiallyFulfilledOrder(order)) items.push(["待履约数量", pendingOrderQuantity(order)]);
-        items.push(
-          ["待履约额度占用记录ID", order.quotaReservationId || "-"], ["履约队列序号", order.queueNo || "-"]
-        );
-      }
       if (!isPhysicalOrder(order) && isOrderFulfillmentFailed(order)) items.push(["异常处理方式", "研发侧处理（后台仅查看）"]);
       return items;
     }
@@ -9601,7 +9591,7 @@
       document.getElementById("orderDetailBody").innerHTML = `
         ${detailSection("订单概览", infoGrid([
           ["订单状态", orderStatusTag(operationalOrderStatus(order), order.status)], ["技术订单状态", orderStatusTag(order.status)],
-          ["业务来源", orderBusinessSource(order)],
+          ["业务来源", orderBusinessSource(order)], ["下单场景", order.orderScene || "现货下单"],
           ["用户", `${order.userId} / ${order.nnNo} / ${order.phone} / ${order.nick}`],
           ["商品", order.product], ["商品快照", order.productSnapshot], ["购买数量", `${order.quantity} 件`],
           ["货币类型", order.currencyType], ["单件支付金额", formatOrderAmount(order, order.unitAmount)],
