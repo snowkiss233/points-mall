@@ -9574,9 +9574,6 @@
           ["支付金额", formatOrderAmount(order)], ["支付方式", paymentMethodTag(order.paymentMethod)], ["履约方式", deliveryTag(order.fulfill)],
           ["创建时间", order.created], ["更新时间", order.updated], ["完成时间", order.completed]
         ]))}
-        ${detailSection("支付与库存处理", infoGrid([
-          ["支付结果", order.paymentResult], ["库存处理结果", order.stockResult]
-        ]))}
         ${orderFulfillmentDetailSection(order)}
         ${isPhysicalOrder(order) ? detailSection("收货及物流信息", infoGrid(orderPhysicalShippingItems(order))) : ""}
         ${isPhysicalOrder(order) ? detailSection("收货信息修改审计", orderAddressAuditHtml(order)) : ""}
