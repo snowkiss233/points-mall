@@ -607,6 +607,18 @@
     }
     .info-label { color: var(--muted); font-size: 12px; margin-bottom: 5px; }
     .info-value { color: var(--text); font-weight: 600; word-break: break-word; }
+    .order-overview-group + .order-overview-group {
+      margin-top: 18px;
+      padding-top: 16px;
+      border-top: 1px solid var(--line);
+    }
+    .order-overview-group-title {
+      margin-bottom: 10px;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .order-overview-status .info-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .material-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
     .material-card {
       border: 1px dashed var(--line-strong);
@@ -984,7 +996,7 @@
       .sidebar { width: 76px; }
       .brand span, .nav-title, .nav-item span, .role { display: none; }
       .main { margin-left: 76px; width: calc(100% - 76px); }
-      .filter-grid, .form-grid, .form-grid.three, .info-grid, .material-grid, .upload-row { grid-template-columns: 1fr; }
+      .filter-grid, .form-grid, .form-grid.three, .info-grid, .order-overview-status .info-grid, .material-grid, .upload-row { grid-template-columns: 1fr; }
       .topbar { align-items: flex-start; height: auto; gap: 10px; padding: 12px; flex-direction: column; }
       .points-account-layout { grid-template-columns: 1fr; }
       .global-search { width: 100%; }
@@ -7519,6 +7531,33 @@
     function infoGrid(items) {
       return `<div class="info-grid">${items.map(([label, value]) => `<div class="info-item"><div class="info-label">${label}</div><div class="info-value">${value}</div></div>`).join("")}</div>`;
     }
+    function orderOverviewHtml(order) {
+      return `
+        <div class="order-overview-group order-overview-status">
+          <div class="order-overview-group-title">状态信息</div>
+          ${infoGrid([
+            ["订单状态", orderStatusTag(operationalOrderStatus(order), order.status)],
+            ["技术订单状态", orderStatusTag(order.status)]
+          ])}
+        </div>
+        <div class="order-overview-group">
+          <div class="order-overview-group-title">基础信息</div>
+          ${infoGrid([
+            ["业务来源", orderBusinessSource(order)], ["下单场景", order.orderScene || "现货下单"],
+            ["用户", `${order.userId} / ${order.nnNo} / ${order.phone} / ${order.nick}`],
+            ["商品", order.product], ["商品快照", order.productSnapshot], ["购买数量", `${order.quantity} 件`],
+            ["货币类型", order.currencyType], ["单件支付金额", formatOrderAmount(order, order.unitAmount)],
+            ["支付金额", formatOrderAmount(order)], ["支付方式", paymentMethodTag(order.paymentMethod)],
+            ["履约方式", deliveryTag(order.fulfill)]
+          ])}
+        </div>
+        <div class="order-overview-group">
+          <div class="order-overview-group-title">时间信息</div>
+          ${infoGrid([
+            ["创建时间", order.created], ["更新时间", order.updated], ["完成时间", order.completed]
+          ])}
+        </div>`;
+    }
     function richTextDisplay(value) {
       return value ? `<div class="rich-display">${value}</div>` : `<div class="hint-text">未配置</div>`;
     }
@@ -9565,15 +9604,7 @@
       if (!order) return;
       document.getElementById("orderDetailTitle").textContent = `订单详情 · ${order.no}`;
       document.getElementById("orderDetailBody").innerHTML = `
-        ${detailSection("订单概览", infoGrid([
-          ["订单状态", orderStatusTag(operationalOrderStatus(order), order.status)], ["技术订单状态", orderStatusTag(order.status)],
-          ["业务来源", orderBusinessSource(order)], ["下单场景", order.orderScene || "现货下单"],
-          ["用户", `${order.userId} / ${order.nnNo} / ${order.phone} / ${order.nick}`],
-          ["商品", order.product], ["商品快照", order.productSnapshot], ["购买数量", `${order.quantity} 件`],
-          ["货币类型", order.currencyType], ["单件支付金额", formatOrderAmount(order, order.unitAmount)],
-          ["支付金额", formatOrderAmount(order)], ["支付方式", paymentMethodTag(order.paymentMethod)], ["履约方式", deliveryTag(order.fulfill)],
-          ["创建时间", order.created], ["更新时间", order.updated], ["完成时间", order.completed]
-        ]))}
+        ${detailSection("订单概览", orderOverviewHtml(order))}
         ${orderFulfillmentDetailSection(order)}
         ${isPhysicalOrder(order) ? detailSection("收货及物流信息", infoGrid(orderPhysicalShippingItems(order))) : ""}
         ${isPhysicalOrder(order) ? detailSection("收货信息修改审计", orderAddressAuditHtml(order)) : ""}
