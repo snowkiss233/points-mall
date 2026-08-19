@@ -1370,7 +1370,7 @@
             <section class="form-card" id="sectionInitialInventory">
               <h2><span class="required-star">*</span>初始库存配置</h2>
               <div class="body">
-                <div class="alert info">首次新建商品时支持配置 SKU 初始库存和下单策略；选择“缺货可下单（进入待履约）”时，还需配置待履约数量上限。履约方式为自动履约（CDKey）时，库存模式固定为限量，初始总库存由绑定的 CDKey 码池同步，不支持在商品新建页手动设置。</div>
+                <div class="alert info">首次新建商品时支持配置 SKU 初始库存和下单策略；选择“缺货可下单”时，还需配置待履约数量上限。履约方式为自动履约（CDKey）时，库存模式固定为限量，初始总库存由绑定的 CDKey 码池同步，不支持在商品新建页手动设置。</div>
                 <div id="inventoryConfigBody"></div>
                 <div class="hint-text">非 CDKey 商品的初始库存只用于商品首次创建时初始化库存记录；下单策略和待履约数量上限均属于库存配置。CDKey 商品绑定码池 ID 后，真实码库存以 CDKey 码池列表为唯一来源。</div>
               </div>
@@ -1605,7 +1605,7 @@
             </div>
             <div class="filter-grid more-filters" id="inventoryMoreFilters">
               <div class="field"><label>CDKey 状态</label><select id="inventoryFilterCdkey"><option>全部</option><option>-</option><option>码池可用</option><option>CDKey 不足</option><option>码池未配置</option><option>码池不可用</option></select></div>
-              <div class="field"><label>下单策略</label><select id="inventoryFilterShortagePolicy"><option>全部</option><option>仅有货可下单</option><option>缺货可下单（进入待履约）</option></select></div>
+              <div class="field"><label>下单策略</label><select id="inventoryFilterShortagePolicy"><option>全部</option><option>仅有货可下单</option><option>缺货可下单</option></select></div>
               <div class="field"><label>创建时间</label><input id="inventoryFilterUpdated" placeholder="开始时间 - 结束时间"></div>
             </div>
             <div class="filter-actions">
@@ -2392,7 +2392,7 @@
     const DELIVERY_AUTO_CDKEY = "自动履约（CDKey）";
     const DELIVERY_MANUAL_PHYSICAL = "手动履约（实物）";
     const SHORTAGE_POLICY_STOCK_ONLY = "仅有货可下单";
-    const SHORTAGE_POLICY_ALLOW_BACKORDER = "缺货可下单（进入待履约）";
+    const SHORTAGE_POLICY_ALLOW_BACKORDER = "缺货可下单";
     const INVENTORY_ADJUST_PENDING_LIMIT = "调整待履约数量上限";
     const deliveries = ["全部", DELIVERY_AUTO_VIRTUAL, DELIVERY_AUTO_CDKEY, DELIVERY_MANUAL_PHYSICAL, "未配置"];
     const deliveryRecordStates = ["全部", "待履约", "已履约", "履约失败", "已取消"];
