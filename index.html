@@ -1352,7 +1352,7 @@
             <section class="form-card" id="sectionSku">
               <h2><span class="required-star">*</span>SKU 配置</h2>
               <div class="body">
-                <div class="alert info">单个 SKU 可同时配置积分、N币、RMB价格。三种价格独立维护，不按充值汇率自动换算；用户下单后锁定所选币种。所有商品 SKU 均可配置下单策略；允许缺货下单时，订单支付成功后占用待履约额度，资源到位后自动或人工继续履约。</div>
+                <div class="alert info">单个 SKU 可同时配置积分、N币、RMB价格。三种价格独立维护，不按充值汇率自动换算；用户下单后锁定所选币种。下单策略与待履约数量上限统一在初始化库存配置中维护。</div>
                 <div class="btn-row" style="margin-bottom:10px">
                   <button class="btn primary" id="addSkuBtn" type="button">添加 SKU</button>
                   <button class="btn danger" id="clearSkuBtn" type="button">清空 SKU</button>
@@ -1370,9 +1370,9 @@
             <section class="form-card" id="sectionInitialInventory">
               <h2><span class="required-star">*</span>初始库存配置</h2>
               <div class="body">
-                <div class="alert info">首次新建商品时支持配置 SKU 初始库存；SKU 允许缺货下单时，还需配置待履约数量上限。履约方式为自动履约（CDKey）时，库存模式固定为限量，初始总库存由绑定的 CDKey 码池同步，不支持在商品新建页手动设置。</div>
+                <div class="alert info">首次新建商品时支持配置 SKU 初始库存和下单策略；选择“缺货可下单（进入待履约）”时，还需配置待履约数量上限。履约方式为自动履约（CDKey）时，库存模式固定为限量，初始总库存由绑定的 CDKey 码池同步，不支持在商品新建页手动设置。</div>
                 <div id="inventoryConfigBody"></div>
-                <div class="hint-text">非 CDKey 商品的初始库存只用于商品首次创建时初始化库存记录；待履约数量上限属于库存配置，后续可在库存列表的“调整库存”中修改。CDKey 商品绑定码池 ID 后，真实码库存以 CDKey 码池列表为唯一来源。</div>
+                <div class="hint-text">非 CDKey 商品的初始库存只用于商品首次创建时初始化库存记录；下单策略和待履约数量上限均属于库存配置。CDKey 商品绑定码池 ID 后，真实码库存以 CDKey 码池列表为唯一来源。</div>
               </div>
             </section>
 
@@ -2637,7 +2637,7 @@
       makeInventoryRecord({ inventoryId: "INV-SPU10001-SKU02", spu: "SPU10001", skuId: "SPU10001-SKU02", stockMode: "限量", totalStock: 500, availableStock: 430, lockedStock: 4, deductedStock: 66, abnormalLockedStock: 0, todayLimit: 180, todayRemaining: 128, dailyRefreshTimes: "10:00,17:00", warningThreshold: 50, lastSyncTime: "2026-05-22 16:20", updatedAt: "2026-05-22 16:20", remark: "头像框 30 天初始化库存" }),
       makeInventoryRecord({ inventoryId: "INV-SPU10001-SKU03", spu: "SPU10001", skuId: "SPU10001-SKU03", stockMode: "限量", totalStock: 200, availableStock: 130, lockedStock: 0, deductedStock: 70, abnormalLockedStock: 0, todayLimit: 80, todayRemaining: 52, warningThreshold: 30, lastSyncTime: "2026-05-22 16:20", updatedAt: "2026-05-22 16:20", remark: "头像框永久 SKU 初始化库存" }),
       makeInventoryRecord({ inventoryId: "INV-SPU10002-SKU01", spu: "SPU10002", skuId: "SPU10002-SKU01", stockMode: "限量", totalStock: 500, availableStock: 320, lockedStock: 8, deductedStock: 172, abnormalLockedStock: 0, todayLimit: 90, todayRemaining: 60, dailyRefreshTimes: "10:00,17:00", warningThreshold: 80, cdkeyPoolId: "PUBG_GCOIN_300_POOL", lastSyncTime: "2026-05-22 15:18", updatedAt: "2026-05-22 15:18", remark: "G-COIN CDKey SKU 初始化库存" }),
-      makeInventoryRecord({ inventoryId: "INV-SPU10003-SKU01", spu: "SPU10003", skuId: "SPU10003-SKU01", stockMode: "限量", totalStock: 100, availableStock: 0, lockedStock: 0, deductedStock: 100, abnormalLockedStock: 0, todayLimit: 60, todayRemaining: 0, dailyRefreshTimes: "10:00,17:00", warningThreshold: 30, pendingFulfillmentLimit: 50, cdkeyPoolId: "ACCELERATOR_7D_POOL", lastSyncTime: "2026-05-21 20:06", updatedAt: "2026-05-21 20:06", remark: "真实库存来自CDKey码池；当前有1笔已支付订单等待补货" }),
+      makeInventoryRecord({ inventoryId: "INV-SPU10003-SKU01", spu: "SPU10003", skuId: "SPU10003-SKU01", stockMode: "限量", totalStock: 100, availableStock: 0, lockedStock: 0, deductedStock: 100, abnormalLockedStock: 0, todayLimit: 60, todayRemaining: 0, dailyRefreshTimes: "10:00,17:00", warningThreshold: 30, shortageOrderPolicy: SHORTAGE_POLICY_ALLOW_BACKORDER, pendingFulfillmentLimit: 50, cdkeyPoolId: "ACCELERATOR_7D_POOL", lastSyncTime: "2026-05-21 20:06", updatedAt: "2026-05-21 20:06", remark: "真实库存来自CDKey码池；当前有1笔已支付订单等待补货" }),
       makeInventoryRecord({ inventoryId: "INV-SPU10004-SKU01", spu: "SPU10004", skuId: "SPU10004-SKU01", stockMode: "限量", totalStock: 120, availableStock: 118, lockedStock: 0, deductedStock: 2, abnormalLockedStock: 0, todayLimit: 40, todayRemaining: 38, warningThreshold: 10, lastSyncTime: "2026-05-21 14:40", updatedAt: "2026-05-21 14:40", remark: "黑色标准款初始化库存" }),
       makeInventoryRecord({ inventoryId: "INV-SPU10004-SKU02", spu: "SPU10004", skuId: "SPU10004-SKU02", stockMode: "限量", totalStock: 80, availableStock: 78, lockedStock: 0, deductedStock: 2, abnormalLockedStock: 0, todayLimit: 30, todayRemaining: 28, warningThreshold: 10, lastSyncTime: "2026-05-21 14:40", updatedAt: "2026-05-21 14:40", remark: "白色标准款初始化库存" }),
       makeInventoryRecord({ inventoryId: "INV-SPU10005-SKU01", spu: "SPU10005", skuId: "SPU10005-SKU01", stockMode: "限量", totalStock: 300, availableStock: 250, lockedStock: 0, deductedStock: 50, abnormalLockedStock: 0, todayLimit: 80, todayRemaining: 48, warningThreshold: 30, lastSyncTime: "2026-05-20 18:12", updatedAt: "2026-05-20 18:12", remark: "昵称挂件 7 天初始化库存" }),
@@ -2790,9 +2790,6 @@
             row.cdkeyPoolCheck = checkCdkeyPool(pool.id);
             row.deliveryParams.cdkey = poolToParams(pool);
           }
-        }
-        if (spu === "SPU10003") {
-          row.shortageOrderPolicy = SHORTAGE_POLICY_ALLOW_BACKORDER;
         }
         return row;
       });
@@ -3153,7 +3150,6 @@
         delivery,
         cdkeyPoolId: "",
         cdkeyPoolCheck: null,
-        shortageOrderPolicy: SHORTAGE_POLICY_STOCK_ONLY,
         deliveryParams: initialDeliveryParams(delivery),
         remark: "SKU 级配置"
       };
@@ -3235,17 +3231,16 @@
       return row.cdkeyPoolId || row.deliveryParams?.cdkey?.poolId || "未填写";
     }
 
-    function isBackorderAllowed(sku) {
-      return sku?.shortageOrderPolicy === SHORTAGE_POLICY_ALLOW_BACKORDER;
+    function isBackorderAllowed(inventoryConfig) {
+      return inventoryConfig?.shortageOrderPolicy === SHORTAGE_POLICY_ALLOW_BACKORDER;
     }
 
-    function shortageOrderPolicyText(sku) {
-      return isBackorderAllowed(sku) ? SHORTAGE_POLICY_ALLOW_BACKORDER : SHORTAGE_POLICY_STOCK_ONLY;
+    function shortageOrderPolicyText(inventoryConfig) {
+      return isBackorderAllowed(inventoryConfig) ? SHORTAGE_POLICY_ALLOW_BACKORDER : SHORTAGE_POLICY_STOCK_ONLY;
     }
 
     function inventoryPendingLimit(record) {
-      const sku = getInventorySku(record);
-      return isBackorderAllowed(sku) ? Math.max(0, Number(record?.pendingFulfillmentLimit || 0)) : 0;
+      return isBackorderAllowed(record) ? Math.max(0, Number(record?.pendingFulfillmentLimit || 0)) : 0;
     }
 
     function pendingDeliveryRecordsForSku(spu, skuId) {
@@ -3348,7 +3343,6 @@
         delivery,
         cdkeyPoolId,
         cdkeyPoolCheck: isCdkeyDelivery(delivery) && cdkeyPoolId ? checkCdkeyPool(cdkeyPoolId) : (row.cdkeyPoolCheck || null),
-        shortageOrderPolicy: row.shortageOrderPolicy === SHORTAGE_POLICY_ALLOW_BACKORDER ? SHORTAGE_POLICY_ALLOW_BACKORDER : SHORTAGE_POLICY_STOCK_ONLY,
         deliveryParams: normalizeDeliveryParams(row, delivery),
         remark: row.remark || "SKU 级配置"
       };
@@ -5462,6 +5456,7 @@
         warningThreshold: 0,
         alertEnabled: "是",
         alertReceivers: "平台运营",
+        shortageOrderPolicy: SHORTAGE_POLICY_STOCK_ONLY,
         pendingFulfillmentLimit: 0,
         pendingReservedCount: 0,
         remark: "初始化库存",
@@ -5816,6 +5811,7 @@
         abnormalLockedStock: record.abnormalLockedStock,
         todayLimit: record.todayLimit,
         todayRemaining: record.todayRemaining,
+        shortageOrderPolicy: shortageOrderPolicyText(record),
         pendingFulfillmentLimit: record.pendingFulfillmentLimit,
         dailyReleases: cloneDailyReleases(record)
       };
@@ -5931,9 +5927,9 @@
           <td>${inventoryWarningText(record)}</td>
           <td>${inventoryStateTag(record.stockState)}</td>
           <td>${cdkeyTag(cdkeyStatus)}</td>
-          <td>${shortageOrderPolicyText(sku)}</td>
-          <td>${isBackorderAllowed(sku) ? `${currentPendingFulfillmentCount(record)} / ${inventoryPendingLimit(record)}` : "-"}</td>
-          <td>${isBackorderAllowed(sku) ? remainingPendingQuota(record) : "-"}</td>
+          <td>${shortageOrderPolicyText(record)}</td>
+          <td>${isBackorderAllowed(record) ? `${currentPendingFulfillmentCount(record)} / ${inventoryPendingLimit(record)}` : "-"}</td>
+          <td>${isBackorderAllowed(record) ? remainingPendingQuota(record) : "-"}</td>
           <td>${record.createdAt || record.updatedAt}</td>
           <td>${lastInventoryOperator(record)}</td>
           <td><div class="action-list">${inventoryRowActions(record)}</div></td>
@@ -5949,7 +5945,7 @@
       const sku = getInventorySku(record);
       const isCdkey = isCdkeyDelivery(sku?.delivery || product?.delivery);
       const actions = [`<button class="btn text" data-inventory-action="detail" data-inventory-id="${record.inventoryId}">查看详情</button>`];
-      if (!isCdkey || isBackorderAllowed(sku)) actions.push(`<button class="btn text" data-inventory-action="adjust" data-inventory-id="${record.inventoryId}">调整库存</button>`);
+      if (!isCdkey || isBackorderAllowed(record)) actions.push(`<button class="btn text" data-inventory-action="adjust" data-inventory-id="${record.inventoryId}">调整库存</button>`);
       if (isCdkey) actions.push(`<button class="btn text" data-inventory-action="pool" data-inventory-id="${record.inventoryId}">查看码池 / 补货</button>`);
       actions.push(`<button class="btn text" data-inventory-action="flow" data-inventory-id="${record.inventoryId}">库存流水</button>`);
       return actions.join("");
@@ -5992,7 +5988,7 @@
         const matchDelivery = delivery === "全部" || deliveryValue === delivery;
         const matchState = state === "全部" || calculateInventoryState(record) === state;
         const matchCdkey = cdkey === "全部" || inventoryCdkeyStatus(record) === cdkey;
-        const matchShortagePolicy = shortagePolicy === "全部" || shortageOrderPolicyText(sku) === shortagePolicy;
+        const matchShortagePolicy = shortagePolicy === "全部" || shortageOrderPolicyText(record) === shortagePolicy;
         const matchUpdated = !updated || String(record.createdAt || record.updatedAt).includes(updated);
         return matchName && matchSpuSku && matchType && matchDelivery && matchState && matchCdkey && matchShortagePolicy && matchUpdated;
       });
@@ -6035,9 +6031,9 @@
           ["库存状态", calculateInventoryState(record)], ["最近同步时间", record.lastSyncTime], ["创建时间", record.createdAt || record.updatedAt], ["备注", record.remark || "-"]
         ]) + cdkeyNotice + physicalNotice)}
         ${detailSection("缺货下单与待履约额度", infoGrid([
-          ["下单策略", shortageOrderPolicyText(sku)], ["待履约数量上限", isBackorderAllowed(sku) ? inventoryPendingLimit(record) : "-"],
-          ["待履约预占数量", isBackorderAllowed(sku) ? pendingReservedCount(record) : "-"], ["当前待履约数量", isBackorderAllowed(sku) ? currentPendingFulfillmentCount(record) : "-"],
-          ["剩余待履约额度", isBackorderAllowed(sku) ? remainingPendingQuota(record) : "-"]
+          ["下单策略", shortageOrderPolicyText(record)], ["待履约数量上限", isBackorderAllowed(record) ? inventoryPendingLimit(record) : "-"],
+          ["待履约预占数量", isBackorderAllowed(record) ? pendingReservedCount(record) : "-"], ["当前待履约数量", isBackorderAllowed(record) ? currentPendingFulfillmentCount(record) : "-"],
+          ["剩余待履约额度", isBackorderAllowed(record) ? remainingPendingQuota(record) : "-"]
         ]) + `<div class="hint-text">待履约额度用于控制已收款但尚未交付的最大责任，不计入真实库存。支付成功后占用，履约成功、退款成功或订单关闭后释放。</div>`)}
         ${detailSection("库存计算说明", `<div class="alert info">普通库存的可用库存用于兑换前锁定；CDKey 商品只锁定实际码，不锁定独立 SKU 库存。待补货订单只占用待履约额度。</div><div class="hint-text">商品是否前台投放由商品投放管理决定，库存列表只影响现货可用性和缺货下单额度。</div>`)}
         ${detailSection("最近库存流水", `${inventoryFlowTable(getInventoryFlows(record).slice(0, 5))}<div class="btn-row" style="margin-top:10px"><button class="btn" id="inventoryMoreFlowBtn">查看更多流水</button></div>`)}
@@ -6057,18 +6053,18 @@
         ["SPU ID", record.spu], ["商品对外名称", product?.name || "-"], ["SKU ID", record.skuId], ["SKU 规格", skuSpecText(sku)],
         ["当前库存模式", record.stockMode], ["当前总库存", inventoryNumberText(record.totalStock, record)], ["当前可用库存", inventoryNumberText(record.availableStock, record)],
         ["当前锁定库存", record.lockedStock], ["当前时段库存重置配置", record.stockMode === "不限量" ? "不限量" : (dailyReleaseLines(record.dailyReleases).join("，") || "不限制")],
-        ["当前安全库存阈值", inventoryWarningText(record)], ["当前待履约数量上限", isBackorderAllowed(sku) ? inventoryPendingLimit(record) : "-"]
+        ["当前安全库存阈值", inventoryWarningText(record)], ["当前下单策略", shortageOrderPolicyText(record)], ["当前待履约数量上限", isBackorderAllowed(record) ? inventoryPendingLimit(record) : "-"]
       ]);
       adjustDailyReleases = cloneDailyReleases(record);
       document.getElementById("inventoryAdjustMode").value = record.stockMode === "不限量" ? "不限量" : "限量";
       const isCdkeyRecord = isCdkeyDelivery(delivery);
-      const pendingLimitOption = isBackorderAllowed(sku) ? `<option>${INVENTORY_ADJUST_PENDING_LIMIT}</option>` : "";
+      const pendingLimitOption = isBackorderAllowed(record) ? `<option>${INVENTORY_ADJUST_PENDING_LIMIT}</option>` : "";
       document.getElementById("inventoryAdjustType").innerHTML = isCdkeyRecord
         ? pendingLimitOption
         : `<option>增加库存</option><option>减少库存</option>${pendingLimitOption}`;
-      document.getElementById("inventoryAdjustType").value = isCdkeyRecord && isBackorderAllowed(sku) ? INVENTORY_ADJUST_PENDING_LIMIT : "增加库存";
+      document.getElementById("inventoryAdjustType").value = isCdkeyRecord && isBackorderAllowed(record) ? INVENTORY_ADJUST_PENDING_LIMIT : "增加库存";
       document.getElementById("inventoryAdjustQty").value = "";
-      document.getElementById("inventoryAdjustPendingLimit").value = isBackorderAllowed(sku) ? inventoryPendingLimit(record) : "";
+      document.getElementById("inventoryAdjustPendingLimit").value = isBackorderAllowed(record) ? inventoryPendingLimit(record) : "";
       document.getElementById("inventoryAdjustSafetyPercent").value = record.stockMode === "不限量" ? "不限量" : (record.warningThreshold ?? "");
       document.getElementById("inventoryAdjustReason").value = "";
       updateInventoryAdjustFields();
@@ -6172,8 +6168,7 @@
       const before = snapshotInventory(record);
 
       if (type === INVENTORY_ADJUST_PENDING_LIMIT) {
-        const sku = getInventorySku(record);
-        if (!isBackorderAllowed(sku)) return toast("仅缺货可下单的 SKU 支持调整待履约数量上限。");
+        if (!isBackorderAllowed(record)) return toast("仅缺货可下单的 SKU 支持调整待履约数量上限。");
         const pendingLimitValue = Number(pendingLimitText);
         if (!/^[1-9]\d*$/.test(pendingLimitText) || !Number.isInteger(pendingLimitValue)) return toast("待履约数量上限必须为正整数。");
         if (pendingLimitValue === inventoryPendingLimit(record)) return toast("调整后上限与当前值一致，无需提交。");
@@ -7596,8 +7591,8 @@
       const codes = attrCodes || deriveSkuAttrCodes({ skuList: rows }, type);
       const normalizedRows = rows.map((row, index) => normalizeSkuRow(row, type, index, codes));
       return `<div class="table-wrap"><table><thead><tr>
-        <th>SKU ID</th><th>SKU 名称</th><th>SKU 属性模板</th><th>SKU 属性值</th><th>计量单位 / 数值</th><th>排序（越大越靠前）</th><th>多币种价格</th><th>履约方式</th><th>CDKey 码池 ID</th><th>下单策略</th><th>每人总兑换次数</th><th>每人每日兑换次数</th><th>SKU 备注</th>
-        </tr></thead><tbody>${normalizedRows.map(s => `<tr><td>${s.skuId}</td><td>${s.skuName}</td><td>${s.templateName}</td><td>${formatSkuAttributeValues(s, type, codes)}</td><td>${skuSpecText(s)}</td><td>${s.sort}</td><td>${skuPriceSummary(s)}</td><td>${normalizeDelivery(s.delivery) || "未配置"}</td><td>${deliveryParamSummary(s)}</td><td>${shortageOrderPolicyText(s)}</td><td>${s.totalLimit}</td><td>${s.dayLimit}</td><td>${s.remark}</td></tr>`).join("")}</tbody></table></div>`;
+        <th>SKU ID</th><th>SKU 名称</th><th>SKU 属性模板</th><th>SKU 属性值</th><th>计量单位 / 数值</th><th>排序（越大越靠前）</th><th>多币种价格</th><th>履约方式</th><th>CDKey 码池 ID</th><th>每人总兑换次数</th><th>每人每日兑换次数</th><th>SKU 备注</th>
+        </tr></thead><tbody>${normalizedRows.map(s => `<tr><td>${s.skuId}</td><td>${s.skuName}</td><td>${s.templateName}</td><td>${formatSkuAttributeValues(s, type, codes)}</td><td>${skuSpecText(s)}</td><td>${s.sort}</td><td>${skuPriceSummary(s)}</td><td>${normalizeDelivery(s.delivery) || "未配置"}</td><td>${deliveryParamSummary(s)}</td><td>${s.totalLimit}</td><td>${s.dayLimit}</td><td>${s.remark}</td></tr>`).join("")}</tbody></table></div>`;
     }
     function exposureDetail(product) {
       return infoGrid([
@@ -7989,7 +7984,7 @@
       const showValidityTypeColumn = skuRows.some(row => isTimeSkuSpecType(row.specType));
       const validityTypeHeader = showValidityTypeColumn ? `<th>有效期类型<br><span class="minor">小时/天必填</span></th>` : "";
       const durationHeader = showValidityTypeColumn ? `<th>数值<br><span class="minor">限时必填</span></th>` : `<th>数值</th>`;
-      head.innerHTML = `<th>SKU 名称</th><th><span class="required-star">*</span>排序<br><span class="minor">越大越靠前</span></th><th><span class="required-star">*</span>计量单位</th>${validityTypeHeader}${durationHeader}<th><span class="required-star">*</span>多币种价格<br><span class="minor">积分 / N币 / RMB</span></th><th>CDKey 码池 ID</th><th><span class="required-star">*</span>下单策略</th><th>每人总兑换次数</th><th>每人每日兑换次数</th>${dynamicHeaders}<th>SKU 备注</th><th>操作</th>`;
+      head.innerHTML = `<th>SKU 名称</th><th><span class="required-star">*</span>排序<br><span class="minor">越大越靠前</span></th><th><span class="required-star">*</span>计量单位</th>${validityTypeHeader}${durationHeader}<th><span class="required-star">*</span>多币种价格<br><span class="minor">积分 / N币 / RMB</span></th><th>CDKey 码池 ID</th><th>每人总兑换次数</th><th>每人每日兑换次数</th>${dynamicHeaders}<th>SKU 备注</th><th>操作</th>`;
       body.innerHTML = skuRows.length ? skuRows.map((s, i) => {
         const attrCells = editableAttrs.map(attr => {
           const value = s.attributeValues[attr.code] || "";
@@ -7998,7 +7993,6 @@
             : `<input class="mini-input" type="text" data-sku="${i}" data-attr="${attr.code}" value="${value}">`;
           return `<td>${control}</td>`;
         }).join("");
-        const backorderEnabled = isBackorderAllowed(s);
         const usesValidityType = isTimeSkuSpecType(s.specType);
         const permanent = usesValidityType && s.validityType === "永久";
         const limited = usesValidityType && s.validityType === "限时";
@@ -8019,14 +8013,13 @@
             <td>${durationCell}</td>
             <td class="price-config-cell">${skuPriceSummary(s)}<button class="btn text" type="button" data-edit-sku-price="${i}">配置多币种价格</button></td>
             <td>${cdkeyPoolEditor(s, i)}</td>
-            <td><select class="mini-input" data-sku="${i}" data-field="shortageOrderPolicy"><option ${!backorderEnabled ? "selected" : ""}>${SHORTAGE_POLICY_STOCK_ONLY}</option><option ${backorderEnabled ? "selected" : ""}>${SHORTAGE_POLICY_ALLOW_BACKORDER}</option></select></td>
             <td><input class="mini-input" type="number" data-sku="${i}" data-field="totalLimit" value="${s.totalLimit}"></td>
             <td><input class="mini-input" type="number" data-sku="${i}" data-field="dayLimit" value="${s.dayLimit}"></td>
             ${attrCells}
             <td><input class="mini-input" data-sku="${i}" data-field="remark" value="${s.remark || ""}"></td>
             <td><button class="btn text" data-copy-sku="${i}">复制</button><button class="btn text" data-del-sku="${i}">删除</button></td>
           </tr>`;
-      }).join("") : `<tr><td colspan="${11 + (showValidityTypeColumn ? 1 : 0) + editableAttrs.length}"><div class="empty">请添加至少 1 条 SKU。</div></td></tr>`;
+      }).join("") : `<tr><td colspan="${10 + (showValidityTypeColumn ? 1 : 0) + editableAttrs.length}"><div class="empty">请添加至少 1 条 SKU。</div></td></tr>`;
       body.querySelectorAll("[data-attr]:not(select)").forEach(el => el.addEventListener("input", updateSkuFromInput));
       body.querySelectorAll("select[data-attr]").forEach(el => el.addEventListener("change", updateSkuFromInput));
       body.querySelectorAll("[data-field]:not(select)").forEach(el => el.addEventListener("input", updateSkuFromInput));
@@ -8163,11 +8156,6 @@
         syncInventoryRows(false);
         renderInventoryConfig();
         validateSkuRows();
-        return;
-      }
-      if (field === "shortageOrderPolicy") {
-        renderSkuEdit();
-        renderInventoryConfig();
         return;
       }
       if (field === "specType") {
@@ -8327,6 +8315,7 @@
           delivery: getFormDelivery() || "未配置",
           stockMode,
           totalStock: isCdkey ? (pool ? pool.total : "") : (stockMode === "不限量" ? "" : (existing?.totalStock ?? "")),
+          shortageOrderPolicy: existing?.shortageOrderPolicy || SHORTAGE_POLICY_STOCK_ONLY,
           pendingFulfillmentLimit: existing?.pendingFulfillmentLimit ?? "",
           dailyReleases: stockMode === "不限量" ? [] : cloneEditableDailyReleases(existing?.dailyReleases || []),
           warningThreshold: existing?.warningThreshold ?? "",
@@ -8347,6 +8336,7 @@
         delivery: normalizeDelivery(sku.delivery) || "未配置",
         stockMode: "限量",
         totalStock: product.stock?.total || "",
+        shortageOrderPolicy: sku.shortageOrderPolicy || SHORTAGE_POLICY_STOCK_ONLY,
         pendingFulfillmentLimit: 0,
         dailyReleases: [],
         warningThreshold: "",
@@ -8394,10 +8384,10 @@
       body.innerHTML = `
         <div class="table-wrap">
           <table>
-            <thead><tr><th>SKU 名称</th><th><span class="required-star">*</span>库存模式</th><th><span class="required-star">*</span>初始总库存</th><th>待履约数量上限<br><span class="minor">缺货可下单时必填</span></th><th>时段库存重置配置</th><th>安全库存阈值</th><th>库存状态</th><th>备注</th></tr></thead>
+            <thead><tr><th>SKU 名称</th><th><span class="required-star">*</span>库存模式</th><th><span class="required-star">*</span>初始总库存</th><th><span class="required-star">*</span>下单策略</th><th>待履约数量上限<br><span class="minor">缺货可下单时必填</span></th><th>时段库存重置配置</th><th>安全库存阈值</th><th>库存状态</th><th>备注</th></tr></thead>
             <tbody>${inventoryRows.map((row, index) => {
               const isCdkeyRow = isCdkeyInventoryRow(index, row);
-              const backorderEnabled = isBackorderAllowed(skuRows[index]);
+              const backorderEnabled = isBackorderAllowed(row);
               const unlimitedDisabled = row.stockMode === "不限量";
               const stockModeEditor = isCdkeyRow
                 ? `<select class="mini-input" data-inv="${index}" data-inv-field="stockMode" disabled><option selected>限量</option></select><div class="minor">CDKey 库存模式固定为限量</div>`
@@ -8408,6 +8398,7 @@
                 <td>${row.skuDisplayText || "-"}</td>
                 <td>${stockModeEditor}</td>
                 <td><input class="mini-input" ${totalStockDisabled ? "disabled" : ""} data-inv="${index}" data-inv-field="totalStock" value="${totalStockValue}"></td>
+                <td><select class="mini-input" data-inv="${index}" data-inv-field="shortageOrderPolicy"><option ${backorderEnabled ? "" : "selected"}>${SHORTAGE_POLICY_STOCK_ONLY}</option><option ${backorderEnabled ? "selected" : ""}>${SHORTAGE_POLICY_ALLOW_BACKORDER}</option></select></td>
                 <td><input class="mini-input" type="number" min="1" data-inv="${index}" data-inv-field="pendingFulfillmentLimit" value="${backorderEnabled ? row.pendingFulfillmentLimit : ""}" ${backorderEnabled ? "" : "disabled"} placeholder="${backorderEnabled ? "请输入正整数" : "当前策略不适用"}"></td>
                 <td>${dailyReleaseEditorHtml(row.dailyReleases, "inv", index, unlimitedDisabled)}</td>
                 <td><input class="mini-input" ${unlimitedDisabled ? "disabled" : ""} data-inv="${index}" data-inv-field="warningThreshold" value="${unlimitedDisabled ? "不限量" : row.warningThreshold}"></td>
@@ -8442,6 +8433,9 @@
         return;
       }
       inventoryRows[index][field] = e.target.value;
+      if (field === "shortageOrderPolicy" && e.target.value === SHORTAGE_POLICY_STOCK_ONLY) {
+        inventoryRows[index].pendingFulfillmentLimit = "";
+      }
       if (field === "stockMode" && e.target.value === "不限量") {
         inventoryRows[index].totalStock = "";
         inventoryRows[index].dailyReleases = [];
@@ -8608,7 +8602,7 @@
         if (!isCdkeyRow && row.stockMode === "限量" && !/^[1-9]\d*$/.test(String(row.totalStock))) {
           errors.push({ item: "初始库存配置", problem: `SKU「${name}」初始总库存缺失`, suggestion: "请填写当前 SKU 的初始总库存" });
         }
-        if (isBackorderAllowed(skuRows[index]) && !/^[1-9]\d*$/.test(String(row.pendingFulfillmentLimit))) {
+        if (isBackorderAllowed(row) && !/^[1-9]\d*$/.test(String(row.pendingFulfillmentLimit))) {
           errors.push({ item: "初始库存配置", problem: `SKU「${name}」待履约数量上限缺失`, suggestion: "缺货可下单时，请填写正整数待履约数量上限" });
         }
         [["warningThreshold", "安全库存阈值"]].forEach(([field, label]) => {
@@ -8652,7 +8646,7 @@
           return;
         }
 
-        if (pool.available <= 0 && !isBackorderAllowed(row)) {
+        if (pool.available <= 0 && !isBackorderAllowed(inventoryRows[index])) {
           errors.push({ item: "CDKey 码池", problem: `SKU「${skuName}」配置的码池可用数量不足`, suggestion: "请补充码池或更换码池" });
           return;
         }
@@ -9067,7 +9061,7 @@
       });
       inventoryRows.forEach((row, index) => {
         if (!isCdkeyInventoryRow(index, row) && row.stockMode === "限量" && !/^[1-9]\d*$/.test(String(row.totalStock))) markInvalidElement(`[data-inv="${index}"][data-inv-field="totalStock"]`);
-        if (isBackorderAllowed(skuRows[index]) && !/^[1-9]\d*$/.test(String(row.pendingFulfillmentLimit))) markInvalidElement(`[data-inv="${index}"][data-inv-field="pendingFulfillmentLimit"]`);
+        if (isBackorderAllowed(row) && !/^[1-9]\d*$/.test(String(row.pendingFulfillmentLimit))) markInvalidElement(`[data-inv="${index}"][data-inv-field="pendingFulfillmentLimit"]`);
       });
       if (!inventoryRows.length || validateInventoryRows().length) document.getElementById("sectionInitialInventory")?.classList.add("invalid");
     }
