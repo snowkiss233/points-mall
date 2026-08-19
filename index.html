@@ -2173,7 +2173,7 @@
         <div class="field" id="inventoryAdjustModeField"><label><span class="required-star">*</span>库存模式</label><select id="inventoryAdjustMode"><option>限量</option><option>不限量</option></select></div>
         <div class="field"><label><span class="required-star">*</span>调整类型</label><select id="inventoryAdjustType"><option>增加库存</option><option>减少库存</option></select></div>
         <div class="field" id="inventoryAdjustQtyField"><label id="inventoryAdjustQtyLabel"><span class="required-star">*</span>调整数量</label><input id="inventoryAdjustQty" type="number" placeholder="请输入调整数量"></div>
-        <div class="field" id="inventoryAdjustPendingLimitField" style="display:none"><label id="inventoryAdjustPendingLimitLabel"><span class="required-star">*</span>调整后待履约数量上限</label><input id="inventoryAdjustPendingLimit" type="number" min="1" placeholder="请输入正整数"></div>
+        <div class="field" id="inventoryAdjustPendingLimitField" style="display:none"><label id="inventoryAdjustPendingLimitLabel"><span class="required-star">*</span>待履约数量上限</label><input id="inventoryAdjustPendingLimit" type="number" min="1" placeholder="请输入正整数"></div>
         <div class="field" id="inventoryAdjustDailyReleaseField" style="grid-column:1/-1"><label>时段库存重置配置</label><div id="inventoryAdjustDailyReleaseEditor"></div></div>
         <div class="field" id="inventoryAdjustSafetyField"><label>安全库存阈值（%）</label><input id="inventoryAdjustSafetyPercent" type="number" min="0" max="100" placeholder="请输入 0-100"></div>
         <div class="field" style="grid-column:1/-1"><label>调整原因</label><textarea id="inventoryAdjustReason" rows="3" placeholder="可填写调整原因"></textarea></div>
@@ -2393,7 +2393,6 @@
     const DELIVERY_MANUAL_PHYSICAL = "手动履约（实物）";
     const SHORTAGE_POLICY_STOCK_ONLY = "仅有货可下单";
     const SHORTAGE_POLICY_ALLOW_BACKORDER = "缺货可下单";
-    const INVENTORY_ADJUST_PENDING_LIMIT = "调整待履约数量上限";
     const deliveries = ["全部", DELIVERY_AUTO_VIRTUAL, DELIVERY_AUTO_CDKEY, DELIVERY_MANUAL_PHYSICAL, "未配置"];
     const deliveryRecordStates = ["全部", "待履约", "已履约", "履约失败", "已取消"];
     const businessSources = ["全部", "积分商城", "xx活动"];
@@ -5855,7 +5854,7 @@
     }
 
     function normalizeInventoryFlowType(type, before = {}, after = {}) {
-      if (type === "入库流水" || type === "出库流水") return type;
+      if (["入库流水", "出库流水", "待履约额度配置变更", "安全库存配置变更"].includes(type)) return type;
       const beforeTotal = numberValue(before.totalStock) + numberValue(before.availableStock);
       const afterTotal = numberValue(after.totalStock) + numberValue(after.availableStock);
       const outboundKeywords = ["减少", "扣减", "锁定", "核销", "订单完成"];
@@ -6057,12 +6056,8 @@
       ]);
       adjustDailyReleases = cloneDailyReleases(record);
       document.getElementById("inventoryAdjustMode").value = record.stockMode === "不限量" ? "不限量" : "限量";
-      const isCdkeyRecord = isCdkeyDelivery(delivery);
-      const pendingLimitOption = isBackorderAllowed(record) ? `<option>${INVENTORY_ADJUST_PENDING_LIMIT}</option>` : "";
-      document.getElementById("inventoryAdjustType").innerHTML = isCdkeyRecord
-        ? pendingLimitOption
-        : `<option>增加库存</option><option>减少库存</option>${pendingLimitOption}`;
-      document.getElementById("inventoryAdjustType").value = isCdkeyRecord && isBackorderAllowed(record) ? INVENTORY_ADJUST_PENDING_LIMIT : "增加库存";
+      document.getElementById("inventoryAdjustType").innerHTML = `<option>增加库存</option><option>减少库存</option>`;
+      document.getElementById("inventoryAdjustType").value = "增加库存";
       document.getElementById("inventoryAdjustQty").value = "";
       document.getElementById("inventoryAdjustPendingLimit").value = isBackorderAllowed(record) ? inventoryPendingLimit(record) : "";
       document.getElementById("inventoryAdjustSafetyPercent").value = record.stockMode === "不限量" ? "不限量" : (record.warningThreshold ?? "");
@@ -6079,7 +6074,6 @@
       const type = typeEl.value;
       const qty = document.getElementById("inventoryAdjustQty");
       const pendingLimit = document.getElementById("inventoryAdjustPendingLimit");
-      const pendingLimitLabel = document.getElementById("inventoryAdjustPendingLimitLabel");
       const modeField = document.getElementById("inventoryAdjustModeField");
       const qtyField = document.getElementById("inventoryAdjustQtyField");
       const pendingLimitField = document.getElementById("inventoryAdjustPendingLimitField");
@@ -6091,26 +6085,19 @@
       const sku = getInventorySku(record);
       const product = getInventoryProduct(record);
       const isCdkeyRecord = isCdkeyDelivery(sku?.delivery || product?.delivery || "未配置");
-      const adjustingPendingLimit = type === INVENTORY_ADJUST_PENDING_LIMIT;
+      const backorderEnabled = isBackorderAllowed(record);
       const modeChangingToUnlimited = targetMode === "不限量";
       const modeChangingToLimited = record.stockMode === "不限量" && targetMode === "限量";
-      modeField.style.display = adjustingPendingLimit ? "none" : "";
-      qtyField.style.display = adjustingPendingLimit ? "none" : "";
-      pendingLimitField.style.display = adjustingPendingLimit ? "" : "none";
-      dailyReleaseField.style.display = adjustingPendingLimit ? "none" : "";
-      safetyField.style.display = adjustingPendingLimit ? "none" : "";
-      if (adjustingPendingLimit) {
-        typeEl.disabled = isCdkeyRecord;
-        pendingLimit.disabled = false;
-        pendingLimitLabel.innerHTML = `<span class="required-star">*</span>调整后待履约数量上限`;
-        tip.textContent = `本次仅调整待履约数量上限，不修改真实库存。当前待履约数量为 ${currentPendingFulfillmentCount(record)}，调整后剩余额度将按新上限重新计算。`;
-        return;
-      }
+      modeField.style.display = "";
+      qtyField.style.display = "";
+      pendingLimitField.style.display = backorderEnabled ? "" : "none";
+      dailyReleaseField.style.display = "";
+      safetyField.style.display = "";
       document.getElementById("inventoryAdjustMode").disabled = isCdkeyRecord;
       typeEl.disabled = modeChangingToUnlimited || isCdkeyRecord;
       qty.disabled = modeChangingToUnlimited || isCdkeyRecord;
       qty.value = qty.disabled ? "" : qty.value;
-      pendingLimit.disabled = true;
+      pendingLimit.disabled = !backorderEnabled;
       safetyPercent.disabled = modeChangingToUnlimited;
       if (modeChangingToUnlimited) {
         safetyPercent.value = "不限量";
@@ -6136,10 +6123,14 @@
       if (isCdkeyRecord) {
         label.innerHTML = "调整数量";
         qty.placeholder = "真实码库存请前往码池维护";
-        tip.textContent = "CDKey SKU 的真实码库存由关联码池同步，不能在此手动调整；待履约数量上限等库存配置仍可在本弹窗维护。";
+        tip.textContent = backorderEnabled
+          ? `CDKey SKU 的真实码库存由关联码池同步，库存模式、调整类型和调整数量仅作展示且不可修改；待履约数量上限可在此单独调整，当前待履约数量为 ${currentPendingFulfillmentCount(record)}。`
+          : "CDKey SKU 的真实码库存由关联码池同步，不能在库存列表手动调整。";
         return;
       }
-      tip.textContent = "库存调整只维护当前 SKU 库存；库存模式、时段库存重置配置和安全库存阈值均在本弹窗内处理。";
+      tip.textContent = backorderEnabled
+        ? `真实库存与待履约数量上限相互独立，可在本弹窗分别调整；当前待履约数量为 ${currentPendingFulfillmentCount(record)}。`
+        : "库存调整只维护当前 SKU 库存；库存模式、时段库存重置配置和安全库存阈值均在本弹窗内处理。";
     }
 
     function validateCdkeyInventoryLimit(record, nextTotal, nextMode) {
@@ -6166,31 +6157,10 @@
       const reason = valueOf("inventoryAdjustReason");
       const qty = Number(qtyText);
       const before = snapshotInventory(record);
-
-      if (type === INVENTORY_ADJUST_PENDING_LIMIT) {
-        if (!isBackorderAllowed(record)) return toast("仅缺货可下单的 SKU 支持调整待履约数量上限。");
-        const pendingLimitValue = Number(pendingLimitText);
-        if (!/^[1-9]\d*$/.test(pendingLimitText) || !Number.isInteger(pendingLimitValue)) return toast("待履约数量上限必须为正整数。");
-        if (pendingLimitValue === inventoryPendingLimit(record)) return toast("调整后上限与当前值一致，无需提交。");
-        record.pendingFulfillmentLimit = pendingLimitValue;
-        record.updatedAt = nowText();
-        record.lastSyncTime = nowText();
-        addInventoryFlow(
-          record,
-          "待履约额度配置变更",
-          before,
-          snapshotInventory(record),
-          reason ? `待履约数量上限调整为 ${pendingLimitValue}：${reason}` : `待履约数量上限调整为 ${pendingLimitValue}`,
-          ""
-        );
-        closeModal("inventoryAdjustModal");
-        renderInventoryTable();
-        renderInventoryStats();
-        renderTable();
-        renderStats();
-        toast("待履约数量上限已调整。");
-        return;
-      }
+      const backorderEnabled = isBackorderAllowed(record);
+      const pendingLimitValue = Number(pendingLimitText);
+      if (backorderEnabled && (!/^[1-9]\d*$/.test(pendingLimitText) || !Number.isInteger(pendingLimitValue))) return toast("待履约数量上限必须为正整数。");
+      const pendingLimitChanged = backorderEnabled && pendingLimitValue !== inventoryPendingLimit(record);
 
       let operation = type;
       const operationParts = [];
@@ -6265,7 +6235,11 @@
           operationParts.push(`设置安全库存阈值 ${safetyPercentValue}%`);
         }
       }
-      if (!operationParts.length) return toast("请填写调整数量、时段库存重置配置或安全库存阈值。");
+      if (pendingLimitChanged) {
+        record.pendingFulfillmentLimit = pendingLimitValue;
+        operationParts.push(`待履约数量上限调整为 ${pendingLimitValue}`);
+      }
+      if (!operationParts.length) return toast("请填写调整数量，或修改待履约数量上限、时段库存重置配置、安全库存阈值。");
       if (record.stockMode !== "不限量" && record.todayLimit !== "" && record.todayLimit !== null && record.todayLimit !== undefined) {
         const maxRemaining = Math.min(numberValue(record.todayLimit), numberValue(record.availableStock));
         if (numberValue(record.todayRemaining) > maxRemaining) record.todayRemaining = maxRemaining;
@@ -6274,7 +6248,9 @@
       record.updatedAt = nowText();
       record.lastSyncTime = nowText();
       const after = snapshotInventory(record);
-      addInventoryFlow(record, normalizeInventoryFlowType(operation, before, after), before, after, reason ? `${operationParts.join("；") || operation}：${reason}` : (operationParts.join("；") || operation), "");
+      const onlyPendingLimitChanged = operationParts.length === 1 && pendingLimitChanged;
+      const flowType = onlyPendingLimitChanged ? "待履约额度配置变更" : normalizeInventoryFlowType(operation, before, after);
+      addInventoryFlow(record, flowType, before, after, reason ? `${operationParts.join("；") || operation}：${reason}` : (operationParts.join("；") || operation), "");
       syncProductStockSummaryByInventory(record.spu);
       closeModal("inventoryAdjustModal");
       renderInventoryTable();
