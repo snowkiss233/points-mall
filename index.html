@@ -473,7 +473,7 @@
     }
     .action-list .btn.text { font-size: 13px; }
     .points-flow-table { min-width: 1420px; }
-    .order-management-table { min-width: 1940px; }
+    .order-management-table { min-width: 1780px; }
     .points-flow-table td,
     .order-management-table td { white-space: nowrap; }
     .order-management-table td:nth-child(5),
@@ -1181,7 +1181,6 @@
               <div class="field"><label>货币类型</label><select id="mallOrderCurrencyFilter"><option value="">全部</option><option>积分</option><option>人民币</option></select></div>
               <div class="field"><label>支付方式</label><select id="mallOrderPaymentMethodFilter"><option value="">全部</option><option>积分支付</option><option>支付宝</option><option>微信支付</option></select></div>
               <div class="field"><label>履约方式</label><select id="mallOrderDeliveryFilter"><option value="">全部</option><option>自动履约（虚拟道具）</option><option>自动履约（CDKey）</option><option>手动履约（实物）</option></select></div>
-              <div class="field"><label>CDKey 提取状态</label><select id="mallOrderExtractFilter"><option value="">全部</option><option>待发码</option><option>待提取</option><option>已提取</option></select></div>
             </div>
             <div class="filter-actions">
               <button class="btn primary" id="searchOrdersBtn">查询</button>
@@ -1202,7 +1201,7 @@
           <div class="table-head"><div><div class="table-title">订单列表</div><div class="table-meta">列表按父订单号展示；履约信息按单数量 SKU 拆分后在订单详情中查看。</div></div><div class="table-meta" id="orderTableCount">共 0 条</div></div>
           <div class="table-wrap">
             <table class="order-management-table">
-              <thead><tr><th>订单号</th><th>业务来源</th><th>用户ID</th><th>用户NN号</th><th>用户手机号</th><th>商品名称</th><th>数量</th><th>下单场景</th><th>支付金额</th><th>支付方式</th><th>履约方式</th><th>订单状态</th><th>CDKey 提取状态</th><th>创建时间</th><th>更新时间</th><th>操作</th></tr></thead>
+              <thead><tr><th>订单号</th><th>业务来源</th><th>用户ID</th><th>用户NN号</th><th>用户手机号</th><th>商品名称</th><th>数量</th><th>下单场景</th><th>支付金额</th><th>支付方式</th><th>履约方式</th><th>订单状态</th><th>创建时间</th><th>更新时间</th><th>操作</th></tr></thead>
               <tbody id="orderManagementTbody"></tbody>
             </table>
           </div>
@@ -1656,7 +1655,7 @@
                   <th><button class="sort-head" type="button" data-inventory-sort="todayRemaining">时段库存重置配置</button></th>
                   <th><button class="sort-head" type="button" data-inventory-sort="warningThreshold">安全库存阈值</button></th>
                   <th>库存状态</th>
-                  <th>CDKey 状态</th>
+                  <th>CDKey 货源配置</th>
                   <th>下单策略</th>
                   <th>待履约数量</th>
                   <th>创建时间</th>
@@ -5704,6 +5703,15 @@
       return sourceIds.length ? sourceIds.join("、") : (inventoryCdkeyPoolId(record) || "未配置");
     }
 
+    function inventoryCdkeySourceConfigHtml(record) {
+      const product = getInventoryProduct(record);
+      const sku = getInventorySku(record);
+      const delivery = sku?.delivery || product?.delivery;
+      if (!requiresCdkeySourceConfig(sku, product?.type) && !isCdkeyDelivery(delivery)) return "--";
+      if (!skuCdkeySourceIds(sku).length) return `<span class="tag orange">未配置</span>`;
+      return deliveryParamSummary(sku, product?.type);
+    }
+
     function normalizeDailyRefreshTimesText(value, useDefault = true) {
       if (value === "不限量") return "不限量";
       const raw = String(value || "").trim();
@@ -6046,7 +6054,6 @@
         const product = getInventoryProduct(record);
         const sku = getInventorySku(record);
         const delivery = sku?.delivery || product?.delivery || "未配置";
-        const cdkeyStatus = inventoryCdkeyStatus(record);
         record.stockState = calculateInventoryState(record);
         return `<tr>
           <td><b>${record.spu}</b></td>
@@ -6062,7 +6069,7 @@
           <td>${inventoryDailyReleaseSummary(record)}</td>
           <td>${inventoryWarningText(record)}</td>
           <td>${inventoryStateTag(record.stockState)}</td>
-          <td>${cdkeyTag(cdkeyStatus)}</td>
+          <td>${inventoryCdkeySourceConfigHtml(record)}</td>
           <td>${shortageOrderPolicyText(record)}</td>
           <td>${isBackorderAllowed(record) ? currentPendingFulfillmentCount(record) : "-"}</td>
           <td>${record.createdAt || record.updatedAt}</td>
@@ -9905,15 +9912,13 @@
       const currencyType = valueOf("mallOrderCurrencyFilter");
       const paymentMethod = valueOf("mallOrderPaymentMethodFilter");
       const delivery = valueOf("mallOrderDeliveryFilter");
-      const extractStatus = valueOf("mallOrderExtractFilter");
       return mallOrders.filter(order => (!no || order.no.includes(no))
         && (!user || [order.userId, order.nnNo, order.phone].some(field => field.includes(user)))
         && (!status || operationalOrderStatus(order) === status)
         && (!product || order.product.includes(product))
         && (!currencyType || order.currencyType === currencyType)
         && (!paymentMethod || order.paymentMethod === paymentMethod)
-        && (!delivery || order.fulfill === delivery)
-        && (!extractStatus || cdkeyExtractStatus(order) === extractStatus));
+        && (!delivery || order.fulfill === delivery));
     }
 
     function renderOrderManagementTable() {
@@ -9922,10 +9927,10 @@
         <tr>
           <td>${order.no}</td><td>${orderBusinessSource(order)}</td><td>${order.userId}</td><td>${order.nnNo}</td><td>${order.phone}</td><td>${order.product}</td>
           <td>${order.quantity}</td><td>${order.orderScene || "现货下单"}</td><td>${formatOrderAmount(order)}</td><td>${paymentMethodTag(order.paymentMethod)}</td>
-          <td>${deliveryTag(order.fulfill)}</td><td>${orderStatusTag(operationalOrderStatus(order), order.status)}</td><td>${cdkeyExtractStatusTag(order)}</td>
+          <td>${deliveryTag(order.fulfill)}</td><td>${orderStatusTag(operationalOrderStatus(order), order.status)}</td>
           <td>${order.created}</td><td>${order.updated}</td><td>${orderActionHtml(order)}</td>
         </tr>
-      `).join("") : `<tr><td colspan="16"><div class="empty">当前筛选条件下暂无订单</div></td></tr>`;
+      `).join("") : `<tr><td colspan="15"><div class="empty">当前筛选条件下暂无订单</div></td></tr>`;
       document.getElementById("orderTableCount").textContent = `共 ${rows.length} 条`;
       document.getElementById("orderStatTotal").textContent = rows.length;
       document.getElementById("orderStatPending").textContent = rows.filter(order => operationalOrderStatus(order) === "待支付").length;
@@ -9935,7 +9940,7 @@
     }
 
     function resetOrderManagementFilters() {
-      ["mallOrderNoFilter", "mallOrderUserFilter", "mallOrderProductFilter", "mallOrderStatusFilter", "mallOrderCurrencyFilter", "mallOrderPaymentMethodFilter", "mallOrderDeliveryFilter", "mallOrderExtractFilter"].forEach(id => document.getElementById(id).value = "");
+      ["mallOrderNoFilter", "mallOrderUserFilter", "mallOrderProductFilter", "mallOrderStatusFilter", "mallOrderCurrencyFilter", "mallOrderPaymentMethodFilter", "mallOrderDeliveryFilter"].forEach(id => document.getElementById(id).value = "");
       renderOrderManagementTable();
       toast("订单筛选项已重置。");
     }
@@ -10031,13 +10036,26 @@
       return value.length === 11 ? `${value.slice(0, 3)}****${value.slice(-4)}` : value || "-";
     }
 
+    function orderCdkeySourceConfigHtml(order) {
+      const supplyMode = order.supplyMode || "-";
+      const isDirectSupply = supplyMode === "接口直供";
+      const referenceLabel = isDirectSupply ? "三方商品编码" : "旧码池 ID";
+      const referenceValue = isDirectSupply
+        ? (order.supplierProductId || "-")
+        : (order.cdkeyPoolId || order.supplySourceId || "-");
+      const provider = isDirectSupply
+        ? `三方供应商${order.supplier ? `（${order.supplier}）` : ""}`
+        : supplyMode === "码池供货" ? "平台自营" : "-";
+      return `<div>${referenceLabel}：${referenceValue}</div><div class="minor">供货方式：${supplyMode}</div><div class="minor">供货方：${provider}</div>`;
+    }
+
     function cdkeyExtractionInfoSection(order) {
       if (!isCdkeyOrder(order)) return "";
       return `<section class="drawer-section">
         <div class="drawer-section-heading"><h3>CDKey 提取信息</h3><span class="drawer-section-summary">${cdkeyExtractStatusTag(order)}</span></div>
         <div class="section-content">
           ${infoGrid([
-            ["命中货源", `${order.supplySourceName || "-"} / ${order.supplyMode || "-"}`],
+            ["货源配置", orderCdkeySourceConfigHtml(order)],
             ["实名校验", order.realNameVerifiedAt && order.realNameVerifiedAt !== "-" ? `已通过 · ${order.realNameVerifiedAt}` : "未校验"],
             ["提取时间", order.extractedAt || "-"]
           ])}
@@ -10350,10 +10368,9 @@
     function exportOrderManagementRecords() {
       const rows = getFilteredMallOrders().map(order => [
         order.no, orderBusinessSource(order), order.userId, order.nnNo, order.phone, order.product, order.quantity, order.orderScene || "现货下单", formatOrderAmount(order), order.paymentMethod, order.fulfill, operationalOrderStatus(order), order.status,
-        cdkeyExtractStatus(order), order.realNameVerifiedAt || "-", order.extractedAt || "-",
         fulfilledOrderQuantity(order), pendingOrderQuantity(order), order.quotaReservationId || "-", order.created, order.updated
       ]);
-      downloadPrototypeCsv("订单列表", ["订单号", "业务来源", "用户ID", "用户NN号", "用户手机号", "商品名称", "数量", "下单场景", "支付金额", "支付方式", "履约方式", "订单状态", "技术订单状态", "CDKey 提取状态", "实名校验时间", "CDKey 提取时间", "已履约数量", "待履约数量", "待履约额度占用记录ID", "创建时间", "更新时间"], rows);
+      downloadPrototypeCsv("订单列表", ["订单号", "业务来源", "用户ID", "用户NN号", "用户手机号", "商品名称", "数量", "下单场景", "支付金额", "支付方式", "履约方式", "订单状态", "技术订单状态", "已履约数量", "待履约数量", "待履约额度占用记录ID", "创建时间", "更新时间"], rows);
     }
     function stateTag(state) {
       const cls = state === "上架" ? "green" : state === "草稿" ? "orange" : state === "下架" ? "" : "";
@@ -10418,8 +10435,6 @@
   </script>
 </body>
 </html>
-
-
 
 
 
