@@ -898,6 +898,12 @@
     .release-row input { width:100%; }
     .release-summary { color:var(--muted); font-size:12px; line-height:1.5; }
     .release-empty { color:var(--muted); font-size:12px; margin-bottom:8px; }
+    .cdkey-route-list { display:flex; flex-direction:column; gap:8px; margin-top:8px; }
+    .cdkey-route-row { display:grid; gap:8px; align-items:center; }
+    .cdkey-route-row.pool { grid-template-columns:80px minmax(0, 1fr) 64px; }
+    .cdkey-route-row.direct { grid-template-columns:80px 160px minmax(0, 1fr) 64px; }
+    .cdkey-route-row input, .cdkey-route-row select { width:100%; min-width:0; }
+    .cdkey-route-sort { text-align:center; }
     .error-text { color: var(--red); font-size: 12px; margin-top: 6px; }
     .hint-text { color: var(--muted); font-size: 13px; margin-top: 8px; }
     .required-star {
@@ -1021,8 +1027,8 @@
         <button class="nav-item" data-menu="库存列表" id="menuInventory"><b>•</b><span>库存列表</span></button>
         <div class="nav-title">履约记录</div>
         <button class="nav-item" data-menu="履约记录列表" id="menuDeliveryRecord"><b>•</b><span>履约记录列表</span></button>
-        <div class="nav-title">CDKey 码池管理</div>
-        <button class="nav-item" data-menu="CDKey 码池列表" id="menuCdkeyPool"><b>•</b><span>CDKey 码池列表</span></button>
+        <div class="nav-title">CDKey 管理</div>
+        <button class="nav-item" data-menu="CDKey 货源列表" id="menuCdkeyPool"><b>•</b><span>CDKey 货源列表</span></button>
       </nav>
       <div class="role">当前登录角色<strong>平台运营</strong></div>
     </aside>
@@ -1082,7 +1088,7 @@
           <div class="table-head">
             <div>
               <div class="table-title">商品数据</div>
-              <div class="table-meta">SKU 是兑换最小单位；库存和 CDKey 码池状态按 SKU 维度在库存列表、SKU 详情或码池列表查看。</div>
+              <div class="table-meta">SKU 是兑换最小单位；库存和 CDKey 货源状态按 SKU 维度在库存列表、SKU 详情或货源列表查看。</div>
             </div>
             <div class="table-meta" id="tableCount">共 0 条</div>
           </div>
@@ -1175,6 +1181,7 @@
               <div class="field"><label>货币类型</label><select id="mallOrderCurrencyFilter"><option value="">全部</option><option>积分</option><option>人民币</option></select></div>
               <div class="field"><label>支付方式</label><select id="mallOrderPaymentMethodFilter"><option value="">全部</option><option>积分支付</option><option>支付宝</option><option>微信支付</option></select></div>
               <div class="field"><label>履约方式</label><select id="mallOrderDeliveryFilter"><option value="">全部</option><option>自动履约（虚拟道具）</option><option>自动履约（CDKey）</option><option>手动履约（实物）</option></select></div>
+              <div class="field"><label>卡密提取状态</label><select id="mallOrderExtractFilter"><option value="">全部</option><option>待发码</option><option>待提取</option><option>部分可提取</option><option>已提取</option></select></div>
             </div>
             <div class="filter-actions">
               <button class="btn primary" id="searchOrdersBtn">查询</button>
@@ -1195,7 +1202,7 @@
           <div class="table-head"><div><div class="table-title">订单列表</div><div class="table-meta">列表按父订单号展示；履约信息按单数量 SKU 拆分后在订单详情中查看。</div></div><div class="table-meta" id="orderTableCount">共 0 条</div></div>
           <div class="table-wrap">
             <table class="order-management-table">
-              <thead><tr><th>订单号</th><th>业务来源</th><th>用户ID</th><th>用户NN号</th><th>用户手机号</th><th>商品名称</th><th>数量</th><th>下单场景</th><th>支付金额</th><th>支付方式</th><th>履约方式</th><th>订单状态</th><th>创建时间</th><th>更新时间</th><th>操作</th></tr></thead>
+              <thead><tr><th>订单号</th><th>业务来源</th><th>用户ID</th><th>用户NN号</th><th>用户手机号</th><th>商品名称</th><th>数量</th><th>下单场景</th><th>支付金额</th><th>支付方式</th><th>履约方式</th><th>订单状态</th><th>卡密提取状态</th><th>创建时间</th><th>更新时间</th><th>操作</th></tr></thead>
               <tbody id="orderManagementTbody"></tbody>
             </table>
           </div>
@@ -1207,7 +1214,7 @@
           <div>
             <button class="btn text" id="backToListBtn">返回商品列表</button>
             <h1 id="formTitle">新建商品</h1>
-            <div class="sub">配置商品类型、基础信息、商品素材、SKU多币种价格、履约方式、CDKey 码池 ID 和初始库存。商品创建后，后续库存调整统一前往库存列表维护。</div>
+            <div class="sub">配置商品类型、基础信息、商品素材、SKU多币种价格、履约方式、CDKey 货源配置和初始库存。商品创建后，后续库存调整统一前往库存列表维护。</div>
           </div>
           <div class="btn-row">
             <button class="btn" id="saveDraftBtn">保存草稿</button>
@@ -1370,9 +1377,9 @@
             <section class="form-card" id="sectionInitialInventory">
               <h2><span class="required-star">*</span>初始库存配置</h2>
               <div class="body">
-                <div class="alert info">首次新建商品时支持配置 SKU 初始库存和下单策略；选择“缺货可下单”时，还需配置待履约数量上限。履约方式为自动履约（CDKey）时，库存模式固定为限量，初始总库存由绑定的 CDKey 码池同步，不支持在商品新建页手动设置。</div>
+                <div class="alert info">首次新建商品时支持配置 SKU 初始库存和下单策略；选择“缺货可下单”时，还需配置待履约数量上限。CDKey SKU 的库存模式由货源路由自动判定：仅码池供货时同步真实码库存；包含接口直供时显示为“不限量（接口实时判断）”。</div>
                 <div id="inventoryConfigBody"></div>
-                <div class="hint-text">非 CDKey 商品的初始库存只用于商品首次创建时初始化库存记录；下单策略和待履约数量上限均属于库存配置。CDKey 商品绑定码池 ID 后，真实码库存以 CDKey 码池列表为唯一来源。</div>
+                <div class="hint-text">非 CDKey 商品的初始库存只用于商品首次创建时初始化库存记录；下单策略和待履约数量上限均属于库存配置。CDKey 商品不在此手工维护库存数量，库存与可售判断来自已绑定的货源路由。</div>
               </div>
             </section>
 
@@ -1604,7 +1611,7 @@
               <div class="field"><label>库存状态</label><select id="inventoryFilterState"></select></div>
             </div>
             <div class="filter-grid more-filters" id="inventoryMoreFilters">
-              <div class="field"><label>CDKey 状态</label><select id="inventoryFilterCdkey"><option>全部</option><option>-</option><option>码池可用</option><option>CDKey 不足</option><option>码池未配置</option><option>码池不可用</option></select></div>
+              <div class="field"><label>CDKey 状态</label><select id="inventoryFilterCdkey"><option>全部</option><option>-</option><option>码池可用</option><option>接口实时判断</option><option>CDKey 不足</option><option>码池未配置</option><option>码池不可用</option></select></div>
               <div class="field"><label>下单策略</label><select id="inventoryFilterShortagePolicy"><option>全部</option><option>仅有货可下单</option><option>缺货可下单</option></select></div>
               <div class="field"><label>创建时间</label><input id="inventoryFilterUpdated" placeholder="开始时间 - 结束时间"></div>
             </div>
@@ -1749,26 +1756,26 @@
       <section id="cdkeyPoolPage" class="content" style="display:none">
         <div class="page-head">
           <div>
-            <h1>CDKey 码池列表</h1>
-            <div class="sub">维护自建 CDKey 码池、补货记录、CDKey 明细、接口生成码和手工上传码。</div>
+            <h1>CDKey 货源列表</h1>
+            <div class="sub">统一维护码池供货与接口直供货源，供商品 SKU 配置多个可用货源。</div>
           </div>
           <div class="btn-row">
-            <button class="btn" id="exportCdkeyPoolBtn">批量导出码池</button>
-            <button class="btn primary" id="newCdkeyPoolBtn">新建码池</button>
+            <button class="btn" id="exportCdkeyPoolBtn">导出货源</button>
+            <button class="btn primary" id="newCdkeyPoolBtn">新建货源</button>
           </div>
         </div>
 
-        <div class="page-note">CDKey 码池是 CDKey 库存的唯一事实来源。商品 SKU 只关联码池 ID；缺码时若 SKU 允许缺货下单，订单占用待履约额度并进入等待队列。补货入库后系统按支付成功时间 FIFO 自动分配 CDKey，剩余码数再作为新订单可用库存。</div>
+        <div class="page-note">供货方分为「平台自营」和「三方供应商」。平台自营固定为码池供货，维护安全库存和码入库方式；三方供应商固定为接口直供，不维护安全库存和码入库方式。一个商品 SKU 可配置多个同供货方式货源并按优先级依次尝试，不支持两种供货方式混用。</div>
 
-        <section class="card" aria-label="CDKey 码池筛选区">
+        <section class="card" aria-label="CDKey 货源筛选区">
           <div class="card-body">
             <div class="filter-grid">
-              <div class="field"><label>码池名称</label><input id="cdkeyPoolFilterName" placeholder="请输入码池名称"></div>
-              <div class="field"><label>码池 ID</label><input id="cdkeyPoolFilterId" placeholder="请输入码池 ID"></div>
-              <div class="field"><label>码池状态</label><select id="cdkeyPoolFilterState"></select></div>
-              <div class="field"><label>码池类型</label><select id="cdkeyPoolFilterSource"><option>全部</option><option>接口生成码</option><option>手工上传码</option></select></div>
-              <div class="field"><label>CDKey 类型</label><select id="cdkeyPoolFilterCdkeyType"><option>全部</option><option>加速器时长</option><option>加速器时长（不可暂停）</option></select></div>
-              <div class="field"><label>是否绑定商品</label><select id="cdkeyPoolFilterBound"><option>全部</option><option>是</option><option>否</option></select></div>
+              <div class="field"><label>货源名称</label><input id="cdkeyPoolFilterName" placeholder="请输入货源名称"></div>
+              <div class="field"><label>货源 ID</label><input id="cdkeyPoolFilterId" placeholder="请输入货源 ID"></div>
+              <div class="field"><label>货源状态</label><select id="cdkeyPoolFilterState"></select></div>
+              <div class="field"><label>供货方式</label><select id="cdkeyPoolFilterSource"><option>全部</option><option>码池供货</option><option>接口直供</option></select></div>
+              <div class="field"><label>供货方</label><select id="cdkeyPoolFilterProvider"><option>全部</option><option>平台自营</option><option>三方供应商</option></select></div>
+              <div class="field"><label>是否绑定 SKU</label><select id="cdkeyPoolFilterBound"><option>全部</option><option>是</option><option>否</option></select></div>
               <div class="field"><label>创建时间</label><input id="cdkeyPoolFilterUpdated" placeholder="开始时间 - 结束时间"></div>
             </div>
             <div class="filter-actions">
@@ -1781,8 +1788,8 @@
         <section class="card">
           <div class="table-head">
             <div>
-              <div class="table-title">CDKey 码池数据</div>
-              <div class="table-meta">码池列表维护码池、补货记录、CDKey 明细及码池库存数量，不维护商品基础信息、SKU 属性模板和履约记录处理结果。</div>
+              <div class="table-title">CDKey 货源数据</div>
+              <div class="table-meta">这里只维护货源本身；商品与价格仍由商品 SKU 管理，客户端提取与退款责任状态由订单管理记录。</div>
             </div>
             <div class="table-meta" id="cdkeyPoolTableCount">共 0 条</div>
           </div>
@@ -1790,21 +1797,14 @@
             <table class="cdkey-pool-table">
               <thead>
                 <tr>
-                  <th>码池 ID</th>
-                  <th>码池名称</th>
-                  <th>码池状态</th>
-                  <th>码池类型</th>
-                  <th>CDKey 类型</th>
-                  <th>总码数</th>
-                  <th>可用码数量</th>
-                  <th>已履约数量</th>
-                  <th>核销数量</th>
-                  <th>过期数量</th>
-                  <th>安全库存阈值</th>
-                  <th>待补货数量</th>
-                  <th>履约缺口</th>
-                  <th>绑定商品ID</th>
-                  <th>绑定 SKU ID</th>
+                  <th>货源 ID</th>
+                  <th>货源名称</th>
+                  <th>供货方式</th>
+                  <th>供货方</th>
+                  <th>供货配置</th>
+                  <th>可用情况</th>
+                  <th>绑定 SKU 数</th>
+                  <th>货源状态</th>
                   <th>创建时间</th>
                   <th>最后操作人</th>
                   <th>操作</th>
@@ -1819,9 +1819,9 @@
       <section id="cdkeyPoolFormPage" class="content form-page" style="display:none">
         <div class="page-head">
           <div>
-            <button class="btn text" id="backToCdkeyPoolListBtn">返回码池列表</button>
-            <h1 id="cdkeyPoolFormTitle">新建 CDKey 码池</h1>
-            <div class="sub">维护自建 CDKey 码池基础信息、码池规则和绑定 SKU；补货请在列表操作中处理。</div>
+            <button class="btn text" id="backToCdkeyPoolListBtn">返回货源列表</button>
+            <h1 id="cdkeyPoolFormTitle">新建 CDKey 货源</h1>
+            <div class="sub">选择供货方式并配置主链路参数；商品 SKU 可同时引用多个货源。</div>
           </div>
           <div class="btn-row">
             <button class="btn" id="cdkeyPoolSaveDraftBtn">保存草稿</button>
@@ -1836,32 +1836,39 @@
               <h2>基础信息</h2>
               <div class="body">
                 <div class="form-grid">
-                  <div class="field"><label>码池 ID</label><input id="cdkeyPoolFormId" value="新建后生成" disabled></div>
-                  <div class="field"><label><span class="required-star">*</span>码池名称</label><input id="cdkeyPoolFormName" placeholder="请输入码池名称"></div>
-                  <div class="field"><label>码池状态</label><input id="cdkeyPoolFormState" value="草稿" disabled></div>
-                  <div class="field"><label><span class="required-star">*</span>安全库存阈值（%）</label><input id="cdkeyPoolFormAlert" type="number" min="0" max="100" placeholder="请输入 0-100"></div>
+                  <div class="field"><label>货源 ID</label><input id="cdkeyPoolFormId" value="新建后生成" disabled></div>
+                  <div class="field"><label><span class="required-star">*</span>货源名称</label><input id="cdkeyPoolFormName" placeholder="请输入货源名称"></div>
+                  <div class="field"><label>货源状态</label><input id="cdkeyPoolFormState" value="草稿" disabled></div>
                 </div>
               </div>
             </section>
 
             <section class="form-card" id="cdkeyPoolSectionRule">
-              <h2>码池规则</h2>
+              <h2>供货配置</h2>
               <div class="body">
                 <div class="form-grid">
-                  <div class="field"><label><span class="required-star">*</span>码池类型</label><select id="cdkeyPoolFormSource"><option>接口生成码</option><option>手工上传码</option></select></div>
-                  <div class="field" id="cdkeyPoolTypeField"><label><span class="required-star">*</span>CDKey 类型</label><select id="cdkeyPoolFormCdkeyType"><option>加速器时长</option><option>加速器时长（不可暂停）</option></select></div>
+                  <div class="field"><label><span class="required-star">*</span>供货方</label><select id="cdkeyPoolFormProvider"><option value="">请选择供货方</option><option>平台自营</option><option>三方供应商</option></select></div>
+                  <div class="field"><label><span class="required-star">*</span>供货方式</label><select id="cdkeyPoolFormSource" disabled><option value="">请先选择供货方</option></select></div>
+                  <div class="field" id="cdkeyPoolSupplierField" style="display:none"><label><span class="required-star">*</span>三方供应商</label><select id="cdkeyPoolFormSupplier"></select></div>
                 </div>
-                <div class="hint-text">一条码池只能选择一种码池类型；码池创建后码池类型不允许变更。接口生成码需要选择 CDKey 类型，保存后不允许变更；手工上传码不配置 CDKey 类型。过期时间跟随初始码数据或补货记录配置，CDKey 底层默认全局唯一，不在页面配置。</div>
+                <div class="form-grid" id="cdkeyPoolStockFields" style="margin-top:12px">
+                  <div class="field"><label><span class="required-star">*</span>安全库存阈值（%）</label><input id="cdkeyPoolFormAlert" type="number" min="0" max="100" placeholder="请输入 0-100"></div>
+                </div>
+                <div class="form-grid" id="cdkeyPoolDirectFields" style="margin-top:12px;display:none">
+                  <div class="field"><label><span class="required-star">*</span>供应商商品</label><select id="cdkeyPoolFormSupplierProduct"></select></div>
+                  <div class="field"><label><span class="required-star">*</span>供应商商品编码（product_id）</label><input id="cdkeyPoolFormSupplierSku" placeholder="选择供应商商品后自动带出" disabled></div>
+                </div>
+                <div class="hint-text" id="cdkeySupplyModeHint">请先选择供货方，再选择供货方式。</div>
               </div>
             </section>
 
             <section class="form-card" id="cdkeyPoolSectionInitialData">
-              <h2>初始码数据配置</h2>
+              <h2>初始供货配置</h2>
               <div class="body" id="cdkeyPoolInitialDataBody"></div>
             </section>
 
             <section class="form-card" id="cdkeyPoolSectionBoundSku">
-              <h2>绑定SKU</h2>
+              <h2>绑定 SKU</h2>
               <div class="body" id="cdkeyPoolImpactBody"></div>
             </section>
 
@@ -1869,14 +1876,14 @@
               <h2>备注</h2>
               <div class="body">
                 <div class="field"><label>备注</label><textarea id="cdkeyPoolFormRemark" rows="4" placeholder="运营内部备注"></textarea></div>
-                <div class="alert info">商品 SKU 只绑定码池 ID；CDKey 库存由码池总码数和可用码数量同步，码池列表不维护商品基础信息、履约方式和履约记录处理结果。</div>
+                <div class="alert info">一个商品 SKU 可配置多个同供货方式货源，并设置优先级；码池供货与接口直供不可混用。订单实际命中的货源需写入订单快照，避免后续配置变化影响审计。</div>
               </div>
             </section>
           </div>
           <aside class="side-anchor">
             <a href="#cdkeyPoolSectionBasic">基础信息</a>
-            <a href="#cdkeyPoolSectionRule">码池规则</a>
-            <a href="#cdkeyPoolSectionInitialData" id="cdkeyPoolInitialDataAnchor">初始码数据</a>
+            <a href="#cdkeyPoolSectionRule">供货配置</a>
+            <a href="#cdkeyPoolSectionInitialData" id="cdkeyPoolInitialDataAnchor">初始供货</a>
             <a href="#cdkeyPoolSectionBoundSku">绑定SKU</a>
             <a href="#cdkeyPoolSectionRemark">备注</a>
           </aside>
@@ -2118,24 +2125,20 @@
   </section>
 
   <section class="modal" id="poolModal" role="dialog" aria-modal="true">
-    <div class="modal-head"><span>选择 CDKey 码池</span><button class="btn text" data-close-modal="poolModal">关闭</button></div>
+    <div class="modal-head"><span>CDKey 货源配置</span><button class="btn text" data-close-modal="poolModal">关闭</button></div>
     <div class="modal-body">
-      <div class="form-grid three" style="margin-bottom:12px">
-        <div class="field"><label>码池名称</label><input id="poolFilterName" placeholder="请输入码池名称"></div>
-        <div class="field"><label>码池状态</label><select id="poolFilterState"><option>全部</option><option>上架</option><option>下架</option></select></div>
-        <div class="field"><label>码池类型</label><input id="poolFilterSpec" placeholder="请输入接口生成码或手工上传码"></div>
+      <div class="field">
+        <label><span class="required-star">*</span>供货方式</label>
+        <select id="skuSupplyMethod"><option value="">请选择供货方式</option><option>码池供货</option><option>接口直供</option></select>
+        <div class="hint-text" id="skuSupplyMethodHint">同一 SKU 只能选择一种供货方式。</div>
       </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr><th>码池 ID</th><th>码池名称</th><th>码池状态</th><th>码池类型</th><th>CDKey 类型</th><th>总码数</th><th>可用码数量</th><th>已履约数量</th><th>核销数量</th><th>创建时间</th><th>最后操作人</th><th>操作</th></tr>
-          </thead>
-          <tbody id="poolTbody"></tbody>
-        </table>
+      <div class="field" style="margin-top:16px">
+        <label><span class="required-star">*</span>货源配置</label>
+        <div id="poolAddSourceArea"></div>
       </div>
     </div>
     <div class="modal-foot">
-      <button class="btn" data-close-modal="poolModal">取消</button>
+      <span class="table-meta" id="poolSelectedCount">已配置 0 个货源</span><button class="btn" data-close-modal="poolModal">取消</button><button class="btn primary" id="confirmPoolRouteBtn">保存货源配置</button>
     </div>
   </section>
 
@@ -2214,7 +2217,7 @@
   </aside>
 
   <aside class="drawer" id="cdkeyPoolDetailDrawer">
-    <div class="drawer-head"><div class="drawer-title">CDKey 码池详情</div><button class="btn" data-close="cdkeyPoolDetailDrawer">关闭</button></div>
+    <div class="drawer-head"><div class="drawer-title">CDKey 货源详情</div><button class="btn" data-close="cdkeyPoolDetailDrawer">关闭</button></div>
     <div class="drawer-body" id="cdkeyPoolDetailBody"></div>
   </aside>
 
@@ -2229,7 +2232,7 @@
   </aside>
 
   <section class="modal restock" id="cdkeyGenerateModal" role="dialog" aria-modal="true">
-    <div class="modal-head"><span>接口生成补货</span><button class="btn text" data-close-modal="cdkeyGenerateModal">关闭</button></div>
+    <div class="modal-head"><span>平台内部生成补货</span><button class="btn text" data-close-modal="cdkeyGenerateModal">关闭</button></div>
     <div class="modal-body">
       <div id="cdkeyGenerateInfo"></div>
       <div class="form-grid" style="margin-top:12px">
@@ -2269,18 +2272,18 @@
   </section>
 
   <section class="modal" id="cdkeyDisableModal" role="dialog" aria-modal="true">
-    <div class="modal-head"><span>下架 CDKey 码池</span><button class="btn text" data-close-modal="cdkeyDisableModal">关闭</button></div>
+    <div class="modal-head"><span>下架 CDKey 货源</span><button class="btn text" data-close-modal="cdkeyDisableModal">关闭</button></div>
     <div class="modal-body">
-      <p>下架后，该码池不会再被后续 CDKey 履约使用。历史履约记录不受影响，已履约 CDKey 不受影响。若该码池已被商品 SKU 引用，可能导致后续履约失败或投放校验异常。</p>
+      <p>下架后，该货源不会再参与后续 CDKey 履约路由。历史履约记录不受影响；若该货源已被商品 SKU 引用，系统将按优先级继续尝试其他上架货源。</p>
       <div id="cdkeyDisableInfo"></div>
     </div>
     <div class="modal-foot"><button class="btn" data-close-modal="cdkeyDisableModal">取消</button><button class="btn warning" id="confirmCdkeyDisableBtn">确认下架</button></div>
   </section>
 
   <section class="modal" id="cdkeyDeleteModal" role="dialog" aria-modal="true">
-    <div class="modal-head"><span>删除 CDKey 码池</span><button class="btn text" data-close-modal="cdkeyDeleteModal">关闭</button></div>
+    <div class="modal-head"><span>删除 CDKey 货源</span><button class="btn text" data-close-modal="cdkeyDeleteModal">关闭</button></div>
     <div class="modal-body">
-      <p>仅草稿状态的码池允许删除。删除后，该码池及其补货记录、CDKey 明细数据将从当前列表中移除，删除后不可恢复。</p>
+      <p>仅未绑定 SKU 的草稿货源允许删除。码池供货删除后，其补货记录与 CDKey 明细也会移除，删除后不可恢复。</p>
       <div id="cdkeyDeleteInfo"></div>
       <div class="field"><label>删除原因</label><textarea id="cdkeyDeleteReason" rows="4" placeholder="请输入删除原因，选填"></textarea></div>
     </div>
@@ -2294,6 +2297,21 @@
     </div>
     <div class="drawer-body" id="orderDetailBody"></div>
   </aside>
+
+  <section class="modal wide" id="cdkeyExtractModal" role="dialog" aria-modal="true">
+    <div class="modal-head"><span id="cdkeyExtractTitle">客户端 · 提取卡密</span><button class="btn text" data-close-modal="cdkeyExtractModal">关闭</button></div>
+    <div class="modal-body" id="cdkeyExtractBody">
+      <div class="info-grid" id="cdkeyExtractOrderInfo"></div>
+      <div class="alert warning" style="margin-top:14px">提取前须完成手机号与实名校验。提取成功后视为用户已获取卡密，普通退款入口关闭；仅卡密失效、无法兑换等异常可申请售后核验。</div>
+      <div class="form-grid" style="margin-top:14px">
+        <div class="field"><label>手机号</label><input id="cdkeyExtractPhone" disabled></div>
+        <div class="field"><label><span class="required-star">*</span>短信验证码</label><div class="file-action-row"><input id="cdkeyExtractSmsCode" maxlength="6" placeholder="原型验证码 123456"><button class="btn" id="sendCdkeySmsBtn" type="button">获取验证码</button></div></div>
+        <div class="field"><label>实名状态</label><div class="file-action-row"><input id="cdkeyExtractRealName" value="待校验" disabled><button class="btn" id="verifyCdkeyRealNameBtn" type="button">校验实名</button></div></div>
+      </div>
+      <label class="checkline" style="margin-top:14px"><input type="checkbox" id="cdkeyExtractConsent">我已确认：提取卡密后不可普通退款；卡密异常需提交售后核验。</label>
+    </div>
+    <div class="modal-foot" id="cdkeyExtractActions"><button class="btn" data-close-modal="cdkeyExtractModal">取消</button><button class="btn primary" id="confirmCdkeyExtractBtn">确认提取卡密</button></div>
+  </section>
 
   <section class="modal wide" id="userPointsModal" role="dialog" aria-modal="true">
     <div class="modal-head"><span>用户积分查询</span><button class="btn text" data-close-modal="userPointsModal">关闭</button></div>
@@ -2411,11 +2429,12 @@
       { id: "FL20260703005", userId: "U100862", nnNo: "NN100862", phone: "13888888888", type: "获取", amount: 500, balance: 1700, source: "活动增量", time: "2026-07-03 10:23:15", desc: "活动奖励发放" }
     ];
     let mallOrders = [
-      { no: "ORD20260706001", userId: "U100862", nnNo: "NN100862", phone: "13888888888", nick: "李四", product: "NN加速器3天卡", productSnapshot: "NN加速器3天卡 / 规格：3天 / 类型：CDKey", productType: "CDKey", quantity: 1, currencyType: "积分", paymentMethod: "积分支付", unitAmount: 500, paymentAmount: 500, inventoryType: "有限库存", acquireForm: "发放至用户背包，用户进入背包查看兑换码", fulfillmentChannel: "背包发放", fulfill: DELIVERY_AUTO_CDKEY, status: "已完成", fulfillmentStatus: "履约完成", reason: "-", paymentResult: "积分扣减成功：-500 积分", stockResult: "库存已扣减：-1", fulfillResult: "CDKey 发放成功", retrySummary: "无需重试", maskedCdkey: "NN3D-****-8K2Q", created: "2026-07-06 09:45:33", updated: "2026-07-06 09:45:58", completed: "2026-07-06 09:45:58" },
+      { no: "ORD20260706001", userId: "U100862", nnNo: "NN100862", phone: "13888888888", nick: "李四", product: "NN加速器3天卡", productSnapshot: "NN加速器3天卡 / 规格：3天 / 类型：CDKey", productType: "CDKey", quantity: 1, currencyType: "积分", paymentMethod: "积分支付", unitAmount: 500, paymentAmount: 500, inventoryType: "CDKey码池库存", acquireForm: "发放至客户端订单，用户主动提取后查看卡密", fulfillmentChannel: "客户端订单", fulfill: DELIVERY_AUTO_CDKEY, status: "已完成", fulfillmentStatus: "履约完成", supplyMode: "码池供货", supplySourceId: "ACCELERATOR_3D_POOL", supplySourceName: "NN 加速器 3 天码池", extractStatus: "已提取", phoneVerifiedAt: "2026-07-06 09:48:11", realNameVerifiedAt: "2026-07-06 09:48:13", extractedAt: "2026-07-06 09:48:16", extractionChannel: "客户端订单详情", codeIssueStatus: "正常", reason: "-", paymentResult: "积分扣减成功：-500 积分", stockResult: "库存已扣减：-1", fulfillResult: "CDKey 发放成功", retrySummary: "无需重试", maskedCdkey: "NN3D-****-8K2Q", fullCdkey: "NN3D-7P9A-8K2Q", created: "2026-07-06 09:45:33", updated: "2026-07-06 09:48:16", completed: "2026-07-06 09:45:58" },
+      { no: "ORD20260706004", userId: "U100869", nnNo: "NN100869", phone: "13912345678", nick: "陈十一", product: "300 G-COIN", productSnapshot: "300 G-COIN / 规格：300 G-COIN / 类型：CDKey", productType: "CDKey", quantity: 1, currencyType: "人民币", paymentMethod: "微信支付", unitAmount: 24.9, paymentAmount: 24.9, inventoryType: "接口直供", acquireForm: "发放至客户端订单，用户主动提取后查看卡密", fulfillmentChannel: "客户端订单", fulfill: DELIVERY_AUTO_CDKEY, status: "已完成", fulfillmentStatus: "履约完成", supplyMode: "接口直供", supplySourceId: "PUBG_VENDOR_API", supplySourceName: "星核 G-COIN 官方直供", supplier: "星核卡券", supplierProduct: "PUBG 300 G-COIN", supplierProductId: "1153796224", supplierRequestResult: "取码成功", extractStatus: "待提取", phoneVerifiedAt: "-", realNameVerifiedAt: "-", extractedAt: "-", extractionChannel: "-", codeIssueStatus: "未提取", reason: "-", paymentResult: "微信支付成功：¥24.90", stockResult: "接口直供，不维护本地库存数量", fulfillResult: "供应商取码成功，待用户提取", retrySummary: "无需重试", maskedCdkey: "PUBG-****-P7Q2", fullCdkey: "PUBG-GC30-X91M-P7Q2", created: "2026-07-06 09:18:20", updated: "2026-07-06 09:18:31", completed: "2026-07-06 09:18:31" },
       { no: "ORD20260706002", userId: "U100863", nnNo: "NN100863", phone: "13966666666", nick: "王五", product: "星耀头像框30天", productSnapshot: "星耀头像框30天 / 类型：虚拟道具 / 权益：社区身份装饰", productType: "虚拟道具", quantity: 1, currencyType: "人民币", paymentMethod: "微信支付", unitAmount: 12.9, paymentAmount: 12.9, inventoryType: "无限库存", acquireForm: "发放至用户背包，用户在社区装扮中启用", fulfillmentChannel: "背包发放", fulfill: DELIVERY_AUTO_VIRTUAL, status: "异常", fulfillmentStatus: "履约中", reason: "履约结果不确定，待人工确认", paymentResult: "微信支付成功：¥12.90", stockResult: "无限库存，无需占用", fulfillResult: "履约超时，结果待确认", retrySummary: "等待重试，已重试 1/3", bagAsset: "头像框权益待确认", created: "2026-07-06 08:30:15", updated: "2026-07-06 08:36:20", completed: "-" },
       { no: "ORD20260706003", userId: "U100864", nnNo: "NN100864", phone: "13733333333", nick: "赵六", product: "NN加速器30天卡", productSnapshot: "NN加速器30天卡 / 规格：30天 / 类型：CDKey", productType: "CDKey", quantity: 1, currencyType: "人民币", paymentMethod: "支付宝", unitAmount: 29.9, paymentAmount: 29.9, inventoryType: "有限库存", acquireForm: "发放至用户背包，用户进入背包查看兑换码", fulfillmentChannel: "背包发放", fulfill: DELIVERY_AUTO_CDKEY, status: "支付失败", fulfillmentStatus: "-", reason: "支付宝支付失败，库存已释放", paymentResult: "支付宝支付失败", stockResult: "库存已释放", fulfillResult: "未进入履约发放", retrySummary: "无需重试", maskedCdkey: "-", created: "2026-07-06 07:12:08", updated: "2026-07-06 07:12:21", completed: "-" },
-      { no: "ORD20260705004", userId: "U100862", nnNo: "NN100862", phone: "13888888888", nick: "李四", product: "加速卡 7 天", productSnapshot: "加速卡 7 天 / 规格：7天 / 类型：CDKey", productType: "CDKey", quantity: 1, currencyType: "积分", paymentMethod: "积分支付", unitAmount: 800, paymentAmount: 800, inventoryType: "CDKey码池库存", acquireForm: "发放至用户背包，用户进入背包查看兑换码", fulfillmentChannel: "背包发放", fulfill: DELIVERY_AUTO_CDKEY, status: "已支付", fulfillmentStatus: "待履约", orderScene: "缺货下单", waitingReason: "等待CDKey补货", pendingQuantity: 1, quotaReservationId: "PFR-20260705004", queueNo: 1, cdkeyPoolId: "ACCELERATOR_7D_POOL", reason: "等待CDKey补货", paymentResult: "积分扣减成功：-800 积分", stockResult: "未占用CDKey；已占用待履约额度：1", fulfillResult: "待码池补货后自动发放", retrySummary: "等待补货，不进入失败重试", maskedCdkey: "-", created: "2026-07-05 16:20:10", updated: "2026-07-05 16:20:18", completed: "-" },
-      { no: "ORD20260705006", businessSource: "积分商城", userId: "U100867", nnNo: "NN100867", phone: "13488888888", nick: "吴九", product: "NN加速器7天卡", productSnapshot: "NN加速器7天卡 / 规格：7天 / 类型：CDKey", productType: "CDKey", quantity: 10, currencyType: "积分", paymentMethod: "积分支付", unitAmount: 800, paymentAmount: 8000, inventoryType: "CDKey码池库存", acquireForm: "发放至用户背包，用户进入背包查看兑换码", fulfillmentChannel: "背包发放", fulfill: DELIVERY_AUTO_CDKEY, status: "已支付", fulfillmentStatus: "履约中", orderScene: "缺货下单", fulfilledQuantity: 5, pendingQuantity: 5, waitingReason: "剩余5个等待CDKey补货", quotaReservationId: "PFR-20260705006", queueNo: 2, cdkeyPoolId: "ACCELERATOR_7D_POOL", reason: "已履约5个，剩余5个等待CDKey补货", paymentResult: "积分扣减成功：-8000 积分", stockResult: "已扣减5个CDKey；剩余5个待补货", fulfillResult: "已自动发放5个CDKey，剩余5个待履约", retrySummary: "剩余数量等待补货，不进入失败重试", maskedCdkey: "已发放5个（详情见履约记录）", created: "2026-07-05 15:30:10", updated: "2026-07-05 15:35:22", completed: "-" },
+      { no: "ORD20260705004", userId: "U100862", nnNo: "NN100862", phone: "13888888888", nick: "李四", product: "加速卡 7 天", productSnapshot: "加速卡 7 天 / 规格：7天 / 类型：CDKey", productType: "CDKey", quantity: 1, currencyType: "积分", paymentMethod: "积分支付", unitAmount: 800, paymentAmount: 800, inventoryType: "CDKey码池库存", acquireForm: "发放至客户端订单，用户主动提取后查看卡密", fulfillmentChannel: "客户端订单", fulfill: DELIVERY_AUTO_CDKEY, status: "已支付", fulfillmentStatus: "待履约", extractStatus: "待发码", supplyMode: "码池供货", supplySourceId: "ACCELERATOR_7D_POOL", supplySourceName: "加速卡 7 天码池", orderScene: "缺货下单", waitingReason: "等待CDKey补货", pendingQuantity: 1, quotaReservationId: "PFR-20260705004", queueNo: 1, cdkeyPoolId: "ACCELERATOR_7D_POOL", reason: "等待CDKey补货", paymentResult: "积分扣减成功：-800 积分", stockResult: "未占用CDKey；已占用待履约额度：1", fulfillResult: "待码池补货后自动发放", retrySummary: "等待补货，不进入失败重试", maskedCdkey: "-", created: "2026-07-05 16:20:10", updated: "2026-07-05 16:20:18", completed: "-" },
+      { no: "ORD20260705006", businessSource: "积分商城", userId: "U100867", nnNo: "NN100867", phone: "13488888888", nick: "吴九", product: "NN加速器7天卡", productSnapshot: "NN加速器7天卡 / 规格：7天 / 类型：CDKey", productType: "CDKey", quantity: 10, currencyType: "积分", paymentMethod: "积分支付", unitAmount: 800, paymentAmount: 8000, inventoryType: "CDKey码池库存", acquireForm: "发放至客户端订单，用户主动提取后查看卡密", fulfillmentChannel: "客户端订单", fulfill: DELIVERY_AUTO_CDKEY, status: "已支付", fulfillmentStatus: "履约中", extractStatus: "部分可提取", supplyMode: "码池供货", supplySourceId: "ACCELERATOR_7D_POOL", supplySourceName: "加速卡 7 天码池", orderScene: "缺货下单", fulfilledQuantity: 5, pendingQuantity: 5, waitingReason: "剩余5个等待CDKey补货", quotaReservationId: "PFR-20260705006", queueNo: 2, cdkeyPoolId: "ACCELERATOR_7D_POOL", reason: "已履约5个，剩余5个等待CDKey补货", paymentResult: "积分扣减成功：-8000 积分", stockResult: "已扣减5个CDKey；剩余5个待补货", fulfillResult: "已自动发放5个CDKey，剩余5个待履约", retrySummary: "剩余数量等待补货，不进入失败重试", maskedCdkey: "已发放5个（详情见履约记录）", created: "2026-07-05 15:30:10", updated: "2026-07-05 15:35:22", completed: "-" },
       { no: "ORD20260705005", userId: "U100863", nnNo: "NN100863", phone: "13966666666", nick: "王五", product: "星耀昵称挂件7天", productSnapshot: "星耀昵称挂件7天 / 类型：虚拟道具 / 权益：昵称装饰", productType: "虚拟道具", quantity: 1, currencyType: "人民币", paymentMethod: "支付宝", unitAmount: 6.9, paymentAmount: 6.9, inventoryType: "无限库存", acquireForm: "发放至用户背包，用户在社区装扮中启用", fulfillmentChannel: "背包发放", fulfill: DELIVERY_AUTO_VIRTUAL, status: "已支付", fulfillmentStatus: "履约失败", reason: "自动重试已达上限", paymentResult: "支付宝支付成功：¥6.90", stockResult: "无限库存，无需占用", fulfillResult: "履约失败，待人工处理", retrySummary: "已达自动重试上限 3/3", bagAsset: "-", created: "2026-07-05 15:08:20", updated: "2026-07-05 15:18:02", completed: "-" },
       { no: "ORD20260704005", businessSource: "暑期周边兑换活动", userId: "U100865", nnNo: "NN100865", phone: "13677777777", nick: "孙七", product: "NN定制鼠标垫", productSnapshot: "NN定制鼠标垫 / 类型：实物商品 / 规格：900x400mm", productType: "实物商品", quantity: 1, currencyType: "人民币", paymentMethod: "支付宝", unitAmount: 49.9, paymentAmount: 49.9, inventoryType: "有限库存", acquireForm: "用户填写收货地址后发货", fulfillmentChannel: "实物履约 / 物流发货", addressStatus: "未填写", recipient: "-", recipientPhone: "-", address: "-", logisticsCompany: "-", trackingNo: "-", fulfill: DELIVERY_MANUAL_PHYSICAL, status: "已支付", fulfillmentStatus: "待履约", reason: "等待用户在客户端订单填写收货地址", paymentResult: "支付宝支付成功：¥49.90", stockResult: "库存已占用：1", fulfillResult: "待用户提交收货地址", retrySummary: "实物履约-地址未填写", created: "2026-07-04 10:00:00", updated: "2026-07-04 10:00:09", completed: "-" },
       { no: "ORD20260703006", businessSource: "社区装扮焕新活动", userId: "U100866", nnNo: "NN100866", phone: "13588888888", nick: "周八", product: "社区身份装饰权益", productSnapshot: "社区身份装饰权益 / 类型：虚拟道具 / 权益：身份标识与资料卡装饰", productType: "虚拟道具", quantity: 1, currencyType: "积分", paymentMethod: "积分支付", unitAmount: 500, paymentAmount: 500, inventoryType: "无限库存", acquireForm: "发放至用户背包，用户在社区身份装饰中启用", fulfillmentChannel: "背包发放", fulfill: DELIVERY_AUTO_VIRTUAL, status: "已完成", fulfillmentStatus: "履约完成", reason: "-", paymentResult: "积分扣减成功：-500 积分", stockResult: "无限库存，无需占用", fulfillResult: "背包发放成功", retrySummary: "无需重试", bagAsset: "社区身份装饰权益 x1", created: "2026-07-03 09:15:42", updated: "2026-07-03 09:15:58", completed: "2026-07-03 09:15:58" },
@@ -2504,8 +2523,6 @@
       cdkeyPoolFormState: { maxLength: 10 },
       cdkeyPoolFormAlert: { min: 0, max: 100 },
       cdkeyPoolFormRemark: { maxLength: 200 },
-      poolFilterName: { maxLength: 50 },
-      poolFilterSpec: { maxLength: 30 },
       cdkeyGenerateName: { maxLength: 50 },
       cdkeyGenerateCount: { min: 1, max: 99999 },
       cdkeyGenerateExpire: { maxLength: 32 },
@@ -2553,13 +2570,31 @@
       }
     };
     const virtualTypes = ["虚拟装扮"];
+    const cdkeySupplierCatalog = {
+      "星核卡券": {
+        interfaceConfig: "星核供应商接口",
+        products: [
+          { name: "PUBG 300 G-COIN", productId: "1153796224" },
+          { name: "PUBG 600 G-COIN", productId: "1153796225" }
+        ]
+      },
+      "极速卡券": {
+        interfaceConfig: "极速卡券接口",
+        products: [
+          { name: "加速器 7 天卡", productId: "1153796301" },
+          { name: "加速器 30 天卡", productId: "1153796302" }
+        ]
+      },
+      "测试供应商": { interfaceConfig: "测试供应商接口", products: [] },
+      "礼包供应商": { interfaceConfig: "礼包供应商接口", products: [] }
+    };
     let poolMocks = [
-      { id: "PUBG_GCOIN_300_POOL", name: "PUBG 300 G-COIN 码池", state: "上架", spec: "300 G-COIN", source: "接口生成码", cdkeyType: "加速器时长", total: 500, available: 320, issued: 172, voided: 0, expired: 0, error: 0, alertThreshold: 80, creator: "平台运营", createdAt: "2026-05-18 10:00", updatedAt: "2026-05-22 15:10", remark: "PUBG G-COIN 商品履约码池" },
-      { id: "ACCELERATOR_7D_POOL", name: "加速卡 7 天码池", state: "上架", spec: "7天", source: "手工上传码", cdkeyType: "", total: 100, available: 0, issued: 100, voided: 0, expired: 0, error: 0, alertThreshold: 30, creator: "平台运营", createdAt: "2026-05-18 11:20", updatedAt: "2026-05-21 12:30", remark: "加速卡 CDKey 已履约完，待补货" },
-      { id: "TEST_POOL_INVALID", name: "测试下架码池", state: "下架", spec: "测试规格", source: "接口生成码", cdkeyType: "加速器时长（不可暂停）", total: 30, available: 5, issued: 5, voided: 0, expired: 0, error: 3, alertThreshold: 10, creator: "测试运营", createdAt: "2026-05-19 09:30", updatedAt: "2026-05-20 10:00", remark: "测试码池，存在不可用 CDKey" },
-      { id: "GAME_ITEM_GIFT_POOL", name: "游戏道具礼包码池", state: "下架", spec: "游戏道具礼包", source: "手工上传码", cdkeyType: "", total: 200, available: 120, issued: 70, voided: 10, expired: 0, error: 0, alertThreshold: 30, creator: "鲁壮", createdAt: "2026-05-19 15:40", updatedAt: "2026-05-22 09:30", remark: "道具礼包码池，暂未上架" },
-      { id: "DECORATION_TRIAL_POOL", name: "装扮体验码池", state: "草稿", spec: "体验码", source: "接口生成码", cdkeyType: "加速器时长", total: 0, available: 0, issued: 0, voided: 0, expired: 0, error: 0, alertThreshold: 20, creator: "王丰", createdAt: "2026-05-23 16:10", updatedAt: "2026-05-23 16:10", remark: "草稿码池，待补货" }
+      { id: "PUBG_GCOIN_300_POOL", name: "PUBG 300 G-COIN 自营码池", state: "上架", providerType: "平台自营", supplyMode: "码池供货", supplier: "", stockMethod: "手工上传", source: "手工上传码", total: 500, available: 320, issued: 172, voided: 0, expired: 0, error: 0, alertThreshold: 80, creator: "平台运营", createdAt: "2026-05-18 10:00", updatedAt: "2026-05-22 15:10", remark: "PUBG G-COIN 商品履约码池" },
+      { id: "PUBG_VENDOR_API", name: "星核 G-COIN 官方直供", state: "上架", providerType: "三方供应商", supplyMode: "接口直供", supplier: "星核卡券", supplierProduct: "PUBG 300 G-COIN", supplierSku: "1153796224", interfaceConfig: "星核供应商接口", source: "接口直供", total: 0, available: 0, issued: 86, voided: 0, expired: 0, error: 0, alertThreshold: "", creator: "平台运营", createdAt: "2026-05-20 14:20", updatedAt: "2026-05-23 09:40", remark: "订单履约时接口实时取码" },
+      { id: "ACCELERATOR_7D_POOL", name: "加速卡 7 天自营码池", state: "上架", providerType: "平台自营", supplyMode: "码池供货", supplier: "", stockMethod: "手工上传", source: "手工上传码", total: 100, available: 0, issued: 100, voided: 0, expired: 0, error: 0, alertThreshold: 30, creator: "平台运营", createdAt: "2026-05-18 11:20", updatedAt: "2026-05-21 12:30", remark: "加速卡 CDKey 已履约完，待补货" },
+      { id: "ACCELERATOR_VENDOR_API", name: "极速加速卡接口直供", state: "上架", providerType: "三方供应商", supplyMode: "接口直供", supplier: "极速卡券", supplierProduct: "加速器 7 天卡", supplierSku: "1153796301", interfaceConfig: "极速卡券接口", source: "接口直供", total: 0, available: 0, issued: 45, voided: 0, expired: 0, error: 0, alertThreshold: "", creator: "平台运营", createdAt: "2026-05-21 09:10", updatedAt: "2026-05-23 10:15", remark: "码池缺货时作为后备货源" }
     ];
+    let skuDirectRouteSources = [];
 
     const templateExamples = {
       "虚拟装扮": [
@@ -2606,8 +2641,8 @@
 
     let products = [
       makeProduct("SPU10001", "赛季限定头像框", "avatar_frame_s1", "限时兑换，佩戴后展示专属头像框", "虚拟装扮", "3 个 SKU：7天 / 30天 / 永久", DELIVERY_AUTO_VIRTUAL, "上架", "已投放 2 个模板", { total: 1200, available: 980, locked: 12, abnormal: 0, today: 180 }, "-", "2026-05-22 16:20", [], "blue"),
-      makeProduct("SPU10002", "300 G-COIN", "pubg_gcoin_300", "PUBG 专属福利", "CDKEY", "1 个 SKU：300 G-COIN", DELIVERY_AUTO_CDKEY, "上架", "已投放 1 个模板", { total: 500, available: 320, locked: 8, abnormal: 0, today: 90 }, "码池可用", "2026-05-22 15:18", [], "purple"),
-      makeProduct("SPU10003", "加速卡 7 天", "accelerator_7d", "兑换后获得 7 天加速权益", "CDKEY", "1 个 SKU：7天", DELIVERY_AUTO_CDKEY, "上架", "已投放 1 个模板", { total: 100, available: 0, locked: 0, abnormal: 0, today: 0 }, "CDKey 不足", "2026-05-21 20:06", [], "purple"),
+      makeProduct("SPU10002", "300 G-COIN", "pubg_gcoin_300", "PUBG 专属福利", "CDKEY", "1 个 SKU：300 G-COIN", DELIVERY_AUTO_CDKEY, "上架", "已投放 1 个模板", { total: 0, available: 0, locked: 0, abnormal: 0, today: "-", unlimited: true, interfaceRealtime: true }, "接口实时判断", "2026-05-22 15:18", [], "purple"),
+      makeProduct("SPU10003", "加速卡 7 天", "accelerator_7d", "兑换后获得 7 天加速权益", "CDKEY", "1 个 SKU：7天", DELIVERY_AUTO_CDKEY, "上架", "已投放 1 个模板", { total: 0, available: 0, locked: 0, abnormal: 0, today: "-", unlimited: true, interfaceRealtime: true }, "接口实时判断", "2026-05-21 20:06", [], "purple"),
       makeProduct("SPU10004", "NN 定制鼠标垫", "nn_mouse_pad", "实物周边，数量有限", "实物", "2 个 SKU：黑色 / 白色", DELIVERY_MANUAL_PHYSICAL, "草稿", "未投放", null, "-", "2026-05-21 14:40", [], "orange"),
       makeProduct("SPU10005", "昵称挂件-星光", "nickname_badge_star", "个性昵称展示挂件", "虚拟装扮", "2 个 SKU：7天 / 30天", DELIVERY_AUTO_VIRTUAL, "下架", "未投放", { total: 600, available: 500, locked: 0, abnormal: 0, today: 80 }, "-", "2026-05-20 18:12", [], "blue"),
       makeProduct("SPU10006", "靓号权益", "premium_number", "限量靓号权益", "虚拟装扮", "2 个 SKU：5位 / 6位", DELIVERY_AUTO_VIRTUAL, "草稿", "未投放", { total: 30, available: 20, locked: 1, abnormal: 0, today: 10 }, "-", "2026-05-20 11:25", ["商品头图缺失", "权益素材缺失"], "blue"),
@@ -2634,8 +2669,8 @@
       makeInventoryRecord({ inventoryId: "INV-SPU10001-SKU01", spu: "SPU10001", skuId: "SPU10001-SKU01", stockMode: "限量", totalStock: 500, availableStock: 420, lockedStock: 8, deductedStock: 72, abnormalLockedStock: 0, todayLimit: 180, todayRemaining: 120, dailyRefreshTimes: "10:00,17:00", warningThreshold: 50, lastSyncTime: "2026-05-22 16:20", updatedAt: "2026-05-22 16:20", remark: "头像框 7 天初始化库存" }),
       makeInventoryRecord({ inventoryId: "INV-SPU10001-SKU02", spu: "SPU10001", skuId: "SPU10001-SKU02", stockMode: "限量", totalStock: 500, availableStock: 430, lockedStock: 4, deductedStock: 66, abnormalLockedStock: 0, todayLimit: 180, todayRemaining: 128, dailyRefreshTimes: "10:00,17:00", warningThreshold: 50, lastSyncTime: "2026-05-22 16:20", updatedAt: "2026-05-22 16:20", remark: "头像框 30 天初始化库存" }),
       makeInventoryRecord({ inventoryId: "INV-SPU10001-SKU03", spu: "SPU10001", skuId: "SPU10001-SKU03", stockMode: "限量", totalStock: 200, availableStock: 130, lockedStock: 0, deductedStock: 70, abnormalLockedStock: 0, todayLimit: 80, todayRemaining: 52, warningThreshold: 30, lastSyncTime: "2026-05-22 16:20", updatedAt: "2026-05-22 16:20", remark: "头像框永久 SKU 初始化库存" }),
-      makeInventoryRecord({ inventoryId: "INV-SPU10002-SKU01", spu: "SPU10002", skuId: "SPU10002-SKU01", stockMode: "限量", totalStock: 500, availableStock: 320, lockedStock: 8, deductedStock: 172, abnormalLockedStock: 0, todayLimit: 90, todayRemaining: 60, dailyRefreshTimes: "10:00,17:00", warningThreshold: 80, cdkeyPoolId: "PUBG_GCOIN_300_POOL", lastSyncTime: "2026-05-22 15:18", updatedAt: "2026-05-22 15:18", remark: "G-COIN CDKey SKU 初始化库存" }),
-      makeInventoryRecord({ inventoryId: "INV-SPU10003-SKU01", spu: "SPU10003", skuId: "SPU10003-SKU01", stockMode: "限量", totalStock: 100, availableStock: 0, lockedStock: 0, deductedStock: 100, abnormalLockedStock: 0, todayLimit: 60, todayRemaining: 0, dailyRefreshTimes: "10:00,17:00", warningThreshold: 30, shortageOrderPolicy: SHORTAGE_POLICY_ALLOW_BACKORDER, pendingFulfillmentLimit: 50, cdkeyPoolId: "ACCELERATOR_7D_POOL", lastSyncTime: "2026-05-21 20:06", updatedAt: "2026-05-21 20:06", remark: "真实库存来自CDKey码池；当前有1笔已支付订单等待补货" }),
+      makeInventoryRecord({ inventoryId: "INV-SPU10002-SKU01", spu: "SPU10002", skuId: "SPU10002-SKU01", stockMode: "不限量", totalStock: "不限量", availableStock: "不限量", lockedStock: 0, deductedStock: 172, abnormalLockedStock: 0, todayLimit: "不限量", todayRemaining: "不限量", warningThreshold: 0, cdkeyPoolId: "PUBG_GCOIN_300_POOL", lastSyncTime: "2026-05-22 15:18", updatedAt: "2026-05-22 15:18", remark: "含接口直供货源，库存由接口实时判断" }),
+      makeInventoryRecord({ inventoryId: "INV-SPU10003-SKU01", spu: "SPU10003", skuId: "SPU10003-SKU01", stockMode: "不限量", totalStock: "不限量", availableStock: "不限量", lockedStock: 0, deductedStock: 100, abnormalLockedStock: 0, todayLimit: "不限量", todayRemaining: "不限量", warningThreshold: 0, shortageOrderPolicy: SHORTAGE_POLICY_STOCK_ONLY, pendingFulfillmentLimit: 0, cdkeyPoolId: "ACCELERATOR_7D_POOL", lastSyncTime: "2026-05-21 20:06", updatedAt: "2026-05-21 20:06", remark: "含接口直供货源，库存由接口实时判断" }),
       makeInventoryRecord({ inventoryId: "INV-SPU10004-SKU01", spu: "SPU10004", skuId: "SPU10004-SKU01", stockMode: "限量", totalStock: 120, availableStock: 118, lockedStock: 0, deductedStock: 2, abnormalLockedStock: 0, todayLimit: 40, todayRemaining: 38, warningThreshold: 10, lastSyncTime: "2026-05-21 14:40", updatedAt: "2026-05-21 14:40", remark: "黑色标准款初始化库存" }),
       makeInventoryRecord({ inventoryId: "INV-SPU10004-SKU02", spu: "SPU10004", skuId: "SPU10004-SKU02", stockMode: "限量", totalStock: 80, availableStock: 78, lockedStock: 0, deductedStock: 2, abnormalLockedStock: 0, todayLimit: 30, todayRemaining: 28, warningThreshold: 10, lastSyncTime: "2026-05-21 14:40", updatedAt: "2026-05-21 14:40", remark: "白色标准款初始化库存" }),
       makeInventoryRecord({ inventoryId: "INV-SPU10005-SKU01", spu: "SPU10005", skuId: "SPU10005-SKU01", stockMode: "限量", totalStock: 300, availableStock: 250, lockedStock: 0, deductedStock: 50, abnormalLockedStock: 0, todayLimit: 80, todayRemaining: 48, warningThreshold: 30, lastSyncTime: "2026-05-20 18:12", updatedAt: "2026-05-20 18:12", remark: "昵称挂件 7 天初始化库存" }),
@@ -2653,24 +2688,24 @@
       makeDeliveryRecord({ recordId: "DEL-202605220006", orderId: "ORD-202605220006", exchangeNo: "EXC-202605220006", userId: "10023893", spu: "SPU10004", skuId: "SPU10004-SKU01", deliveryMethod: DELIVERY_MANUAL_PHYSICAL, deliveryState: "待履约", payAmount: 6800, inventoryFlowId: "FLOW-000017", externalFulfillmentNo: "-", externalFulfillmentState: "待履约", createdAt: "2026-05-22 17:40", deliveredAt: "-", updatedAt: "2026-05-22 17:40", remark: "订单 / 履约后台承接发货" }),
       makeDeliveryRecord({ recordId: "DEL-202605220007", orderId: "ORD-202605220007", exchangeNo: "EXC-202605220007", userId: "10023894", spu: "SPU10004", skuId: "SPU10004-SKU02", deliveryMethod: DELIVERY_MANUAL_PHYSICAL, deliveryState: "待履约", payAmount: 6800, inventoryFlowId: "FLOW-000018", externalFulfillmentNo: "FUL-202605220007", externalFulfillmentState: "外部履约中", createdAt: "2026-05-22 17:48", deliveredAt: "-", updatedAt: "2026-05-22 17:50", remark: "只读展示外部履约单号" }),
       makeDeliveryRecord({ recordId: "DEL-202605220008", orderId: "ORD-202605220008", exchangeNo: "EXC-202605220008", businessSource: "xx活动", userId: "10023895", spu: "SPU10005", skuId: "SPU10005-SKU01", deliveryMethod: DELIVERY_AUTO_VIRTUAL, deliveryState: "履约失败", payAmount: 800, inventoryFlowId: "FLOW-000019", autoResourceId: "RESOURCE_NICKNAME_DECOR_7D", failureReason: "订单取消", createdAt: "2026-05-22 18:02", deliveredAt: "-", updatedAt: "2026-05-22 18:05", remark: "用户取消兑换" }),
-      makeDeliveryRecord({ recordId: "DEL-202605220009", orderId: "ORD-202605220009", exchangeNo: "EXC-202605220009", userId: "10023896", spu: "SPU10007", skuId: "SPU10007-SKU01", deliveryMethod: DELIVERY_AUTO_VIRTUAL, deliveryState: "履约失败", payAmount: 800, inventoryFlowId: "FLOW-000020", autoResourceId: "RESOURCE_ENTRANCE_EFFECT_7D", failureReason: "库存锁定未释放", createdAt: "2026-05-22 18:10", deliveredAt: "-", updatedAt: "2026-05-22 18:11", remark: "库存锁定仍占用" }),
-      makeDeliveryRecord({ recordId: "DEL-202605220010", orderId: "ORD-202605220010", exchangeNo: "EXC-202605220010", userId: "10023897", spu: "SPU10002", skuId: "SPU10002-SKU01", deliveryMethod: DELIVERY_AUTO_CDKEY, deliveryState: "履约失败", payAmount: 3000, inventoryFlowId: "FLOW-000021", cdkeyPoolId: "TEST_POOL_INVALID", cdkeyBatchId: "BATCH-TEST-202605-001", maskedCdkey: "-", failureReason: "码池未上架", createdAt: "2026-05-22 18:20", deliveredAt: "-", updatedAt: "2026-05-22 18:20", remark: "下架码池不允许履约" })
+      makeDeliveryRecord({ recordId: "DEL-202605220009", orderId: "ORD-202605220009", exchangeNo: "EXC-202605220009", userId: "10023896", spu: "SPU10007", skuId: "SPU10007-SKU01", deliveryMethod: DELIVERY_AUTO_VIRTUAL, deliveryState: "履约失败", payAmount: 800, inventoryFlowId: "FLOW-000020", autoResourceId: "RESOURCE_ENTRANCE_EFFECT_7D", failureReason: "库存锁定未释放", createdAt: "2026-05-22 18:10", deliveredAt: "-", updatedAt: "2026-05-22 18:11", remark: "库存锁定仍占用" })
     ];
     let cdkeyBatches = [
-      makeCdkeyBatch({ batchId: "BATCH-PUBG-202605-001", poolId: "PUBG_GCOIN_300_POOL", batchName: "PUBG 300 G-COIN 5月补货", source: "接口生成码", state: "可用", total: 300, available: 220, issued: 72, voided: 0, failed: 0, expireAt: "2026-12-31 23:59", createdAt: "2026-05-18 10:20", updatedAt: "2026-05-22 15:10" }),
-      makeCdkeyBatch({ batchId: "BATCH-PUBG-202605-002", poolId: "PUBG_GCOIN_300_POOL", batchName: "PUBG 300 G-COIN 追加补货", source: "接口生成码", state: "可用", total: 200, available: 100, issued: 100, voided: 0, failed: 0, expireAt: "2026-12-31 23:59", createdAt: "2026-05-20 14:00", updatedAt: "2026-05-22 12:30" }),
-      makeCdkeyBatch({ batchId: "BATCH-ACC-202605-001", poolId: "ACCELERATOR_7D_POOL", batchName: "加速卡 7 天 5月补货", source: "手工上传码", state: "可用", total: 100, available: 0, issued: 100, voided: 0, failed: 0, expireAt: "2026-10-31 23:59", createdAt: "2026-05-18 11:30", updatedAt: "2026-05-21 12:30" }),
-      makeCdkeyBatch({ batchId: "BATCH-TEST-202605-001", poolId: "TEST_POOL_INVALID", batchName: "测试异常补货", source: "接口生成码", state: "异常", total: 30, available: 5, issued: 5, voided: 0, failed: 3, expireAt: "2026-09-30 23:59", createdAt: "2026-05-19 09:40", updatedAt: "2026-05-20 10:00" })
+      makeCdkeyBatch({ batchId: "BATCH-PUBG-202605-001", poolId: "PUBG_GCOIN_300_POOL", batchName: "PUBG 300 G-COIN 5月补货", source: "手工上传码", fileName: "pubg_gcoin_300_20260518.xlsx", state: "可用", total: 300, available: 220, issued: 72, voided: 0, failed: 0, expireAt: "2026-12-31 23:59", createdAt: "2026-05-18 10:20", updatedAt: "2026-05-22 15:10" }),
+      makeCdkeyBatch({ batchId: "BATCH-PUBG-202605-002", poolId: "PUBG_GCOIN_300_POOL", batchName: "PUBG 300 G-COIN 追加补货", source: "手工上传码", fileName: "pubg_gcoin_300_append_20260520.xlsx", state: "可用", total: 200, available: 100, issued: 100, voided: 0, failed: 0, expireAt: "2026-12-31 23:59", createdAt: "2026-05-20 14:00", updatedAt: "2026-05-22 12:30" }),
+      makeCdkeyBatch({ batchId: "BATCH-ACC-202605-001", poolId: "ACCELERATOR_7D_POOL", batchName: "加速卡 7 天 5月补货", source: "手工上传码", fileName: "accelerator_7d_20260518.xlsx", state: "可用", total: 100, available: 0, issued: 100, voided: 0, failed: 0, expireAt: "2026-10-31 23:59", createdAt: "2026-05-18 11:30", updatedAt: "2026-05-21 12:30" })
     ];
     let cdkeyCodes = [
       makeCdkeyCode({ rowKey: "ROW-PUBG-001", poolId: "PUBG_GCOIN_300_POOL", batchId: "BATCH-PUBG-202605-001", maskedCdkey: "PUBG-****-****-8K29", state: "已履约", deliveryRecordId: "DEL-202605220001", exchangeNo: "EXC-202605220001", orderId: "ORD-202605220001", issuedAt: "2026-05-22 16:21", updatedAt: "2026-05-22 16:21" }),
       makeCdkeyCode({ rowKey: "ROW-PUBG-002", poolId: "PUBG_GCOIN_300_POOL", batchId: "BATCH-PUBG-202605-001", maskedCdkey: "PUBG-****-****-A21C", state: "已履约", deliveryRecordId: "DEL-202605220001", exchangeNo: "EXC-202605220001", orderId: "ORD-202605220001", issuedAt: "2026-05-22 16:21", updatedAt: "2026-05-22 16:21" }),
       makeCdkeyCode({ rowKey: "ROW-PUBG-003", poolId: "PUBG_GCOIN_300_POOL", batchId: "BATCH-PUBG-202605-001", maskedCdkey: "PUBG-****-****-K91M", state: "已履约", deliveryRecordId: "DEL-202605220001", exchangeNo: "EXC-202605220001", orderId: "ORD-202605220001", issuedAt: "2026-05-22 16:21", updatedAt: "2026-05-22 16:21" }),
       makeCdkeyCode({ rowKey: "ROW-PUBG-004", poolId: "PUBG_GCOIN_300_POOL", batchId: "BATCH-PUBG-202605-002", maskedCdkey: "PUBG-****-****-P7Q2", state: "未使用", updatedAt: "2026-05-22 12:30" }),
-      makeCdkeyCode({ rowKey: "ROW-ACC-001", poolId: "ACCELERATOR_7D_POOL", batchId: "BATCH-ACC-202605-001", maskedCdkey: "ACC7-****-****-19KQ", state: "已履约", deliveryRecordId: "DEL-202605210011", exchangeNo: "EXC-202605210011", orderId: "ORD-202605210011", issuedAt: "2026-05-21 12:30", updatedAt: "2026-05-21 12:30" }),
-      makeCdkeyCode({ rowKey: "ROW-TEST-001", poolId: "TEST_POOL_INVALID", batchId: "BATCH-TEST-202605-001", maskedCdkey: "TEST-****-****-0001", state: "未使用", updatedAt: "2026-05-20 10:00" })
+      makeCdkeyCode({ rowKey: "ROW-ACC-001", poolId: "ACCELERATOR_7D_POOL", batchId: "BATCH-ACC-202605-001", maskedCdkey: "ACC7-****-****-19KQ", state: "已履约", deliveryRecordId: "DEL-202605210011", exchangeNo: "EXC-202605210011", orderId: "ORD-202605210011", issuedAt: "2026-05-21 12:30", updatedAt: "2026-05-21 12:30" })
     ];
     let cdkeyLogs = [];
+    let cdkeyExtractionLogs = [
+      { orderNo: "ORD20260706001", action: "提取成功", phoneResult: "通过", realNameResult: "通过", result: "已向用户展示卡密", time: "2026-07-06 09:48:16", channel: "客户端订单详情" }
+    ];
     let visibleProducts = [...products];
     let visibleTemplates = [...attributeTemplates];
     let visibleDisplayConfigs = [...displayConfigs];
@@ -2709,6 +2744,9 @@
     let pendingFormEnable = false;
     let previousFormType = "";
     let currentEditingSkuIndex = null;
+    let cdkeyRouteDraft = [];
+    let cdkeyRouteMethodDraft = "";
+    let cdkeyStockMethodDraft = "手工上传";
     let currentEditingPriceSkuIndex = null;
     let skuPriceDraft = [];
     let descriptionTags = [];
@@ -2739,6 +2777,10 @@
 
     function isCdkeyDelivery(delivery) {
       return normalizeDelivery(delivery) === DELIVERY_AUTO_CDKEY;
+    }
+
+    function requiresCdkeySourceConfig(row, productType) {
+      return productType === "CDKEY" || isCdkeyDelivery(row?.delivery);
     }
 
     function isPhysicalDelivery(delivery) {
@@ -2781,10 +2823,13 @@
         row.prices = sampleSkuPrices(type, row.attributeValues, index + 1);
         syncLegacySkuPriceFields(row);
         if (isCdkeyDelivery(row.delivery)) {
-          const poolIndex = { SPU10002: 0, SPU10003: 1 }[spu];
-          const pool = Number.isInteger(poolIndex) ? poolMocks[poolIndex] : null;
+          const primarySourceId = { SPU10002: "PUBG_VENDOR_API", SPU10003: "ACCELERATOR_7D_POOL" }[spu];
+          const pool = primarySourceId ? poolMocks.find(item => item.id === primarySourceId) : null;
           if (pool) {
             row.cdkeyPoolId = pool.id;
+            row.cdkeySourceIds = [pool.id];
+            row.cdkeySourceRoutes = [{ sourceId: pool.id, sort: 1 }];
+            row.cdkeySupplyMethod = cdkeySupplyMode(pool);
             row.cdkeyPoolCheck = checkCdkeyPool(pool.id);
             row.deliveryParams.cdkey = poolToParams(pool);
           }
@@ -3204,19 +3249,22 @@
     }
 
     function getPoolById(poolId) {
-      return poolMocks.find(item => item.id === poolId);
+      return poolMocks.find(item => item.id === poolId) || skuDirectRouteSources.find(item => item.id === poolId);
     }
 
     function checkCdkeyPool(poolId) {
       if (!poolId) {
-        return { status: "未配置", ok: false, message: "请填写码池 ID" };
+        return { status: "未配置", ok: false, message: "请配置 CDKey 货源" };
       }
       const pool = getPoolById(poolId);
       if (!pool) {
-        return { status: "失败", ok: false, message: "码池 ID 不存在" };
+        return { status: "失败", ok: false, message: "货源 ID 不存在" };
       }
       if (pool.state !== "上架") {
-        return { status: "失败", ok: false, message: "码池不可用，不允许使用" };
+        return { status: "失败", ok: false, message: "货源不可用，不允许使用" };
+      }
+      if (cdkeySupplyMode(pool) === "接口直供") {
+        return { status: "接口实时判断", ok: true, stockSufficient: true, message: "接口直供货源配置有效，库存以下单履约时的接口结果为准", pool };
       }
       if (pool.available <= 0) {
         return { status: "可用但缺码", ok: true, stockSufficient: false, message: "码池配置有效，当前可用数量为0", pool };
@@ -3224,9 +3272,76 @@
       return { status: "通过", ok: true, stockSufficient: true, message: `码池可用，可用数量 ${pool.available}`, pool };
     }
 
-    function deliveryParamSummary(row) {
-      if (!isCdkeyDelivery(row.delivery)) return "无需配置";
-      return row.cdkeyPoolId || row.deliveryParams?.cdkey?.poolId || "未填写";
+    function evaluateCdkeySourceRoute(sourceIds = []) {
+      const ids = [...new Set((sourceIds || []).filter(Boolean))];
+      const sourceRows = ids.map(sourceId => ({ sourceId, source: getPoolById(sourceId) }));
+      const sources = sourceRows.map(item => item.source).filter(Boolean);
+      const missingSourceIds = sourceRows.filter(item => !item.source).map(item => item.sourceId);
+      const activeSources = sources.filter(source => source.state === "上架");
+      const activeDirectSources = activeSources.filter(source => cdkeySupplyMode(source) === "接口直供");
+      const activePoolSources = activeSources.filter(source => cdkeySupplyMode(source) === "码池供货");
+      const totalPoolStock = activePoolSources.reduce((sum, source) => sum + Number(source.total || 0), 0);
+      const availablePoolStock = activePoolSources.reduce((sum, source) => sum + Number(source.available || 0), 0);
+
+      let productStatus = "货源不可用";
+      let inventoryStatus = "码池不可用";
+      if (!ids.length) {
+        productStatus = "货源未配置";
+        inventoryStatus = "码池未配置";
+      } else if (!sources.length && missingSourceIds.length) {
+        productStatus = "货源不存在";
+      } else if (activeDirectSources.length) {
+        productStatus = "接口实时判断";
+        inventoryStatus = "接口实时判断";
+      } else if (activePoolSources.length && availablePoolStock > 0) {
+        productStatus = "货源可用";
+        inventoryStatus = "码池可用";
+      } else if (activePoolSources.length) {
+        productStatus = "CDKey 不足";
+        inventoryStatus = "CDKey 不足";
+      }
+
+      return {
+        ids,
+        sources,
+        missingSourceIds,
+        activeSources,
+        activeDirectSources,
+        activePoolSources,
+        hasActiveDirect: activeDirectSources.length > 0,
+        totalPoolStock,
+        availablePoolStock,
+        ok: activeSources.length > 0,
+        stockSufficient: activeDirectSources.length > 0 || availablePoolStock > 0,
+        productStatus,
+        inventoryStatus
+      };
+    }
+
+    function evaluateSkuCdkeyRoute(sku) {
+      return evaluateCdkeySourceRoute(skuCdkeySourceIds(sku));
+    }
+
+    function cdkeyProductStatusFromSkus(skus = []) {
+      const statuses = skus.filter(sku => isCdkeyDelivery(sku.delivery)).map(sku => evaluateSkuCdkeyRoute(sku).productStatus);
+      if (!statuses.length) return "-";
+      if (statuses.includes("CDKey 不足")) return "CDKey 不足";
+      const invalid = statuses.find(status => !["货源可用", "接口实时判断"].includes(status));
+      if (invalid) return invalid;
+      return statuses.includes("接口实时判断") ? "接口实时判断" : "货源可用";
+    }
+
+    function deliveryParamSummary(row, productType) {
+      if (!requiresCdkeySourceConfig(row, productType)) return "无需配置";
+      const sourceIds = skuCdkeySourceIds(row);
+      return sourceIds.length ? sourceIds.map((sourceId, index) => {
+        const source = getPoolById(sourceId);
+        const sort = cdkeySourceSortValue(row, sourceId, index, sourceIds.length);
+        const reference = cdkeySupplyMode(source) === "接口直供"
+          ? `${source?.supplier || "未知供应商"} / ${source?.supplierSku || sourceId}`
+          : `旧码池 ID：${sourceId}`;
+        return `排序 ${sort}：${reference}`;
+      }).join("<br>") : "未配置";
     }
 
     function isBackorderAllowed(inventoryConfig) {
@@ -3315,7 +3430,9 @@
       const validityType = normalizeSkuValidityType(row.validityType, type, validitySource, specType);
       const displayText = row.displayText || row.text || generateSkuDisplayText(attributeValues, type, codes, specType, duration, validityType);
       const delivery = normalizeDelivery(row.delivery);
-      const cdkeyPoolId = row.cdkeyPoolId || row.deliveryParams?.cdkey?.poolId || "";
+      const cdkeySourceIds = skuCdkeySourceIds(row);
+      const cdkeyPoolId = cdkeySourceIds[0] || row.deliveryParams?.cdkey?.poolId || "";
+      const cdkeySourceModes = [...new Set(cdkeySourceIds.map(sourceId => cdkeySupplyMode(getPoolById(sourceId))).filter(Boolean))];
       const skuName = Object.prototype.hasOwnProperty.call(row, "skuName")
         ? row.skuName
         : (row.name || row.displayText || row.text || `${type} SKU${index + 1}`);
@@ -3340,7 +3457,12 @@
         dayLimit: row.dayLimit || 1,
         delivery,
         cdkeyPoolId,
-        cdkeyPoolCheck: isCdkeyDelivery(delivery) && cdkeyPoolId ? checkCdkeyPool(cdkeyPoolId) : (row.cdkeyPoolCheck || null),
+        cdkeySourceIds,
+        cdkeySourceRoutes: Array.isArray(row.cdkeySourceRoutes) && row.cdkeySourceRoutes.length
+          ? row.cdkeySourceRoutes.map(route => ({ sourceId: route.sourceId, sort: Number(route.sort || 0) }))
+          : cdkeySourceIds.map((sourceId, routeIndex) => ({ sourceId, sort: cdkeySourceIds.length - routeIndex })),
+        cdkeySupplyMethod: row.cdkeySupplyMethod || (cdkeySourceModes.length === 1 ? cdkeySourceModes[0] : ""),
+        cdkeyPoolCheck: requiresCdkeySourceConfig({ delivery }, type) && cdkeySourceIds.length ? { status: "通过", ok: true, message: `已配置 ${cdkeySourceIds.length} 个货源` } : (row.cdkeyPoolCheck || null),
         deliveryParams: normalizeDeliveryParams(row, delivery),
         remark: row.remark || "SKU 级配置"
       };
@@ -3694,7 +3816,7 @@
       document.getElementById("exportInventoryBtn").addEventListener("click", () => toast("导出任务已创建，可在下载中心查看。"));
       document.getElementById("inventoryFlowExportBtn").addEventListener("click", () => toast("库存流水导出任务已创建，可在下载中心查看。"));
       document.getElementById("exportDeliveryBtn").addEventListener("click", () => toast("导出任务已创建，可在下载中心查看。"));
-      document.getElementById("exportCdkeyPoolBtn").addEventListener("click", () => toast("导出任务已创建，可在下载中心查看。"));
+      document.getElementById("exportCdkeyPoolBtn").addEventListener("click", () => toast("CDKey 货源导出任务已创建，可在下载中心查看。"));
       document.getElementById("searchPointsFlowBtn").addEventListener("click", renderPointsFlowTable);
       document.getElementById("resetPointsFlowBtn").addEventListener("click", resetPointsFlowFilters);
       document.getElementById("exportPointsFlowBtn").addEventListener("click", exportPointsFlowRecords);
@@ -3710,6 +3832,9 @@
       document.getElementById("resetOrdersBtn").addEventListener("click", resetOrderManagementFilters);
       document.getElementById("exportOrdersBtn").addEventListener("click", exportOrderManagementRecords);
       document.getElementById("confirmOrderActionBtn").addEventListener("click", confirmOrderManagementAction);
+      document.getElementById("sendCdkeySmsBtn").addEventListener("click", sendCdkeyExtractSmsCode);
+      document.getElementById("verifyCdkeyRealNameBtn").addEventListener("click", verifyCdkeyExtractRealName);
+      document.getElementById("confirmCdkeyExtractBtn").addEventListener("click", confirmCdkeyExtraction);
       document.getElementById("editAddressReason").addEventListener("change", toggleEditAddressOtherReason);
       document.getElementById("confirmAddressEditBtn").addEventListener("click", confirmOrderAddressEdit);
       document.getElementById("confirmLogisticsBtn").addEventListener("click", confirmOrderLogistics);
@@ -3733,10 +3858,19 @@
       document.getElementById("cdkeyPoolCancelBtn").addEventListener("click", showCdkeyPoolPage);
       document.getElementById("cdkeyPoolSaveDraftBtn").addEventListener("click", saveCdkeyPoolDraft);
       document.getElementById("cdkeyPoolSaveEnableBtn").addEventListener("click", saveCdkeyPoolEnable);
-      document.getElementById("cdkeyPoolFormSource").addEventListener("change", () => {
+      document.getElementById("cdkeyPoolFormProvider").addEventListener("change", () => {
+        updateCdkeyProviderFields();
+        renderCdkeySupplierOptions();
         updateCdkeyPoolTypeField();
         renderCdkeyPoolInitialData();
       });
+      document.getElementById("cdkeyPoolFormSource").addEventListener("change", () => {
+        renderCdkeySupplierOptions(valueOf("cdkeyPoolFormSupplier"));
+        updateCdkeyPoolTypeField();
+        renderCdkeyPoolInitialData();
+      });
+      document.getElementById("cdkeyPoolFormSupplier").addEventListener("change", () => renderCdkeySupplierProducts());
+      document.getElementById("cdkeyPoolFormSupplierProduct").addEventListener("change", syncCdkeySupplierProductCode);
       document.getElementById("confirmCdkeyGenerateBtn").addEventListener("click", confirmCdkeyGenerate);
       document.getElementById("confirmCdkeyUploadBtn").addEventListener("click", confirmCdkeyUpload);
       document.getElementById("confirmCdkeyVoidBtn").addEventListener("click", confirmCdkeyVoid);
@@ -3787,9 +3921,8 @@
       document.querySelectorAll("[data-rich-cmd]").forEach(btn => btn.addEventListener("click", () => handleRichCommand(btn.dataset.richTarget, btn.dataset.richCmd)));
       document.getElementById("confirmDeleteBtn").addEventListener("click", confirmDelete);
       document.getElementById("confirmDisableBtn").addEventListener("click", confirmDisable);
-      document.getElementById("poolFilterName").addEventListener("input", renderPoolTable);
-      document.getElementById("poolFilterState").addEventListener("change", renderPoolTable);
-      document.getElementById("poolFilterSpec").addEventListener("input", renderPoolTable);
+      document.getElementById("skuSupplyMethod").addEventListener("change", updateCdkeyRouteMethod);
+      document.getElementById("confirmPoolRouteBtn").addEventListener("click", confirmCdkeyRouteConfig);
       document.getElementById("newTemplateBtn").addEventListener("click", () => openTemplateForm("new"));
       document.getElementById("exportTemplateBtn").addEventListener("click", () => toast("导出任务已创建，可在下载中心查看。"));
       document.getElementById("templateSearchBtn").addEventListener("click", applyTemplateFilters);
@@ -3879,7 +4012,7 @@
         "订单列表": "订单管理 / 订单列表",
         "库存列表": "库存管理 / 库存列表",
         "履约记录列表": "履约记录 / 履约记录列表",
-        "CDKey 码池列表": "CDKey 码池管理 / CDKey 码池列表"
+        "CDKey 货源列表": "CDKey 管理 / CDKey 货源列表"
       };
       document.getElementById("breadcrumb").textContent = crumbs[menu] || `商品管理 / ${menu}`;
     }
@@ -3954,7 +4087,7 @@
     function showCdkeyPoolPage() {
       hideAllPages();
       document.getElementById("cdkeyPoolPage").style.display = "block";
-      setActiveMenu("CDKey 码池列表");
+      setActiveMenu("CDKey 货源列表");
       visibleCdkeyPools = [...poolMocks];
       renderCdkeyPoolTable();
       renderCdkeyPoolStats();
@@ -4672,7 +4805,7 @@
       if (product.state === "草稿") return { status: "不可投放", reason: "商品未上架" };
       if (product.state === "下架") return { status: "不可投放", reason: "商品已下架" };
       if (!product.stock) return { status: "不可投放", reason: "库存未配置" };
-      if (product.cdkey !== "-" && product.cdkey !== "码池可用") return { status: "不可投放", reason: product.cdkey };
+      if (!["-", "码池可用", "货源可用", "接口实时判断"].includes(product.cdkey)) return { status: "不可投放", reason: product.cdkey };
       if (product.delivery === "未配置") return { status: "不可投放", reason: "履约方式未配置" };
       return { status: "可投放", reason: "无" };
     }
@@ -5561,6 +5694,16 @@
       return `${inventoryNumberText(remaining)} / ${inventoryNumberText(limit)}`;
     }
 
+    function inventoryStockModeLabel(record) {
+      const sku = getInventorySku(record);
+      return record.stockMode === "不限量" && evaluateSkuCdkeyRoute(sku).hasActiveDirect ? "不限量（接口实时判断）" : record.stockMode;
+    }
+
+    function inventoryCdkeySourceText(record) {
+      const sourceIds = skuCdkeySourceIds(getInventorySku(record));
+      return sourceIds.length ? sourceIds.join("、") : (inventoryCdkeyPoolId(record) || "未配置");
+    }
+
     function normalizeDailyRefreshTimesText(value, useDefault = true) {
       if (value === "不限量") return "不限量";
       const raw = String(value || "").trim();
@@ -5777,7 +5920,7 @@
 
     function inventoryCdkeyPoolId(record) {
       const sku = getInventorySku(record);
-      return record.cdkeyPoolId || sku?.cdkeyPoolId || sku?.deliveryParams?.cdkey?.poolId || "";
+      return skuCdkeySourceIds(sku)[0] || record.cdkeyPoolId || sku?.deliveryParams?.cdkey?.poolId || "";
     }
 
     function inventoryCdkeyStatus(record) {
@@ -5785,12 +5928,7 @@
       const sku = getInventorySku(record);
       const delivery = sku?.delivery || product?.delivery;
       if (!isCdkeyDelivery(delivery)) return "-";
-      const poolId = inventoryCdkeyPoolId(record);
-      if (!poolId) return "码池未配置";
-      const check = checkCdkeyPool(poolId);
-      if (check.ok && check.stockSufficient !== false) return "码池可用";
-      if (check.stockSufficient === false) return "CDKey 不足";
-      return "码池不可用";
+      return evaluateSkuCdkeyRoute(sku).inventoryStatus;
     }
 
     function inventorySummaryFromRecord(record) {
@@ -5917,7 +6055,7 @@
           <td>${product?.type || "-"}</td>
           <td>${skuSpecText(sku)}</td>
           <td>${deliveryTag(delivery)}</td>
-          <td>${record.stockMode}</td>
+          <td>${inventoryStockModeLabel(record)}</td>
           <td>${inventoryNumberText(record.totalStock, record)}</td>
           <td>${inventoryNumberText(record.availableStock, record)}</td>
           <td>${record.lockedStock}</td>
@@ -5943,7 +6081,7 @@
       const isCdkey = isCdkeyDelivery(sku?.delivery || product?.delivery);
       const actions = [`<button class="btn text" data-inventory-action="detail" data-inventory-id="${record.inventoryId}">查看详情</button>`];
       if (!isCdkey || isBackorderAllowed(record)) actions.push(`<button class="btn text" data-inventory-action="adjust" data-inventory-id="${record.inventoryId}">调整库存</button>`);
-      if (isCdkey) actions.push(`<button class="btn text" data-inventory-action="pool" data-inventory-id="${record.inventoryId}">查看码池 / 补货</button>`);
+      if (isCdkey) actions.push(`<button class="btn text" data-inventory-action="pool" data-inventory-id="${record.inventoryId}">查看首选货源</button>`);
       actions.push(`<button class="btn text" data-inventory-action="flow" data-inventory-id="${record.inventoryId}">库存流水</button>`);
       return actions.join("");
     }
@@ -5955,7 +6093,7 @@
       if (action === "pool") {
         const record = getInventoryRecordById(inventoryId);
         const poolId = record ? inventoryCdkeyPoolId(record) : "";
-        if (!poolId) return toast("当前 SKU 尚未配置 CDKey 码池。");
+        if (!poolId) return toast("当前 SKU 尚未配置 CDKey 货源。");
         openCdkeyPoolDetail(poolId);
       }
     }
@@ -6009,8 +6147,12 @@
       const product = getInventoryProduct(record);
       const sku = getInventorySku(record);
       const delivery = sku?.delivery || product?.delivery || "未配置";
-      const cdkeyPoolId = inventoryCdkeyPoolId(record);
-      const cdkeyNotice = isCdkeyDelivery(delivery) ? `<div class="alert info">CDKey SKU 库存模式固定为限量；总库存和可用库存由关联码池同步。补货、核销和码池库存维护请前往 CDKey 码池管理。</div>` : "";
+      const hasDirectSupply = evaluateSkuCdkeyRoute(sku).hasActiveDirect;
+      const cdkeyNotice = isCdkeyDelivery(delivery)
+        ? hasDirectSupply
+          ? `<div class="alert info">该 SKU 的货源路由包含接口直供，库存显示为“不限量（接口实时判断）”；平台不维护供应商库存数量，实际是否有货以下单履约时的接口结果为准。</div>`
+          : `<div class="alert info">该 SKU 仅使用码池供货，总库存和可用库存由关联码池同步。补货、核销和卡密维护请前往 CDKey 货源列表。</div>`
+        : "";
       const physicalNotice = isPhysicalDelivery(delivery) ? `<div class="alert info">库存列表只维护实物商品可兑换库存，不承接用户收货地址、物流单号和完整发货流程；收货地址与发货状态由订单 / 履约后台承接。</div>` : "";
       document.getElementById("inventoryDetailBody").innerHTML = `
         ${detailSection("商品与 SKU 信息", infoGrid([
@@ -6018,10 +6160,10 @@
           ["商品副标题", product?.subtitle || "-"], ["商品类型", product?.type || "-"],
           ["SKU ID", record.skuId], ["SKU 规格", skuSpecText(sku)], ["SKU 属性值", product ? formatSkuAttributeValues(sku, product.type) : "-"],
           ["履约方式", normalizeDelivery(delivery)], ["商品状态", product?.state || "-"], ["CDKey 状态", inventoryCdkeyStatus(record)],
-          ["关联码池 ID", isCdkeyDelivery(delivery) ? cdkeyPoolId || "未配置" : "-"]
-        ]) + `<div class="hint-text">商品与 SKU 信息来自商品列表，库存列表只读展示，不维护商品基础信息、SKU 属性、履约方式和 CDKey 码池 ID。</div>`)}
+          ["关联货源 ID", isCdkeyDelivery(delivery) ? inventoryCdkeySourceText(record) : "-"]
+        ]) + `<div class="hint-text">商品与 SKU 信息来自商品列表，库存列表只读展示，不维护商品基础信息、SKU 属性、履约方式和 CDKey 货源路由。</div>`)}
         ${detailSection("库存主数据", infoGrid([
-          ["库存模式", record.stockMode], ["总库存", inventoryNumberText(record.totalStock, record)],
+          ["库存模式", inventoryStockModeLabel(record)], ["总库存", inventoryNumberText(record.totalStock, record)],
           ["可用库存", inventoryNumberText(record.availableStock, record)], ["锁定库存", record.lockedStock],
           ["当前时段剩余库存", inventoryNumberText(record.todayRemaining, record)], ["时段库存重置配置", record.stockMode === "不限量" ? "不限量" : (dailyReleaseLines(record.dailyReleases).join("，") || "不限制")],
           ["安全库存阈值", inventoryWarningText(record)],
@@ -6047,7 +6189,7 @@
       const delivery = sku?.delivery || product?.delivery || "未配置";
       document.getElementById("inventoryAdjustInfo").innerHTML = infoGrid([
         ["SPU ID", record.spu], ["商品对外名称", product?.name || "-"], ["SKU ID", record.skuId], ["SKU 规格", skuSpecText(sku)],
-        ["当前库存模式", record.stockMode], ["当前总库存", inventoryNumberText(record.totalStock, record)], ["当前可用库存", inventoryNumberText(record.availableStock, record)],
+        ["当前库存模式", inventoryStockModeLabel(record)], ["当前总库存", inventoryNumberText(record.totalStock, record)], ["当前可用库存", inventoryNumberText(record.availableStock, record)],
         ["当前锁定库存", record.lockedStock], ["当前时段库存重置配置", record.stockMode === "不限量" ? "不限量" : (dailyReleaseLines(record.dailyReleases).join("，") || "不限制")],
         ["当前安全库存阈值", inventoryWarningText(record)], ["当前下单策略", shortageOrderPolicyText(record)], ["当前待履约数量上限", isBackorderAllowed(record) ? inventoryPendingLimit(record) : "-"]
       ]);
@@ -6105,7 +6247,9 @@
       if (modeChangingToUnlimited) {
         label.innerHTML = "调整数量";
         qty.placeholder = "不限量模式无需填写";
-        tip.textContent = "库存模式切换为不限量后，总库存、可用库存、时段库存重置配置和安全库存阈值按不限量展示；CDKey SKU 不允许设置为不限量。";
+        tip.textContent = isCdkeyRecord
+          ? "该 CDKey SKU 包含接口直供货源，库存模式由货源路由自动判定为“不限量（接口实时判断）”，不支持在库存列表手工切换或调整数量。"
+          : "库存模式切换为不限量后，总库存、可用库存、时段库存重置配置和安全库存阈值按不限量展示。";
         return;
       }
       if (modeChangingToLimited) {
@@ -6135,7 +6279,8 @@
       const product = getInventoryProduct(record);
       const delivery = sku?.delivery || product?.delivery || "未配置";
       if (!isCdkeyDelivery(delivery)) return "";
-      if (nextMode === "不限量") return "CDKey SKU 库存模式固定为限量，不能设置为不限量。";
+      const hasDirectSupply = evaluateSkuCdkeyRoute(sku).hasActiveDirect;
+      if (nextMode === "不限量") return hasDirectSupply ? "" : "仅码池供货的 CDKey SKU 不能设置为不限量。";
       const poolId = inventoryCdkeyPoolId(record);
       const pool = getPoolById(poolId);
       if (!pool) return "CDKey SKU 未绑定可用码池，不能调整库存。";
@@ -6393,6 +6538,7 @@
       const sum = (rows, key) => rows.reduce((total, record) => total + numberValue(record[key]), 0);
       product.stock = {
         unlimited: records.some(record => record.stockMode === "不限量"),
+        interfaceRealtime: records.some(record => evaluateSkuCdkeyRoute(getInventorySku(record)).hasActiveDirect),
         total: sum(limited, "totalStock"),
         available: sum(limited, "availableStock"),
         locked: sum(records, "lockedStock"),
@@ -6400,8 +6546,7 @@
       };
       const cdkeyRecords = records.filter(record => isCdkeyDelivery(getInventorySku(record)?.delivery || product.delivery));
       if (cdkeyRecords.length) {
-        const statuses = cdkeyRecords.map(record => inventoryCdkeyStatus(record));
-        product.cdkey = statuses.includes("CDKey 不足") ? "CDKey 不足" : statuses.find(status => status !== "码池可用") || "码池可用";
+        product.cdkey = cdkeyProductStatusFromSkus(cdkeyRecords.map(getInventorySku).filter(Boolean));
       }
     }
 
@@ -6684,7 +6829,7 @@
     }
 
     function makeCdkeyBatch(batch) {
-      const result = { voided: 0, failed: 0, expireAt: "", createdAt: nowText(), updatedAt: nowText(), ...batch };
+      const result = { voided: 0, failed: 0, fileName: "", expireAt: "", createdAt: nowText(), updatedAt: nowText(), ...batch };
       return result;
     }
 
@@ -6718,10 +6863,11 @@
       products.forEach(product => {
         product.skuList.forEach(sku => {
           const skuPoolId = sku.cdkeyPoolId || sku.deliveryParams?.cdkey?.poolId || "";
-          if (skuPoolId === poolId) rows.push({ product, sku });
+          const sourceIds = Array.isArray(sku.cdkeySourceIds) ? sku.cdkeySourceIds : [];
+          if (skuPoolId === poolId || sourceIds.includes(poolId)) rows.push({ product, sku });
         });
       });
-      return rows.slice(0, 1);
+      return rows;
     }
 
     function getAllBoundSkuByPool(poolId) {
@@ -6729,15 +6875,15 @@
       products.forEach(product => {
         product.skuList.forEach(sku => {
           const skuPoolId = sku.cdkeyPoolId || sku.deliveryParams?.cdkey?.poolId || "";
-          if (skuPoolId === poolId) rows.push({ product, sku });
+          const sourceIds = Array.isArray(sku.cdkeySourceIds) ? sku.cdkeySourceIds : [];
+          if (skuPoolId === poolId || sourceIds.includes(poolId)) rows.push({ product, sku });
         });
       });
       return rows;
     }
 
     function cdkeyPoolBindingError(poolId, currentSkuId = "") {
-      const bound = getAllBoundSkuByPool(poolId).find(({ sku }) => sku.skuId !== currentSkuId);
-      return bound ? `该码池已绑定 SKU ${bound.sku.skuId}，当前仅支持 1 个码池绑定 1 个 SKU。` : "";
+      return "";
     }
 
     function cdkeyPoolSelectableError(pool, currentSkuId = "") {
@@ -6751,8 +6897,26 @@
       return `<span class="tag ${cls}">${state}</span>`;
     }
 
-    function cdkeyTypeText(pool) {
-      return pool?.source === "接口生成码" ? (pool.cdkeyType || "未配置") : "-";
+    function cdkeySupplyMode(pool) {
+      return pool?.supplyMode || "码池供货";
+    }
+
+    function cdkeySupplyAvailability(pool) {
+      return cdkeySupplyMode(pool) === "接口直供"
+        ? `<span class="tag blue">实时判断</span><div class="minor">平台不维护库存</div>`
+        : `<b>${pool.available || 0}</b> / ${pool.total || 0}`;
+    }
+
+    function latestCdkeyUploadFile(poolId) {
+      const latestBatch = getCdkeyBatchesByPool(poolId)
+        .filter(batch => batch.source === "手工上传码" && batch.fileName)
+        .sort((a, b) => String(b.createdAt || b.updatedAt || "").localeCompare(String(a.createdAt || a.updatedAt || "")))[0];
+      return latestBatch?.fileName || "暂无上传文件";
+    }
+
+    function cdkeySupplyConfig(pool) {
+      if (cdkeySupplyMode(pool) !== "接口直供") return `码入库方式：${pool.stockMethod || "手工上传"}<div class="minor">上传文件：${latestCdkeyUploadFile(pool.id)}</div>`;
+      return `${pool.supplierProduct || "-"}${pool.supplierSku ? `<div class="minor">商品编号：${pool.supplierSku}</div>` : ""}`;
     }
 
     function cdkeyCodeStateTag(state) {
@@ -6768,16 +6932,14 @@
       const body = document.getElementById("cdkeyPoolTbody");
       document.getElementById("cdkeyPoolTableCount").textContent = `共 ${visibleCdkeyPools.length} 条`;
       if (!visibleCdkeyPools.length) {
-        body.innerHTML = `<tr><td colspan="18"><div class="empty">当前筛选条件下暂无 CDKey 码池</div></td></tr>`;
+        body.innerHTML = `<tr><td colspan="11"><div class="empty">当前筛选条件下暂无 CDKey 货源</div></td></tr>`;
         return;
       }
       body.innerHTML = visibleCdkeyPools.map(pool => {
-        const bound = getBoundSkuByPool(pool.id)[0];
+        const boundCount = getAllBoundSkuByPool(pool.id).length;
         return `<tr>
-          <td><b>${pool.id}</b></td><td>${pool.name}</td><td>${cdkeyPoolStateTag(pool.state)}</td><td>${pool.source || "-"}</td>
-          <td>${cdkeyTypeText(pool)}</td>
-          <td>${pool.total}</td><td>${pool.available}</td><td>${pool.issued}</td><td>${pool.voided}</td><td>${pool.expired || 0}</td>
-          <td>${percentText(pool.alertThreshold)}</td><td>${pendingCdkeyCountForPool(pool.id)}</td><td>${cdkeyFulfillmentGap(pool)}</td><td>${bound?.product?.spu || "-"}</td><td>${bound?.sku?.skuId || "-"}</td><td>${pool.createdAt || pool.updatedAt}</td>
+          <td><b>${pool.id}</b></td><td>${pool.name}</td><td><span class="tag ${cdkeySupplyMode(pool) === "接口直供" ? "purple" : "blue"}">${cdkeySupplyMode(pool)}</span></td>
+          <td>${cdkeyProviderSummary(pool)}</td><td>${cdkeySupplyConfig(pool)}</td><td>${cdkeySupplyAvailability(pool)}</td><td>${boundCount}</td><td>${cdkeyPoolStateTag(pool.state)}</td><td>${pool.createdAt || pool.updatedAt}</td>
           <td>${lastCdkeyOperator(pool)}</td>
           <td><div class="action-list">${cdkeyPoolActions(pool)}</div></td>
         </tr>`;
@@ -6787,10 +6949,13 @@
 
     function cdkeyPoolActions(pool) {
       const actions = [
-        `<button class="btn text" data-cdkey-action="edit" data-pool-id="${pool.id}">编辑</button>`,
-        `<button class="btn text" data-cdkey-action="code" data-pool-id="${pool.id}">CDKey 明细</button>`
+        `<button class="btn text" data-cdkey-action="detail" data-pool-id="${pool.id}">详情</button>`,
+        `<button class="btn text" data-cdkey-action="edit" data-pool-id="${pool.id}">编辑</button>`
       ];
-      if (pool.state !== "下架") actions.splice(1, 0, `<button class="btn text" data-cdkey-action="restock" data-pool-id="${pool.id}">补货</button>`);
+      if (cdkeySupplyMode(pool) === "码池供货") {
+        if (pool.state !== "下架" && pool.stockMethod === "手工上传") actions.push(`<button class="btn text" data-cdkey-action="restock" data-pool-id="${pool.id}">补货</button>`);
+        actions.push(`<button class="btn text" data-cdkey-action="code" data-pool-id="${pool.id}">卡密明细</button>`);
+      }
       if (pool.state === "上架") actions.push(`<button class="btn text" data-cdkey-action="disable" data-pool-id="${pool.id}">下架</button>`);
       if (pool.state !== "上架") actions.push(`<button class="btn text" data-cdkey-action="enable" data-pool-id="${pool.id}">上架</button>`);
       if (pool.state === "草稿") actions.push(`<button class="btn text danger" data-cdkey-action="delete" data-pool-id="${pool.id}">删除</button>`);
@@ -6798,11 +6963,12 @@
     }
 
     function handleCdkeyPoolAction(action, poolId) {
+      if (action === "detail") openCdkeyPoolDetail(poolId);
       if (action === "edit") openCdkeyPoolForm("edit", getPoolById(poolId));
       if (action === "restock") {
         const pool = getPoolById(poolId);
-        if (pool?.source === "手工上传码") openCdkeyUploadModal(poolId);
-        else openCdkeyGenerateModal(poolId);
+        if (pool?.stockMethod === "手工上传") openCdkeyUploadModal(poolId);
+        else toast("平台内部生成暂未开放，当前货源不能补货。");
       }
       if (action === "code") openCdkeyCodeDrawer(poolId);
       if (action === "disable") openCdkeyDisableModal(poolId);
@@ -6815,7 +6981,7 @@
       const poolId = valueOf("cdkeyPoolFilterId").toUpperCase();
       const state = valueOf("cdkeyPoolFilterState");
       const source = valueOf("cdkeyPoolFilterSource");
-      const cdkeyType = valueOf("cdkeyPoolFilterCdkeyType");
+      const providerType = valueOf("cdkeyPoolFilterProvider");
       const bound = valueOf("cdkeyPoolFilterBound");
       const updated = valueOf("cdkeyPoolFilterUpdated");
       visibleCdkeyPools = poolMocks.filter(pool => {
@@ -6823,40 +6989,127 @@
         return (!poolName || pool.name.toUpperCase().includes(poolName))
           && (!poolId || pool.id.toUpperCase().includes(poolId))
           && (state === "全部" || pool.state === state)
-          && (source === "全部" || pool.source === source)
-          && (cdkeyType === "全部" || pool.cdkeyType === cdkeyType)
+          && (source === "全部" || cdkeySupplyMode(pool) === source)
+          && (providerType === "全部" || cdkeyProviderType(pool) === providerType)
           && (bound === "全部" || (bound === "是" ? boundCount > 0 : boundCount === 0))
           && (!updated || String(pool.createdAt || pool.updatedAt).includes(updated));
       });
       renderCdkeyPoolTable();
       renderCdkeyPoolStats();
-      toast("查询完成，CDKey 码池列表已刷新。");
+      toast("查询完成，CDKey 货源列表已刷新。");
     }
 
     function resetCdkeyPoolFilters() {
       ["cdkeyPoolFilterName", "cdkeyPoolFilterId", "cdkeyPoolFilterUpdated"].forEach(id => document.getElementById(id).value = "");
-      ["cdkeyPoolFilterState", "cdkeyPoolFilterSource", "cdkeyPoolFilterCdkeyType", "cdkeyPoolFilterBound"].forEach(id => document.getElementById(id).value = "全部");
+      ["cdkeyPoolFilterState", "cdkeyPoolFilterSource", "cdkeyPoolFilterProvider", "cdkeyPoolFilterBound"].forEach(id => document.getElementById(id).value = "全部");
       visibleCdkeyPools = [...poolMocks];
       renderCdkeyPoolTable();
       renderCdkeyPoolStats();
-      toast("CDKey 码池筛选项已重置。");
+      toast("CDKey 货源筛选项已重置。");
+    }
+
+    function cdkeySupplierNamesForMode(mode) {
+      const suppliers = Object.entries(cdkeySupplierCatalog);
+      return mode === "接口直供"
+        ? suppliers.filter(([, config]) => config.products.length > 0).map(([name]) => name)
+        : suppliers.map(([name]) => name);
+    }
+
+    function cdkeyProviderType(pool) {
+      if (pool?.providerType) return pool.providerType;
+      return pool?.supplier && pool.supplier !== "平台自营" ? "三方供应商" : "平台自营";
+    }
+
+    function cdkeyProviderSummary(pool) {
+      const providerType = cdkeyProviderType(pool);
+      return providerType === "三方供应商"
+        ? `三方供应商${pool?.supplier ? `<div class="minor">${pool.supplier}</div>` : ""}`
+        : "平台自营";
+    }
+
+    function cdkeyProviderText(pool) {
+      const providerType = cdkeyProviderType(pool);
+      return providerType === "三方供应商" && pool?.supplier ? `${providerType} · ${pool.supplier}` : providerType;
+    }
+
+    function updateCdkeyProviderFields(selectedMode = "") {
+      const providerType = valueOf("cdkeyPoolFormProvider");
+      const sourceSelect = document.getElementById("cdkeyPoolFormSource");
+      const supplierField = document.getElementById("cdkeyPoolSupplierField");
+      const allowedModes = providerType === "平台自营"
+        ? ["码池供货"]
+        : providerType === "三方供应商" ? ["接口直供"] : [];
+      const currentMode = selectedMode || sourceSelect.value;
+      supplierField.style.display = providerType === "三方供应商" ? "" : "none";
+      sourceSelect.innerHTML = `<option value="">${providerType ? "请选择供货方式" : "请先选择供货方"}</option>${allowedModes.map(mode => `<option value="${mode}">${mode}</option>`).join("")}`;
+      sourceSelect.value = allowedModes.includes(currentMode) ? currentMode : "";
+      sourceSelect.disabled = !providerType || pendingCdkeyAction?.mode === "edit";
+      if (providerType !== "三方供应商") {
+        document.getElementById("cdkeyPoolFormSupplier").value = "";
+        renderCdkeySupplierProducts();
+      }
+    }
+
+    function renderCdkeySupplierOptions(selectedSupplier = "") {
+      const select = document.getElementById("cdkeyPoolFormSupplier");
+      if (!select) return;
+      if (valueOf("cdkeyPoolFormProvider") !== "三方供应商") {
+        select.innerHTML = `<option value="">请选择三方供应商</option>`;
+        select.disabled = true;
+        renderCdkeySupplierProducts();
+        return;
+      }
+      const supplyMode = valueOf("cdkeyPoolFormSource");
+      if (!supplyMode) {
+        select.innerHTML = `<option value="">请先选择供货方式</option>`;
+        select.disabled = true;
+        renderCdkeySupplierProducts();
+        return;
+      }
+      select.disabled = false;
+      const supplierNames = cdkeySupplierNamesForMode(supplyMode);
+      select.innerHTML = `<option value="">请选择三方供应商</option>${supplierNames.map(name => `<option value="${name}">${name}</option>`).join("")}`;
+      select.value = supplierNames.includes(selectedSupplier) ? selectedSupplier : "";
+      renderCdkeySupplierProducts();
+    }
+
+    function renderCdkeySupplierProducts(selectedProduct = "") {
+      const select = document.getElementById("cdkeyPoolFormSupplierProduct");
+      if (!select) return;
+      const products = cdkeySupplierCatalog[valueOf("cdkeyPoolFormSupplier")]?.products || [];
+      select.innerHTML = `<option value="">请选择供应商商品</option>${products.map(product => `<option value="${product.name}" data-product-id="${product.productId}">${product.name}</option>`).join("")}`;
+      select.value = products.some(product => product.name === selectedProduct) ? selectedProduct : "";
+      syncCdkeySupplierProductCode();
+    }
+
+    function syncCdkeySupplierProductCode() {
+      const productSelect = document.getElementById("cdkeyPoolFormSupplierProduct");
+      const productIdInput = document.getElementById("cdkeyPoolFormSupplierSku");
+      if (!productSelect || !productIdInput) return;
+      productIdInput.value = productSelect.selectedOptions[0]?.dataset.productId || "";
     }
 
     function openCdkeyPoolForm(mode, pool = null) {
       pendingCdkeyAction = { mode, poolId: pool?.id || "" };
       hideAllPages();
       document.getElementById("cdkeyPoolFormPage").style.display = "block";
-      setActiveMenu("CDKey 码池列表");
-      document.getElementById("cdkeyPoolFormTitle").textContent = mode === "edit" ? "编辑 CDKey 码池" : "新建 CDKey 码池";
+      setActiveMenu("CDKey 货源列表");
+      document.getElementById("cdkeyPoolFormTitle").textContent = mode === "edit" ? "编辑 CDKey 货源" : "新建 CDKey 货源";
+      document.getElementById("cdkeyPoolSaveDraftBtn").textContent = mode === "edit" ? "保存修改" : "保存草稿";
+      const enableButton = document.getElementById("cdkeyPoolSaveEnableBtn");
+      enableButton.textContent = "保存并上架";
+      enableButton.style.display = mode === "edit" && pool?.state === "上架" ? "none" : "";
       document.getElementById("cdkeyPoolFormId").value = pool?.id || "新建后生成";
       document.getElementById("cdkeyPoolFormId").disabled = true;
       document.getElementById("cdkeyPoolFormName").value = pool?.name || "";
       document.getElementById("cdkeyPoolFormState").value = pool?.state || "草稿";
       document.getElementById("cdkeyPoolFormAlert").value = pool?.alertThreshold ?? "";
-      document.getElementById("cdkeyPoolFormSource").value = pool?.source || "接口生成码";
-      document.getElementById("cdkeyPoolFormSource").disabled = mode === "edit";
-      document.getElementById("cdkeyPoolFormCdkeyType").value = pool?.cdkeyType || cdkeyTypeOptions[0];
-      document.getElementById("cdkeyPoolFormCdkeyType").disabled = mode === "edit";
+      document.getElementById("cdkeyPoolFormProvider").value = pool ? cdkeyProviderType(pool) : "";
+      document.getElementById("cdkeyPoolFormProvider").disabled = mode === "edit";
+      updateCdkeyProviderFields(pool ? cdkeySupplyMode(pool) : "");
+      renderCdkeySupplierOptions(pool?.supplier || "");
+      renderCdkeySupplierProducts(pool?.supplierProduct || "");
+      cdkeyStockMethodDraft = pool?.stockMethod || (pool?.source === "平台内部生成码" ? "平台内部生成" : "手工上传");
       document.getElementById("cdkeyPoolFormRemark").value = pool?.remark || "";
       updateCdkeyPoolTypeField();
       const initialSection = document.getElementById("cdkeyPoolSectionInitialData");
@@ -6869,83 +7122,108 @@
     }
 
     function updateCdkeyPoolTypeField() {
-      const field = document.getElementById("cdkeyPoolTypeField");
-      const select = document.getElementById("cdkeyPoolFormCdkeyType");
-      if (!field || !select) return;
-      const isInterfaceSource = valueOf("cdkeyPoolFormSource") === "接口生成码";
-      field.style.display = isInterfaceSource ? "" : "none";
-      if (!isInterfaceSource) select.value = "";
-      if (isInterfaceSource && !select.value) select.value = cdkeyTypeOptions[0];
+      const providerType = valueOf("cdkeyPoolFormProvider");
+      const supplyMode = valueOf("cdkeyPoolFormSource");
+      const isPoolSupply = providerType === "平台自营" && supplyMode === "码池供货";
+      const isDirectSupply = providerType === "三方供应商" && supplyMode === "接口直供";
+      document.getElementById("cdkeyPoolStockFields").style.display = isPoolSupply ? "" : "none";
+      document.getElementById("cdkeyPoolDirectFields").style.display = isDirectSupply ? "" : "none";
+      document.getElementById("cdkeySupplyModeHint").textContent = !providerType
+        ? "请先选择供货方，再选择供货方式。"
+        : !supplyMode
+          ? `${providerType}已选择，请继续选择供货方式。`
+          : isPoolSupply
+            ? "供货方和供货方式创建后不可变更。码池供货维护本地卡密库存，安全库存阈值用于触发补货提醒。"
+            : "供货方和供货方式创建后不可变更。接口直供不维护供应商库存数量；订单履约时实时取码，当前货源无库存则继续尝试下一货源。";
     }
 
-    function renderCdkeyPoolInitialData() {
+    function renderCdkeyPoolInitialData(selectedMethod = "") {
       const body = document.getElementById("cdkeyPoolInitialDataBody");
       if (!body || pendingCdkeyAction?.mode !== "new") return;
-      const source = valueOf("cdkeyPoolFormSource") || "接口生成码";
-      if (source === "手工上传码") {
+      const supplyMode = valueOf("cdkeyPoolFormSource");
+      if (!supplyMode) {
+        body.innerHTML = `<div class="alert info">请先在供货配置中选择供货方和供货方式。</div>`;
+        return;
+      }
+      if (supplyMode === "接口直供") {
+        body.innerHTML = `<div class="alert info">接口直供无需导入初始卡密，也不维护安全库存。保存并上架后，订单履约时使用供应商商品编码（product_id）取码；外部订单号（customer_order_no）和购买数量（buy_num）由订单动态传入。</div>`;
+        return;
+      }
+      cdkeyStockMethodDraft = selectedMethod || cdkeyStockMethodDraft || "手工上传";
+      const stockMethod = cdkeyStockMethodDraft;
+      const methodField = `<div class="form-grid" style="margin-bottom:12px"><div class="field"><label><span class="required-star">*</span>码入库方式</label><select id="cdkeyPoolFormStockMethod"><option value="手工上传" ${stockMethod === "手工上传" ? "selected" : ""}>手工上传</option><option value="平台内部生成" ${stockMethod === "平台内部生成" ? "selected" : ""}>平台内部生成（暂未开放）</option></select><div class="hint-text">该字段定义卡密进入平台码池的方式；创建后不可变更。</div></div></div>`;
+      if (stockMethod === "手工上传") {
         body.innerHTML = `
+          ${methodField}
           <div class="alert info">首次新建码池时可同时上传初始 CDKey 数据；导入数量由上传文件解析，不在页面手工填写。码池保存后，后续新增码统一通过列表「补货」处理。</div>
           <div class="form-grid">
             <div class="field"><label>上传文件</label><div class="file-action-row"><button class="btn" type="button" onclick="toast('已打开本地文件选择器。')">上传</button><button class="btn" type="button" onclick="toast('CDKey 导入模板已开始下载。')">下载模板</button><input id="cdkeyInitialUploadFile" value="mock_cdkey_upload.xlsx" disabled></div></div>
             <div class="field"><label>过期时间</label><input id="cdkeyInitialUploadExpire" placeholder="2026-12-31 23:59"></div>
             <div class="alert info" style="grid-column:1/-1">如上传文件中存在重复 CDKey，本次导入请求全部退回，不做部分入库。</div>
           </div>`;
-        return;
+      } else {
+        body.innerHTML = `${methodField}<div class="alert warning">“平台内部生成”作为码入库方式预留，本期暂未开放。当前可保存草稿，但不能保存并上架。</div>`;
       }
-      body.innerHTML = `
-        <div class="alert info">首次新建码池时必须配置初始生成数量，数量为 1-99999 的正整数；码池保存后，后续新增码统一通过列表「补货」处理。</div>
-        <div class="form-grid">
-          <div class="field"><label><span class="required-star">*</span>生成数量</label><input id="cdkeyInitialGenerateCount" type="number" placeholder="请输入生成数量，1-99999"></div>
-          <div class="field"><label>过期时间</label><input id="cdkeyInitialGenerateExpire" placeholder="2026-12-31 23:59"></div>
-        </div>`;
+      document.getElementById("cdkeyPoolFormStockMethod")?.addEventListener("change", event => renderCdkeyPoolInitialData(event.target.value));
     }
 
     function initialCdkeyDataError(pool) {
       if (pendingCdkeyAction?.mode !== "new") return "";
-      const source = pool.source || "接口生成码";
-      if (source === "手工上传码") return "";
-      const countRaw = valueOf("cdkeyInitialGenerateCount");
-      const count = Number(countRaw);
-      if (!Number.isInteger(count) || count <= 0 || count > 99999) return "生成数量必须为 1-99999 的正整数。";
       return "";
     }
 
     function createInitialCdkeyDataIfNeeded(pool) {
       if (pendingCdkeyAction?.mode !== "new") return;
-      const source = pool.source || "接口生成码";
+      if (cdkeyProviderType(pool) !== "平台自营" || cdkeySupplyMode(pool) === "接口直供") return;
+      if (pool.stockMethod === "平台内部生成") return;
+      const source = pool.stockMethod === "手工上传" ? "手工上传码" : "平台内部生成码";
       const expireId = source === "手工上传码" ? "cdkeyInitialUploadExpire" : "cdkeyInitialGenerateExpire";
       const expireAt = valueOf(expireId);
       const count = source === "手工上传码" ? 100 : Number(valueOf("cdkeyInitialGenerateCount"));
       const batchName = source === "手工上传码" ? `${pool.name || pool.id} 初始导入` : `${pool.name || pool.id} 初始生成`;
-      createCdkeyBatchAndCodes(pool, batchName, source, count, "首次新建码池初始化数据", expireAt);
+      const fileName = source === "手工上传码" ? valueOf("cdkeyInitialUploadFile") : "";
+      createCdkeyBatchAndCodes(pool, batchName, source, count, "首次新建码池初始化数据", expireAt, fileName);
     }
 
     function renderCdkeyPoolImpact(poolId) {
       const rows = poolId ? getBoundSkuByPool(poolId) : [];
-      document.getElementById("cdkeyPoolImpactBody").innerHTML = rows.length ? boundSkuTable(rows) : `<div class="empty">当前码池暂未被商品 SKU 绑定。保存后可在商品 SKU 履约配置中引用该码池 ID。</div>`;
+      document.getElementById("cdkeyPoolImpactBody").innerHTML = rows.length ? boundSkuTable(rows) : `<div class="empty">当前货源暂未被商品 SKU 绑定。保存后可在商品 SKU 的货源配置中引用该货源 ID。</div>`;
     }
 
     function boundSkuTable(rows) {
-      return `<div class="table-wrap"><table><thead><tr><th>商品ID</th><th>商品信息</th><th>商品类型</th><th>SKU ID</th><th>SKU 规格</th><th>履约方式</th><th>商品状态</th><th>库存摘要</th><th>CDKey 状态</th></tr></thead><tbody>${rows.map(({ product, sku }) => `<tr><td>${product.spu}</td><td>${productInfoHtml(product)}</td><td>${product.type}</td><td>${sku.skuId}</td><td>${skuSpecText(sku)}</td><td>${deliveryTag(product.delivery || sku.delivery)}</td><td>${stateTag(product.state)}</td><td>${stockText(product.stock)}</td><td>${cdkeyTag(product.cdkey)}</td></tr>`).join("")}</tbody></table></div><div class="hint-text">绑定关系来自商品 SKU 的 CDKey 码池 ID。码池列表只展示绑定 SKU，不维护商品基础信息和履约方式。</div>`;
+      return `<div class="table-wrap"><table><thead><tr><th>商品ID</th><th>商品信息</th><th>商品类型</th><th>SKU ID</th><th>SKU 规格</th><th>履约方式</th><th>商品状态</th></tr></thead><tbody>${rows.map(({ product, sku }) => `<tr><td>${product.spu}</td><td>${productInfoHtml(product)}</td><td>${product.type}</td><td>${sku.skuId}</td><td>${skuSpecText(sku)}</td><td>${deliveryTag(product.delivery || sku.delivery)}</td><td>${stateTag(product.state)}</td></tr>`).join("")}</tbody></table></div><div class="hint-text">同一 SKU 可绑定多个货源，路由顺序由 SKU 货源优先级决定。</div>`;
     }
 
     function generateCdkeyPoolId() {
       const next = poolMocks.length + 1;
-      const base = `CDKEY_POOL_${String(next).padStart(3, "0")}`;
+      const base = `CDKEY_SOURCE_${String(next).padStart(3, "0")}`;
       if (!getPoolById(base)) return base;
-      return `CDKEY_POOL_${Date.now()}`;
+      return `CDKEY_SOURCE_${Date.now()}`;
     }
 
     function buildCdkeyPoolFromForm(state) {
       const existing = getPoolById(pendingCdkeyAction?.poolId);
+      const providerType = existing?.providerType || valueOf("cdkeyPoolFormProvider");
+      const supplyMode = existing?.supplyMode || valueOf("cdkeyPoolFormSource");
+      const stockMethod = providerType === "平台自营" && supplyMode === "码池供货" ? (existing?.stockMethod || cdkeyStockMethodDraft || "手工上传") : "";
+      const supplier = providerType === "三方供应商" ? valueOf("cdkeyPoolFormSupplier") : "";
+      const supplierConfig = cdkeySupplierCatalog[supplier] || { interfaceConfig: "", products: [] };
+      const supplierProduct = supplyMode === "接口直供" ? valueOf("cdkeyPoolFormSupplierProduct") : "";
+      const supplierProductConfig = supplierConfig.products.find(product => product.name === supplierProduct);
       return {
         ...(existing || {}),
         id: existing?.id || generateCdkeyPoolId(),
         name: valueOf("cdkeyPoolFormName"),
         state,
-        source: existing?.source || valueOf("cdkeyPoolFormSource"),
-        cdkeyType: (existing?.source || valueOf("cdkeyPoolFormSource")) === "接口生成码" ? (existing?.cdkeyType || valueOf("cdkeyPoolFormCdkeyType")) : "",
-        alertThreshold: valueOf("cdkeyPoolFormAlert") === "" ? "" : Number(valueOf("cdkeyPoolFormAlert")),
+        providerType,
+        supplyMode,
+        supplier,
+        stockMethod,
+        source: supplyMode === "接口直供" ? "接口直供" : stockMethod === "手工上传" ? "手工上传码" : "平台内部生成码",
+        supplierProduct,
+        supplierSku: supplyMode === "接口直供" ? (supplierProductConfig?.productId || "") : "",
+        interfaceConfig: supplyMode === "接口直供" ? supplierConfig.interfaceConfig : "",
+        alertThreshold: providerType === "平台自营" && supplyMode === "码池供货" && valueOf("cdkeyPoolFormAlert") !== "" ? Number(valueOf("cdkeyPoolFormAlert")) : "",
         creator: existing?.creator || "平台运营",
         dedupeRule: "全局唯一",
         total: existing?.total || 0,
@@ -6962,13 +7240,19 @@
 
     function validateCdkeyPool(pool, enableMode) {
       const errors = [];
-      if (!pool.id) errors.push("码池 ID 必填");
-      if (!pool.name) errors.push("码池名称必填");
-      if (!Number.isInteger(pool.alertThreshold) || pool.alertThreshold < 0 || pool.alertThreshold > 100) errors.push("安全库存阈值必须为 0-100 的整数");
-      if (enableMode && !["接口生成码", "手工上传码"].includes(pool.source)) errors.push("码池类型必选且只能选择一种");
-      if (enableMode && pool.source === "接口生成码" && !cdkeyTypeOptions.includes(pool.cdkeyType)) errors.push("接口生成码必须选择 CDKey 类型");
+      if (!pool.id) errors.push("货源 ID 必填");
+      if (!pool.name) errors.push("货源名称必填");
+      if (!["平台自营", "三方供应商"].includes(pool.providerType)) errors.push("供货方必选");
+      if (pool.providerType === "三方供应商" && !pool.supplier) errors.push("三方供应商必填");
+      if (!["码池供货", "接口直供"].includes(pool.supplyMode)) errors.push("供货方式必选");
+      if (pool.providerType === "平台自营" && pool.supplyMode !== "码池供货") errors.push("平台自营仅支持码池供货");
+      if (pool.providerType === "三方供应商" && pool.supplyMode !== "接口直供") errors.push("三方供应商仅支持接口直供");
+      if (pool.supplyMode === "接口直供" && pool.providerType !== "三方供应商") errors.push("接口直供仅支持三方供应商");
+      if (pool.providerType === "平台自营" && (!Number.isInteger(pool.alertThreshold) || pool.alertThreshold < 0 || pool.alertThreshold > 100)) errors.push("安全库存阈值必须为 0-100 的整数");
+      if (enableMode && pool.supplyMode === "码池供货" && pool.stockMethod === "平台内部生成") errors.push("平台内部生成暂未开放，当前货源不能上架");
+      if (enableMode && pool.supplyMode === "接口直供" && (!pool.supplierProduct || !/^\d{1,20}$/.test(pool.supplierSku) || !pool.interfaceConfig)) errors.push("接口直供需选择供应商商品并正确带出 product_id");
       const duplicate = poolMocks.some(item => item.id === pool.id && item.id !== pendingCdkeyAction?.poolId);
-      if (duplicate) errors.push("码池 ID 不允许重复");
+      if (duplicate) errors.push("货源 ID 不允许重复");
       return errors;
     }
 
@@ -6978,14 +7262,17 @@
 
     function highlightCdkeyPoolInvalidFields(pool) {
       if (!pool.name) markInvalidControl("cdkeyPoolFormName");
-      if (!Number.isInteger(pool.alertThreshold) || pool.alertThreshold < 0 || pool.alertThreshold > 100) markInvalidControl("cdkeyPoolFormAlert");
-      if (!["接口生成码", "手工上传码"].includes(pool.source)) markInvalidControl("cdkeyPoolFormSource");
-      if (pool.source === "接口生成码" && !cdkeyTypeOptions.includes(pool.cdkeyType)) markInvalidControl("cdkeyPoolFormCdkeyType");
-      const source = pool.source || "接口生成码";
-      if (source === "手工上传码") return;
-      const initialCountRaw = valueOf("cdkeyInitialGenerateCount");
-      const initialCount = Number(initialCountRaw);
-      if (!Number.isInteger(initialCount) || initialCount <= 0 || initialCount > 99999) markInvalidControl("cdkeyInitialGenerateCount");
+      if (!["平台自营", "三方供应商"].includes(pool.providerType)) markInvalidControl("cdkeyPoolFormProvider");
+      if (pool.providerType === "三方供应商" && !pool.supplier) markInvalidControl("cdkeyPoolFormSupplier");
+      if (!["码池供货", "接口直供"].includes(pool.supplyMode)) markInvalidControl("cdkeyPoolFormSource");
+      if (pool.providerType === "平台自营" && (!Number.isInteger(pool.alertThreshold) || pool.alertThreshold < 0 || pool.alertThreshold > 100)) markInvalidControl("cdkeyPoolFormAlert");
+      if (pool.supplyMode === "码池供货" && pool.stockMethod === "平台内部生成") markInvalidControl("cdkeyPoolFormStockMethod");
+      if (pool.supplyMode === "接口直供") {
+        if (!pool.supplierProduct) markInvalidControl("cdkeyPoolFormSupplierProduct");
+        if (!/^\d{1,20}$/.test(pool.supplierSku)) markInvalidControl("cdkeyPoolFormSupplierSku");
+        return;
+      }
+      return;
     }
 
     function upsertCdkeyPool(pool) {
@@ -6995,21 +7282,23 @@
       } else {
         poolMocks.unshift(pool);
       }
-      addCdkeyLog(pool.id, pendingCdkeyAction?.mode === "edit" ? "编辑码池" : "新建码池", "-", pool.state, pool.remark || "码池配置保存");
+      addCdkeyLog(pool.id, pendingCdkeyAction?.mode === "edit" ? "编辑货源" : "新建货源", "-", pool.state, pool.remark || "货源配置保存");
       syncCdkeyStatusByPool(pool.id);
       visibleCdkeyPools = [...poolMocks];
     }
 
     function saveCdkeyPoolDraft() {
-      const pool = buildCdkeyPoolFromForm("草稿");
-      const errors = validateCdkeyPool(pool, false);
+      const existing = getPoolById(pendingCdkeyAction?.poolId);
+      const targetState = pendingCdkeyAction?.mode === "edit" ? (existing?.state || "草稿") : "草稿";
+      const pool = buildCdkeyPoolFromForm(targetState);
+      const errors = validateCdkeyPool(pool, targetState === "上架");
       if (errors.length) return toast(errors[0]);
       const initialError = initialCdkeyDataError(pool);
       if (initialError) return toast(initialError);
       upsertCdkeyPool(pool);
       createInitialCdkeyDataIfNeeded(pool);
       showCdkeyPoolPage();
-      toast("CDKey 码池草稿已保存。");
+      toast(pendingCdkeyAction?.mode === "edit" ? "CDKey 货源修改已保存。" : "CDKey 货源草稿已保存。");
     }
 
     function saveCdkeyPoolEnable() {
@@ -7028,14 +7317,14 @@
         return toast("信息不完整，无法上架");
       }
       openEnableConfirm({
-        title: "确认上架 CDKey 码池",
-        message: "上架后，该码池可被商品 SKU 的 CDKey 履约配置引用。是否确认上架？",
+        title: "确认上架 CDKey 货源",
+        message: "上架后，该货源可被商品 SKU 的 CDKey 履约配置引用。是否确认上架？",
         confirmText: "确认上架",
         onConfirm: () => {
           upsertCdkeyPool(pool);
           createInitialCdkeyDataIfNeeded(pool);
           showCdkeyPoolPage();
-          toast(pool.available <= 0 ? "码池已上架，当前无可用码，请补货。" : "码池已上架。");
+          toast(cdkeySupplyMode(pool) === "接口直供" ? "接口直供货源已上架。" : pool.available <= 0 ? "码池供货货源已上架，当前无可用码，请补货。" : "码池供货货源已上架。");
         }
       });
     }
@@ -7043,18 +7332,22 @@
     function openCdkeyPoolDetail(poolId) {
       const pool = getPoolById(poolId);
       if (!pool) return;
+      const isDirect = cdkeySupplyMode(pool) === "接口直供";
+      const supplyConfig = isDirect
+        ? infoGrid([["供应商商品", pool.supplierProduct || "-"], ["供应商商品编码（product_id）", pool.supplierSku || "-"], ["接口配置（随供应商关联）", pool.interfaceConfig || "-"]])
+        : infoGrid([["码入库方式", pool.stockMethod || "-"], ["总码数", pool.total], ["可用码数量", pool.available], ["安全库存阈值", percentText(pool.alertThreshold)], ["待补货数量", pendingCdkeyCountForPool(pool.id)]]);
+      const basicItems = [
+        ["货源 ID", pool.id], ["货源名称", pool.name], ["货源状态", pool.state], ["创建时间", pool.createdAt || pool.updatedAt || "-"]
+      ];
+      const providerItems = [["供货方", cdkeyProviderType(pool)]];
+      if (cdkeyProviderType(pool) === "三方供应商") providerItems.push(["三方供应商", pool.supplier || "-"]);
+      providerItems.push(["供货方式", cdkeySupplyMode(pool)]);
+      basicItems.push(["备注", pool.remark || "-"]);
       document.getElementById("cdkeyPoolDetailBody").innerHTML = `
-        ${detailSection("码池基础信息", infoGrid([
-          ["码池 ID", pool.id], ["码池名称", pool.name], ["码池状态", pool.state], ["码池类型", pool.source || "-"],
-          ["CDKey 类型", cdkeyTypeText(pool)],
-          ["安全库存阈值", percentText(pool.alertThreshold)],
-          ["创建时间", pool.createdAt || pool.updatedAt || "-"], ["备注", pool.remark || "-"]
-        ]))}
-        ${detailSection("码池数量统计", infoGrid([
-          ["总码数", pool.total], ["可用码数量", pool.available], ["已履约数量", pool.issued],
-          ["核销数量", pool.voided], ["过期数量", pool.expired || 0], ["待补货数量", pendingCdkeyCountForPool(pool.id)], ["履约缺口", cdkeyFulfillmentGap(pool)]
-        ]) + `<div class="alert info">待补货数量是已支付未发放的订单责任，不属于码池库存；补货后优先自动履约，剩余码才计入可供新订单使用的可用码数量。</div>`)}
-        ${detailSection("绑定SKU", boundSkuTable(getBoundSkuByPool(pool.id)))}
+        ${detailSection("货源基础信息", infoGrid(basicItems))}
+        ${detailSection("供货配置", infoGrid(providerItems))}
+        ${detailSection(isDirect ? "接口直供配置" : "码池供货配置", supplyConfig)}
+        ${detailSection("绑定 SKU", boundSkuTable(getBoundSkuByPool(pool.id)))}
       `;
       openDrawer("cdkeyPoolDetailDrawer");
     }
@@ -7062,9 +7355,9 @@
     function openCdkeyGenerateModal(poolId) {
       const pool = getPoolById(poolId);
       if (!pool) return;
-      if (pool.source !== "接口生成码") return toast("该码池为手工上传码类型，不支持接口生成码。");
+      if (pool.source !== "平台内部生成码") return toast("该码池不是平台内部生成类型。");
       selectedCdkeyPool = pool;
-      document.getElementById("cdkeyGenerateInfo").innerHTML = infoGrid([["码池 ID", pool.id], ["码池名称", pool.name], ["码池类型", pool.source], ["CDKey 类型", cdkeyTypeText(pool)], ["当前可用码数量", pool.available], ["待补货数量", pendingCdkeyCountForPool(pool.id)], ["当前履约缺口", cdkeyFulfillmentGap(pool)], ["当前码池状态", pool.state]]) + `<div class="alert info">补货入库后，系统会优先按支付成功时间 FIFO 自动发放待补货订单，剩余 CDKey 才进入新订单可用库存。</div>`;
+      document.getElementById("cdkeyGenerateInfo").innerHTML = infoGrid([["货源 ID", pool.id], ["货源名称", pool.name], ["码入库方式", pool.stockMethod], ["当前可用码数量", pool.available], ["待补货数量", pendingCdkeyCountForPool(pool.id)], ["当前履约缺口", cdkeyFulfillmentGap(pool)], ["当前货源状态", pool.state]]) + `<div class="alert info">补货入库后，系统会优先按支付成功时间 FIFO 自动发放待补货订单，剩余 CDKey 才进入新订单可用库存。</div>`;
       document.getElementById("cdkeyGenerateBatchList").innerHTML = cdkeyBatchTable(getCdkeyBatchesByPool(pool.id), false, true);
       ["cdkeyGenerateName", "cdkeyGenerateCount", "cdkeyGenerateExpire"].forEach(id => document.getElementById(id).value = "");
       openModal("cdkeyGenerateModal");
@@ -7079,17 +7372,17 @@
       const expireAt = valueOf("cdkeyGenerateExpire");
       if (!name) return toast("请输入补货名称。");
       if (!Number.isInteger(count) || count <= 0 || count > 99999) return toast("生成数量必须为 1-99999 的正整数。");
-      const fulfilledCount = createCdkeyBatchAndCodes(pool, name, "接口生成码", count, "接口生成补货", expireAt);
+      const fulfilledCount = createCdkeyBatchAndCodes(pool, name, "平台内部生成码", count, "平台内部生成补货", expireAt);
       closeModal("cdkeyGenerateModal");
-      toast(`接口生成补货完成；自动履约 ${fulfilledCount} 笔待补货订单。`);
+      toast(`平台内部生成补货完成；自动履约 ${fulfilledCount} 笔待补货订单。`);
     }
 
     function openCdkeyUploadModal(poolId) {
       const pool = getPoolById(poolId);
       if (!pool) return;
-      if (pool.source !== "手工上传码") return toast("该码池为接口生成码类型，不支持手工上传码。");
+      if (pool.stockMethod !== "手工上传") return toast("该货源不是手工上传类型，不能执行上传补货。");
       selectedCdkeyPool = pool;
-      document.getElementById("cdkeyUploadInfo").innerHTML = infoGrid([["码池 ID", pool.id], ["码池名称", pool.name], ["码池类型", pool.source], ["CDKey 类型", cdkeyTypeText(pool)], ["当前可用码数量", pool.available], ["待补货数量", pendingCdkeyCountForPool(pool.id)], ["当前履约缺口", cdkeyFulfillmentGap(pool)], ["当前码池状态", pool.state]]) + `<div class="alert info">补货入库后，系统会优先按支付成功时间 FIFO 自动发放待补货订单，剩余 CDKey 才进入新订单可用库存。</div>`;
+      document.getElementById("cdkeyUploadInfo").innerHTML = infoGrid([["货源 ID", pool.id], ["货源名称", pool.name], ["码入库方式", pool.stockMethod], ["当前可用码数量", pool.available], ["待补货数量", pendingCdkeyCountForPool(pool.id)], ["当前履约缺口", cdkeyFulfillmentGap(pool)], ["当前货源状态", pool.state]]) + `<div class="alert info">补货入库后，系统会优先按支付成功时间 FIFO 自动发放待补货订单，剩余 CDKey 才进入新订单可用库存。</div>`;
       document.getElementById("cdkeyUploadBatchList").innerHTML = cdkeyBatchTable(getCdkeyBatchesByPool(pool.id), false, true);
       ["cdkeyUploadName", "cdkeyUploadExpire"].forEach(id => document.getElementById(id).value = "");
       openModal("cdkeyUploadModal");
@@ -7102,15 +7395,17 @@
       const name = valueOf("cdkeyUploadName");
       const count = 100;
       const expireAt = valueOf("cdkeyUploadExpire");
+      const fileName = valueOf("cdkeyUploadFile");
       if (!name) return toast("请输入补货名称。");
-      const fulfilledCount = createCdkeyBatchAndCodes(pool, name, "手工上传码", count, "手工上传补货", expireAt);
+      if (!fileName) return toast("请先上传补货文件。");
+      const fulfilledCount = createCdkeyBatchAndCodes(pool, name, "手工上传码", count, "手工上传补货", expireAt, fileName);
       closeModal("cdkeyUploadModal");
       toast(`手工上传补货完成；自动履约 ${fulfilledCount} 笔待补货订单。`);
     }
 
-    function createCdkeyBatchAndCodes(pool, name, source, count, reason, expireAt = "") {
+    function createCdkeyBatchAndCodes(pool, name, source, count, reason, expireAt = "", fileName = "") {
       const batchId = `BATCH-${pool.id}-${Date.now()}`.replace(/[^A-Z0-9_-]/g, "");
-      const batch = makeCdkeyBatch({ batchId, poolId: pool.id, batchName: name, source, state: "可用", total: count, available: count, issued: 0, voided: 0, failed: 0, expireAt, createdAt: nowText(), updatedAt: nowText() });
+      const batch = makeCdkeyBatch({ batchId, poolId: pool.id, batchName: name, source, fileName, state: "可用", total: count, available: count, issued: 0, voided: 0, failed: 0, expireAt, createdAt: nowText(), updatedAt: nowText() });
       cdkeyBatches.unshift(batch);
       for (let i = 1; i <= Math.min(count, 5); i++) {
         cdkeyCodes.unshift(makeCdkeyCode({ rowKey: `ROW-${batchId}-${i}`, poolId: pool.id, batchId, maskedCdkey: `${pool.id.slice(0,4)}-****-****-${String(i).padStart(4, "0")}`, state: "未使用", expireAt, updatedAt: nowText() }));
@@ -7118,7 +7413,7 @@
       pool.total += count;
       pool.available += count;
       pool.updatedAt = nowText();
-      addCdkeyLog(pool.id, source === "接口生成码" ? "接口生成补货" : "手工上传补货", "-", `${name} / ${count} 个`, reason);
+      addCdkeyLog(pool.id, source === "平台内部生成码" ? "平台内部生成补货" : "手工上传补货", "-", `${name} / ${count} 个`, reason);
       const fulfilledCount = allocatePendingCdkeyDeliveries(pool.id);
       syncCdkeyStatusByPool(pool.id);
       renderCdkeyPoolTable();
@@ -7191,8 +7486,8 @@
     function openCdkeyBatchDrawer(poolId) {
       const pool = getPoolById(poolId);
       if (!pool) return;
-      document.getElementById("cdkeyBatchBody").innerHTML = `${detailSection("码池信息", infoGrid([["码池 ID", pool.id], ["码池名称", pool.name], ["码池状态", pool.state], ["码池类型", pool.source], ["CDKey 类型", cdkeyTypeText(pool)]]))}
-        <div class="form-grid two" style="margin-bottom:12px"><div class="field"><label>补货记录 ID</label><input placeholder="请输入补货记录 ID"></div><div class="field"><label>码池类型</label><select><option>全部</option><option>接口生成码</option><option>手工上传码</option></select></div></div>
+      document.getElementById("cdkeyBatchBody").innerHTML = `${detailSection("码池信息", infoGrid([["货源 ID", pool.id], ["货源名称", pool.name], ["货源状态", pool.state], ["码入库方式", pool.stockMethod]]))}
+        <div class="form-grid two" style="margin-bottom:12px"><div class="field"><label>补货记录 ID</label><input placeholder="请输入补货记录 ID"></div><div class="field"><label>码入库来源</label><select><option>全部</option><option>平台内部生成码</option><option>手工上传码</option></select></div></div>
         ${cdkeyBatchTable(getCdkeyBatchesByPool(pool.id), true)}`;
       openDrawer("cdkeyBatchDrawer");
       document.querySelectorAll("[data-batch-code]").forEach(btn => btn.addEventListener("click", () => openCdkeyCodeDrawer(btn.dataset.poolId, btn.dataset.batchCode)));
@@ -7201,9 +7496,9 @@
     function cdkeyBatchTable(rows, withActions, compact = false) {
       if (!rows.length) return `<div class="empty">暂无补货记录</div>`;
       if (compact) {
-        return `<div class="table-wrap restock-table-wrap"><table class="restock-batch-table"><thead><tr><th>补货记录 ID</th><th>补货名称</th><th>码池类型</th><th>总码数</th><th>可用码数量</th><th>已履约数量</th><th>核销数量</th><th>过期时间</th><th>创建时间</th></tr></thead><tbody>${rows.map(batch => `<tr><td>${batch.batchId}</td><td>${batch.batchName}</td><td>${batch.source}</td><td>${batch.total}</td><td>${batch.available}</td><td>${batch.issued}</td><td>${batch.voided}</td><td>${batch.expireAt || "-"}</td><td>${batch.createdAt || batch.updatedAt}</td></tr>`).join("")}</tbody></table></div>`;
+        return `<div class="table-wrap restock-table-wrap"><table class="restock-batch-table"><thead><tr><th>补货记录 ID</th><th>补货名称</th><th>码入库来源</th><th>上传文件名</th><th>总码数</th><th>可用码数量</th><th>已履约数量</th><th>核销数量</th><th>过期时间</th><th>创建时间</th></tr></thead><tbody>${rows.map(batch => `<tr><td>${batch.batchId}</td><td>${batch.batchName}</td><td>${batch.source}</td><td>${batch.fileName || "-"}</td><td>${batch.total}</td><td>${batch.available}</td><td>${batch.issued}</td><td>${batch.voided}</td><td>${batch.expireAt || "-"}</td><td>${batch.createdAt || batch.updatedAt}</td></tr>`).join("")}</tbody></table></div>`;
       }
-      return `<div class="table-wrap"><table class="cdkey-batch-table"><thead><tr><th>补货记录 ID</th><th>补货名称</th><th>码池 ID</th><th>码池类型</th><th>总码数</th><th>可用码数量</th><th>已履约数量</th><th>核销数量</th><th>失败数量</th><th>过期时间</th><th>创建时间</th>${withActions ? "<th>最后操作人</th><th>操作</th>" : ""}</tr></thead><tbody>${rows.map(batch => `<tr><td>${batch.batchId}</td><td>${batch.batchName}</td><td>${batch.poolId}</td><td>${batch.source}</td><td>${batch.total}</td><td>${batch.available}</td><td>${batch.issued}</td><td>${batch.voided}</td><td>${batch.failed}</td><td>${batch.expireAt || "-"}</td><td>${batch.createdAt || batch.updatedAt}</td>${withActions ? `<td>${lastCdkeyOperator(getPoolById(batch.poolId))}</td><td><button class="btn text" data-pool-id="${batch.poolId}" data-batch-code="${batch.batchId}">查看 CDKey 明细</button></td>` : ""}</tr>`).join("")}</tbody></table></div>`;
+      return `<div class="table-wrap"><table class="cdkey-batch-table"><thead><tr><th>补货记录 ID</th><th>补货名称</th><th>码池 ID</th><th>码入库来源</th><th>上传文件名</th><th>总码数</th><th>可用码数量</th><th>已履约数量</th><th>核销数量</th><th>失败数量</th><th>过期时间</th><th>创建时间</th>${withActions ? "<th>最后操作人</th><th>操作</th>" : ""}</tr></thead><tbody>${rows.map(batch => `<tr><td>${batch.batchId}</td><td>${batch.batchName}</td><td>${batch.poolId}</td><td>${batch.source}</td><td>${batch.fileName || "-"}</td><td>${batch.total}</td><td>${batch.available}</td><td>${batch.issued}</td><td>${batch.voided}</td><td>${batch.failed}</td><td>${batch.expireAt || "-"}</td><td>${batch.createdAt || batch.updatedAt}</td>${withActions ? `<td>${lastCdkeyOperator(getPoolById(batch.poolId))}</td><td><button class="btn text" data-pool-id="${batch.poolId}" data-batch-code="${batch.batchId}">查看 CDKey 明细</button></td>` : ""}</tr>`).join("")}</tbody></table></div>`;
     }
 
     function openCdkeyCodeDrawer(poolId, batchId = "") {
@@ -7265,8 +7560,8 @@
       const pool = getPoolById(poolId);
       if (!pool) return;
       selectedCdkeyPool = pool;
-      const bound = getBoundSkuByPool(pool.id)[0];
-      document.getElementById("cdkeyDisableInfo").innerHTML = infoGrid([["码池 ID", pool.id], ["码池名称", pool.name], ["当前码池状态", pool.state], ["绑定 SKU ID", bound?.sku?.skuId || "-"]]);
+      const boundRows = getAllBoundSkuByPool(pool.id);
+      document.getElementById("cdkeyDisableInfo").innerHTML = infoGrid([["货源 ID", pool.id], ["货源名称", pool.name], ["供货方式", cdkeySupplyMode(pool)], ["当前货源状态", pool.state], ["绑定 SKU 数量", boundRows.length]]);
       openModal("cdkeyDisableModal");
     }
 
@@ -7276,24 +7571,25 @@
       const before = pool.state;
       pool.state = "下架";
       pool.updatedAt = nowText();
-      addCdkeyLog(pool.id, "下架码池", before, "下架", "列表操作下架");
+      addCdkeyLog(pool.id, "下架货源", before, "下架", "列表操作下架");
       syncCdkeyStatusByPool(pool.id);
       closeModal("cdkeyDisableModal");
       renderCdkeyPoolTable();
       renderCdkeyPoolStats();
       renderTable();
-      toast("码池已下架。");
+      toast("CDKey 货源已下架。");
     }
 
     function openCdkeyDeleteModal(poolId) {
       const pool = getPoolById(poolId);
       if (!pool) return;
-      if (pool.state !== "草稿") return toast("仅草稿状态的 CDKey 码池允许删除。");
+      if (pool.state !== "草稿") return toast("仅草稿状态的 CDKey 货源允许删除。");
+      const boundRows = getAllBoundSkuByPool(pool.id);
+      if (boundRows.length) return toast("该货源仍绑定商品 SKU，请先解除绑定后再删除。");
       selectedCdkeyPool = pool;
-      const bound = getBoundSkuByPool(pool.id)[0];
       document.getElementById("cdkeyDeleteInfo").innerHTML = infoGrid([
-        ["码池 ID", pool.id], ["码池名称", pool.name], ["当前码池状态", pool.state],
-        ["绑定 SKU ID", bound?.sku?.skuId || "-"], ["补货记录数", getCdkeyBatchesByPool(pool.id).length]
+        ["货源 ID", pool.id], ["货源名称", pool.name], ["供货方式", cdkeySupplyMode(pool)], ["当前货源状态", pool.state],
+        ["绑定 SKU 数量", boundRows.length], ["补货记录数", getCdkeyBatchesByPool(pool.id).length]
       ]);
       document.getElementById("cdkeyDeleteReason").value = "";
       openModal("cdkeyDeleteModal");
@@ -7302,48 +7598,50 @@
     function confirmCdkeyDelete() {
       const pool = selectedCdkeyPool;
       if (!pool) return;
-      if (pool.state !== "草稿") return toast("仅草稿状态的 CDKey 码池允许删除。");
+      if (pool.state !== "草稿") return toast("仅草稿状态的 CDKey 货源允许删除。");
+      if (getAllBoundSkuByPool(pool.id).length) return toast("该货源仍绑定商品 SKU，请先解除绑定后再删除。");
       const poolId = pool.id;
+      const reason = valueOf("cdkeyDeleteReason") || "列表操作删除草稿货源";
+      addCdkeyLog(poolId, "删除货源", "草稿", "已删除", reason);
       poolMocks = poolMocks.filter(item => item.id !== poolId);
       visibleCdkeyPools = visibleCdkeyPools.filter(item => item.id !== poolId);
       cdkeyBatches = cdkeyBatches.filter(item => item.poolId !== poolId);
       cdkeyCodes = cdkeyCodes.filter(item => item.poolId !== poolId);
-      cdkeyLogs = cdkeyLogs.filter(item => item.object !== poolId);
       syncCdkeyStatusByPool(poolId);
       closeModal("cdkeyDeleteModal");
       renderCdkeyPoolTable();
       renderCdkeyPoolStats();
       renderTable();
-      toast("CDKey 码池已删除。");
+      toast("CDKey 货源已删除。");
     }
 
     function enableCdkeyPool(poolId) {
       const pool = getPoolById(poolId);
       if (!pool) return;
-      if (pool.state === "上架") return toast("码池已是上架状态。");
+      if (pool.state === "上架") return toast("货源已是上架状态。");
       const errors = validateCdkeyPool(pool, true);
+      if (errors.length) return toast(errors[0]);
       openEnableConfirm({
-        title: "确认上架 CDKey 码池",
-        message: "上架后，该码池可被商品 SKU 的 CDKey 履约配置引用。是否确认上架？",
+        title: "确认上架 CDKey 货源",
+        message: "上架后，该货源可被商品 SKU 的 CDKey 履约配置引用。是否确认上架？",
         confirmText: "确认上架",
         onConfirm: () => {
-          if (errors.length) return toast("信息不完整，无法上架");
           const before = pool.state;
           pool.state = "上架";
           pool.updatedAt = nowText();
-          addCdkeyLog(pool.id, "上架码池", before, "上架", "信息完整后上架");
+          addCdkeyLog(pool.id, "上架货源", before, "上架", "信息完整后上架");
           syncCdkeyStatusByPool(pool.id);
           renderCdkeyPoolTable();
           renderCdkeyPoolStats();
           renderTable();
-          toast("码池已上架。");
+          toast("CDKey 货源已上架。");
         }
       });
     }
 
     function seedCdkeyLogs() {
       if (cdkeyLogs.length) return;
-      poolMocks.forEach(pool => addCdkeyLog(pool.id, "新建码池", "-", pool.state, "mock 初始化数据", pool.createdAt || pool.updatedAt));
+      poolMocks.forEach(pool => addCdkeyLog(pool.id, "新建货源", "-", pool.state, "mock 初始化数据", pool.createdAt || pool.updatedAt));
       addCdkeyLog("PUBG_GCOIN_300_POOL", "CDKey 履约", "未使用", "已履约", "关联履约记录 DEL-202605220001", "2026-05-22 16:21");
       addCdkeyLog("ACCELERATOR_7D_POOL", "安全库存阈值变更", "50", "30", "码池可用数量不足", "2026-05-21 12:30");
     }
@@ -7356,39 +7654,53 @@
       return cdkeyLogs.filter(log => log.object === poolId);
     }
 
-    function syncCdkeyStatusByPool(poolId) {
-      products.forEach(product => {
-        const related = product.skuList.some(sku => (sku.cdkeyPoolId || sku.deliveryParams?.cdkey?.poolId || "") === poolId);
-        if (!related) return;
-        const statuses = product.skuList.filter(sku => isCdkeyDelivery(sku.delivery)).map(sku => {
-          const skuPoolId = sku.cdkeyPoolId || sku.deliveryParams?.cdkey?.poolId || "";
-          const check = checkCdkeyPool(skuPoolId);
-          if (check.ok && check.stockSufficient !== false) return "码池可用";
-          if (check.stockSufficient === false) return "CDKey 不足";
-          if (!skuPoolId) return "码池未配置";
-          return "码池不可用";
-        });
-        product.cdkey = statuses.includes("CDKey 不足") ? "CDKey 不足" : statuses.find(status => status !== "码池可用") || "码池可用";
-      });
-      inventoryRecords.forEach(record => {
-        if (inventoryCdkeyPoolId(record) !== poolId) return;
-        const pool = getPoolById(poolId);
-        if (!pool) return;
+    function inventoryRecordUsesCdkeySource(record, poolId) {
+      return skuCdkeySourceIds(getInventorySku(record)).includes(poolId);
+    }
+
+    function syncCdkeyInventoryRecord(record) {
+      const sku = getInventorySku(record);
+      if (!sku || !isCdkeyDelivery(sku.delivery || getInventoryProduct(record)?.delivery)) return;
+      const route = evaluateSkuCdkeyRoute(sku);
+      record.cdkeyPoolId = route.ids[0] || "";
+      if (route.hasActiveDirect) {
+        record.stockMode = "不限量";
+        record.totalStock = "不限量";
+        record.availableStock = "不限量";
+        record.todayLimit = "不限量";
+        record.todayRemaining = "不限量";
+        record.warningThreshold = 0;
+      } else {
         record.stockMode = "限量";
-        record.totalStock = Number(pool.total || 0);
-        record.availableStock = Number(pool.available || 0);
-        record.lockedStock = getCdkeyCodesByPool(poolId).filter(code => code.state === "已锁定").length;
-        record.deductedStock = Number(pool.issued || 0);
-        record.lastSyncTime = nowText();
-        record.updatedAt = record.lastSyncTime;
-        record.stockState = calculateInventoryState(record);
-      });
-      const affectedSpus = [...new Set(inventoryRecords.filter(record => inventoryCdkeyPoolId(record) === poolId).map(record => record.spu))];
+        record.totalStock = route.totalPoolStock;
+        record.availableStock = route.availablePoolStock;
+        record.todayLimit = "";
+        record.todayRemaining = "";
+        record.warningThreshold = route.activePoolSources.length === 1 ? (route.activePoolSources[0].alertThreshold ?? "") : "";
+      }
+      record.dailyReleases = [];
+      record.lockedStock = route.activePoolSources.reduce((sum, source) => sum + getCdkeyCodesByPool(source.id).filter(code => code.state === "已锁定").length, 0);
+      record.deductedStock = route.sources.reduce((sum, source) => sum + Number(source.issued || 0), 0);
+      record.lastSyncTime = nowText();
+      record.updatedAt = record.lastSyncTime;
+      record.stockState = calculateInventoryState(record);
+    }
+
+    function syncCdkeyStatusByPool(poolId) {
+      const affectedProducts = products.filter(product => product.skuList.some(sku => skuCdkeySourceIds(sku).includes(poolId)));
+      const affectedRecords = inventoryRecords.filter(record => inventoryRecordUsesCdkeySource(record, poolId));
+      affectedRecords.forEach(syncCdkeyInventoryRecord);
+      const affectedSpus = [...new Set([...affectedProducts.map(product => product.spu), ...affectedRecords.map(record => record.spu)])];
       affectedSpus.forEach(syncProductStockSummaryByInventory);
+      affectedProducts.forEach(product => product.cdkey = cdkeyProductStatusFromSkus(product.skuList));
     }
 
     function syncAllCdkeyStatus() {
-      poolMocks.forEach(pool => syncCdkeyStatusByPool(pool.id));
+      inventoryRecords.forEach(syncCdkeyInventoryRecord);
+      products.forEach(product => {
+        syncProductStockSummaryByInventory(product.spu);
+        product.cdkey = cdkeyProductStatusFromSkus(product.skuList);
+      });
     }
 
     function lastOperatorFromLogs(logs, fallback = "平台运营") {
@@ -7564,8 +7876,8 @@
       const codes = attrCodes || deriveSkuAttrCodes({ skuList: rows }, type);
       const normalizedRows = rows.map((row, index) => normalizeSkuRow(row, type, index, codes));
       return `<div class="table-wrap"><table><thead><tr>
-        <th>SKU ID</th><th>SKU 名称</th><th>SKU 属性模板</th><th>SKU 属性值</th><th>计量单位 / 数值</th><th>排序（越大越靠前）</th><th>多币种价格</th><th>履约方式</th><th>CDKey 码池 ID</th><th>每人总兑换次数</th><th>每人每日兑换次数</th><th>SKU 备注</th>
-        </tr></thead><tbody>${normalizedRows.map(s => `<tr><td>${s.skuId}</td><td>${s.skuName}</td><td>${s.templateName}</td><td>${formatSkuAttributeValues(s, type, codes)}</td><td>${skuSpecText(s)}</td><td>${s.sort}</td><td>${skuPriceSummary(s)}</td><td>${normalizeDelivery(s.delivery) || "未配置"}</td><td>${deliveryParamSummary(s)}</td><td>${s.totalLimit}</td><td>${s.dayLimit}</td><td>${s.remark}</td></tr>`).join("")}</tbody></table></div>`;
+        <th>SKU ID</th><th>SKU 名称</th><th>SKU 属性模板</th><th>SKU 属性值</th><th>计量单位 / 数值</th><th>排序（越大越靠前）</th><th>多币种价格</th><th>履约方式</th><th>CDKey 货源配置</th><th>每人总兑换次数</th><th>每人每日兑换次数</th><th>SKU 备注</th>
+        </tr></thead><tbody>${normalizedRows.map(s => `<tr><td>${s.skuId}</td><td>${s.skuName}</td><td>${s.templateName}</td><td>${formatSkuAttributeValues(s, type, codes)}</td><td>${skuSpecText(s)}</td><td>${s.sort}</td><td>${skuPriceSummary(s)}</td><td>${normalizeDelivery(s.delivery) || "未配置"}</td><td>${deliveryParamSummary(s, type)}</td><td>${s.totalLimit}</td><td>${s.dayLimit}</td><td>${s.remark}</td></tr>`).join("")}</tbody></table></div>`;
     }
     function exposureDetail(product) {
       return infoGrid([
@@ -7784,13 +8096,18 @@
 
     function syncSkuDeliveryFromForm() {
       const delivery = getFormDelivery();
+      const productType = valueOf("formType");
       skuRows = skuRows.map(row => {
         const next = { ...row, delivery };
         next.deliveryParams = normalizeDeliveryParams(next, delivery);
-        if (!isCdkeyDelivery(delivery)) {
+        if (!requiresCdkeySourceConfig(next, productType)) {
+          next.cdkeyPoolId = "";
+          next.cdkeySourceIds = [];
+          next.cdkeySourceRoutes = [];
+          next.cdkeySupplyMethod = "";
           next.cdkeyPoolCheck = null;
-        } else if (next.cdkeyPoolId) {
-          next.cdkeyPoolCheck = checkCdkeyPool(next.cdkeyPoolId);
+        } else if (skuCdkeySourceIds(next).length) {
+          next.cdkeyPoolCheck = { status: "通过", ok: true, message: `已配置 ${skuCdkeySourceIds(next).length} 个货源` };
         }
         return next;
       });
@@ -7957,7 +8274,7 @@
       const showValidityTypeColumn = skuRows.some(row => isTimeSkuSpecType(row.specType));
       const validityTypeHeader = showValidityTypeColumn ? `<th>有效期类型<br><span class="minor">小时/天必填</span></th>` : "";
       const durationHeader = showValidityTypeColumn ? `<th>数值<br><span class="minor">限时必填</span></th>` : `<th>数值</th>`;
-      head.innerHTML = `<th>SKU 名称</th><th><span class="required-star">*</span>排序<br><span class="minor">越大越靠前</span></th><th><span class="required-star">*</span>计量单位</th>${validityTypeHeader}${durationHeader}<th><span class="required-star">*</span>多币种价格<br><span class="minor">积分 / N币 / RMB</span></th><th>CDKey 码池 ID</th><th>每人总兑换次数</th><th>每人每日兑换次数</th>${dynamicHeaders}<th>SKU 备注</th><th>操作</th>`;
+      head.innerHTML = `<th>SKU 名称</th><th><span class="required-star">*</span>排序<br><span class="minor">越大越靠前</span></th><th><span class="required-star">*</span>计量单位</th>${validityTypeHeader}${durationHeader}<th><span class="required-star">*</span>多币种价格<br><span class="minor">积分 / N币 / RMB</span></th><th>CDKey 货源配置</th><th>每人总兑换次数</th><th>每人每日兑换次数</th>${dynamicHeaders}<th>SKU 备注</th><th>操作</th>`;
       body.innerHTML = skuRows.length ? skuRows.map((s, i) => {
         const attrCells = editableAttrs.map(attr => {
           const value = s.attributeValues[attr.code] || "";
@@ -8000,8 +8317,6 @@
       body.querySelectorAll("[data-copy-sku]").forEach(btn => btn.addEventListener("click", () => copySkuRow(Number(btn.dataset.copySku))));
       body.querySelectorAll("[data-del-sku]").forEach(btn => btn.addEventListener("click", () => { skuRows.splice(Number(btn.dataset.delSku), 1); syncInventoryRows(true); renderSkuEdit(); renderInventoryConfig(); validateSkuRows(); }));
       body.querySelectorAll("[data-edit-sku-price]").forEach(btn => btn.addEventListener("click", () => openSkuPriceModal(Number(btn.dataset.editSkuPrice))));
-      body.querySelectorAll("[data-cdkey-pool]").forEach(input => input.addEventListener("input", updateSkuCdkeyPool));
-      body.querySelectorAll("[data-check-pool]").forEach(btn => btn.addEventListener("click", () => checkSkuCdkeyPool(Number(btn.dataset.checkPool))));
       body.querySelectorAll("[data-select-pool]").forEach(btn => btn.addEventListener("click", () => openPoolModal(Number(btn.dataset.selectPool))));
       validateSkuRows();
     }
@@ -8078,15 +8393,36 @@
     }
 
     function cdkeyPoolEditor(row, index) {
-      if (!isCdkeyDelivery(row.delivery)) return `<span class="minor">无需配置</span>`;
-      const check = row.cdkeyPoolCheck || (row.cdkeyPoolId ? checkCdkeyPool(row.cdkeyPoolId) : null);
-      const tagClass = !check?.ok ? "red" : check.stockSufficient === false ? "orange" : "green";
-      const tag = check ? `<span class="tag ${tagClass}">${check.status}</span>` : `<span class="tag orange">未校验</span>`;
-      const message = check ? check.message : "请输入码池 ID 后校验";
-      return `
-        <input class="mini-input" data-sku="${index}" data-cdkey-pool="${index}" placeholder="请输入码池 ID" value="${row.cdkeyPoolId || ""}">
-        <div class="btn-row" style="margin-top:6px"><button class="btn text" type="button" data-check-pool="${index}">校验</button><button class="btn text" type="button" data-select-pool="${index}">选择</button>${tag}</div>
-        <div class="minor">${message}</div>`;
+      if (!requiresCdkeySourceConfig(row, valueOf("formType"))) return `<span class="minor">无需配置</span>`;
+      const sourceIds = skuCdkeySourceIds(row);
+      if (!sourceIds.length) return `<button class="btn text" type="button" data-select-pool="${index}">配置货源</button><div class="minor">至少配置 1 个上架货源</div>`;
+      const sources = sourceIds.map(getPoolById);
+      const methods = [...new Set(sources.map(source => cdkeySupplyMode(source)).filter(Boolean))];
+      const method = row.cdkeySupplyMethod || (methods.length === 1 ? methods[0] : "配置异常");
+      const routeLines = sourceIds.map((sourceId, routeIndex) => {
+        const source = getPoolById(sourceId);
+        const sort = cdkeySourceSortValue(row, sourceId, routeIndex, sourceIds.length);
+        const tagClass = !source || source.state !== "上架" ? "red" : "blue";
+        const reference = method === "接口直供"
+          ? `${source?.supplier || "未知供应商"} / ${source?.supplierSku || sourceId}`
+          : `旧码池 ID：${sourceId}`;
+        return `<div><span class="tag ${tagClass}">排序 ${sort}</span> ${reference}<div class="minor">${source?.name || "货源不存在"}${source ? ` · ${source.state}` : ""}</div></div>`;
+      }).join("");
+      const methodClass = method === "接口直供" ? "purple" : method === "码池供货" ? "blue" : "red";
+      return `<div style="margin-bottom:6px"><span class="tag ${methodClass}">供货方式：${method}</span></div><div class="route-stack">${routeLines}</div><button class="btn text" type="button" data-select-pool="${index}" style="margin-top:6px">编辑配置</button>`;
+    }
+
+    function skuCdkeySourceIds(row) {
+      const sourceIds = Array.isArray(row?.cdkeySourceIds) ? row.cdkeySourceIds : [];
+      const fallbackIds = row?.cdkeyPoolId ? [row.cdkeyPoolId] : [];
+      return [...new Set([...sourceIds, ...fallbackIds].filter(Boolean))];
+    }
+
+    function cdkeySourceSortValue(row, sourceId, index, total) {
+      const configured = Array.isArray(row?.cdkeySourceRoutes)
+        ? row.cdkeySourceRoutes.find(route => route.sourceId === sourceId)
+        : null;
+      return configured ? Number(configured.sort) : Math.max(1, total - index);
     }
 
     function deliveryDisplayName(delivery) {
@@ -8160,11 +8496,14 @@
       }
       if (field === "delivery") {
         skuRows[index].deliveryParams = initialDeliveryParams(e.target.value);
-        if (!isCdkeyDelivery(e.target.value)) {
+        if (!requiresCdkeySourceConfig(skuRows[index], type)) {
           skuRows[index].cdkeyPoolId = "";
+          skuRows[index].cdkeySourceIds = [];
+          skuRows[index].cdkeySourceRoutes = [];
+          skuRows[index].cdkeySupplyMethod = "";
           skuRows[index].cdkeyPoolCheck = null;
-        } else if (skuRows[index].cdkeyPoolId) {
-          skuRows[index].cdkeyPoolCheck = checkCdkeyPool(skuRows[index].cdkeyPoolId);
+        } else if (skuCdkeySourceIds(skuRows[index]).length) {
+          skuRows[index].cdkeyPoolCheck = { status: "通过", ok: true, message: `已配置 ${skuCdkeySourceIds(skuRows[index]).length} 个货源` };
         }
         syncInventoryRows(false);
         renderSkuEdit();
@@ -8173,27 +8512,6 @@
       }
       validateSkuRows();
       renderInventoryConfig();
-    }
-
-    function updateSkuCdkeyPool(e) {
-      const index = Number(e.target.dataset.sku);
-      if (!skuRows[index]) return;
-      skuRows[index].cdkeyPoolId = e.target.value.trim();
-      skuRows[index].cdkeyPoolCheck = null;
-      renderInventoryConfig();
-    }
-
-    function checkSkuCdkeyPool(index) {
-      const row = skuRows[index];
-      if (!row) return;
-      row.cdkeyPoolCheck = checkCdkeyPool(row.cdkeyPoolId || "");
-      if (row.cdkeyPoolCheck.ok) {
-        const bindingError = cdkeyPoolBindingError(row.cdkeyPoolId, row.skuId);
-        if (bindingError) row.cdkeyPoolCheck = { status: "失败", ok: false, message: bindingError };
-      }
-      renderSkuEdit();
-      renderInventoryConfig();
-      toast(row.cdkeyPoolCheck.ok ? `码池配置有效：${row.cdkeyPoolCheck.pool.name}，可用 ${row.cdkeyPoolCheck.pool.available}` : row.cdkeyPoolCheck.message);
     }
 
     function validateSkuRows() {
@@ -8274,9 +8592,10 @@
     function syncInventoryRows(forceReset = false) {
       if (formMode === "edit") return;
       syncSkuDeliveryFromForm();
+      const productType = valueOf("formType");
       inventoryRows = skuRows.map((sku, index) => {
         const existing = forceReset ? null : inventoryRows[index];
-        const isCdkey = isCdkeyDelivery(sku.delivery);
+        const isCdkey = requiresCdkeySourceConfig(sku, productType);
         const poolId = sku.cdkeyPoolId || sku.deliveryParams?.cdkey?.poolId || "";
         const pool = poolId ? getPoolById(poolId) : null;
         const stockMode = isCdkey ? "限量" : (existing?.stockMode || "限量");
@@ -8320,25 +8639,43 @@
 
     function isCdkeyInventoryRow(index, row = null) {
       const sku = skuRows[index];
-      return isCdkeyDelivery(sku?.delivery || row?.delivery || getFormDelivery());
+      return requiresCdkeySourceConfig({ delivery: sku?.delivery || row?.delivery || getFormDelivery() }, valueOf("formType"));
     }
 
     function cdkeyPoolForInventoryRow(index) {
+      return cdkeySourcesForInventoryRow(index).find(source => cdkeySupplyMode(source) === "码池供货") || null;
+    }
+
+    function cdkeySourcesForInventoryRow(index) {
       const sku = skuRows[index];
-      const poolId = sku?.cdkeyPoolId || sku?.deliveryParams?.cdkey?.poolId || "";
-      return poolId ? getPoolById(poolId) : null;
+      return skuCdkeySourceIds(sku).map(getPoolById).filter(Boolean);
+    }
+
+    function cdkeyRouteForInventoryRow(index) {
+      return evaluateCdkeySourceRoute(skuCdkeySourceIds(skuRows[index]));
+    }
+
+    function cdkeyInventoryModeLabel(index) {
+      return cdkeyRouteForInventoryRow(index).hasActiveDirect
+        ? "不限量（接口实时判断）"
+        : "限量（码池库存）";
     }
 
     function cdkeyInventoryDisplayValue(index) {
-      const pool = cdkeyPoolForInventoryRow(index);
-      return pool ? `码池同步：总码数 ${pool.total}` : "绑定码池后同步";
+      const route = cdkeyRouteForInventoryRow(index);
+      if (route.hasActiveDirect) return "接口实时判断";
+      return route.activePoolSources.length ? `码池同步：总码数 ${route.totalPoolStock}` : "配置货源后同步";
     }
 
     function applyCdkeyInventorySync(row, index) {
       if (!isCdkeyInventoryRow(index, row)) return row;
-      const pool = cdkeyPoolForInventoryRow(index);
-      row.stockMode = "限量";
-      row.totalStock = pool ? pool.total : "";
+      const route = cdkeyRouteForInventoryRow(index);
+      row.stockMode = route.hasActiveDirect ? "不限量" : "限量";
+      row.totalStock = route.hasActiveDirect ? "" : route.totalPoolStock || "";
+      if (route.hasActiveDirect) {
+        row.dailyReleases = [];
+        row.warningThreshold = "";
+      }
       return row;
     }
 
@@ -8363,7 +8700,7 @@
               const backorderEnabled = isBackorderAllowed(row);
               const unlimitedDisabled = row.stockMode === "不限量";
               const stockModeEditor = isCdkeyRow
-                ? `<select class="mini-input" data-inv="${index}" data-inv-field="stockMode" disabled><option selected>限量</option></select><div class="minor">CDKey 库存模式固定为限量</div>`
+                ? `<select class="mini-input" data-inv="${index}" data-inv-field="stockMode" disabled><option selected>${cdkeyInventoryModeLabel(index)}</option></select><div class="minor">由已配置的 CDKey 货源路由自动判定</div>`
                 : `<select class="mini-input" data-inv="${index}" data-inv-field="stockMode"><option ${row.stockMode === "限量" ? "selected" : ""}>限量</option><option ${row.stockMode === "不限量" ? "selected" : ""}>不限量</option></select>`;
               const totalStockDisabled = unlimitedDisabled || isCdkeyRow;
               const totalStockValue = isCdkeyRow ? cdkeyInventoryDisplayValue(index) : (unlimitedDisabled ? "不限量" : row.totalStock);
@@ -8390,10 +8727,11 @@
 
     function cdkeyInventoryHint(index) {
       const sku = skuRows[index];
-      if (!sku || !isCdkeyDelivery(sku.delivery)) return "";
-      const check = sku.cdkeyPoolCheck || (sku.cdkeyPoolId ? checkCdkeyPool(sku.cdkeyPoolId) : null);
-      if (check?.ok) return `<div class="minor">已关联码池 ${sku.cdkeyPoolId}，总码数 ${check.pool.total} / 可用码 ${check.pool.available}；库存由 CDKey 码池列表同步。${check.stockSufficient === false ? "当前缺码，是否可继续下单由下单策略决定。" : ""}</div>`;
-      return `<div class="minor">CDKey SKU 库存模式固定为限量；请先在 SKU 配置中填写并校验可用的 CDKey 码池 ID，绑定后库存由码池列表同步。</div>`;
+      if (!sku || !requiresCdkeySourceConfig(sku, valueOf("formType"))) return "";
+      const route = cdkeyRouteForInventoryRow(index);
+      if (!route.ids.length) return `<div class="minor">请先在 SKU 配置中至少选择 1 个上架货源。</div>`;
+      if (route.hasActiveDirect) return `<div class="minor">已配置 ${route.ids.length} 个货源，当前路由包含上架的接口直供；平台不维护供应商库存数量，订单履约时实时判断。</div>`;
+      return `<div class="minor">当前路由包含 ${route.activePoolSources.length} 个上架码池货源，总码数 ${route.totalPoolStock} / 可用码 ${route.availablePoolStock}；库存由 CDKey 货源列表同步。</div>`;
     }
 
     function updateInventoryFromInput(e) {
@@ -8543,6 +8881,7 @@
         return applyCdkeyInventorySync(next, index);
       });
       const hasUnlimited = syncedRows.some(row => row.stockMode === "不限量");
+      const interfaceRealtime = syncedRows.some((row, index) => isCdkeyInventoryRow(index, row) && cdkeySourcesForInventoryRow(index).some(source => cdkeySupplyMode(source) === "接口直供"));
       const limitedRows = syncedRows.filter(row => row.stockMode === "限量" && /^[1-9]\d*$/.test(String(row.totalStock)));
       if (!hasUnlimited && !limitedRows.length) return null;
       const total = limitedRows.reduce((sum, row) => sum + Number(row.totalStock), 0);
@@ -8559,7 +8898,8 @@
         locked: 0,
         abnormal: 0,
         today: dailyValues.length ? dailyValues.reduce((a, b) => a + b, 0) : "-",
-        unlimited: hasUnlimited
+        unlimited: hasUnlimited,
+        interfaceRealtime
       };
     }
 
@@ -8597,45 +8937,44 @@
     function validateSkuCdkeyPools() {
       const errors = [];
       syncSkuDeliveryFromForm();
-      const selectedPoolIds = new Map();
+      const productType = valueOf("formType");
       skuRows.forEach((row, index) => {
-        if (!isCdkeyDelivery(row.delivery)) return;
-        const poolId = row.cdkeyPoolId || row.deliveryParams?.cdkey?.poolId || "";
+        if (!requiresCdkeySourceConfig(row, productType)) return;
+        const sourceIds = skuCdkeySourceIds(row);
         const skuName = row.skuName || row.displayText || `SKU${index + 1}`;
-        const pool = getPoolById(poolId);
-
-        if (!poolId) {
-          errors.push({ item: "CDKey 码池", problem: `SKU「${skuName}」未填写码池 ID`, suggestion: "请填写可用的 CDKey 码池 ID" });
+        if (!sourceIds.length) {
+          errors.push({ item: "CDKey 货源配置", problem: `SKU「${skuName}」未配置货源`, suggestion: "请至少选择 1 个上架货源" });
           return;
         }
-
-        if (!pool) {
-          errors.push({ item: "CDKey 码池", problem: `SKU「${skuName}」配置的码池 ID 不存在`, suggestion: "请检查码池 ID 是否正确" });
+        const sources = sourceIds.map(getPoolById);
+        if (sources.some(source => !source)) {
+          errors.push({ item: "CDKey 货源配置", problem: `SKU「${skuName}」存在已删除的货源`, suggestion: "请重新配置货源" });
           return;
         }
-
-        if (pool.state !== "上架") {
-          errors.push({ item: "CDKey 码池", problem: `SKU「${skuName}」配置的码池不是上架状态`, suggestion: "请更换上架状态的码池" });
+        if (sources.some(source => source.state !== "上架")) {
+          errors.push({ item: "CDKey 货源配置", problem: `SKU「${skuName}」存在非上架货源`, suggestion: "请移除或更换该货源" });
           return;
         }
-
-        if (pool.available <= 0 && !isBackorderAllowed(inventoryRows[index])) {
-          errors.push({ item: "CDKey 码池", problem: `SKU「${skuName}」配置的码池可用数量不足`, suggestion: "请补充码池或更换码池" });
+        const routeSorts = sourceIds.map((sourceId, routeIndex) => cdkeySourceSortValue(row, sourceId, routeIndex, sourceIds.length));
+        if (routeSorts.some(sort => !Number.isInteger(sort) || sort <= 0) || new Set(routeSorts).size !== routeSorts.length) {
+          errors.push({ item: "CDKey 货源配置", problem: `SKU「${skuName}」的货源排序值无效或重复`, suggestion: "请配置不重复的正整数排序值" });
           return;
         }
-
-        const bindingError = cdkeyPoolBindingError(poolId, row.skuId);
-        if (bindingError) {
-          errors.push({ item: "CDKey 码池", problem: `SKU「${skuName}」${bindingError}`, suggestion: "请更换未绑定 SKU 的码池" });
+        const modes = [...new Set(sources.map(source => cdkeySupplyMode(source)).filter(Boolean))];
+        if (modes.length !== 1) {
+          errors.push({ item: "CDKey 货源配置", problem: `SKU「${skuName}」混用了码池供货与接口直供`, suggestion: "请仅保留同一种供货方式" });
           return;
         }
-
-        if (selectedPoolIds.has(poolId)) {
-          errors.push({ item: "CDKey 码池", problem: `码池 ${poolId} 在当前商品内被多个 SKU 选择`, suggestion: "当前仅支持 1 个码池绑定 1 个 SKU" });
+        if (row.cdkeySupplyMethod && row.cdkeySupplyMethod !== modes[0]) {
+          errors.push({ item: "CDKey 货源配置", problem: `SKU「${skuName}」的供货方式与已添加货源不一致`, suggestion: "请重新配置该 SKU 的货源" });
           return;
         }
-        selectedPoolIds.set(poolId, row.skuId);
-
+        row.cdkeySupplyMethod = modes[0];
+        const hasPotentialSupply = sources.some(source => cdkeySupplyMode(source) === "接口直供" || Number(source.available || 0) > 0);
+        if (!hasPotentialSupply && !isBackorderAllowed(inventoryRows[index])) {
+          errors.push({ item: "CDKey 货源配置", problem: `SKU「${skuName}」当前全部码池货源均无可用码`, suggestion: "请补充当前码池、增加同类型码池货源或允许缺货下单" });
+          return;
+        }
         const inventory = inventoryRows[index];
         if (inventory) applyCdkeyInventorySync(inventory, index);
       });
@@ -8644,59 +8983,167 @@
 
     function openPoolModal(index) {
       if (Number.isInteger(index)) currentEditingSkuIndex = index;
-      renderPoolTable();
+      const row = skuRows[currentEditingSkuIndex];
+      const sourceIds = skuCdkeySourceIds(row);
+      const sourceModes = [...new Set(sourceIds.map(sourceId => cdkeySupplyMode(getPoolById(sourceId))).filter(Boolean))];
+      cdkeyRouteDraft = sourceIds.map((sourceId, routeIndex) => {
+        const source = getPoolById(sourceId);
+        const sort = cdkeySourceSortValue(row, sourceId, routeIndex, sourceIds.length);
+        return cdkeySupplyMode(source) === "接口直供"
+          ? { sourceId, sort, supplier: source?.supplier || "", productId: String(source?.supplierSku || "") }
+          : { sourceId, sort, poolId: sourceId };
+      });
+      cdkeyRouteMethodDraft = row?.cdkeySupplyMethod || (sourceModes.length === 1 ? sourceModes[0] : "");
+      document.getElementById("skuSupplyMethod").value = cdkeyRouteMethodDraft;
+      renderCdkeyRouteAddArea();
       openModal("poolModal");
     }
 
-    function renderPoolTable() {
-      const name = valueOf("poolFilterName");
-      const state = valueOf("poolFilterState");
-      const source = valueOf("poolFilterSpec");
-      const currentSku = skuRows[currentEditingSkuIndex] || {};
-      const rows = poolMocks.filter(pool => {
-        const matchName = !name || pool.name.includes(name) || pool.id.includes(name);
-        const matchState = state === "全部" || !state || pool.state === state;
-        const matchSpec = !source || pool.source.includes(source);
-        return matchName && matchState && matchSpec && !cdkeyPoolSelectableError(pool, currentSku.skuId || "");
-      });
-      if (!rows.length) {
-        document.getElementById("poolTbody").innerHTML = `<tr><td colspan="12"><div class="empty">暂无可选择码池。仅展示上架、可用码数量大于 0、且未绑定其他 SKU 的码池。</div></td></tr>`;
+    function renderCdkeyRouteAddArea() {
+      const methodSelect = document.getElementById("skuSupplyMethod");
+      const hint = document.getElementById("skuSupplyMethodHint");
+      const area = document.getElementById("poolAddSourceArea");
+      const count = document.getElementById("poolSelectedCount");
+      if (!methodSelect || !hint || !area || !count) return;
+      methodSelect.value = cdkeyRouteMethodDraft;
+      methodSelect.disabled = cdkeyRouteDraft.length > 0;
+      count.textContent = `已配置 ${cdkeyRouteDraft.length} 个货源`;
+      hint.textContent = cdkeyRouteDraft.length ? "当前供货方式已锁定；删除全部货源后可切换。" : "同一 SKU 只能选择一种供货方式。";
+      if (!cdkeyRouteMethodDraft) {
+        area.innerHTML = `<div class="release-empty">请先选择供货方式。</div>`;
         return;
       }
-      document.getElementById("poolTbody").innerHTML = rows.map(pool => `
-        <tr>
-          <td>${pool.id}</td>
-          <td>${pool.name}</td>
-          <td>${pool.state === "上架" ? `<span class="tag green">${pool.state}</span>` : `<span class="tag red">${pool.state}</span>`}</td>
-          <td>${pool.source}</td>
-          <td>${cdkeyTypeText(pool)}</td>
-          <td>${pool.total}</td>
-          <td>${pool.available}</td>
-          <td>${pool.issued}</td>
-          <td>${pool.voided}</td>
-          <td>${pool.createdAt || pool.updatedAt}</td>
-          <td>${lastCdkeyOperator(pool)}</td>
-          <td><button class="btn text" type="button" data-pool-id="${pool.id}">确认选择</button></td>
-        </tr>`).join("");
-      document.querySelectorAll("[data-pool-id]").forEach(btn => btn.addEventListener("click", () => selectPool(btn.dataset.poolId)));
+      const supplierNames = cdkeySupplierNamesForMode("接口直供");
+      const rows = cdkeyRouteDraft.length ? cdkeyRouteDraft.map((route, index) => {
+        if (cdkeyRouteMethodDraft === "码池供货") {
+          return `<div class="cdkey-route-row pool">
+            <input class="cdkey-route-sort" type="number" min="1" placeholder="排序值" value="${route.sort || ""}" data-route-index="${index}" data-route-field="sort">
+            <input maxlength="64" placeholder="请输入旧码池 ID" value="${route.poolId || ""}" data-route-index="${index}" data-route-field="poolId">
+            <button class="btn text danger" type="button" data-route-remove="${index}">删除</button>
+          </div>`;
+        }
+        return `<div class="cdkey-route-row direct">
+          <input class="cdkey-route-sort" type="number" min="1" placeholder="排序值" value="${route.sort || ""}" data-route-index="${index}" data-route-field="sort">
+          <select data-route-index="${index}" data-route-field="supplier"><option value="">选择供应商</option>${supplierNames.map(name => `<option value="${name}" ${route.supplier === name ? "selected" : ""}>${name}</option>`).join("")}</select>
+          <input maxlength="20" placeholder="输入三方商品编码" value="${route.productId || ""}" data-route-index="${index}" data-route-field="productId">
+          <button class="btn text danger" type="button" data-route-remove="${index}">删除</button>
+        </div>`;
+      }).join("") : `<div class="release-empty">未配置，请添加货源。</div>`;
+      area.innerHTML = `<div class="cdkey-route-list">${rows}<button class="btn text" type="button" id="addCdkeyRouteSourceBtn">添加货源</button><div class="hint-text">排序值越大越优先；必须为正整数且不可重复。</div></div>`;
+      area.querySelectorAll("[data-route-field]").forEach(control => {
+        control.addEventListener(control.tagName === "SELECT" ? "change" : "input", updateCdkeyRouteDraft);
+      });
+      area.querySelectorAll("[data-route-remove]").forEach(button => button.addEventListener("click", removeCdkeyRouteSource));
+      document.getElementById("addCdkeyRouteSourceBtn")?.addEventListener("click", addCdkeyRouteSource);
     }
 
-    function selectPool(poolId) {
-      const row = skuRows[currentEditingSkuIndex];
-      if (!row || !isCdkeyDelivery(row.delivery)) return;
-      const pool = getPoolById(poolId);
-      const selectableError = cdkeyPoolSelectableError(pool, row.skuId || "");
-      if (selectableError) return toast(selectableError);
-      row.cdkeyPoolId = poolId;
-      row.cdkeyPoolCheck = checkCdkeyPool(poolId);
-      if (row.cdkeyPoolCheck.ok) {
-        const bindingError = cdkeyPoolBindingError(poolId, row.skuId);
-        if (bindingError) row.cdkeyPoolCheck = { status: "失败", ok: false, message: bindingError };
+    function updateCdkeyRouteMethod(event) {
+      const nextMethod = event.target.value;
+      if (cdkeyRouteDraft.length && nextMethod !== cdkeyRouteMethodDraft) {
+        event.target.value = cdkeyRouteMethodDraft;
+        return toast("请先删除全部已添加货源，再切换供货方式。");
       }
+      cdkeyRouteMethodDraft = nextMethod;
+      renderCdkeyRouteAddArea();
+    }
+
+    function ensureSupplierProductRouteSource(supplier, product) {
+      const managedSource = poolMocks.find(source => cdkeySupplyMode(source) === "接口直供" && source.supplier === supplier && String(source.supplierSku) === String(product.productId));
+      if (managedSource) return managedSource;
+      const supplierIndex = Math.max(1, Object.keys(cdkeySupplierCatalog).indexOf(supplier) + 1);
+      const sourceId = `SUPPLIER_PRODUCT_${supplierIndex}_${product.productId}`;
+      let source = skuDirectRouteSources.find(item => item.id === sourceId);
+      if (!source) {
+        source = {
+          id: sourceId,
+          name: `${supplier} · ${product.name}`,
+          state: "上架",
+          providerType: "三方供应商",
+          supplyMode: "接口直供",
+          supplier,
+          supplierProduct: product.name,
+          supplierSku: product.productId,
+          interfaceConfig: cdkeySupplierCatalog[supplier]?.interfaceConfig || "",
+          total: 0,
+          available: 0,
+          issued: 0
+        };
+        skuDirectRouteSources.push(source);
+      }
+      return source;
+    }
+
+    function addCdkeyRouteSource() {
+      if (!cdkeyRouteMethodDraft) return toast("请先选择供货方式。");
+      cdkeyRouteDraft.push(cdkeyRouteMethodDraft === "码池供货"
+        ? { sourceId: "", sort: "", poolId: "" }
+        : { sourceId: "", sort: "", supplier: "", productId: "" });
+      renderCdkeyRouteAddArea();
+    }
+
+    function updateCdkeyRouteDraft(event) {
+      const index = Number(event.currentTarget.dataset.routeIndex);
+      const field = event.currentTarget.dataset.routeField;
+      if (!cdkeyRouteDraft[index]) return;
+      cdkeyRouteDraft[index][field] = event.currentTarget.value;
+      cdkeyRouteDraft[index].sourceId = "";
+    }
+
+    function removeCdkeyRouteSource(event) {
+      const index = Number(event.currentTarget.dataset.routeRemove);
+      if (!cdkeyRouteDraft[index]) return;
+      cdkeyRouteDraft.splice(index, 1);
+      renderCdkeyRouteAddArea();
+    }
+
+    function renderPoolTable() {
+      renderCdkeyRouteAddArea();
+    }
+
+    function confirmCdkeyRouteConfig() {
+      const row = skuRows[currentEditingSkuIndex];
+      if (!row || !requiresCdkeySourceConfig(row, valueOf("formType"))) return;
+      if (!cdkeyRouteMethodDraft) return toast("请选择供货方式。");
+      if (!cdkeyRouteDraft.length) return toast("请至少添加 1 个货源。");
+      const sources = [];
+      const sortValues = new Set();
+      for (let index = 0; index < cdkeyRouteDraft.length; index += 1) {
+        const route = cdkeyRouteDraft[index];
+        const sort = String(route.sort || "").trim();
+        if (!/^[1-9]\d*$/.test(sort)) return toast(`请填写第 ${index + 1} 条排序值，且必须为正整数。`);
+        if (sortValues.has(sort)) return toast(`排序值 ${sort} 重复，请调整后保存。`);
+        sortValues.add(sort);
+        let source = null;
+        if (cdkeyRouteMethodDraft === "码池供货") {
+          const poolId = String(route.poolId || "").trim();
+          if (!poolId) return toast(`请填写第 ${index + 1} 条旧码池 ID。`);
+          source = poolMocks.find(item => item.id.toUpperCase() === poolId.toUpperCase() && cdkeySupplyMode(item) === "码池供货");
+          if (!source) return toast(`第 ${index + 1} 条旧码池 ID 不存在。`);
+        } else {
+          const supplier = String(route.supplier || "").trim();
+          const productId = String(route.productId || "").trim();
+          if (!supplier) return toast(`请选择第 ${index + 1} 条三方供应商。`);
+          if (!productId) return toast(`请填写第 ${index + 1} 条三方商品编码。`);
+          const product = cdkeySupplierCatalog[supplier]?.products.find(item => String(item.productId) === productId);
+          if (!product) return toast(`第 ${index + 1} 条商品编码不属于所选供应商。`);
+          source = ensureSupplierProductRouteSource(supplier, product);
+        }
+        if (source.state !== "上架") return toast(`第 ${index + 1} 条货源不是上架状态。`);
+        if (sources.some(item => item.source.id === source.id)) return toast(`第 ${index + 1} 条货源重复，请删除重复项。`);
+        sources.push({ source, sort: Number(sort) });
+      }
+      sources.sort((a, b) => b.sort - a.sort);
+      const sourceIds = sources.map(item => item.source.id);
+      row.cdkeySourceIds = sourceIds;
+      row.cdkeySourceRoutes = sources.map(item => ({ sourceId: item.source.id, sort: item.sort }));
+      row.cdkeyPoolId = sourceIds[0];
+      row.cdkeySupplyMethod = cdkeyRouteMethodDraft;
+      row.cdkeyPoolCheck = { status: "通过", ok: true, message: `已配置 ${sourceIds.length} 个货源` };
+      if (row.deliveryParams?.cdkey) row.deliveryParams.cdkey.poolId = sourceIds[0];
       closeModal("poolModal");
       renderSkuEdit();
       renderInventoryConfig();
-      toast(row.cdkeyPoolCheck.ok ? "码池 ID 已回填并校验通过。" : row.cdkeyPoolCheck.message);
+      toast("CDKey 货源配置已保存。");
     }
 
     function buildFormProduct() {
@@ -8796,33 +9243,16 @@
       return `SPU${max + 1}`;
     }
 
-    function resolveCdkeyState(rows, inventories) {
+    function resolveCdkeyState(rows, inventories, productType) {
       const cdkeyRows = rows
         .map((row, index) => ({ row, index }))
-        .filter(item => isCdkeyDelivery(item.row.delivery));
+        .filter(item => requiresCdkeySourceConfig(item.row, productType));
       if (!cdkeyRows.length) return "-";
-
-      for (const { row } of cdkeyRows) {
-        const poolId = row.cdkeyPoolId || row.deliveryParams?.cdkey?.poolId || "";
-        if (!poolId) return "码池未配置";
-      }
-
-      for (const { row } of cdkeyRows) {
-        const poolId = row.cdkeyPoolId || row.deliveryParams?.cdkey?.poolId || "";
-        if (!getPoolById(poolId)) return "码池不存在";
-      }
-
-      for (const { row } of cdkeyRows) {
-        const pool = getPoolById(row.cdkeyPoolId || row.deliveryParams?.cdkey?.poolId || "");
-        if (pool.state !== "上架") return "码池不可用";
-      }
-
-      for (const { row } of cdkeyRows) {
-        const pool = getPoolById(row.cdkeyPoolId || row.deliveryParams?.cdkey?.poolId || "");
-        if (pool.available <= 0) return "CDKey 不足";
-      }
-
-      return "码池可用";
+      const statuses = cdkeyRows.map(({ row }) => evaluateCdkeySourceRoute(skuCdkeySourceIds(row)).productStatus);
+      if (statuses.includes("CDKey 不足")) return "CDKey 不足";
+      const invalid = statuses.find(status => !["货源可用", "接口实时判断"].includes(status));
+      if (invalid) return invalid;
+      return statuses.includes("接口实时判断") ? "接口实时判断" : "货源可用";
     }
 
     function createProductFromForm(state) {
@@ -8840,7 +9270,7 @@
           dailyReleases: next.stockMode === "不限量" ? [] : normalizeDailyReleaseRows(next.dailyReleases || [])
         };
       });
-      const cdkeyState = resolveCdkeyState(skuRows, savedInventoryRows);
+      const cdkeyState = resolveCdkeyState(skuRows, savedInventoryRows, type);
       const spuTemplate = getSpuTemplate(type);
       const product = {
         spu,
@@ -8874,7 +9304,7 @@
         logs: [
           { time: nowText(), user: "平台运营", type: editingProduct ? "编辑基础信息" : "新建商品", object: spu, before: editingProduct ? editingProduct.name : "-", after: valueOf("formName"), remark: state === "上架" ? "保存并上架" : "保存草稿" },
           { time: nowText(), user: "平台运营", type: "SKU 配置变更", object: `${spu} / SKU`, before: "-", after: skuSummaryText(), remark: "新建 / 编辑页保存" },
-          { time: nowText(), user: "平台运营", type: "履约方式变更", object: spu, before: "-", after: normalizeDelivery(delivery), remark: isCdkeyDelivery(delivery) ? "仅自动履约（CDKey）商品的 SKU 需要配置码池 ID" : "自动履约（虚拟道具）和手动履约（实物）无需在商品中心配置履约参数" }
+          { time: nowText(), user: "平台运营", type: "履约方式变更", object: spu, before: "-", after: normalizeDelivery(delivery), remark: requiresCdkeySourceConfig({ delivery }, type) ? "CDKEY 商品或自动履约（CDKey）的 SKU 需要配置货源" : "自动履约（虚拟道具）和手动履约（实物）无需在商品中心配置履约参数" }
         ]
       };
       return product;
@@ -8887,7 +9317,7 @@
       if (virtualTypes.includes(valueOf("formType")) && !materialAssets.detail.length) issues.push("权益素材缺失");
       if (!skuRows.length) issues.push("SKU 配置缺失");
       if (!getFormDelivery()) issues.push("履约方式缺失");
-      if (isCdkeyDelivery(getFormDelivery()) && skuRows.some(s => !(s.cdkeyPoolId || s.deliveryParams?.cdkey?.poolId))) issues.push("CDKey 码池未配置");
+      if (skuRows.some(s => requiresCdkeySourceConfig(s, valueOf("formType")) && !skuCdkeySourceIds(s).length)) issues.push("CDKey 货源未配置");
       if (!buildStockFromInventoryRows()) issues.push("初始库存配置缺失");
       return issues;
     }
@@ -9030,7 +9460,7 @@
         activeAttrs.forEach(attr => {
           if (attr.required !== false && !row.attributeValues?.[attr.code]) markInvalidElement(`[data-sku="${index}"][data-attr="${attr.code}"]`);
         });
-        if (isCdkeyDelivery(getFormDelivery()) && !(row.cdkeyPoolId || row.deliveryParams?.cdkey?.poolId)) markInvalidElement(`[data-sku="${index}"][data-cdkey-pool="${index}"]`);
+        if (requiresCdkeySourceConfig(row, valueOf("formType")) && !skuCdkeySourceIds(row).length) markInvalidElement(`[data-select-pool="${index}"]`);
       });
       inventoryRows.forEach((row, index) => {
         if (!isCdkeyInventoryRow(index, row) && row.stockMode === "限量" && !/^[1-9]\d*$/.test(String(row.totalStock))) markInvalidElement(`[data-inv="${index}"][data-inv-field="totalStock"]`);
@@ -9064,7 +9494,8 @@
         if (product.issues.includes("商品说明缺失")) list.push(["商品素材", "商品说明缺失", "请补充商品说明富文本"]);
         if (product.issues.includes("权益素材缺失")) list.push(["虚拟权益素材", "虚拟装扮类商品缺少商品详情图", "请补充商品详情图"]);
         if (product.issues.includes("履约方式缺失")) list.push(["履约方式", "履约方式缺失", "请配置履约方式"]);
-        if (product.issues.includes("CDKey 码池未配置")) list.push(["CDKey 码池", "CDKey SKU 未填写码池 ID", "请填写可用的 CDKey 码池 ID"]);
+        if (product.issues.includes("CDKey 货源未配置")) list.push(["CDKey 货源配置", "CDKey SKU 未配置货源", "请至少选择 1 个上架货源"]);
+        if (product.issues.includes("CDKey 码池未配置")) list.push(["CDKey 货源配置", "CDKey SKU 未配置货源", "请至少选择 1 个上架货源"]);
         if (product.cdkey === "码池未配置") list.push(["CDKey 码池", "CDKey SKU 未填写码池 ID", "请填写可用的 CDKey 码池 ID"]);
         if (product.cdkey === "码池不存在") list.push(["CDKey 码池", "CDKey SKU 配置的码池 ID 不存在", "请检查码池 ID 是否正确"]);
         if (product.cdkey === "码池不可用") list.push(["CDKey 码池", "CDKey SKU 配置的码池不是上架状态", "请更换上架状态的码池"]);
@@ -9103,6 +9534,7 @@
 
     function stockText(stock) {
       if (!stock) return `<span class="tag orange">未配置</span>`;
+      if (stock.interfaceRealtime) return "不限量（接口实时判断）";
       if (stock.unlimited) return `含不限量 SKU；限量可用 ${stock.available}，锁定 ${stock.locked}`;
       return `可用 ${stock.available}，锁定 ${stock.locked}`;
     }
@@ -9320,6 +9752,32 @@
       return isPointsOrder(order) ? "退回积分" : "原路退款";
     }
 
+    function isCdkeyOrder(order) {
+      return order?.productType === "CDKey" || isCdkeyDelivery(order?.fulfill);
+    }
+
+    function cdkeyExtractStatus(order) {
+      if (!isCdkeyOrder(order)) return "不适用";
+      if (order.extractStatus) return order.extractStatus;
+      if (fulfilledOrderQuantity(order) <= 0) return "待发码";
+      return "待提取";
+    }
+
+    function cdkeyExtractStatusTag(order) {
+      const status = cdkeyExtractStatus(order);
+      if (status === "不适用") return "-";
+      const cls = status === "已提取" ? "green" : status === "待提取" ? "purple" : status === "部分可提取" ? "blue" : "orange";
+      return `<span class="tag ${cls}">${status}</span>`;
+    }
+
+    function isCdkeyRefundLocked(order) {
+      return isCdkeyOrder(order) && cdkeyExtractStatus(order) === "已提取";
+    }
+
+    function canExtractCdkeyOrder(order) {
+      return isCdkeyOrder(order) && cdkeyExtractStatus(order) === "待提取" && fulfilledOrderQuantity(order) > 0;
+    }
+
     function isOrderFulfillmentFailed(order) {
       return order.fulfillmentStatus === "履约失败";
     }
@@ -9329,7 +9787,7 @@
     }
 
     function canRefundBackorder(order) {
-      return order.orderScene === "缺货下单" && order.status === "已支付" && order.fulfillmentStatus === "待履约";
+      return !isCdkeyRefundLocked(order) && order.orderScene === "缺货下单" && order.status === "已支付" && order.fulfillmentStatus === "待履约";
     }
 
     function canShipPhysicalOrder(order) {
@@ -9421,6 +9879,7 @@
 
     function orderActionHtml(order) {
       const actions = [`<button class="btn text" data-mall-order-detail="${order.no}">详情</button>`];
+      if (canExtractCdkeyOrder(order)) actions.push(`<button class="btn text" data-mall-order-extract="${order.no}">客户端提取演示</button>`);
       if (canHandleOrderFulfillmentFailure(order)) {
         actions.push(`<button class="btn text" data-mall-order-retry="${order.no}">重新发放</button>`);
         actions.push(`<button class="btn text danger" data-mall-order-refund="${order.no}">${refundActionLabel(order)}</button>`);
@@ -9445,13 +9904,15 @@
       const currencyType = valueOf("mallOrderCurrencyFilter");
       const paymentMethod = valueOf("mallOrderPaymentMethodFilter");
       const delivery = valueOf("mallOrderDeliveryFilter");
+      const extractStatus = valueOf("mallOrderExtractFilter");
       return mallOrders.filter(order => (!no || order.no.includes(no))
         && (!user || [order.userId, order.nnNo, order.phone].some(field => field.includes(user)))
         && (!status || operationalOrderStatus(order) === status)
         && (!product || order.product.includes(product))
         && (!currencyType || order.currencyType === currencyType)
         && (!paymentMethod || order.paymentMethod === paymentMethod)
-        && (!delivery || order.fulfill === delivery));
+        && (!delivery || order.fulfill === delivery)
+        && (!extractStatus || cdkeyExtractStatus(order) === extractStatus));
     }
 
     function renderOrderManagementTable() {
@@ -9460,10 +9921,10 @@
         <tr>
           <td>${order.no}</td><td>${orderBusinessSource(order)}</td><td>${order.userId}</td><td>${order.nnNo}</td><td>${order.phone}</td><td>${order.product}</td>
           <td>${order.quantity}</td><td>${order.orderScene || "现货下单"}</td><td>${formatOrderAmount(order)}</td><td>${paymentMethodTag(order.paymentMethod)}</td>
-          <td>${deliveryTag(order.fulfill)}</td><td>${orderStatusTag(operationalOrderStatus(order), order.status)}</td>
+          <td>${deliveryTag(order.fulfill)}</td><td>${orderStatusTag(operationalOrderStatus(order), order.status)}</td><td>${cdkeyExtractStatusTag(order)}</td>
           <td>${order.created}</td><td>${order.updated}</td><td>${orderActionHtml(order)}</td>
         </tr>
-      `).join("") : `<tr><td colspan="15"><div class="empty">当前筛选条件下暂无订单</div></td></tr>`;
+      `).join("") : `<tr><td colspan="16"><div class="empty">当前筛选条件下暂无订单</div></td></tr>`;
       document.getElementById("orderTableCount").textContent = `共 ${rows.length} 条`;
       document.getElementById("orderStatTotal").textContent = rows.length;
       document.getElementById("orderStatPending").textContent = rows.filter(order => operationalOrderStatus(order) === "待支付").length;
@@ -9473,7 +9934,7 @@
     }
 
     function resetOrderManagementFilters() {
-      ["mallOrderNoFilter", "mallOrderUserFilter", "mallOrderProductFilter", "mallOrderStatusFilter", "mallOrderCurrencyFilter", "mallOrderPaymentMethodFilter", "mallOrderDeliveryFilter"].forEach(id => document.getElementById(id).value = "");
+      ["mallOrderNoFilter", "mallOrderUserFilter", "mallOrderProductFilter", "mallOrderStatusFilter", "mallOrderCurrencyFilter", "mallOrderPaymentMethodFilter", "mallOrderDeliveryFilter", "mallOrderExtractFilter"].forEach(id => document.getElementById(id).value = "");
       renderOrderManagementTable();
       toast("订单筛选项已重置。");
     }
@@ -9566,6 +10027,55 @@
       </section>`;
     }
 
+    function maskPhoneNumber(phone) {
+      const value = String(phone || "");
+      return value.length === 11 ? `${value.slice(0, 3)}****${value.slice(-4)}` : value || "-";
+    }
+
+    function cdkeyExtractionAuditHtml(order) {
+      const logs = cdkeyExtractionLogs.filter(log => log.orderNo === order.no);
+      if (!logs.length) return `<div class="hint-text">暂无提取记录；用户尚未查看完整卡密。</div>`;
+      return `<div class="table-wrap"><table><thead><tr><th>操作</th><th>手机号校验</th><th>实名校验</th><th>结果</th><th>渠道</th><th>时间</th></tr></thead><tbody>${logs.map(log => `<tr><td>${log.action}</td><td>${log.phoneResult}</td><td>${log.realNameResult}</td><td>${log.result}</td><td>${log.channel}</td><td>${log.time}</td></tr>`).join("")}</tbody></table></div>`;
+    }
+
+    function supplierRequestSnapshotSection(order) {
+      if (!isCdkeyOrder(order) || order.supplyMode !== "接口直供") return "";
+      return detailSection("供应商接口请求快照", `${infoGrid([
+        ["供应商", order.supplier || "-"],
+        ["供应商商品", order.supplierProduct || "-"],
+        ["product_id", order.supplierProductId || "-"],
+        ["customer_order_no", order.no],
+        ["buy_num", order.quantity],
+        ["调用结果", order.supplierRequestResult || order.fulfillResult || "-"]
+      ])}<div class="hint-text">product_id 来自货源配置；customer_order_no 与 buy_num 在订单履约时动态生成并随订单快照保存。</div>`);
+    }
+
+    function cdkeyOrderResponsibilitySection(order) {
+      if (!isCdkeyOrder(order)) return "";
+      const locked = isCdkeyRefundLocked(order);
+      const rule = locked
+        ? `<div class="alert warning">用户已主动提取卡密，普通退款已关闭。仅卡密失效、无法兑换等异常可进入售后；需核验卡密状态或取得供应商核验结果。</div>`
+        : `<div class="alert info">用户尚未提取完整卡密。完成手机号与实名校验并确认责任提示后，才可展示卡密；提取成功后普通退款入口关闭。</div>`;
+      return `<section class="drawer-section">
+        <div class="drawer-section-heading"><h3>卡密提取与退款责任</h3><span class="drawer-section-summary">${cdkeyExtractStatusTag(order)}</span></div>
+        <div class="section-content">
+          ${infoGrid([
+            ["命中货源", `${order.supplySourceName || "-"} / ${order.supplyMode || "-"}`],
+            ["卡密（脱敏）", order.maskedCdkey || "-"],
+            ["手机号校验", order.phoneVerifiedAt && order.phoneVerifiedAt !== "-" ? `已通过 · ${order.phoneVerifiedAt}` : "未校验"],
+            ["实名校验", order.realNameVerifiedAt && order.realNameVerifiedAt !== "-" ? `已通过 · ${order.realNameVerifiedAt}` : "未校验"],
+            ["提取时间", order.extractedAt || "-"],
+            ["普通退款资格", locked ? "不可退款" : "可按订单规则处理"],
+            ["卡密异常状态", order.codeIssueStatus || "未提取"],
+            ["提取渠道", order.extractionChannel || "-"]
+          ])}
+          ${rule}
+          <div class="table-title" style="margin-top:14px">提取审计记录</div>
+          ${cdkeyExtractionAuditHtml(order)}
+        </div>
+      </section>`;
+    }
+
     function openOrderManagementDetail(orderNo) {
       const order = mallOrders.find(item => item.no === orderNo);
       if (!order) return;
@@ -9573,10 +10083,13 @@
       document.getElementById("orderDetailBody").innerHTML = `
         ${detailSection("订单概览", orderOverviewHtml(order))}
         ${orderFulfillmentDetailSection(order)}
+        ${supplierRequestSnapshotSection(order)}
+        ${cdkeyOrderResponsibilitySection(order)}
         ${isPhysicalOrder(order) ? detailSection("收货及物流信息", infoGrid(orderPhysicalShippingItems(order))) : ""}
         ${isPhysicalOrder(order) ? detailSection("收货信息修改审计", orderAddressAuditHtml(order)) : ""}
       `;
       const actions = [`<button class="btn" data-close-order-detail>关闭</button>`];
+      if (canExtractCdkeyOrder(order)) actions.push(`<button class="btn primary" data-mall-order-extract="${order.no}">打开客户端提取演示</button>`);
       if (canHandleOrderFulfillmentFailure(order)) {
         actions.push(`<button class="btn primary" data-mall-order-retry="${order.no}">重新发放</button>`);
         actions.push(`<button class="btn danger" data-mall-order-refund="${order.no}">${refundActionLabel(order)}</button>`);
@@ -9591,10 +10104,85 @@
       openDrawer("orderDetailDrawer");
     }
 
+    function renderCdkeyExtractionForm(order) {
+      document.getElementById("cdkeyExtractTitle").textContent = "客户端 · 提取卡密";
+      document.getElementById("cdkeyExtractBody").innerHTML = `
+        <div class="info-grid" id="cdkeyExtractOrderInfo">${[
+          ["订单号", order.no], ["商品", order.product], ["卡密状态", cdkeyExtractStatus(order)], ["手机号", maskPhoneNumber(order.phone)]
+        ].map(([label, value]) => `<div class="info-item"><div class="info-label">${label}</div><div class="info-value">${value}</div></div>`).join("")}</div>
+        <div class="alert warning" style="margin-top:14px">提取前须完成手机号与实名校验。提取成功后视为用户已获取卡密，普通退款入口关闭；仅卡密失效、无法兑换等异常可申请售后核验。</div>
+        <div class="form-grid" style="margin-top:14px">
+          <div class="field"><label>手机号</label><input id="cdkeyExtractPhone" value="${maskPhoneNumber(order.phone)}" disabled></div>
+          <div class="field"><label><span class="required-star">*</span>短信验证码</label><div class="file-action-row"><input id="cdkeyExtractSmsCode" maxlength="6" placeholder="原型验证码 123456"><button class="btn" id="sendCdkeySmsBtn" type="button">获取验证码</button></div></div>
+          <div class="field"><label>实名状态</label><div class="file-action-row"><input id="cdkeyExtractRealName" value="待校验" disabled><button class="btn" id="verifyCdkeyRealNameBtn" type="button">校验实名</button></div></div>
+        </div>
+        <label class="checkline" style="margin-top:14px"><input type="checkbox" id="cdkeyExtractConsent">我已确认：提取卡密后不可普通退款；卡密异常需提交售后核验。</label>`;
+      document.getElementById("cdkeyExtractActions").innerHTML = `<button class="btn" data-close-modal="cdkeyExtractModal">取消</button><button class="btn primary" id="confirmCdkeyExtractBtn">确认提取卡密</button>`;
+      document.getElementById("sendCdkeySmsBtn").onclick = sendCdkeyExtractSmsCode;
+      document.getElementById("verifyCdkeyRealNameBtn").onclick = verifyCdkeyExtractRealName;
+      document.getElementById("confirmCdkeyExtractBtn").onclick = confirmCdkeyExtraction;
+    }
+
+    function openCdkeyExtractModal(orderNo) {
+      const order = mallOrders.find(item => item.no === orderNo);
+      if (!order || !canExtractCdkeyOrder(order)) return toast("该订单当前不可提取卡密。");
+      const modal = document.getElementById("cdkeyExtractModal");
+      modal.dataset.orderNo = order.no;
+      modal.dataset.smsSent = "false";
+      modal.dataset.realNameVerified = "false";
+      renderCdkeyExtractionForm(order);
+      closeAllLayers();
+      openModal("cdkeyExtractModal");
+    }
+
+    function sendCdkeyExtractSmsCode() {
+      const modal = document.getElementById("cdkeyExtractModal");
+      modal.dataset.smsSent = "true";
+      const button = document.getElementById("sendCdkeySmsBtn");
+      if (button) button.textContent = "已发送";
+      toast("验证码已发送；原型验证码为 123456。");
+    }
+
+    function verifyCdkeyExtractRealName() {
+      const modal = document.getElementById("cdkeyExtractModal");
+      modal.dataset.realNameVerified = "true";
+      const input = document.getElementById("cdkeyExtractRealName");
+      if (input) input.value = "已实名 · 与当前账号一致";
+      const button = document.getElementById("verifyCdkeyRealNameBtn");
+      if (button) button.textContent = "校验通过";
+      toast("实名信息校验通过。");
+    }
+
+    function confirmCdkeyExtraction() {
+      const modal = document.getElementById("cdkeyExtractModal");
+      const order = mallOrders.find(item => item.no === modal.dataset.orderNo);
+      if (!order || !canExtractCdkeyOrder(order)) return toast("该订单当前不可提取卡密。");
+      if (modal.dataset.smsSent !== "true" || valueOf("cdkeyExtractSmsCode") !== "123456") return toast("请先完成手机号验证码校验；原型验证码为 123456。");
+      if (modal.dataset.realNameVerified !== "true") return toast("请先完成当前账号实名校验。");
+      if (!document.getElementById("cdkeyExtractConsent")?.checked) return toast("请确认提取后的退款责任提示。");
+      const time = nowText();
+      order.extractStatus = "已提取";
+      order.phoneVerifiedAt = time;
+      order.realNameVerifiedAt = time;
+      order.extractedAt = time;
+      order.extractionChannel = "客户端订单详情";
+      order.codeIssueStatus = "正常";
+      order.updated = time;
+      cdkeyExtractionLogs.unshift({ orderNo: order.no, action: "提取成功", phoneResult: "通过", realNameResult: "通过", result: "已向用户展示卡密", time, channel: order.extractionChannel });
+      document.getElementById("cdkeyExtractTitle").textContent = "卡密提取成功";
+      document.getElementById("cdkeyExtractBody").innerHTML = `
+        <div class="alert success">手机号与实名校验通过，已记录提取时间与客户端入口。</div>
+        ${infoGrid([["订单号", order.no], ["商品", order.product], ["完整卡密", `<b>${order.fullCdkey || order.maskedCdkey}</b>`], ["提取时间", time]])}
+        <div class="alert warning" style="margin-top:14px">当前订单普通退款入口已关闭。如卡密失效或无法兑换，请发起卡密异常售后并完成核验。</div>`;
+      document.getElementById("cdkeyExtractActions").innerHTML = `<button class="btn primary" data-close-modal="cdkeyExtractModal">完成</button>`;
+      renderOrderManagementTable();
+    }
+
     function openOrderActionConfirm(action, orderNo) {
       const order = mallOrders.find(item => item.no === orderNo);
       const isRefund = action === "refund";
       if (!order) return toast("当前订单已不支持该处理动作。");
+      if (isRefund && isCdkeyRefundLocked(order)) return toast("用户已提取卡密，普通退款已关闭；仅卡密异常可进入售后核验。");
       const actionAllowed = isRefund ? (canHandleOrderFulfillmentFailure(order) || canRefundBackorder(order)) : canHandleOrderFulfillmentFailure(order);
       if (!actionAllowed) return toast("当前订单已不支持该处理动作。");
       const refundLabel = refundActionLabel(order);
@@ -9624,6 +10212,10 @@
       const modal = document.getElementById("orderActionConfirmModal");
       const order = mallOrders.find(item => item.no === modal.dataset.orderNo);
       if (!order) return;
+      if (modal.dataset.action === "refund" && isCdkeyRefundLocked(order)) {
+        closeModal("orderActionConfirmModal");
+        return toast("用户已提取卡密，普通退款已关闭；请转卡密异常售后核验。");
+      }
       const time = nowText();
       if (modal.dataset.action === "retry") {
         order.status = "已支付";
@@ -9774,6 +10366,8 @@
       const target = event.target;
       const detail = target.closest("[data-mall-order-detail]");
       if (detail) return openOrderManagementDetail(detail.dataset.mallOrderDetail);
+      const extract = target.closest("[data-mall-order-extract]");
+      if (extract) return openCdkeyExtractModal(extract.dataset.mallOrderExtract);
       const retry = target.closest("[data-mall-order-retry]");
       if (retry) return openOrderActionConfirm("retry", retry.dataset.mallOrderRetry);
       const refund = target.closest("[data-mall-order-refund]");
@@ -9788,9 +10382,10 @@
     function exportOrderManagementRecords() {
       const rows = getFilteredMallOrders().map(order => [
         order.no, orderBusinessSource(order), order.userId, order.nnNo, order.phone, order.product, order.quantity, order.orderScene || "现货下单", formatOrderAmount(order), order.paymentMethod, order.fulfill, operationalOrderStatus(order), order.status,
+        cdkeyExtractStatus(order), order.phoneVerifiedAt || "-", order.realNameVerifiedAt || "-", order.extractedAt || "-", isCdkeyRefundLocked(order) ? "普通退款关闭" : "按订单规则处理",
         fulfilledOrderQuantity(order), pendingOrderQuantity(order), order.quotaReservationId || "-", order.created, order.updated
       ]);
-      downloadPrototypeCsv("订单列表", ["订单号", "业务来源", "用户ID", "用户NN号", "用户手机号", "商品名称", "数量", "下单场景", "支付金额", "支付方式", "履约方式", "订单状态", "技术订单状态", "已履约数量", "待履约数量", "待履约额度占用记录ID", "创建时间", "更新时间"], rows);
+      downloadPrototypeCsv("订单列表", ["订单号", "业务来源", "用户ID", "用户NN号", "用户手机号", "商品名称", "数量", "下单场景", "支付金额", "支付方式", "履约方式", "订单状态", "技术订单状态", "卡密提取状态", "手机号校验时间", "实名校验时间", "卡密提取时间", "普通退款资格", "已履约数量", "待履约数量", "待履约额度占用记录ID", "创建时间", "更新时间"], rows);
     }
     function stateTag(state) {
       const cls = state === "上架" ? "green" : state === "草稿" ? "orange" : state === "下架" ? "" : "";
@@ -9805,7 +10400,8 @@
     }
     function cdkeyTag(status) {
       if (status === "-") return "-";
-      if (status === "码池可用") return `<span class="tag green">${status}</span>`;
+      if (["码池可用", "货源可用"].includes(status)) return `<span class="tag green">${status}</span>`;
+      if (status === "接口实时判断") return `<span class="tag blue">${status}</span>`;
       if (status === "CDKey 不足") return `<span class="tag red">${status}</span>`;
       return `<span class="tag orange">${status}</span>`;
     }
