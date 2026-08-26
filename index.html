@@ -9890,7 +9890,6 @@
 
     function orderActionHtml(order) {
       const actions = [`<button class="btn text" data-mall-order-detail="${order.no}">详情</button>`];
-      if (canExtractCdkeyOrder(order)) actions.push(`<button class="btn text" data-mall-order-extract="${order.no}">客户端提取演示</button>`);
       if (canHandleOrderFulfillmentFailure(order)) {
         actions.push(`<button class="btn text" data-mall-order-retry="${order.no}">重新发放</button>`);
         actions.push(`<button class="btn text danger" data-mall-order-refund="${order.no}">${refundActionLabel(order)}</button>`);
@@ -10078,7 +10077,6 @@
         ${isPhysicalOrder(order) ? detailSection("收货信息修改审计", orderAddressAuditHtml(order)) : ""}
       `;
       const actions = [`<button class="btn" data-close-order-detail>关闭</button>`];
-      if (canExtractCdkeyOrder(order)) actions.push(`<button class="btn primary" data-mall-order-extract="${order.no}">打开客户端提取演示</button>`);
       if (canHandleOrderFulfillmentFailure(order)) {
         actions.push(`<button class="btn primary" data-mall-order-retry="${order.no}">重新发放</button>`);
         actions.push(`<button class="btn danger" data-mall-order-refund="${order.no}">${refundActionLabel(order)}</button>`);
@@ -10355,8 +10353,6 @@
       const target = event.target;
       const detail = target.closest("[data-mall-order-detail]");
       if (detail) return openOrderManagementDetail(detail.dataset.mallOrderDetail);
-      const extract = target.closest("[data-mall-order-extract]");
-      if (extract) return openCdkeyExtractModal(extract.dataset.mallOrderExtract);
       const retry = target.closest("[data-mall-order-retry]");
       if (retry) return openOrderActionConfirm("retry", retry.dataset.mallOrderRetry);
       const refund = target.closest("[data-mall-order-refund]");
