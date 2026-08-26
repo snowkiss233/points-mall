@@ -330,7 +330,11 @@
     .template-attr-table th:nth-child(5),
     .template-attr-table td:nth-child(5) { width: 190px; }
     .sku-attr-select-table { min-width: 900px; }
-    .order-fulfillment-detail-table { min-width: 620px; }
+    .order-fulfillment-detail-table { min-width: 760px; }
+    .order-fulfillment-detail-table th:first-child,
+    .order-fulfillment-detail-table td:first-child { width: 190px; }
+    .order-fulfillment-detail-table th:last-child,
+    .order-fulfillment-detail-table td:last-child { width: 110px; }
     .checkbox-grid {
       display: flex;
       gap: 10px;
@@ -7819,6 +7823,20 @@
     function infoGrid(items) {
       return `<div class="info-grid">${items.map(([label, value]) => `<div class="info-item"><div class="info-label">${label}</div><div class="info-value">${value}</div></div>`).join("")}</div>`;
     }
+    function orderCdkeyPoolOverview(order) {
+      const legacySnapshot = {
+        "NN加速器3天卡": { id: "ACCELERATOR_3D_POOL", name: "NN 加速器 3 天码池", supplyMode: "码池供货" },
+        "NN加速器30天卡": { id: "ACCELERATOR_30D_POOL", name: "NN 加速器 30 天码池", supplyMode: "码池供货" }
+      }[order.product];
+      const sourceId = order.cdkeyPoolId || order.supplySourceId || legacySnapshot?.id || "";
+      const source = sourceId ? getPoolById(sourceId) : null;
+      const sourceName = order.supplySourceName || source?.name || legacySnapshot?.name || "-";
+      const supplyMode = order.supplyMode || source?.supplyMode || legacySnapshot?.supplyMode || "-";
+      if (supplyMode === "接口直供") {
+        return `<div>不适用（接口直供）</div><div class="minor">货源：${sourceName}${sourceId ? `（${sourceId}）` : ""}</div>`;
+      }
+      return sourceId ? `${sourceName}（${sourceId}）` : "-";
+    }
     function orderOverviewHtml(order) {
       return `
         <div class="order-overview-group order-overview-status">
@@ -7836,7 +7854,8 @@
             ["商品", order.product], ["商品快照", order.productSnapshot], ["购买数量", `${order.quantity} 件`],
             ["货币类型", order.currencyType], ["单件支付金额", formatOrderAmount(order, order.unitAmount)],
             ["支付金额", formatOrderAmount(order)], ["支付方式", paymentMethodTag(order.paymentMethod)],
-            ["履约方式", deliveryTag(order.fulfill)]
+            ["履约方式", deliveryTag(order.fulfill)],
+            ...((order.productType === "CDKey" || isCdkeyDelivery(order.fulfill)) ? [["码池信息（码池 ID）", orderCdkeyPoolOverview(order)]] : [])
           ])}
         </div>
         <div class="order-overview-group">
@@ -9960,18 +9979,19 @@
       return `<span class="tag ${cls}">${status}</span>`;
     }
 
-    function fulfilledChildResult(order) {
-      if (order.productType === "CDKey") {
-        return cdkeyExtractStatus(order) === "已提取" ? "CDKey 已提取" : "CDKey 已备妥，待用户提取";
+    function childFulfillmentProductInfo(order) {
+      const details = [order.productSnapshot || order.product || "-", "数量：1"];
+      const maskedCdkey = String(order.maskedCdkey || "");
+      if (order.productType === "CDKey" && Number(order.quantity || 1) === 1 && maskedCdkey && maskedCdkey !== "-") {
+        details.push(`CDKey：${maskedCdkey}`);
       }
-      if (order.productType === "虚拟道具") return order.bagAsset && order.bagAsset !== "-" ? `已发放：${order.bagAsset}` : "权益已发放至用户背包";
-      if (isPhysicalOrder(order)) return "用户已确认收货";
-      return order.fulfillResult || "履约完成";
+      return details.join(" / ");
     }
 
-    function pendingChildResult(order) {
-      if (isPhysicalOrder(order)) return "未发货";
-      return "未发放";
+    function childFulfillmentResult(order, outcome) {
+      const success = outcome === "履约成功";
+      const deliveryText = success ? "已交付" : "未交付";
+      return `<span class="tag ${success ? "green" : "red"}">${outcome}</span><div class="minor" style="margin-top:4px">${deliveryText}：${childFulfillmentProductInfo(order)}</div>`;
     }
 
     function pendingChildDescription(order) {
@@ -9990,14 +10010,17 @@
         && (!order.fulfillmentStatus || order.fulfillmentStatus === "-");
       return Array.from({ length: total }, (_, index) => {
         const childNo = `${order.no}-${String(index + 1).padStart(2, "0")}`;
-        if (notEntered) return { childNo, sequence: index + 1, status: "未进入履约", description: order.reason || "订单未进入履约", result: "未进入履约" };
-        if (order.fulfillmentStatus === "无需履约") return { childNo, sequence: index + 1, status: "无需履约", description: "该商品无需履约", result: "无需履约" };
-        if (index < fulfilledCount) return { childNo, sequence: index + 1, status: "履约完成", description: isPhysicalOrder(order) ? "用户已确认收货" : "履约完成", result: fulfilledChildResult(order) };
-        if (fulfillmentException) return { childNo, sequence: index + 1, status: "履约异常", description: orderExceptionReason(order), result: order.fulfillResult || "履约失败" };
-        if (isPartial) return { childNo, sequence: index + 1, status: "待履约", description: pendingChildDescription(order), result: pendingChildResult(order) };
-        if (isAwaitingReceiptOrder(order)) return { childNo, sequence: index + 1, status: "履约中", description: "已统一发货，待用户确认收货", result: "已统一发货" };
-        if (order.fulfillmentStatus === "履约中") return { childNo, sequence: index + 1, status: "履约中", description: "履约处理中", result: order.fulfillResult || "履约处理中" };
-        return { childNo, sequence: index + 1, status: "待履约", description: pendingChildDescription(order), result: pendingChildResult(order) };
+        if (notEntered) return { childNo, sequence: index + 1, status: "未进入履约", description: order.reason || "订单未进入履约", result: "-" };
+        if (order.fulfillmentStatus === "无需履约") return { childNo, sequence: index + 1, status: "无需履约", description: "该商品无需履约", result: "-" };
+        if (index < fulfilledCount) return { childNo, sequence: index + 1, status: "履约完成", description: "-", result: childFulfillmentResult(order, "履约成功") };
+        if (fulfillmentException) {
+          const terminalFailure = order.fulfillmentStatus === "履约失败";
+          return { childNo, sequence: index + 1, status: "履约异常", description: orderExceptionReason(order), result: terminalFailure ? childFulfillmentResult(order, "履约失败") : "-" };
+        }
+        if (isPartial) return { childNo, sequence: index + 1, status: "待履约", description: pendingChildDescription(order), result: "-" };
+        if (isAwaitingReceiptOrder(order)) return { childNo, sequence: index + 1, status: "履约中", description: "已统一发货，待用户确认收货", result: "-" };
+        if (order.fulfillmentStatus === "履约中") return { childNo, sequence: index + 1, status: "履约中", description: order.reason && order.reason !== "-" ? order.reason : "履约处理中", result: "-" };
+        return { childNo, sequence: index + 1, status: "待履约", description: pendingChildDescription(order), result: "-" };
       });
     }
 
@@ -10013,9 +10036,9 @@
 
     function orderFulfillmentDetailTable(order) {
       const rows = orderChildFulfillmentRows(order);
-      return `<div class="hint-text" style="margin-bottom:10px">父订单按单数量 SKU 拆分；每个子订单代表 1 个 SKU 数量，履约说明和履约结果仅描述当前子订单。</div>
-        <div class="table-wrap"><table class="order-fulfillment-detail-table"><thead><tr><th>子订单号</th><th>履约说明</th><th>履约结果</th></tr></thead><tbody>
-        ${rows.map(row => `<tr><td>${row.childNo}</td><td>${row.description || "-"}</td><td>${row.result || "-"}</td></tr>`).join("")}
+      return `<div class="hint-text" style="margin-bottom:10px">父订单按单数量 SKU 拆分；履约说明展示当前过程、异常原因或处理中信息，履约结果仅在终态展示成功/失败及对应商品信息。</div>
+        <div class="table-wrap"><table class="order-fulfillment-detail-table"><thead><tr><th>子订单号</th><th>履约说明</th><th>履约结果</th><th>履约状态</th></tr></thead><tbody>
+        ${rows.map(row => `<tr><td>${row.childNo}</td><td>${row.description || "-"}</td><td>${row.result || "-"}</td><td>${childFulfillmentStatusTag(row.status)}</td></tr>`).join("")}
         </tbody></table></div>`;
     }
 
