@@ -1181,7 +1181,7 @@
               <div class="field"><label>货币类型</label><select id="mallOrderCurrencyFilter"><option value="">全部</option><option>积分</option><option>人民币</option></select></div>
               <div class="field"><label>支付方式</label><select id="mallOrderPaymentMethodFilter"><option value="">全部</option><option>积分支付</option><option>支付宝</option><option>微信支付</option></select></div>
               <div class="field"><label>履约方式</label><select id="mallOrderDeliveryFilter"><option value="">全部</option><option>自动履约（虚拟道具）</option><option>自动履约（CDKey）</option><option>手动履约（实物）</option></select></div>
-              <div class="field"><label>卡密提取状态</label><select id="mallOrderExtractFilter"><option value="">全部</option><option>待发码</option><option>待提取</option><option>部分可提取</option><option>已提取</option></select></div>
+              <div class="field"><label>CDKey 提取状态</label><select id="mallOrderExtractFilter"><option value="">全部</option><option>待发码</option><option>待提取</option><option>已提取</option></select></div>
             </div>
             <div class="filter-actions">
               <button class="btn primary" id="searchOrdersBtn">查询</button>
@@ -1202,7 +1202,7 @@
           <div class="table-head"><div><div class="table-title">订单列表</div><div class="table-meta">列表按父订单号展示；履约信息按单数量 SKU 拆分后在订单详情中查看。</div></div><div class="table-meta" id="orderTableCount">共 0 条</div></div>
           <div class="table-wrap">
             <table class="order-management-table">
-              <thead><tr><th>订单号</th><th>业务来源</th><th>用户ID</th><th>用户NN号</th><th>用户手机号</th><th>商品名称</th><th>数量</th><th>下单场景</th><th>支付金额</th><th>支付方式</th><th>履约方式</th><th>订单状态</th><th>卡密提取状态</th><th>创建时间</th><th>更新时间</th><th>操作</th></tr></thead>
+              <thead><tr><th>订单号</th><th>业务来源</th><th>用户ID</th><th>用户NN号</th><th>用户手机号</th><th>商品名称</th><th>数量</th><th>下单场景</th><th>支付金额</th><th>支付方式</th><th>履约方式</th><th>订单状态</th><th>CDKey 提取状态</th><th>创建时间</th><th>更新时间</th><th>操作</th></tr></thead>
               <tbody id="orderManagementTbody"></tbody>
             </table>
           </div>
@@ -1697,7 +1697,7 @@
               <div class="field"><label>业务来源</label><select id="deliveryFilterSource"></select></div>
               <div class="field"><label>商品类型</label><select id="deliveryFilterType"></select></div>
               <div class="field"><label>履约方式</label><select id="deliveryFilterMethod"></select></div>
-              <div class="field"><label>履约等待原因</label><select id="deliveryFilterWaitingReason"><option>全部</option><option>等待CDKey补货</option><option>等待普通库存补货</option><option>等待人工履约</option></select></div>
+              <div class="field"><label>履约等待原因</label><select id="deliveryFilterWaitingReason"><option>全部</option><option>等待 CDKey补货</option><option>等待普通库存补货</option><option>等待人工履约</option></select></div>
               <div class="field"><label>CDKey 码池 ID</label><input id="deliveryFilterPool" placeholder="请输入码池 ID"></div>
               <div class="field"><label>履约时间</label><input id="deliveryFilterDelivered" placeholder="开始时间 - 结束时间"></div>
             </div>
@@ -2299,18 +2299,18 @@
   </aside>
 
   <section class="modal wide" id="cdkeyExtractModal" role="dialog" aria-modal="true">
-    <div class="modal-head"><span id="cdkeyExtractTitle">客户端 · 提取卡密</span><button class="btn text" data-close-modal="cdkeyExtractModal">关闭</button></div>
+    <div class="modal-head"><span id="cdkeyExtractTitle">客户端 · 提取 CDKey</span><button class="btn text" data-close-modal="cdkeyExtractModal">关闭</button></div>
     <div class="modal-body" id="cdkeyExtractBody">
       <div class="info-grid" id="cdkeyExtractOrderInfo"></div>
-      <div class="alert warning" style="margin-top:14px">提取前须完成手机号与实名校验。提取成功后视为用户已获取卡密，普通退款入口关闭；仅卡密失效、无法兑换等异常可申请售后核验。</div>
+      <div class="alert warning" style="margin-top:14px">提取前须完成手机号与实名校验。提取成功后视为用户已获取 CDKey，普通退款入口关闭；仅 CDKey 失效、无法兑换等异常可申请售后核验。</div>
       <div class="form-grid" style="margin-top:14px">
         <div class="field"><label>手机号</label><input id="cdkeyExtractPhone" disabled></div>
         <div class="field"><label><span class="required-star">*</span>短信验证码</label><div class="file-action-row"><input id="cdkeyExtractSmsCode" maxlength="6" placeholder="原型验证码 123456"><button class="btn" id="sendCdkeySmsBtn" type="button">获取验证码</button></div></div>
         <div class="field"><label>实名状态</label><div class="file-action-row"><input id="cdkeyExtractRealName" value="待校验" disabled><button class="btn" id="verifyCdkeyRealNameBtn" type="button">校验实名</button></div></div>
       </div>
-      <label class="checkline" style="margin-top:14px"><input type="checkbox" id="cdkeyExtractConsent">我已确认：提取卡密后不可普通退款；卡密异常需提交售后核验。</label>
+      <label class="checkline" style="margin-top:14px"><input type="checkbox" id="cdkeyExtractConsent">我已确认：提取 CDKey 后不可普通退款；CDKey 异常需提交售后核验。</label>
     </div>
-    <div class="modal-foot" id="cdkeyExtractActions"><button class="btn" data-close-modal="cdkeyExtractModal">取消</button><button class="btn primary" id="confirmCdkeyExtractBtn">确认提取卡密</button></div>
+    <div class="modal-foot" id="cdkeyExtractActions"><button class="btn" data-close-modal="cdkeyExtractModal">取消</button><button class="btn primary" id="confirmCdkeyExtractBtn">确认提取 CDKey</button></div>
   </section>
 
   <section class="modal wide" id="userPointsModal" role="dialog" aria-modal="true">
@@ -2429,12 +2429,12 @@
       { id: "FL20260703005", userId: "U100862", nnNo: "NN100862", phone: "13888888888", type: "获取", amount: 500, balance: 1700, source: "活动增量", time: "2026-07-03 10:23:15", desc: "活动奖励发放" }
     ];
     let mallOrders = [
-      { no: "ORD20260706001", userId: "U100862", nnNo: "NN100862", phone: "13888888888", nick: "李四", product: "NN加速器3天卡", productSnapshot: "NN加速器3天卡 / 规格：3天 / 类型：CDKey", productType: "CDKey", quantity: 1, currencyType: "积分", paymentMethod: "积分支付", unitAmount: 500, paymentAmount: 500, inventoryType: "CDKey码池库存", acquireForm: "发放至客户端订单，用户主动提取后查看卡密", fulfillmentChannel: "客户端订单", fulfill: DELIVERY_AUTO_CDKEY, status: "已完成", fulfillmentStatus: "履约完成", supplyMode: "码池供货", supplySourceId: "ACCELERATOR_3D_POOL", supplySourceName: "NN 加速器 3 天码池", extractStatus: "已提取", phoneVerifiedAt: "2026-07-06 09:48:11", realNameVerifiedAt: "2026-07-06 09:48:13", extractedAt: "2026-07-06 09:48:16", extractionChannel: "客户端订单详情", codeIssueStatus: "正常", reason: "-", paymentResult: "积分扣减成功：-500 积分", stockResult: "库存已扣减：-1", fulfillResult: "CDKey 发放成功", retrySummary: "无需重试", maskedCdkey: "NN3D-****-8K2Q", fullCdkey: "NN3D-7P9A-8K2Q", created: "2026-07-06 09:45:33", updated: "2026-07-06 09:48:16", completed: "2026-07-06 09:45:58" },
-      { no: "ORD20260706004", userId: "U100869", nnNo: "NN100869", phone: "13912345678", nick: "陈十一", product: "300 G-COIN", productSnapshot: "300 G-COIN / 规格：300 G-COIN / 类型：CDKey", productType: "CDKey", quantity: 1, currencyType: "人民币", paymentMethod: "微信支付", unitAmount: 24.9, paymentAmount: 24.9, inventoryType: "接口直供", acquireForm: "发放至客户端订单，用户主动提取后查看卡密", fulfillmentChannel: "客户端订单", fulfill: DELIVERY_AUTO_CDKEY, status: "已完成", fulfillmentStatus: "履约完成", supplyMode: "接口直供", supplySourceId: "PUBG_VENDOR_API", supplySourceName: "星核 G-COIN 官方直供", supplier: "星核卡券", supplierProduct: "PUBG 300 G-COIN", supplierProductId: "1153796224", supplierRequestResult: "取码成功", extractStatus: "待提取", phoneVerifiedAt: "-", realNameVerifiedAt: "-", extractedAt: "-", extractionChannel: "-", codeIssueStatus: "未提取", reason: "-", paymentResult: "微信支付成功：¥24.90", stockResult: "接口直供，不维护本地库存数量", fulfillResult: "供应商取码成功，待用户提取", retrySummary: "无需重试", maskedCdkey: "PUBG-****-P7Q2", fullCdkey: "PUBG-GC30-X91M-P7Q2", created: "2026-07-06 09:18:20", updated: "2026-07-06 09:18:31", completed: "2026-07-06 09:18:31" },
+      { no: "ORD20260706001", userId: "U100862", nnNo: "NN100862", phone: "13888888888", nick: "李四", product: "NN加速器3天卡", productSnapshot: "NN加速器3天卡 / 规格：3天 / 类型：CDKey", productType: "CDKey", quantity: 1, currencyType: "积分", paymentMethod: "积分支付", unitAmount: 500, paymentAmount: 500, inventoryType: "CDKey 码池库存", acquireForm: "发放至客户端订单，用户主动提取后查看 CDKey", fulfillmentChannel: "客户端订单", fulfill: DELIVERY_AUTO_CDKEY, status: "已完成", fulfillmentStatus: "履约完成", supplyMode: "码池供货", supplySourceId: "ACCELERATOR_3D_POOL", supplySourceName: "NN 加速器 3 天码池", extractStatus: "已提取", phoneVerifiedAt: "2026-07-06 09:48:11", realNameVerifiedAt: "2026-07-06 09:48:13", extractedAt: "2026-07-06 09:48:16", extractionChannel: "客户端订单详情", codeIssueStatus: "正常", reason: "-", paymentResult: "积分扣减成功：-500 积分", stockResult: "库存已扣减：-1", fulfillResult: "CDKey 发放成功", retrySummary: "无需重试", maskedCdkey: "NN3D-****-8K2Q", fullCdkey: "NN3D-7P9A-8K2Q", created: "2026-07-06 09:45:33", updated: "2026-07-06 09:48:16", completed: "2026-07-06 09:45:58" },
+      { no: "ORD20260706004", userId: "U100869", nnNo: "NN100869", phone: "13912345678", nick: "陈十一", product: "300 G-COIN", productSnapshot: "300 G-COIN / 规格：300 G-COIN / 类型：CDKey", productType: "CDKey", quantity: 1, currencyType: "人民币", paymentMethod: "微信支付", unitAmount: 24.9, paymentAmount: 24.9, inventoryType: "接口直供", acquireForm: "发放至客户端订单，用户主动提取后查看 CDKey", fulfillmentChannel: "客户端订单", fulfill: DELIVERY_AUTO_CDKEY, status: "已完成", fulfillmentStatus: "履约完成", supplyMode: "接口直供", supplySourceId: "PUBG_VENDOR_API", supplySourceName: "星核 G-COIN 官方直供", supplier: "星核卡券", supplierProduct: "PUBG 300 G-COIN", supplierProductId: "1153796224", supplierRequestResult: "取码成功", extractStatus: "待提取", phoneVerifiedAt: "-", realNameVerifiedAt: "-", extractedAt: "-", extractionChannel: "-", codeIssueStatus: "未提取", reason: "-", paymentResult: "微信支付成功：¥24.90", stockResult: "接口直供，不维护本地库存数量", fulfillResult: "供应商取码成功，待用户提取", retrySummary: "无需重试", maskedCdkey: "PUBG-****-P7Q2", fullCdkey: "PUBG-GC30-X91M-P7Q2", created: "2026-07-06 09:18:20", updated: "2026-07-06 09:18:31", completed: "2026-07-06 09:18:31" },
       { no: "ORD20260706002", userId: "U100863", nnNo: "NN100863", phone: "13966666666", nick: "王五", product: "星耀头像框30天", productSnapshot: "星耀头像框30天 / 类型：虚拟道具 / 权益：社区身份装饰", productType: "虚拟道具", quantity: 1, currencyType: "人民币", paymentMethod: "微信支付", unitAmount: 12.9, paymentAmount: 12.9, inventoryType: "无限库存", acquireForm: "发放至用户背包，用户在社区装扮中启用", fulfillmentChannel: "背包发放", fulfill: DELIVERY_AUTO_VIRTUAL, status: "异常", fulfillmentStatus: "履约中", reason: "履约结果不确定，待人工确认", paymentResult: "微信支付成功：¥12.90", stockResult: "无限库存，无需占用", fulfillResult: "履约超时，结果待确认", retrySummary: "等待重试，已重试 1/3", bagAsset: "头像框权益待确认", created: "2026-07-06 08:30:15", updated: "2026-07-06 08:36:20", completed: "-" },
       { no: "ORD20260706003", userId: "U100864", nnNo: "NN100864", phone: "13733333333", nick: "赵六", product: "NN加速器30天卡", productSnapshot: "NN加速器30天卡 / 规格：30天 / 类型：CDKey", productType: "CDKey", quantity: 1, currencyType: "人民币", paymentMethod: "支付宝", unitAmount: 29.9, paymentAmount: 29.9, inventoryType: "有限库存", acquireForm: "发放至用户背包，用户进入背包查看兑换码", fulfillmentChannel: "背包发放", fulfill: DELIVERY_AUTO_CDKEY, status: "支付失败", fulfillmentStatus: "-", reason: "支付宝支付失败，库存已释放", paymentResult: "支付宝支付失败", stockResult: "库存已释放", fulfillResult: "未进入履约发放", retrySummary: "无需重试", maskedCdkey: "-", created: "2026-07-06 07:12:08", updated: "2026-07-06 07:12:21", completed: "-" },
-      { no: "ORD20260705004", userId: "U100862", nnNo: "NN100862", phone: "13888888888", nick: "李四", product: "加速卡 7 天", productSnapshot: "加速卡 7 天 / 规格：7天 / 类型：CDKey", productType: "CDKey", quantity: 1, currencyType: "积分", paymentMethod: "积分支付", unitAmount: 800, paymentAmount: 800, inventoryType: "CDKey码池库存", acquireForm: "发放至客户端订单，用户主动提取后查看卡密", fulfillmentChannel: "客户端订单", fulfill: DELIVERY_AUTO_CDKEY, status: "已支付", fulfillmentStatus: "待履约", extractStatus: "待发码", supplyMode: "码池供货", supplySourceId: "ACCELERATOR_7D_POOL", supplySourceName: "加速卡 7 天码池", orderScene: "缺货下单", waitingReason: "等待CDKey补货", pendingQuantity: 1, quotaReservationId: "PFR-20260705004", queueNo: 1, cdkeyPoolId: "ACCELERATOR_7D_POOL", reason: "等待CDKey补货", paymentResult: "积分扣减成功：-800 积分", stockResult: "未占用CDKey；已占用待履约额度：1", fulfillResult: "待码池补货后自动发放", retrySummary: "等待补货，不进入失败重试", maskedCdkey: "-", created: "2026-07-05 16:20:10", updated: "2026-07-05 16:20:18", completed: "-" },
-      { no: "ORD20260705006", businessSource: "积分商城", userId: "U100867", nnNo: "NN100867", phone: "13488888888", nick: "吴九", product: "NN加速器7天卡", productSnapshot: "NN加速器7天卡 / 规格：7天 / 类型：CDKey", productType: "CDKey", quantity: 10, currencyType: "积分", paymentMethod: "积分支付", unitAmount: 800, paymentAmount: 8000, inventoryType: "CDKey码池库存", acquireForm: "发放至客户端订单，用户主动提取后查看卡密", fulfillmentChannel: "客户端订单", fulfill: DELIVERY_AUTO_CDKEY, status: "已支付", fulfillmentStatus: "履约中", extractStatus: "部分可提取", supplyMode: "码池供货", supplySourceId: "ACCELERATOR_7D_POOL", supplySourceName: "加速卡 7 天码池", orderScene: "缺货下单", fulfilledQuantity: 5, pendingQuantity: 5, waitingReason: "剩余5个等待CDKey补货", quotaReservationId: "PFR-20260705006", queueNo: 2, cdkeyPoolId: "ACCELERATOR_7D_POOL", reason: "已履约5个，剩余5个等待CDKey补货", paymentResult: "积分扣减成功：-8000 积分", stockResult: "已扣减5个CDKey；剩余5个待补货", fulfillResult: "已自动发放5个CDKey，剩余5个待履约", retrySummary: "剩余数量等待补货，不进入失败重试", maskedCdkey: "已发放5个（详情见履约记录）", created: "2026-07-05 15:30:10", updated: "2026-07-05 15:35:22", completed: "-" },
+      { no: "ORD20260705004", userId: "U100862", nnNo: "NN100862", phone: "13888888888", nick: "李四", product: "加速卡 7 天", productSnapshot: "加速卡 7 天 / 规格：7天 / 类型：CDKey", productType: "CDKey", quantity: 1, currencyType: "积分", paymentMethod: "积分支付", unitAmount: 800, paymentAmount: 800, inventoryType: "CDKey 码池库存", acquireForm: "发放至客户端订单，用户主动提取后查看 CDKey", fulfillmentChannel: "客户端订单", fulfill: DELIVERY_AUTO_CDKEY, status: "已支付", fulfillmentStatus: "待履约", extractStatus: "待发码", supplyMode: "码池供货", supplySourceId: "ACCELERATOR_7D_POOL", supplySourceName: "加速卡 7 天码池", orderScene: "缺货下单", waitingReason: "等待 CDKey补货", pendingQuantity: 1, quotaReservationId: "PFR-20260705004", queueNo: 1, cdkeyPoolId: "ACCELERATOR_7D_POOL", reason: "等待 CDKey补货", paymentResult: "积分扣减成功：-800 积分", stockResult: "未占用 CDKey；已占用待履约额度：1", fulfillResult: "待码池补货后自动发放", retrySummary: "等待补货，不进入失败重试", maskedCdkey: "-", created: "2026-07-05 16:20:10", updated: "2026-07-05 16:20:18", completed: "-" },
+      { no: "ORD20260705006", businessSource: "积分商城", userId: "U100867", nnNo: "NN100867", phone: "13488888888", nick: "吴九", product: "NN加速器7天卡", productSnapshot: "NN加速器7天卡 / 规格：7天 / 类型：CDKey", productType: "CDKey", quantity: 10, currencyType: "积分", paymentMethod: "积分支付", unitAmount: 800, paymentAmount: 8000, inventoryType: "CDKey 码池库存", acquireForm: "发放至客户端订单，用户主动提取后查看 CDKey", fulfillmentChannel: "客户端订单", fulfill: DELIVERY_AUTO_CDKEY, status: "已支付", fulfillmentStatus: "履约中", extractStatus: "待发码", supplyMode: "码池供货", supplySourceId: "ACCELERATOR_7D_POOL", supplySourceName: "加速卡 7 天码池", orderScene: "缺货下单", fulfilledQuantity: 5, pendingQuantity: 5, waitingReason: "剩余5个等待 CDKey补货", quotaReservationId: "PFR-20260705006", queueNo: 2, cdkeyPoolId: "ACCELERATOR_7D_POOL", reason: "已履约5个，剩余5个等待 CDKey补货", paymentResult: "积分扣减成功：-8000 积分", stockResult: "已扣减5个 CDKey；剩余5个待补货", fulfillResult: "已自动发放5个 CDKey，剩余5个待履约", retrySummary: "剩余数量等待补货，不进入失败重试", maskedCdkey: "已发放5个（详情见履约记录）", created: "2026-07-05 15:30:10", updated: "2026-07-05 15:35:22", completed: "-" },
       { no: "ORD20260705005", userId: "U100863", nnNo: "NN100863", phone: "13966666666", nick: "王五", product: "星耀昵称挂件7天", productSnapshot: "星耀昵称挂件7天 / 类型：虚拟道具 / 权益：昵称装饰", productType: "虚拟道具", quantity: 1, currencyType: "人民币", paymentMethod: "支付宝", unitAmount: 6.9, paymentAmount: 6.9, inventoryType: "无限库存", acquireForm: "发放至用户背包，用户在社区装扮中启用", fulfillmentChannel: "背包发放", fulfill: DELIVERY_AUTO_VIRTUAL, status: "已支付", fulfillmentStatus: "履约失败", reason: "自动重试已达上限", paymentResult: "支付宝支付成功：¥6.90", stockResult: "无限库存，无需占用", fulfillResult: "履约失败，待人工处理", retrySummary: "已达自动重试上限 3/3", bagAsset: "-", created: "2026-07-05 15:08:20", updated: "2026-07-05 15:18:02", completed: "-" },
       { no: "ORD20260704005", businessSource: "暑期周边兑换活动", userId: "U100865", nnNo: "NN100865", phone: "13677777777", nick: "孙七", product: "NN定制鼠标垫", productSnapshot: "NN定制鼠标垫 / 类型：实物商品 / 规格：900x400mm", productType: "实物商品", quantity: 1, currencyType: "人民币", paymentMethod: "支付宝", unitAmount: 49.9, paymentAmount: 49.9, inventoryType: "有限库存", acquireForm: "用户填写收货地址后发货", fulfillmentChannel: "实物履约 / 物流发货", addressStatus: "未填写", recipient: "-", recipientPhone: "-", address: "-", logisticsCompany: "-", trackingNo: "-", fulfill: DELIVERY_MANUAL_PHYSICAL, status: "已支付", fulfillmentStatus: "待履约", reason: "等待用户在客户端订单填写收货地址", paymentResult: "支付宝支付成功：¥49.90", stockResult: "库存已占用：1", fulfillResult: "待用户提交收货地址", retrySummary: "实物履约-地址未填写", created: "2026-07-04 10:00:00", updated: "2026-07-04 10:00:09", completed: "-" },
       { no: "ORD20260703006", businessSource: "社区装扮焕新活动", userId: "U100866", nnNo: "NN100866", phone: "13588888888", nick: "周八", product: "社区身份装饰权益", productSnapshot: "社区身份装饰权益 / 类型：虚拟道具 / 权益：身份标识与资料卡装饰", productType: "虚拟道具", quantity: 1, currencyType: "积分", paymentMethod: "积分支付", unitAmount: 500, paymentAmount: 500, inventoryType: "无限库存", acquireForm: "发放至用户背包，用户在社区身份装饰中启用", fulfillmentChannel: "背包发放", fulfill: DELIVERY_AUTO_VIRTUAL, status: "已完成", fulfillmentStatus: "履约完成", reason: "-", paymentResult: "积分扣减成功：-500 积分", stockResult: "无限库存，无需占用", fulfillResult: "背包发放成功", retrySummary: "无需重试", bagAsset: "社区身份装饰权益 x1", created: "2026-07-03 09:15:42", updated: "2026-07-03 09:15:58", completed: "2026-07-03 09:15:58" },
@@ -2681,7 +2681,7 @@
     ];
     let deliveryRecords = [
       makeDeliveryRecord({ recordId: "DEL-202605220001", orderId: "ORD-202605220001", exchangeNo: "EXC-202605220001", userId: "10023888", spu: "SPU10002", skuId: "SPU10002-SKU01", deliveryMethod: DELIVERY_AUTO_CDKEY, deliveryState: "已履约", quantity: 3, payAmount: 9000, inventoryFlowId: "FLOW-000012", cdkeyPoolId: "PUBG_GCOIN_300_POOL", cdkeyBatchId: "BATCH-PUBG-202605-001", maskedCdkey: "PUBG-****-****-8K29", createdAt: "2026-05-22 16:20", deliveredAt: "2026-05-22 16:21", updatedAt: "2026-05-22 16:21", remark: "CDKey 已履约 3 个" }),
-      makeDeliveryRecord({ recordId: "DEL-202607050004", orderId: "ORD20260705004", exchangeNo: "EXC-202607050004", userId: "U100862", userNnNo: "NN100862", userPhone: "13888888888", spu: "SPU10003", skuId: "SPU10003-SKU01", deliveryMethod: DELIVERY_AUTO_CDKEY, deliveryState: "待履约", orderScene: "缺货下单", waitingReason: "等待CDKey补货", pendingQuantity: 1, queueNo: 1, quotaReservationId: "PFR-20260705004", payAmount: 800, inventoryFlowId: "-", cdkeyPoolId: "ACCELERATOR_7D_POOL", cdkeyBatchId: "", maskedCdkey: "-", failureReason: "", createdAt: "2026-07-05 16:20:18", deliveredAt: "-", updatedAt: "2026-07-05 16:20:18", remark: "支付成功，已占用待履约额度，等待码池补货" }),
+      makeDeliveryRecord({ recordId: "DEL-202607050004", orderId: "ORD20260705004", exchangeNo: "EXC-202607050004", userId: "U100862", userNnNo: "NN100862", userPhone: "13888888888", spu: "SPU10003", skuId: "SPU10003-SKU01", deliveryMethod: DELIVERY_AUTO_CDKEY, deliveryState: "待履约", orderScene: "缺货下单", waitingReason: "等待 CDKey补货", pendingQuantity: 1, queueNo: 1, quotaReservationId: "PFR-20260705004", payAmount: 800, inventoryFlowId: "-", cdkeyPoolId: "ACCELERATOR_7D_POOL", cdkeyBatchId: "", maskedCdkey: "-", failureReason: "", createdAt: "2026-07-05 16:20:18", deliveredAt: "-", updatedAt: "2026-07-05 16:20:18", remark: "支付成功，已占用待履约额度，等待码池补货" }),
       makeDeliveryRecord({ recordId: "DEL-202605220003", orderId: "ORD-202605220003", exchangeNo: "EXC-202605220003", businessSource: "xx活动", userId: "10023890", spu: "SPU10001", skuId: "SPU10001-SKU01", deliveryMethod: DELIVERY_AUTO_VIRTUAL, deliveryState: "已履约", payAmount: 800, inventoryFlowId: "FLOW-000014", autoResourceId: "RESOURCE_AVATAR_FRAME_7D", createdAt: "2026-05-22 17:10", deliveredAt: "2026-05-22 17:10", updatedAt: "2026-05-22 17:10", remark: "权益服务已履约" }),
       makeDeliveryRecord({ recordId: "DEL-202605220004", orderId: "ORD-202605220004", exchangeNo: "EXC-202605220004", userId: "10023891", spu: "SPU10007", skuId: "SPU10007-SKU01", deliveryMethod: DELIVERY_AUTO_VIRTUAL, deliveryState: "待履约", payAmount: 800, inventoryFlowId: "FLOW-000015", autoResourceId: "RESOURCE_ENTRANCE_EFFECT_7D", callbackState: "等待回调", createdAt: "2026-05-22 17:20", deliveredAt: "-", updatedAt: "2026-05-22 17:20", remark: "等待权益服务回调" }),
       makeDeliveryRecord({ recordId: "DEL-202605220005", orderId: "ORD-202605220005", exchangeNo: "EXC-202605220005", userId: "10023892", spu: "SPU10008", skuId: "SPU10008-SKU01", deliveryMethod: DELIVERY_AUTO_CDKEY, deliveryState: "履约失败", payAmount: 800, inventoryFlowId: "FLOW-000016", failureReason: "CDKey 码池未配置", createdAt: "2026-05-22 17:28", deliveredAt: "-", updatedAt: "2026-05-22 17:28", remark: "商品码池配置缺失" }),
@@ -2704,7 +2704,7 @@
     ];
     let cdkeyLogs = [];
     let cdkeyExtractionLogs = [
-      { orderNo: "ORD20260706001", action: "提取成功", phoneResult: "通过", realNameResult: "通过", result: "已向用户展示卡密", time: "2026-07-06 09:48:16", channel: "客户端订单详情" }
+      { orderNo: "ORD20260706001", action: "提取成功", phoneResult: "通过", realNameResult: "通过", result: "已向用户展示 CDKey", time: "2026-07-06 09:48:16", channel: "客户端订单详情" }
     ];
     let visibleProducts = [...products];
     let visibleTemplates = [...attributeTemplates];
@@ -3379,7 +3379,7 @@
     function pendingCdkeyRecordsForPool(poolId) {
       return deliveryRecords.filter(record => record.cdkeyPoolId === poolId
         && record.deliveryState === "待履约"
-        && record.waitingReason === "等待CDKey补货");
+        && record.waitingReason === "等待 CDKey补货");
     }
 
     function pendingCdkeyCountForPool(poolId) {
@@ -6151,7 +6151,7 @@
       const cdkeyNotice = isCdkeyDelivery(delivery)
         ? hasDirectSupply
           ? `<div class="alert info">该 SKU 的货源路由包含接口直供，库存显示为“不限量（接口实时判断）”；平台不维护供应商库存数量，实际是否有货以下单履约时的接口结果为准。</div>`
-          : `<div class="alert info">该 SKU 仅使用码池供货，总库存和可用库存由关联码池同步。补货、核销和卡密维护请前往 CDKey 货源列表。</div>`
+          : `<div class="alert info">该 SKU 仅使用码池供货，总库存和可用库存由关联码池同步。补货、核销和 CDKey 维护请前往 CDKey 货源列表。</div>`
         : "";
       const physicalNotice = isPhysicalDelivery(delivery) ? `<div class="alert info">库存列表只维护实物商品可兑换库存，不承接用户收货地址、物流单号和完整发货流程；收货地址与发货状态由订单 / 履约后台承接。</div>` : "";
       document.getElementById("inventoryDetailBody").innerHTML = `
@@ -6806,7 +6806,7 @@
 
     function deliveryAdvice(record) {
       const reason = record.failureReason || "";
-      if (record.waitingReason === "等待CDKey补货") return "该记录属于正常待履约，请前往 CDKey 码池补货；入库后系统将按支付成功时间 FIFO 自动发放。";
+      if (record.waitingReason === "等待 CDKey补货") return "该记录属于正常待履约，请前往 CDKey 码池补货；入库后系统将按支付成功时间 FIFO 自动发放。";
       if (record.waitingReason) return `该记录正在${record.waitingReason}，请补充对应资源或完成履约。`;
       if (!reason) return "当前履约记录无异常，仅用于查询归档。";
       if (reason.includes("CDKey 可用码不足")) return "请前往 CDKey 码池列表补货或检查码池状态。";
@@ -6954,7 +6954,7 @@
       ];
       if (cdkeySupplyMode(pool) === "码池供货") {
         if (pool.state !== "下架" && pool.stockMethod === "手工上传") actions.push(`<button class="btn text" data-cdkey-action="restock" data-pool-id="${pool.id}">补货</button>`);
-        actions.push(`<button class="btn text" data-cdkey-action="code" data-pool-id="${pool.id}">卡密明细</button>`);
+        actions.push(`<button class="btn text" data-cdkey-action="code" data-pool-id="${pool.id}">CDKey 明细</button>`);
       }
       if (pool.state === "上架") actions.push(`<button class="btn text" data-cdkey-action="disable" data-pool-id="${pool.id}">下架</button>`);
       if (pool.state !== "上架") actions.push(`<button class="btn text" data-cdkey-action="enable" data-pool-id="${pool.id}">上架</button>`);
@@ -7133,7 +7133,7 @@
         : !supplyMode
           ? `${providerType}已选择，请继续选择供货方式。`
           : isPoolSupply
-            ? "供货方和供货方式创建后不可变更。码池供货维护本地卡密库存，安全库存阈值用于触发补货提醒。"
+            ? "供货方和供货方式创建后不可变更。码池供货维护本地 CDKey 库存，安全库存阈值用于触发补货提醒。"
             : "供货方和供货方式创建后不可变更。接口直供不维护供应商库存数量；订单履约时实时取码，当前货源无库存则继续尝试下一货源。";
     }
 
@@ -7146,12 +7146,12 @@
         return;
       }
       if (supplyMode === "接口直供") {
-        body.innerHTML = `<div class="alert info">接口直供无需导入初始卡密，也不维护安全库存。保存并上架后，订单履约时使用供应商商品编码（product_id）取码；外部订单号（customer_order_no）和购买数量（buy_num）由订单动态传入。</div>`;
+        body.innerHTML = `<div class="alert info">接口直供无需导入初始 CDKey，也不维护安全库存。保存并上架后，订单履约时使用供应商商品编码（product_id）取码；外部订单号（customer_order_no）和购买数量（buy_num）由订单动态传入。</div>`;
         return;
       }
       cdkeyStockMethodDraft = selectedMethod || cdkeyStockMethodDraft || "手工上传";
       const stockMethod = cdkeyStockMethodDraft;
-      const methodField = `<div class="form-grid" style="margin-bottom:12px"><div class="field"><label><span class="required-star">*</span>码入库方式</label><select id="cdkeyPoolFormStockMethod"><option value="手工上传" ${stockMethod === "手工上传" ? "selected" : ""}>手工上传</option><option value="平台内部生成" ${stockMethod === "平台内部生成" ? "selected" : ""}>平台内部生成（暂未开放）</option></select><div class="hint-text">该字段定义卡密进入平台码池的方式；创建后不可变更。</div></div></div>`;
+      const methodField = `<div class="form-grid" style="margin-bottom:12px"><div class="field"><label><span class="required-star">*</span>码入库方式</label><select id="cdkeyPoolFormStockMethod"><option value="手工上传" ${stockMethod === "手工上传" ? "selected" : ""}>手工上传</option><option value="平台内部生成" ${stockMethod === "平台内部生成" ? "selected" : ""}>平台内部生成（暂未开放）</option></select><div class="hint-text">该字段定义 CDKey 进入平台码池的方式；创建后不可变更。</div></div></div>`;
       if (stockMethod === "手工上传") {
         body.innerHTML = `
           ${methodField}
@@ -9758,15 +9758,15 @@
 
     function cdkeyExtractStatus(order) {
       if (!isCdkeyOrder(order)) return "不适用";
-      if (order.extractStatus) return order.extractStatus;
-      if (fulfilledOrderQuantity(order) <= 0) return "待发码";
-      return "待提取";
+      if (order.extractStatus === "已提取") return "已提取";
+      const totalQuantity = Math.max(1, Number(order.quantity || 1));
+      return fulfilledOrderQuantity(order) >= totalQuantity ? "待提取" : "待发码";
     }
 
     function cdkeyExtractStatusTag(order) {
       const status = cdkeyExtractStatus(order);
       if (status === "不适用") return "-";
-      const cls = status === "已提取" ? "green" : status === "待提取" ? "purple" : status === "部分可提取" ? "blue" : "orange";
+      const cls = status === "已提取" ? "green" : status === "待提取" ? "purple" : "orange";
       return `<span class="tag ${cls}">${status}</span>`;
     }
 
@@ -9775,7 +9775,8 @@
     }
 
     function canExtractCdkeyOrder(order) {
-      return isCdkeyOrder(order) && cdkeyExtractStatus(order) === "待提取" && fulfilledOrderQuantity(order) > 0;
+      const totalQuantity = Math.max(1, Number(order?.quantity || 1));
+      return isCdkeyOrder(order) && cdkeyExtractStatus(order) === "待提取" && fulfilledOrderQuantity(order) >= totalQuantity;
     }
 
     function isOrderFulfillmentFailed(order) {
@@ -9956,9 +9957,7 @@
 
     function fulfilledChildResult(order) {
       if (order.productType === "CDKey") {
-        return order.maskedCdkey && order.maskedCdkey !== "-" && order.maskedCdkey.includes("****")
-          ? `已发放：${order.maskedCdkey}`
-          : "CDKey 已发放至用户背包";
+        return cdkeyExtractStatus(order) === "已提取" ? "CDKey 已提取" : "CDKey 已备妥，待用户提取";
       }
       if (order.productType === "虚拟道具") return order.bagAsset && order.bagAsset !== "-" ? `已发放：${order.bagAsset}` : "权益已发放至用户背包";
       if (isPhysicalOrder(order)) return "用户已确认收货";
@@ -9972,7 +9971,7 @@
 
     function pendingChildDescription(order) {
       if (isPhysicalOrder(order)) return order.addressStatus === "已填写" ? "待运营发货" : "待用户填写地址";
-      if (order.productType === "CDKey") return order.orderScene === "缺货下单" ? "等待CDKey补货" : "待系统发放";
+      if (order.productType === "CDKey") return order.orderScene === "缺货下单" ? "等待 CDKey补货" : "待系统发放";
       if (order.productType === "虚拟道具") return "待系统发放";
       return order.orderScene === "缺货下单" ? "等待库存补货" : "待系统履约";
     }
@@ -10032,46 +10031,16 @@
       return value.length === 11 ? `${value.slice(0, 3)}****${value.slice(-4)}` : value || "-";
     }
 
-    function cdkeyExtractionAuditHtml(order) {
-      const logs = cdkeyExtractionLogs.filter(log => log.orderNo === order.no);
-      if (!logs.length) return `<div class="hint-text">暂无提取记录；用户尚未查看完整卡密。</div>`;
-      return `<div class="table-wrap"><table><thead><tr><th>操作</th><th>手机号校验</th><th>实名校验</th><th>结果</th><th>渠道</th><th>时间</th></tr></thead><tbody>${logs.map(log => `<tr><td>${log.action}</td><td>${log.phoneResult}</td><td>${log.realNameResult}</td><td>${log.result}</td><td>${log.channel}</td><td>${log.time}</td></tr>`).join("")}</tbody></table></div>`;
-    }
-
-    function supplierRequestSnapshotSection(order) {
-      if (!isCdkeyOrder(order) || order.supplyMode !== "接口直供") return "";
-      return detailSection("供应商接口请求快照", `${infoGrid([
-        ["供应商", order.supplier || "-"],
-        ["供应商商品", order.supplierProduct || "-"],
-        ["product_id", order.supplierProductId || "-"],
-        ["customer_order_no", order.no],
-        ["buy_num", order.quantity],
-        ["调用结果", order.supplierRequestResult || order.fulfillResult || "-"]
-      ])}<div class="hint-text">product_id 来自货源配置；customer_order_no 与 buy_num 在订单履约时动态生成并随订单快照保存。</div>`);
-    }
-
-    function cdkeyOrderResponsibilitySection(order) {
+    function cdkeyExtractionInfoSection(order) {
       if (!isCdkeyOrder(order)) return "";
-      const locked = isCdkeyRefundLocked(order);
-      const rule = locked
-        ? `<div class="alert warning">用户已主动提取卡密，普通退款已关闭。仅卡密失效、无法兑换等异常可进入售后；需核验卡密状态或取得供应商核验结果。</div>`
-        : `<div class="alert info">用户尚未提取完整卡密。完成手机号与实名校验并确认责任提示后，才可展示卡密；提取成功后普通退款入口关闭。</div>`;
       return `<section class="drawer-section">
-        <div class="drawer-section-heading"><h3>卡密提取与退款责任</h3><span class="drawer-section-summary">${cdkeyExtractStatusTag(order)}</span></div>
+        <div class="drawer-section-heading"><h3>CDKey 提取信息</h3><span class="drawer-section-summary">${cdkeyExtractStatusTag(order)}</span></div>
         <div class="section-content">
           ${infoGrid([
             ["命中货源", `${order.supplySourceName || "-"} / ${order.supplyMode || "-"}`],
-            ["卡密（脱敏）", order.maskedCdkey || "-"],
-            ["手机号校验", order.phoneVerifiedAt && order.phoneVerifiedAt !== "-" ? `已通过 · ${order.phoneVerifiedAt}` : "未校验"],
             ["实名校验", order.realNameVerifiedAt && order.realNameVerifiedAt !== "-" ? `已通过 · ${order.realNameVerifiedAt}` : "未校验"],
-            ["提取时间", order.extractedAt || "-"],
-            ["普通退款资格", locked ? "不可退款" : "可按订单规则处理"],
-            ["卡密异常状态", order.codeIssueStatus || "未提取"],
-            ["提取渠道", order.extractionChannel || "-"]
+            ["提取时间", order.extractedAt || "-"]
           ])}
-          ${rule}
-          <div class="table-title" style="margin-top:14px">提取审计记录</div>
-          ${cdkeyExtractionAuditHtml(order)}
         </div>
       </section>`;
     }
@@ -10083,8 +10052,7 @@
       document.getElementById("orderDetailBody").innerHTML = `
         ${detailSection("订单概览", orderOverviewHtml(order))}
         ${orderFulfillmentDetailSection(order)}
-        ${supplierRequestSnapshotSection(order)}
-        ${cdkeyOrderResponsibilitySection(order)}
+        ${cdkeyExtractionInfoSection(order)}
         ${isPhysicalOrder(order) ? detailSection("收货及物流信息", infoGrid(orderPhysicalShippingItems(order))) : ""}
         ${isPhysicalOrder(order) ? detailSection("收货信息修改审计", orderAddressAuditHtml(order)) : ""}
       `;
@@ -10105,19 +10073,19 @@
     }
 
     function renderCdkeyExtractionForm(order) {
-      document.getElementById("cdkeyExtractTitle").textContent = "客户端 · 提取卡密";
+      document.getElementById("cdkeyExtractTitle").textContent = "客户端 · 提取 CDKey";
       document.getElementById("cdkeyExtractBody").innerHTML = `
         <div class="info-grid" id="cdkeyExtractOrderInfo">${[
-          ["订单号", order.no], ["商品", order.product], ["卡密状态", cdkeyExtractStatus(order)], ["手机号", maskPhoneNumber(order.phone)]
+          ["订单号", order.no], ["商品", order.product], ["CDKey 状态", cdkeyExtractStatus(order)], ["手机号", maskPhoneNumber(order.phone)]
         ].map(([label, value]) => `<div class="info-item"><div class="info-label">${label}</div><div class="info-value">${value}</div></div>`).join("")}</div>
-        <div class="alert warning" style="margin-top:14px">提取前须完成手机号与实名校验。提取成功后视为用户已获取卡密，普通退款入口关闭；仅卡密失效、无法兑换等异常可申请售后核验。</div>
+        <div class="alert warning" style="margin-top:14px">提取前须完成手机号与实名校验。提取成功后视为用户已获取 CDKey，普通退款入口关闭；仅 CDKey 失效、无法兑换等异常可申请售后核验。</div>
         <div class="form-grid" style="margin-top:14px">
           <div class="field"><label>手机号</label><input id="cdkeyExtractPhone" value="${maskPhoneNumber(order.phone)}" disabled></div>
           <div class="field"><label><span class="required-star">*</span>短信验证码</label><div class="file-action-row"><input id="cdkeyExtractSmsCode" maxlength="6" placeholder="原型验证码 123456"><button class="btn" id="sendCdkeySmsBtn" type="button">获取验证码</button></div></div>
           <div class="field"><label>实名状态</label><div class="file-action-row"><input id="cdkeyExtractRealName" value="待校验" disabled><button class="btn" id="verifyCdkeyRealNameBtn" type="button">校验实名</button></div></div>
         </div>
-        <label class="checkline" style="margin-top:14px"><input type="checkbox" id="cdkeyExtractConsent">我已确认：提取卡密后不可普通退款；卡密异常需提交售后核验。</label>`;
-      document.getElementById("cdkeyExtractActions").innerHTML = `<button class="btn" data-close-modal="cdkeyExtractModal">取消</button><button class="btn primary" id="confirmCdkeyExtractBtn">确认提取卡密</button>`;
+        <label class="checkline" style="margin-top:14px"><input type="checkbox" id="cdkeyExtractConsent">我已确认：提取 CDKey 后不可普通退款；CDKey 异常需提交售后核验。</label>`;
+      document.getElementById("cdkeyExtractActions").innerHTML = `<button class="btn" data-close-modal="cdkeyExtractModal">取消</button><button class="btn primary" id="confirmCdkeyExtractBtn">确认提取 CDKey</button>`;
       document.getElementById("sendCdkeySmsBtn").onclick = sendCdkeyExtractSmsCode;
       document.getElementById("verifyCdkeyRealNameBtn").onclick = verifyCdkeyExtractRealName;
       document.getElementById("confirmCdkeyExtractBtn").onclick = confirmCdkeyExtraction;
@@ -10125,7 +10093,7 @@
 
     function openCdkeyExtractModal(orderNo) {
       const order = mallOrders.find(item => item.no === orderNo);
-      if (!order || !canExtractCdkeyOrder(order)) return toast("该订单当前不可提取卡密。");
+      if (!order || !canExtractCdkeyOrder(order)) return toast("该订单当前不可提取 CDKey。");
       const modal = document.getElementById("cdkeyExtractModal");
       modal.dataset.orderNo = order.no;
       modal.dataset.smsSent = "false";
@@ -10156,7 +10124,7 @@
     function confirmCdkeyExtraction() {
       const modal = document.getElementById("cdkeyExtractModal");
       const order = mallOrders.find(item => item.no === modal.dataset.orderNo);
-      if (!order || !canExtractCdkeyOrder(order)) return toast("该订单当前不可提取卡密。");
+      if (!order || !canExtractCdkeyOrder(order)) return toast("该订单当前不可提取 CDKey。");
       if (modal.dataset.smsSent !== "true" || valueOf("cdkeyExtractSmsCode") !== "123456") return toast("请先完成手机号验证码校验；原型验证码为 123456。");
       if (modal.dataset.realNameVerified !== "true") return toast("请先完成当前账号实名校验。");
       if (!document.getElementById("cdkeyExtractConsent")?.checked) return toast("请确认提取后的退款责任提示。");
@@ -10168,12 +10136,12 @@
       order.extractionChannel = "客户端订单详情";
       order.codeIssueStatus = "正常";
       order.updated = time;
-      cdkeyExtractionLogs.unshift({ orderNo: order.no, action: "提取成功", phoneResult: "通过", realNameResult: "通过", result: "已向用户展示卡密", time, channel: order.extractionChannel });
-      document.getElementById("cdkeyExtractTitle").textContent = "卡密提取成功";
+      cdkeyExtractionLogs.unshift({ orderNo: order.no, action: "提取成功", phoneResult: "通过", realNameResult: "通过", result: "已向用户展示 CDKey", time, channel: order.extractionChannel });
+      document.getElementById("cdkeyExtractTitle").textContent = "CDKey 提取成功";
       document.getElementById("cdkeyExtractBody").innerHTML = `
         <div class="alert success">手机号与实名校验通过，已记录提取时间与客户端入口。</div>
-        ${infoGrid([["订单号", order.no], ["商品", order.product], ["完整卡密", `<b>${order.fullCdkey || order.maskedCdkey}</b>`], ["提取时间", time]])}
-        <div class="alert warning" style="margin-top:14px">当前订单普通退款入口已关闭。如卡密失效或无法兑换，请发起卡密异常售后并完成核验。</div>`;
+        ${infoGrid([["订单号", order.no], ["商品", order.product], ["完整 CDKey", `<b>${order.fullCdkey || order.maskedCdkey}</b>`], ["提取时间", time]])}
+        <div class="alert warning" style="margin-top:14px">当前订单普通退款入口已关闭。如 CDKey 失效或无法兑换，请发起 CDKey 异常售后并完成核验。</div>`;
       document.getElementById("cdkeyExtractActions").innerHTML = `<button class="btn primary" data-close-modal="cdkeyExtractModal">完成</button>`;
       renderOrderManagementTable();
     }
@@ -10182,7 +10150,7 @@
       const order = mallOrders.find(item => item.no === orderNo);
       const isRefund = action === "refund";
       if (!order) return toast("当前订单已不支持该处理动作。");
-      if (isRefund && isCdkeyRefundLocked(order)) return toast("用户已提取卡密，普通退款已关闭；仅卡密异常可进入售后核验。");
+      if (isRefund && isCdkeyRefundLocked(order)) return toast("用户已提取 CDKey，普通退款已关闭；仅 CDKey 异常可进入售后核验。");
       const actionAllowed = isRefund ? (canHandleOrderFulfillmentFailure(order) || canRefundBackorder(order)) : canHandleOrderFulfillmentFailure(order);
       if (!actionAllowed) return toast("当前订单已不支持该处理动作。");
       const refundLabel = refundActionLabel(order);
@@ -10214,7 +10182,7 @@
       if (!order) return;
       if (modal.dataset.action === "refund" && isCdkeyRefundLocked(order)) {
         closeModal("orderActionConfirmModal");
-        return toast("用户已提取卡密，普通退款已关闭；请转卡密异常售后核验。");
+        return toast("用户已提取 CDKey，普通退款已关闭；请转 CDKey 异常售后核验。");
       }
       const time = nowText();
       if (modal.dataset.action === "retry") {
@@ -10382,10 +10350,10 @@
     function exportOrderManagementRecords() {
       const rows = getFilteredMallOrders().map(order => [
         order.no, orderBusinessSource(order), order.userId, order.nnNo, order.phone, order.product, order.quantity, order.orderScene || "现货下单", formatOrderAmount(order), order.paymentMethod, order.fulfill, operationalOrderStatus(order), order.status,
-        cdkeyExtractStatus(order), order.phoneVerifiedAt || "-", order.realNameVerifiedAt || "-", order.extractedAt || "-", isCdkeyRefundLocked(order) ? "普通退款关闭" : "按订单规则处理",
+        cdkeyExtractStatus(order), order.realNameVerifiedAt || "-", order.extractedAt || "-",
         fulfilledOrderQuantity(order), pendingOrderQuantity(order), order.quotaReservationId || "-", order.created, order.updated
       ]);
-      downloadPrototypeCsv("订单列表", ["订单号", "业务来源", "用户ID", "用户NN号", "用户手机号", "商品名称", "数量", "下单场景", "支付金额", "支付方式", "履约方式", "订单状态", "技术订单状态", "卡密提取状态", "手机号校验时间", "实名校验时间", "卡密提取时间", "普通退款资格", "已履约数量", "待履约数量", "待履约额度占用记录ID", "创建时间", "更新时间"], rows);
+      downloadPrototypeCsv("订单列表", ["订单号", "业务来源", "用户ID", "用户NN号", "用户手机号", "商品名称", "数量", "下单场景", "支付金额", "支付方式", "履约方式", "订单状态", "技术订单状态", "CDKey 提取状态", "实名校验时间", "CDKey 提取时间", "已履约数量", "待履约数量", "待履约额度占用记录ID", "创建时间", "更新时间"], rows);
     }
     function stateTag(state) {
       const cls = state === "上架" ? "green" : state === "草稿" ? "orange" : state === "下架" ? "" : "";
@@ -10450,8 +10418,6 @@
   </script>
 </body>
 </html>
-
-
 
 
 
