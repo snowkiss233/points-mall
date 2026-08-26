@@ -5697,11 +5697,6 @@
       return record.stockMode;
     }
 
-    function inventoryCdkeySourceText(record) {
-      const sourceIds = skuCdkeySourceIds(getInventorySku(record));
-      return sourceIds.length ? sourceIds.join("、") : (inventoryCdkeyPoolId(record) || "未配置");
-    }
-
     function inventoryCdkeySourceConfigHtml(record) {
       const product = getInventoryProduct(record);
       const sku = getInventorySku(record);
@@ -6093,11 +6088,8 @@
     }
 
     function inventoryRowActions(record) {
-      const product = getInventoryProduct(record);
-      const sku = getInventorySku(record);
-      const isCdkey = isCdkeyDelivery(sku?.delivery || product?.delivery);
       const actions = [`<button class="btn text" data-inventory-action="detail" data-inventory-id="${record.inventoryId}">查看详情</button>`];
-      if (!isCdkey || isBackorderAllowed(record)) actions.push(`<button class="btn text" data-inventory-action="adjust" data-inventory-id="${record.inventoryId}">调整库存</button>`);
+      actions.push(`<button class="btn text" data-inventory-action="adjust" data-inventory-id="${record.inventoryId}">调整库存</button>`);
       actions.push(`<button class="btn text" data-inventory-action="flow" data-inventory-id="${record.inventoryId}">库存流水</button>`);
       return actions.join("");
     }
@@ -6169,8 +6161,8 @@
           ["SPU ID", record.spu], ["商品对外名称", product?.name || "-"], ["商品对内名称", product?.internalName || "-"],
           ["商品副标题", product?.subtitle || "-"], ["商品类型", product?.type || "-"],
           ["SKU ID", record.skuId], ["SKU 规格", skuSpecText(sku)], ["SKU 属性值", product ? formatSkuAttributeValues(sku, product.type) : "-"],
-          ["履约方式", normalizeDelivery(delivery)], ["商品状态", product?.state || "-"], ["CDKey 状态", inventoryCdkeyStatus(record)],
-          ["关联货源 ID", isCdkeyDelivery(delivery) ? inventoryCdkeySourceText(record) : "-"]
+          ["履约方式", normalizeDelivery(delivery)], ["商品状态", product?.state || "-"],
+          ["CDKey 货源配置", inventoryCdkeySourceConfigHtml(record)]
         ]) + `<div class="hint-text">商品与 SKU 信息来自商品列表，库存列表只读展示，不维护商品基础信息、SKU 属性、履约方式和 CDKey 货源路由。</div>`)}
         ${detailSection("库存主数据", infoGrid([
           ["库存模式", inventoryStockModeLabel(record)], ["总库存", inventoryNumberText(record.totalStock, record)],
@@ -6209,7 +6201,7 @@
       document.getElementById("inventoryAdjustType").value = "增加库存";
       document.getElementById("inventoryAdjustQty").value = "";
       document.getElementById("inventoryAdjustPendingLimit").value = isBackorderAllowed(record) ? inventoryPendingLimit(record) : "";
-      document.getElementById("inventoryAdjustSafetyPercent").value = record.stockMode === "不限量" ? "不限量" : (record.warningThreshold ?? "");
+      document.getElementById("inventoryAdjustSafetyPercent").value = record.stockMode === "不限量" ? "" : (record.warningThreshold ?? "");
       document.getElementById("inventoryAdjustReason").value = "";
       updateInventoryAdjustFields();
       openModal("inventoryAdjustModal");
@@ -6229,6 +6221,8 @@
       const dailyReleaseField = document.getElementById("inventoryAdjustDailyReleaseField");
       const safetyField = document.getElementById("inventoryAdjustSafetyField");
       const safetyPercent = document.getElementById("inventoryAdjustSafetyPercent");
+      const reason = document.getElementById("inventoryAdjustReason");
+      const confirmButton = document.getElementById("confirmInventoryAdjustBtn");
       const label = document.getElementById("inventoryAdjustQtyLabel");
       const tip = document.getElementById("inventoryAdjustTip");
       const sku = getInventorySku(record);
@@ -6247,18 +6241,22 @@
       qty.disabled = modeChangingToUnlimited || isCdkeyRecord;
       qty.value = qty.disabled ? "" : qty.value;
       pendingLimit.disabled = !backorderEnabled;
-      safetyPercent.disabled = modeChangingToUnlimited;
+      safetyPercent.disabled = modeChangingToUnlimited || isCdkeyRecord;
+      reason.disabled = isCdkeyRecord && !backorderEnabled;
+      confirmButton.disabled = isCdkeyRecord && !backorderEnabled;
       if (modeChangingToUnlimited) {
-        safetyPercent.value = "不限量";
+        safetyPercent.value = "";
+        safetyPercent.placeholder = "不限量";
       } else {
+        safetyPercent.placeholder = "请输入 0-100";
         if (safetyPercent.value === "不限量") safetyPercent.value = record.stockMode === "不限量" ? "" : (record.warningThreshold ?? "");
       }
-      renderAdjustDailyReleaseEditor(modeChangingToUnlimited);
+      renderAdjustDailyReleaseEditor(modeChangingToUnlimited || isCdkeyRecord);
       if (modeChangingToUnlimited) {
         label.innerHTML = "调整数量";
         qty.placeholder = "不限量模式无需填写";
         tip.textContent = isCdkeyRecord
-          ? "该 CDKey SKU 包含接口直供货源，库存模式由货源路由自动判定为“不限量”，不支持在库存列表手工切换或调整数量。"
+          ? "该 CDKey SKU 包含接口直供货源，库存模式及其他库存配置均由货源路由决定；本弹窗仅展示当前配置，不支持修改。"
           : "库存模式切换为不限量后，总库存、可用库存、时段库存重置配置和安全库存阈值按不限量展示。";
         return;
       }
