@@ -1376,7 +1376,7 @@
             <section class="form-card" id="sectionInitialInventory">
               <h2><span class="required-star">*</span>初始库存配置</h2>
               <div class="body">
-                <div class="alert info">首次新建商品时支持配置 SKU 初始库存和下单策略；选择“缺货可下单”时，还需配置待履约数量上限。CDKey SKU 的库存模式由货源路由自动判定：仅码池供货时同步真实码库存；包含接口直供时显示为“不限量（接口实时判断）”。</div>
+                <div class="alert info">首次新建商品时支持配置 SKU 初始库存和下单策略；选择“缺货可下单”时，还需配置待履约数量上限。CDKey SKU 的库存模式由货源路由自动判定：仅码池供货时同步真实码库存；包含接口直供时显示为“不限量”。</div>
                 <div id="inventoryConfigBody"></div>
                 <div class="hint-text">非 CDKey 商品的初始库存只用于商品首次创建时初始化库存记录；下单策略和待履约数量上限均属于库存配置。CDKey 商品不在此手工维护库存数量，库存与可售判断来自已绑定的货源路由。</div>
               </div>
@@ -5694,8 +5694,7 @@
     }
 
     function inventoryStockModeLabel(record) {
-      const sku = getInventorySku(record);
-      return record.stockMode === "不限量" && evaluateSkuCdkeyRoute(sku).hasActiveDirect ? "不限量（接口实时判断）" : record.stockMode;
+      return record.stockMode;
     }
 
     function inventoryCdkeySourceText(record) {
@@ -5708,8 +5707,19 @@
       const sku = getInventorySku(record);
       const delivery = sku?.delivery || product?.delivery;
       if (!requiresCdkeySourceConfig(sku, product?.type) && !isCdkeyDelivery(delivery)) return "--";
-      if (!skuCdkeySourceIds(sku).length) return `<span class="tag orange">未配置</span>`;
-      return deliveryParamSummary(sku, product?.type);
+      const sourceIds = skuCdkeySourceIds(sku);
+      if (!sourceIds.length) return `<span class="tag orange">未配置</span>`;
+      return sourceIds.map(sourceId => {
+        const source = getPoolById(sourceId);
+        const supplyMode = cdkeySupplyMode(source);
+        const provider = supplyMode === "接口直供"
+          ? `三方供应商${source?.supplier ? `（${source.supplier}）` : ""}`
+          : "平台自营";
+        const reference = supplyMode === "接口直供"
+          ? `商品编码：${source?.supplierSku || "-"}`
+          : `旧码池 ID：${sourceId}`;
+        return `${provider} / ${supplyMode} / ${reference}`;
+      }).join("<br>");
     }
 
     function normalizeDailyRefreshTimesText(value, useDefault = true) {
@@ -6088,7 +6098,6 @@
       const isCdkey = isCdkeyDelivery(sku?.delivery || product?.delivery);
       const actions = [`<button class="btn text" data-inventory-action="detail" data-inventory-id="${record.inventoryId}">查看详情</button>`];
       if (!isCdkey || isBackorderAllowed(record)) actions.push(`<button class="btn text" data-inventory-action="adjust" data-inventory-id="${record.inventoryId}">调整库存</button>`);
-      if (isCdkey) actions.push(`<button class="btn text" data-inventory-action="pool" data-inventory-id="${record.inventoryId}">查看首选货源</button>`);
       actions.push(`<button class="btn text" data-inventory-action="flow" data-inventory-id="${record.inventoryId}">库存流水</button>`);
       return actions.join("");
     }
@@ -6097,12 +6106,6 @@
       if (action === "detail") openInventoryDetail(inventoryId);
       if (action === "adjust") openInventoryAdjustModal(inventoryId);
       if (action === "flow") openInventoryFlowDrawer(inventoryId);
-      if (action === "pool") {
-        const record = getInventoryRecordById(inventoryId);
-        const poolId = record ? inventoryCdkeyPoolId(record) : "";
-        if (!poolId) return toast("当前 SKU 尚未配置 CDKey 货源。");
-        openCdkeyPoolDetail(poolId);
-      }
     }
 
     function toggleInventoryMoreFilters() {
@@ -6157,7 +6160,7 @@
       const hasDirectSupply = evaluateSkuCdkeyRoute(sku).hasActiveDirect;
       const cdkeyNotice = isCdkeyDelivery(delivery)
         ? hasDirectSupply
-          ? `<div class="alert info">该 SKU 的货源路由包含接口直供，库存显示为“不限量（接口实时判断）”；平台不维护供应商库存数量，实际是否有货以下单履约时的接口结果为准。</div>`
+          ? `<div class="alert info">该 SKU 的货源路由包含接口直供，库存显示为“不限量”；平台不维护供应商库存数量，实际是否有货以下单履约时的接口结果为准。</div>`
           : `<div class="alert info">该 SKU 仅使用码池供货，总库存和可用库存由关联码池同步。补货、核销和 CDKey 维护请前往 CDKey 货源列表。</div>`
         : "";
       const physicalNotice = isPhysicalDelivery(delivery) ? `<div class="alert info">库存列表只维护实物商品可兑换库存，不承接用户收货地址、物流单号和完整发货流程；收货地址与发货状态由订单 / 履约后台承接。</div>` : "";
@@ -6255,7 +6258,7 @@
         label.innerHTML = "调整数量";
         qty.placeholder = "不限量模式无需填写";
         tip.textContent = isCdkeyRecord
-          ? "该 CDKey SKU 包含接口直供货源，库存模式由货源路由自动判定为“不限量（接口实时判断）”，不支持在库存列表手工切换或调整数量。"
+          ? "该 CDKey SKU 包含接口直供货源，库存模式由货源路由自动判定为“不限量”，不支持在库存列表手工切换或调整数量。"
           : "库存模式切换为不限量后，总库存、可用库存、时段库存重置配置和安全库存阈值按不限量展示。";
         return;
       }
@@ -8664,7 +8667,7 @@
 
     function cdkeyInventoryModeLabel(index) {
       return cdkeyRouteForInventoryRow(index).hasActiveDirect
-        ? "不限量（接口实时判断）"
+        ? "不限量"
         : "限量（码池库存）";
     }
 
@@ -9541,7 +9544,7 @@
 
     function stockText(stock) {
       if (!stock) return `<span class="tag orange">未配置</span>`;
-      if (stock.interfaceRealtime) return "不限量（接口实时判断）";
+      if (stock.interfaceRealtime) return "不限量";
       if (stock.unlimited) return `含不限量 SKU；限量可用 ${stock.available}，锁定 ${stock.locked}`;
       return `可用 ${stock.available}，锁定 ${stock.locked}`;
     }
@@ -10435,6 +10438,3 @@
   </script>
 </body>
 </html>
-
-
-
