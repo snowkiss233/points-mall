@@ -1208,7 +1208,7 @@
           <div class="table-head"><div><div class="table-title">订单列表</div><div class="table-meta">列表按父订单号展示；履约信息按单数量 SKU 拆分后在订单详情中查看。</div></div><div class="table-meta" id="orderTableCount">共 0 条</div></div>
           <div class="table-wrap">
             <table class="order-management-table">
-              <thead><tr><th>订单号</th><th>业务来源</th><th>用户ID</th><th>用户NN号</th><th>用户手机号</th><th>商品名称</th><th>数量</th><th>下单场景</th><th>支付金额</th><th>支付方式</th><th>履约方式</th><th>订单状态</th><th>退款状态</th><th>创建时间</th><th>更新时间</th><th>操作</th></tr></thead>
+              <thead><tr><th>订单号</th><th>业务来源</th><th>用户ID</th><th>用户NN号</th><th>用户手机号</th><th>商品名称</th><th>数量</th><th>下单场景</th><th>支付金额</th><th>支付方式</th><th>履约方式</th><th>订单状态</th><th>创建时间</th><th>更新时间</th><th>操作</th></tr></thead>
               <tbody id="orderManagementTbody"></tbody>
             </table>
           </div>
@@ -7873,8 +7873,7 @@
         <div class="order-overview-group order-overview-status">
           <div class="order-overview-group-title">状态信息</div>
           ${infoGrid([
-            ["订单状态", orderStatusTag(operationalOrderStatus(order), order.status)],
-            ["技术订单状态", orderStatusTag(order.status)]
+            ["订单状态", orderStatusTag(operationalOrderStatus(order), order.status)]
           ])}
         </div>
         <div class="order-overview-group">
@@ -9823,13 +9822,13 @@
     }
 
     function canInitiateManualRefund(order) {
-      const paidOrder = ["已支付", "异常"].includes(operationalOrderStatus(order));
+      const paidOrder = ["已支付", "已完成", "异常"].includes(operationalOrderStatus(order));
       const refundAvailable = ["未退款", "退款失败"].includes(order.refundStatus || "未退款") && refundableOrderAmount(order) > 0;
       const physicalNotShipped = !isPhysicalOrder(order) || !order.trackingNo || order.trackingNo === "-";
-      const noGoodsDelivered = fulfilledOrderQuantity(order) === 0;
+      const notPartiallyFulfilled = !isPartiallyFulfilledOrder(order);
       const directSupplyResultUnclear = order.supplyMode === "接口直供"
         && /不确定|不明确|待确认/.test(`${order.supplierRequestResult || ""}${order.reason || ""}`);
-      return paidOrder && refundAvailable && physicalNotShipped && noGoodsDelivered && !directSupplyResultUnclear && !isCdkeyRefundLocked(order);
+      return paidOrder && refundAvailable && physicalNotShipped && notPartiallyFulfilled && !directSupplyResultUnclear && !isCdkeyRefundLocked(order);
     }
 
     function isCdkeyOrder(order) {
@@ -9963,7 +9962,6 @@
       if (canHandleOrderFulfillmentFailure(order)) {
         actions.push(`<button class="btn text" data-mall-order-retry="${order.no}">重新发放</button>`);
       }
-      if (canInitiateManualRefund(order)) actions.push(`<button class="btn text danger" data-mall-order-refund="${order.no}">退款</button>`);
       if (canShipPhysicalOrder(order)) {
         actions.push(`<button class="btn text" data-mall-order-address="${order.no}">修改收货信息</button>`);
         actions.push(`<button class="btn text" data-mall-order-ship="${order.no}">发货</button>`);
@@ -10001,9 +9999,9 @@
           <td>${order.no}</td><td>${orderBusinessSource(order)}</td><td>${order.userId}</td><td>${order.nnNo}</td><td>${order.phone}</td><td>${order.product}</td>
           <td>${order.quantity}</td><td>${order.orderScene || "现货下单"}</td><td>${formatOrderAmount(order)}</td><td>${paymentMethodTag(order.paymentMethod)}</td>
           <td>${deliveryTag(order.fulfill)}</td><td>${orderStatusTag(operationalOrderStatus(order), order.status)}</td>
-          <td>${refundStatusTag(order.refundStatus)}</td><td>${order.created}</td><td>${order.updated}</td><td>${orderActionHtml(order)}</td>
+          <td>${order.created}</td><td>${order.updated}</td><td>${orderActionHtml(order)}</td>
         </tr>
-      `).join("") : `<tr><td colspan="16"><div class="empty">当前筛选条件下暂无订单</div></td></tr>`;
+      `).join("") : `<tr><td colspan="15"><div class="empty">当前筛选条件下暂无订单</div></td></tr>`;
       document.getElementById("orderTableCount").textContent = `共 ${rows.length} 条`;
       document.getElementById("orderStatTotal").textContent = rows.length;
       document.getElementById("orderStatPending").textContent = rows.filter(order => operationalOrderStatus(order) === "待支付").length;
@@ -10164,13 +10162,19 @@
       </section>`;
     }
 
+    function hasOrderRefundRecord(order) {
+      return (order.refundStatus && order.refundStatus !== "未退款")
+        || (order.refundNo && order.refundNo !== "-")
+        || (Array.isArray(order.refundHistory) && order.refundHistory.length > 0);
+    }
+
     function openOrderManagementDetail(orderNo) {
       const order = mallOrders.find(item => item.no === orderNo);
       if (!order) return;
       document.getElementById("orderDetailTitle").textContent = `订单详情 · ${order.no}`;
       document.getElementById("orderDetailBody").innerHTML = `
         ${detailSection("订单概览", orderOverviewHtml(order))}
-        ${orderRefundDetailSection(order)}
+        ${hasOrderRefundRecord(order) ? orderRefundDetailSection(order) : ""}
         ${orderFulfillmentDetailSection(order)}
         ${cdkeyExtractionInfoSection(order)}
         ${isPhysicalOrder(order) ? detailSection("收货及物流信息", infoGrid(orderPhysicalShippingItems(order))) : ""}
@@ -10312,7 +10316,7 @@
       modal.dataset.retryMode = String(retryMode);
       document.getElementById("orderRefundModalTitle").textContent = "退款";
       document.getElementById("orderRefundInfo").innerHTML = [
-        ["订单号", order.no], ["商品", order.product], ["用户", `${order.userId} / ${order.nnNo} / ${order.phone}`],
+        ["父订单号", order.no], ["商品", order.product], ["用户", `${order.userId} / ${order.nnNo} / ${order.phone}`],
         ["退款货币", order.currencyType], ["原支付渠道", order.paymentMethod], ["原支付金额", formatOrderAmount(order)], ["已退金额", formatOrderAmount(order, order.refundedAmount)],
         ["退款状态", refundStatusTag(order.refundStatus)], ["退款金额", formatOrderAmount(order, remainingAmount)]
       ].map(([label, value]) => `<div class="info-item"><div class="info-label">${label}</div><div class="info-value">${value}</div></div>`).join("");
@@ -10324,8 +10328,8 @@
       document.getElementById("orderRefundAmountHint").textContent = `本期仅支持全额退款，退款金额固定为 ${formatOrderAmount(order, remainingAmount)}。`;
       document.getElementById("orderRefundRemark").value = order.refundRemark !== "-" ? order.refundRemark : "";
       document.getElementById("orderRefundImpact").textContent = isPointsOrder(order)
-        ? "确认后积分退回用户原积分账户并生成积分流水，退款成功后关闭订单。"
-        : `确认后通过${order.paymentMethod}原支付订单和原收款商户退款，退款成功后关闭订单。`;
+        ? "本期按父订单整单退款；确认后积分退回用户原积分账户并生成积分流水。退款成功后关闭父订单，子订单仅保留原履约记录。"
+        : `本期按父订单整单退款；确认后通过${order.paymentMethod}原支付订单和原收款商户退款。退款成功后关闭父订单，子订单仅保留原履约记录。`;
       document.getElementById("confirmOrderRefundBtn").textContent = "确认退款";
       closeAllLayers();
       openModal("orderRefundModal");
