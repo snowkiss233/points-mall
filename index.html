@@ -2308,13 +2308,13 @@
     <div class="modal-head"><span id="cdkeyExtractTitle">客户端 · 提取 CDKey</span><button class="btn text" data-close-modal="cdkeyExtractModal">关闭</button></div>
     <div class="modal-body" id="cdkeyExtractBody">
       <div class="info-grid" id="cdkeyExtractOrderInfo"></div>
-      <div class="alert warning" style="margin-top:14px">提取前须完成手机号与实名校验。提取成功后视为用户已获取 CDKey，普通退款入口关闭；仅 CDKey 失效、无法兑换等异常可申请售后核验。</div>
+      <div class="alert warning" style="margin-top:14px">提取前须完成手机号与实名校验。提取成功后视为用户已获取 CDKey；如遇特殊纠纷，后台仍可退款，但操作前会再次提示风险并保留记录。</div>
       <div class="form-grid" style="margin-top:14px">
         <div class="field"><label>手机号</label><input id="cdkeyExtractPhone" disabled></div>
         <div class="field"><label><span class="required-star">*</span>短信验证码</label><div class="file-action-row"><input id="cdkeyExtractSmsCode" maxlength="6" placeholder="原型验证码 123456"><button class="btn" id="sendCdkeySmsBtn" type="button">获取验证码</button></div></div>
         <div class="field"><label>实名状态</label><div class="file-action-row"><input id="cdkeyExtractRealName" value="待校验" disabled><button class="btn" id="verifyCdkeyRealNameBtn" type="button">校验实名</button></div></div>
       </div>
-      <label class="checkline" style="margin-top:14px"><input type="checkbox" id="cdkeyExtractConsent">我已确认：提取 CDKey 后不可普通退款；CDKey 异常需提交售后核验。</label>
+      <label class="checkline" style="margin-top:14px"><input type="checkbox" id="cdkeyExtractConsent">我已知悉：提取后即视为已查看完整 CDKey；后续特殊纠纷退款需由后台再次确认风险。</label>
     </div>
     <div class="modal-foot" id="cdkeyExtractActions"><button class="btn" data-close-modal="cdkeyExtractModal">取消</button><button class="btn primary" id="confirmCdkeyExtractBtn">确认提取 CDKey</button></div>
   </section>
@@ -2383,6 +2383,15 @@
       <div class="alert warning" id="orderRefundImpact" style="margin-top:14px"></div>
     </div>
     <div class="modal-foot"><button class="btn" data-close-modal="orderRefundModal">取消</button><button class="btn danger" id="confirmOrderRefundBtn">确认退款</button></div>
+  </section>
+
+  <section class="modal" id="cdkeyRefundRiskModal" role="dialog" aria-modal="true">
+    <div class="modal-head"><span>确认退款风险</span><button class="btn text" data-close-modal="cdkeyRefundRiskModal">关闭</button></div>
+    <div class="modal-body">
+      <div class="info-grid" id="cdkeyRefundRiskInfo"></div>
+      <div class="alert warning" style="margin-top:14px">该订单的 CDKey 已被用户提取并查看，退款后无法收回。仅限已核实的特殊纠纷使用，请确认已完成核实并愿意承担重复权益风险。</div>
+    </div>
+    <div class="modal-foot"><button class="btn" data-close-modal="cdkeyRefundRiskModal">取消</button><button class="btn danger" id="confirmCdkeyRefundRiskBtn">仍要退款</button></div>
   </section>
 
   <section class="modal wide" id="logisticsModal" role="dialog" aria-modal="true">
@@ -3866,6 +3875,7 @@
       document.getElementById("exportOrdersBtn").addEventListener("click", exportOrderManagementRecords);
       document.getElementById("confirmOrderActionBtn").addEventListener("click", confirmOrderManagementAction);
       document.getElementById("confirmOrderRefundBtn").addEventListener("click", confirmOrderRefund);
+      document.getElementById("confirmCdkeyRefundRiskBtn").addEventListener("click", confirmCdkeyRefundRisk);
       document.getElementById("sendCdkeySmsBtn").addEventListener("click", sendCdkeyExtractSmsCode);
       document.getElementById("verifyCdkeyRealNameBtn").addEventListener("click", verifyCdkeyExtractRealName);
       document.getElementById("confirmCdkeyExtractBtn").addEventListener("click", confirmCdkeyExtraction);
@@ -9818,7 +9828,7 @@
     }
 
     function canRetryOrderRefund(order) {
-      return order.refundStatus === "退款失败" && refundableOrderAmount(order) > 0 && !isCdkeyRefundLocked(order);
+      return order.refundStatus === "退款失败" && refundableOrderAmount(order) > 0;
     }
 
     function canInitiateManualRefund(order) {
@@ -9828,7 +9838,7 @@
       const notPartiallyFulfilled = !isPartiallyFulfilledOrder(order);
       const directSupplyResultUnclear = order.supplyMode === "接口直供"
         && /不确定|不明确|待确认/.test(`${order.supplierRequestResult || ""}${order.reason || ""}`);
-      return paidOrder && refundAvailable && physicalNotShipped && notPartiallyFulfilled && !directSupplyResultUnclear && !isCdkeyRefundLocked(order);
+      return paidOrder && refundAvailable && physicalNotShipped && notPartiallyFulfilled && !directSupplyResultUnclear;
     }
 
     function isCdkeyOrder(order) {
@@ -9849,7 +9859,7 @@
       return `<span class="tag ${cls}">${status}</span>`;
     }
 
-    function isCdkeyRefundLocked(order) {
+    function isExtractedCdkeyOrder(order) {
       return isCdkeyOrder(order) && cdkeyExtractStatus(order) === "已提取";
     }
 
@@ -9867,7 +9877,7 @@
     }
 
     function canRefundBackorder(order) {
-      return !isCdkeyRefundLocked(order) && order.orderScene === "缺货下单" && order.status === "已支付" && order.fulfillmentStatus === "待履约";
+      return !isExtractedCdkeyOrder(order) && order.orderScene === "缺货下单" && order.status === "已支付" && order.fulfillmentStatus === "待履约";
     }
 
     function canShipPhysicalOrder(order) {
@@ -10200,13 +10210,13 @@
         <div class="info-grid" id="cdkeyExtractOrderInfo">${[
           ["订单号", order.no], ["商品", order.product], ["CDKey 状态", cdkeyExtractStatus(order)], ["手机号", maskPhoneNumber(order.phone)]
         ].map(([label, value]) => `<div class="info-item"><div class="info-label">${label}</div><div class="info-value">${value}</div></div>`).join("")}</div>
-        <div class="alert warning" style="margin-top:14px">提取前须完成手机号与实名校验。提取成功后视为用户已获取 CDKey，普通退款入口关闭；仅 CDKey 失效、无法兑换等异常可申请售后核验。</div>
+        <div class="alert warning" style="margin-top:14px">提取前须完成手机号与实名校验。提取成功后视为用户已获取 CDKey；如遇特殊纠纷，后台仍可退款，但操作前会再次提示风险并保留记录。</div>
         <div class="form-grid" style="margin-top:14px">
           <div class="field"><label>手机号</label><input id="cdkeyExtractPhone" value="${maskPhoneNumber(order.phone)}" disabled></div>
           <div class="field"><label><span class="required-star">*</span>短信验证码</label><div class="file-action-row"><input id="cdkeyExtractSmsCode" maxlength="6" placeholder="原型验证码 123456"><button class="btn" id="sendCdkeySmsBtn" type="button">获取验证码</button></div></div>
           <div class="field"><label>实名状态</label><div class="file-action-row"><input id="cdkeyExtractRealName" value="待校验" disabled><button class="btn" id="verifyCdkeyRealNameBtn" type="button">校验实名</button></div></div>
         </div>
-        <label class="checkline" style="margin-top:14px"><input type="checkbox" id="cdkeyExtractConsent">我已确认：提取 CDKey 后不可普通退款；CDKey 异常需提交售后核验。</label>`;
+        <label class="checkline" style="margin-top:14px"><input type="checkbox" id="cdkeyExtractConsent">我已知悉：提取后即视为已查看完整 CDKey；后续特殊纠纷退款需由后台再次确认风险。</label>`;
       document.getElementById("cdkeyExtractActions").innerHTML = `<button class="btn" data-close-modal="cdkeyExtractModal">取消</button><button class="btn primary" id="confirmCdkeyExtractBtn">确认提取 CDKey</button>`;
       document.getElementById("sendCdkeySmsBtn").onclick = sendCdkeyExtractSmsCode;
       document.getElementById("verifyCdkeyRealNameBtn").onclick = verifyCdkeyExtractRealName;
@@ -10263,7 +10273,7 @@
       document.getElementById("cdkeyExtractBody").innerHTML = `
         <div class="alert success">手机号与实名校验通过，已记录提取时间与客户端入口。</div>
         ${infoGrid([["订单号", order.no], ["商品", order.product], ["完整 CDKey", `<b>${order.fullCdkey || order.maskedCdkey}</b>`], ["提取时间", time]])}
-        <div class="alert warning" style="margin-top:14px">当前订单普通退款入口已关闭。如 CDKey 失效或无法兑换，请发起 CDKey 异常售后并完成核验。</div>`;
+        <div class="alert warning" style="margin-top:14px">如后续因特殊纠纷退款，后台将再次提示风险并完整保留操作记录。</div>`;
       document.getElementById("cdkeyExtractActions").innerHTML = `<button class="btn primary" data-close-modal="cdkeyExtractModal">完成</button>`;
       renderOrderManagementTable();
     }
@@ -10304,11 +10314,27 @@
       toast("已触发重新发放。");
     }
 
-    function openOrderRefundModal(orderNo) {
+    function openCdkeyRefundRiskModal(order) {
+      const modal = document.getElementById("cdkeyRefundRiskModal");
+      modal.dataset.orderNo = order.no;
+      document.getElementById("cdkeyRefundRiskInfo").innerHTML = [
+        ["父订单号", order.no], ["商品", order.product], ["CDKey 状态", cdkeyExtractStatus(order)], ["提取时间", order.extractedAt || order.cdkeyExtractedAt || "已提取"]
+      ].map(([label, value]) => `<div class="info-item"><div class="info-label">${label}</div><div class="info-value">${value}</div></div>`).join("");
+      closeAllLayers();
+      openModal("cdkeyRefundRiskModal");
+    }
+
+    function confirmCdkeyRefundRisk() {
+      const orderNo = document.getElementById("cdkeyRefundRiskModal").dataset.orderNo;
+      closeModal("cdkeyRefundRiskModal");
+      openOrderRefundModal(orderNo, true);
+    }
+
+    function openOrderRefundModal(orderNo, riskConfirmed = false) {
       const order = mallOrders.find(item => item.no === orderNo);
       if (!order) return toast("订单不存在。");
-      if (isCdkeyRefundLocked(order)) return toast("用户已提取 CDKey，普通退款已关闭；请转 CDKey 异常售后核验。");
       if (!canInitiateManualRefund(order)) return toast("当前订单不可退款，请检查订单、发货及退款状态。");
+      if (isExtractedCdkeyOrder(order) && !riskConfirmed) return openCdkeyRefundRiskModal(order);
       const retryMode = canRetryOrderRefund(order);
       const remainingAmount = refundableOrderAmount(order);
       const modal = document.getElementById("orderRefundModal");
@@ -10327,9 +10353,10 @@
       amountInput.step = isPointsOrder(order) ? "1" : "0.01";
       document.getElementById("orderRefundAmountHint").textContent = `本期仅支持全额退款，退款金额固定为 ${formatOrderAmount(order, remainingAmount)}。`;
       document.getElementById("orderRefundRemark").value = order.refundRemark !== "-" ? order.refundRemark : "";
-      document.getElementById("orderRefundImpact").textContent = isPointsOrder(order)
+      const cdkeyRiskText = isExtractedCdkeyOrder(order) ? " 该 CDKey 已被用户提取，本次退款属于特殊纠纷处理，操作将完整记录。" : "";
+      document.getElementById("orderRefundImpact").textContent = (isPointsOrder(order)
         ? "本期按父订单整单退款；确认后积分退回用户原积分账户并生成积分流水。退款成功后关闭父订单，子订单仅保留原履约记录。"
-        : `本期按父订单整单退款；确认后通过${order.paymentMethod}原支付订单和原收款商户退款。退款成功后关闭父订单，子订单仅保留原履约记录。`;
+        : `本期按父订单整单退款；确认后通过${order.paymentMethod}原支付订单和原收款商户退款。退款成功后关闭父订单，子订单仅保留原履约记录。`) + cdkeyRiskText;
       document.getElementById("confirmOrderRefundBtn").textContent = "确认退款";
       closeAllLayers();
       openModal("orderRefundModal");
