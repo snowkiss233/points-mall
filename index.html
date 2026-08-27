@@ -1771,7 +1771,7 @@
           </div>
         </div>
 
-        <div class="page-note">供货方分为「平台自营」和「三方供应商」。平台自营固定为码池供货，维护安全库存和码入库方式；三方供应商固定为接口直供，不维护安全库存和码入库方式。一个商品 SKU 可配置多个同供货方式货源并按优先级依次尝试，不支持两种供货方式混用。</div>
+        <div class="page-note">先选择具体供货方，再选择该供货方支持的供货方式。供货方与供货方式不再固定绑定：码池供货需要配置码池入库方式并维护本地 CDKey 库存；接口直供在订单履约时实时取码，不维护本地库存数量。一个商品 SKU 可配置多个同供货方式货源并按优先级依次尝试，不支持两种供货方式混用。</div>
 
         <section class="card" aria-label="CDKey 货源筛选区">
           <div class="card-body">
@@ -1780,7 +1780,7 @@
               <div class="field"><label>货源 ID</label><input id="cdkeyPoolFilterId" placeholder="请输入货源 ID"></div>
               <div class="field"><label>货源状态</label><select id="cdkeyPoolFilterState"></select></div>
               <div class="field"><label>供货方式</label><select id="cdkeyPoolFilterSource"><option>全部</option><option>码池供货</option><option>接口直供</option></select></div>
-              <div class="field"><label>供货方</label><select id="cdkeyPoolFilterProvider"><option>全部</option><option>平台自营</option><option>三方供应商</option></select></div>
+              <div class="field"><label>供货方</label><select id="cdkeyPoolFilterProvider"><option>全部</option><option>平台自营</option><option>星核卡券</option><option>极速卡券</option><option>测试供应商</option><option>礼包供应商</option></select></div>
               <div class="field"><label>是否绑定 SKU</label><select id="cdkeyPoolFilterBound"><option>全部</option><option>是</option><option>否</option></select></div>
               <div class="field"><label>创建时间</label><input id="cdkeyPoolFilterUpdated" placeholder="开始时间 - 结束时间"></div>
             </div>
@@ -1853,16 +1853,15 @@
               <h2>供货配置</h2>
               <div class="body">
                 <div class="form-grid">
-                  <div class="field"><label><span class="required-star">*</span>供货方</label><select id="cdkeyPoolFormProvider"><option value="">请选择供货方</option><option>平台自营</option><option>三方供应商</option></select></div>
+                  <div class="field"><label><span class="required-star">*</span>供货方</label><select id="cdkeyPoolFormProvider"><option value="">请选择供货方</option></select><div class="hint-text">直接选择实际提供商品的一方，例如平台自营或具体供应商。</div></div>
                   <div class="field"><label><span class="required-star">*</span>供货方式</label><select id="cdkeyPoolFormSource" disabled><option value="">请先选择供货方</option></select></div>
-                  <div class="field" id="cdkeyPoolSupplierField" style="display:none"><label><span class="required-star">*</span>三方供应商</label><select id="cdkeyPoolFormSupplier"></select></div>
                 </div>
                 <div class="form-grid" id="cdkeyPoolStockFields" style="margin-top:12px">
                   <div class="field"><label><span class="required-star">*</span>安全库存阈值（%）</label><input id="cdkeyPoolFormAlert" type="number" min="0" max="100" placeholder="请输入 0-100"></div>
                 </div>
                 <div class="form-grid" id="cdkeyPoolDirectFields" style="margin-top:12px;display:none">
-                  <div class="field"><label><span class="required-star">*</span>供应商商品</label><select id="cdkeyPoolFormSupplierProduct"></select></div>
-                  <div class="field"><label><span class="required-star">*</span>供应商商品编码（product_id）</label><input id="cdkeyPoolFormSupplierSku" placeholder="选择供应商商品后自动带出" disabled></div>
+                  <div class="field"><label><span class="required-star">*</span>供货商品</label><select id="cdkeyPoolFormSupplierProduct"></select></div>
+                  <div class="field"><label><span class="required-star">*</span>供货商品编码（product_id）</label><input id="cdkeyPoolFormSupplierSku" placeholder="选择供货商品后自动带出" disabled></div>
                 </div>
                 <div class="hint-text" id="cdkeySupplyModeHint">请先选择供货方，再选择供货方式。</div>
               </div>
@@ -2238,7 +2237,7 @@
   </aside>
 
   <section class="modal restock" id="cdkeyGenerateModal" role="dialog" aria-modal="true">
-    <div class="modal-head"><span>平台内部生成补货</span><button class="btn text" data-close-modal="cdkeyGenerateModal">关闭</button></div>
+    <div class="modal-head"><span>接口批量获取补货</span><button class="btn text" data-close-modal="cdkeyGenerateModal">关闭</button></div>
     <div class="modal-body">
       <div id="cdkeyGenerateInfo"></div>
       <div class="form-grid" style="margin-top:12px">
@@ -2614,6 +2613,7 @@
     const virtualTypes = ["虚拟装扮"];
     const cdkeySupplierCatalog = {
       "星核卡券": {
+        supportedModes: ["码池供货", "接口直供"],
         interfaceConfig: "星核供应商接口",
         products: [
           { name: "PUBG 300 G-COIN", productId: "1153796224" },
@@ -2621,14 +2621,23 @@
         ]
       },
       "极速卡券": {
+        supportedModes: ["码池供货", "接口直供"],
         interfaceConfig: "极速卡券接口",
         products: [
           { name: "加速器 7 天卡", productId: "1153796301" },
           { name: "加速器 30 天卡", productId: "1153796302" }
         ]
       },
-      "测试供应商": { interfaceConfig: "测试供应商接口", products: [] },
-      "礼包供应商": { interfaceConfig: "礼包供应商接口", products: [] }
+      "测试供应商": { supportedModes: ["码池供货"], interfaceConfig: "测试供应商接口", products: [] },
+      "礼包供应商": { supportedModes: ["码池供货"], interfaceConfig: "礼包供应商接口", products: [] }
+    };
+    const cdkeyPlatformProvider = {
+      providerType: "平台自营",
+      interfaceConfig: "平台内部出码接口",
+      products: [
+        { name: "平台加速器 7 天卡", productId: "INTERNAL_ACCELERATOR_7D" },
+        { name: "平台加速器 30 天卡", productId: "INTERNAL_ACCELERATOR_30D" }
+      ]
     };
     let poolMocks = [
       { id: "PUBG_GCOIN_300_POOL", name: "PUBG 300 G-COIN 自营码池", state: "上架", providerType: "平台自营", supplyMode: "码池供货", supplier: "", stockMethod: "手工上传", source: "手工上传码", total: 500, available: 320, issued: 172, voided: 0, expired: 0, error: 0, alertThreshold: 80, creator: "平台运营", createdAt: "2026-05-18 10:00", updatedAt: "2026-05-22 15:10", remark: "PUBG G-COIN 商品履约码池" },
@@ -3904,17 +3913,16 @@
       document.getElementById("cdkeyPoolSaveEnableBtn").addEventListener("click", saveCdkeyPoolEnable);
       document.getElementById("cdkeyPoolFormProvider").addEventListener("change", () => {
         updateCdkeyProviderFields();
-        renderCdkeySupplierOptions();
+        renderCdkeySupplyProducts();
         updateCdkeyPoolTypeField();
         renderCdkeyPoolInitialData();
       });
       document.getElementById("cdkeyPoolFormSource").addEventListener("change", () => {
-        renderCdkeySupplierOptions(valueOf("cdkeyPoolFormSupplier"));
+        renderCdkeySupplyProducts();
         updateCdkeyPoolTypeField();
         renderCdkeyPoolInitialData();
       });
-      document.getElementById("cdkeyPoolFormSupplier").addEventListener("change", () => renderCdkeySupplierProducts());
-      document.getElementById("cdkeyPoolFormSupplierProduct").addEventListener("change", syncCdkeySupplierProductCode);
+      document.getElementById("cdkeyPoolFormSupplierProduct").addEventListener("change", syncCdkeySupplyProductCode);
       document.getElementById("confirmCdkeyGenerateBtn").addEventListener("click", confirmCdkeyGenerate);
       document.getElementById("confirmCdkeyUploadBtn").addEventListener("click", confirmCdkeyUpload);
       document.getElementById("confirmCdkeyVoidBtn").addEventListener("click", confirmCdkeyVoid);
@@ -7021,7 +7029,7 @@
       if (action === "restock") {
         const pool = getPoolById(poolId);
         if (pool?.stockMethod === "手工上传") openCdkeyUploadModal(poolId);
-        else toast("平台内部生成暂未开放，当前货源不能补货。");
+        else toast("接口批量获取暂未开放，当前货源不能补货。");
       }
       if (action === "code") openCdkeyCodeDrawer(poolId);
       if (action === "disable") openCdkeyDisableModal(poolId);
@@ -7034,7 +7042,7 @@
       const poolId = valueOf("cdkeyPoolFilterId").toUpperCase();
       const state = valueOf("cdkeyPoolFilterState");
       const source = valueOf("cdkeyPoolFilterSource");
-      const providerType = valueOf("cdkeyPoolFilterProvider");
+      const providerName = valueOf("cdkeyPoolFilterProvider");
       const bound = valueOf("cdkeyPoolFilterBound");
       const updated = valueOf("cdkeyPoolFilterUpdated");
       visibleCdkeyPools = poolMocks.filter(pool => {
@@ -7043,7 +7051,7 @@
           && (!poolId || pool.id.toUpperCase().includes(poolId))
           && (state === "全部" || pool.state === state)
           && (source === "全部" || cdkeySupplyMode(pool) === source)
-          && (providerType === "全部" || cdkeyProviderType(pool) === providerType)
+          && (providerName === "全部" || cdkeyProviderName(pool) === providerName)
           && (bound === "全部" || (bound === "是" ? boundCount > 0 : boundCount === 0))
           && (!updated || String(pool.createdAt || pool.updatedAt).includes(updated));
       });
@@ -7068,6 +7076,37 @@
         : suppliers.map(([name]) => name);
     }
 
+    function cdkeyProviderNames() {
+      return ["平台自营", ...Object.keys(cdkeySupplierCatalog)];
+    }
+
+    function cdkeyProviderConfig(providerName) {
+      if (providerName === "平台自营") {
+        return { ...cdkeyPlatformProvider, supportedModes: ["码池供货", "接口直供"] };
+      }
+      const supplier = cdkeySupplierCatalog[providerName];
+      if (!supplier) return null;
+      return {
+        ...supplier,
+        providerType: "三方供应商",
+        supportedModes: supplier.supportedModes || (supplier.products.length ? ["码池供货", "接口直供"] : ["码池供货"])
+      };
+    }
+
+    function cdkeyProviderName(pool) {
+      if (!pool) return "";
+      if (pool.providerName) return pool.providerName;
+      return cdkeyProviderType(pool) === "三方供应商" ? (pool.supplier || "") : "平台自营";
+    }
+
+    function renderCdkeyProviderOptions(selectedProvider = "") {
+      const select = document.getElementById("cdkeyPoolFormProvider");
+      if (!select) return;
+      const providerNames = cdkeyProviderNames();
+      select.innerHTML = `<option value="">请选择供货方</option>${providerNames.map(name => `<option value="${name}">${name}</option>`).join("")}`;
+      select.value = providerNames.includes(selectedProvider) ? selectedProvider : "";
+    }
+
     function cdkeyProviderType(pool) {
       if (pool?.providerType) return pool.providerType;
       return pool?.supplier && pool.supplier !== "平台自营" ? "三方供应商" : "平台自营";
@@ -7075,67 +7114,36 @@
 
     function cdkeyProviderSummary(pool) {
       const providerType = cdkeyProviderType(pool);
-      return providerType === "三方供应商"
-        ? `三方供应商${pool?.supplier ? `<div class="minor">${pool.supplier}</div>` : ""}`
-        : "平台自营";
+      const providerName = cdkeyProviderName(pool) || "-";
+      return `${providerName}${providerType === "三方供应商" ? `<div class="minor">三方供应商</div>` : ""}`;
     }
 
     function cdkeyProviderText(pool) {
-      const providerType = cdkeyProviderType(pool);
-      return providerType === "三方供应商" && pool?.supplier ? `${providerType} · ${pool.supplier}` : providerType;
+      return cdkeyProviderName(pool) || "-";
     }
 
     function updateCdkeyProviderFields(selectedMode = "") {
-      const providerType = valueOf("cdkeyPoolFormProvider");
+      const providerName = valueOf("cdkeyPoolFormProvider");
       const sourceSelect = document.getElementById("cdkeyPoolFormSource");
-      const supplierField = document.getElementById("cdkeyPoolSupplierField");
-      const allowedModes = providerType === "平台自营"
-        ? ["码池供货"]
-        : providerType === "三方供应商" ? ["接口直供"] : [];
+      const allowedModes = cdkeyProviderConfig(providerName)?.supportedModes || [];
       const currentMode = selectedMode || sourceSelect.value;
-      supplierField.style.display = providerType === "三方供应商" ? "" : "none";
-      sourceSelect.innerHTML = `<option value="">${providerType ? "请选择供货方式" : "请先选择供货方"}</option>${allowedModes.map(mode => `<option value="${mode}">${mode}</option>`).join("")}`;
+      sourceSelect.innerHTML = `<option value="">${providerName ? "请选择供货方式" : "请先选择供货方"}</option>${allowedModes.map(mode => `<option value="${mode}">${mode}</option>`).join("")}`;
       sourceSelect.value = allowedModes.includes(currentMode) ? currentMode : "";
-      sourceSelect.disabled = !providerType || pendingCdkeyAction?.mode === "edit";
-      if (providerType !== "三方供应商") {
-        document.getElementById("cdkeyPoolFormSupplier").value = "";
-        renderCdkeySupplierProducts();
-      }
+      sourceSelect.disabled = !providerName || pendingCdkeyAction?.mode === "edit";
     }
 
-    function renderCdkeySupplierOptions(selectedSupplier = "") {
-      const select = document.getElementById("cdkeyPoolFormSupplier");
-      if (!select) return;
-      if (valueOf("cdkeyPoolFormProvider") !== "三方供应商") {
-        select.innerHTML = `<option value="">请选择三方供应商</option>`;
-        select.disabled = true;
-        renderCdkeySupplierProducts();
-        return;
-      }
-      const supplyMode = valueOf("cdkeyPoolFormSource");
-      if (!supplyMode) {
-        select.innerHTML = `<option value="">请先选择供货方式</option>`;
-        select.disabled = true;
-        renderCdkeySupplierProducts();
-        return;
-      }
-      select.disabled = false;
-      const supplierNames = cdkeySupplierNamesForMode(supplyMode);
-      select.innerHTML = `<option value="">请选择三方供应商</option>${supplierNames.map(name => `<option value="${name}">${name}</option>`).join("")}`;
-      select.value = supplierNames.includes(selectedSupplier) ? selectedSupplier : "";
-      renderCdkeySupplierProducts();
-    }
-
-    function renderCdkeySupplierProducts(selectedProduct = "") {
+    function renderCdkeySupplyProducts(selectedProduct = "") {
       const select = document.getElementById("cdkeyPoolFormSupplierProduct");
       if (!select) return;
-      const products = cdkeySupplierCatalog[valueOf("cdkeyPoolFormSupplier")]?.products || [];
-      select.innerHTML = `<option value="">请选择供应商商品</option>${products.map(product => `<option value="${product.name}" data-product-id="${product.productId}">${product.name}</option>`).join("")}`;
+      const providerName = valueOf("cdkeyPoolFormProvider");
+      const products = valueOf("cdkeyPoolFormSource") === "接口直供" ? (cdkeyProviderConfig(providerName)?.products || []) : [];
+      select.innerHTML = `<option value="">${providerName ? "请选择供货商品" : "请先选择供货方"}</option>${products.map(product => `<option value="${product.name}" data-product-id="${product.productId}">${product.name}</option>`).join("")}`;
       select.value = products.some(product => product.name === selectedProduct) ? selectedProduct : "";
-      syncCdkeySupplierProductCode();
+      select.disabled = !providerName || valueOf("cdkeyPoolFormSource") !== "接口直供";
+      syncCdkeySupplyProductCode();
     }
 
-    function syncCdkeySupplierProductCode() {
+    function syncCdkeySupplyProductCode() {
       const productSelect = document.getElementById("cdkeyPoolFormSupplierProduct");
       const productIdInput = document.getElementById("cdkeyPoolFormSupplierSku");
       if (!productSelect || !productIdInput) return;
@@ -7157,12 +7165,13 @@
       document.getElementById("cdkeyPoolFormName").value = pool?.name || "";
       document.getElementById("cdkeyPoolFormState").value = pool?.state || "草稿";
       document.getElementById("cdkeyPoolFormAlert").value = pool?.alertThreshold ?? "";
-      document.getElementById("cdkeyPoolFormProvider").value = pool ? cdkeyProviderType(pool) : "";
+      renderCdkeyProviderOptions(pool ? cdkeyProviderName(pool) : "");
       document.getElementById("cdkeyPoolFormProvider").disabled = mode === "edit";
       updateCdkeyProviderFields(pool ? cdkeySupplyMode(pool) : "");
-      renderCdkeySupplierOptions(pool?.supplier || "");
-      renderCdkeySupplierProducts(pool?.supplierProduct || "");
-      cdkeyStockMethodDraft = pool?.stockMethod || (pool?.source === "平台内部生成码" ? "平台内部生成" : "手工上传");
+      renderCdkeySupplyProducts(pool?.supplierProduct || "");
+      cdkeyStockMethodDraft = pool?.stockMethod === "平台内部生成" || pool?.source === "平台内部生成码"
+        ? "接口批量获取"
+        : (pool?.stockMethod || "手工上传");
       document.getElementById("cdkeyPoolFormRemark").value = pool?.remark || "";
       updateCdkeyPoolTypeField();
       const initialSection = document.getElementById("cdkeyPoolSectionInitialData");
@@ -7175,19 +7184,19 @@
     }
 
     function updateCdkeyPoolTypeField() {
-      const providerType = valueOf("cdkeyPoolFormProvider");
+      const providerName = valueOf("cdkeyPoolFormProvider");
       const supplyMode = valueOf("cdkeyPoolFormSource");
-      const isPoolSupply = providerType === "平台自营" && supplyMode === "码池供货";
-      const isDirectSupply = providerType === "三方供应商" && supplyMode === "接口直供";
+      const isPoolSupply = supplyMode === "码池供货";
+      const isDirectSupply = supplyMode === "接口直供";
       document.getElementById("cdkeyPoolStockFields").style.display = isPoolSupply ? "" : "none";
       document.getElementById("cdkeyPoolDirectFields").style.display = isDirectSupply ? "" : "none";
-      document.getElementById("cdkeySupplyModeHint").textContent = !providerType
+      document.getElementById("cdkeySupplyModeHint").textContent = !providerName
         ? "请先选择供货方，再选择供货方式。"
         : !supplyMode
-          ? `${providerType}已选择，请继续选择供货方式。`
+          ? `${providerName}已选择，请继续选择供货方式。`
           : isPoolSupply
-            ? "供货方和供货方式创建后不可变更。码池供货维护本地 CDKey 库存，安全库存阈值用于触发补货提醒。"
-            : "供货方和供货方式创建后不可变更。接口直供不维护供应商库存数量；订单履约时实时取码，当前货源无库存则继续尝试下一货源。";
+            ? "码池供货会提前将 CDKey 存入平台；继续在下方选择码池入库方式。供货方和供货方式创建后不可变更。"
+            : "接口直供不提前入库；订单支付成功后才实时取码，明确无货时按订单规则自动退款。供货方和供货方式创建后不可变更。";
     }
 
     function renderCdkeyPoolInitialData(selectedMethod = "") {
@@ -7199,12 +7208,12 @@
         return;
       }
       if (supplyMode === "接口直供") {
-        body.innerHTML = `<div class="alert info">接口直供无需导入初始 CDKey，也不维护安全库存。保存并上架后，订单履约时使用供应商商品编码（product_id）取码；外部订单号（customer_order_no）和购买数量（buy_num）由订单动态传入。</div>`;
+        body.innerHTML = `<div class="alert info">接口直供无需导入初始 CDKey，也不维护安全库存。保存并上架后，订单履约时使用供货商品编码（product_id）取码；外部订单号（customer_order_no）和购买数量（buy_num）由订单动态传入。</div>`;
         return;
       }
       cdkeyStockMethodDraft = selectedMethod || cdkeyStockMethodDraft || "手工上传";
       const stockMethod = cdkeyStockMethodDraft;
-      const methodField = `<div class="form-grid" style="margin-bottom:12px"><div class="field"><label><span class="required-star">*</span>码入库方式</label><select id="cdkeyPoolFormStockMethod"><option value="手工上传" ${stockMethod === "手工上传" ? "selected" : ""}>手工上传</option><option value="平台内部生成" ${stockMethod === "平台内部生成" ? "selected" : ""}>平台内部生成（暂未开放）</option></select><div class="hint-text">该字段定义 CDKey 进入平台码池的方式；创建后不可变更。</div></div></div>`;
+      const methodField = `<div class="form-grid" style="margin-bottom:12px"><div class="field"><label><span class="required-star">*</span>码入库方式</label><select id="cdkeyPoolFormStockMethod"><option value="手工上传" ${stockMethod === "手工上传" ? "selected" : ""}>手工上传</option><option value="接口批量获取" ${stockMethod === "接口批量获取" ? "selected" : ""}>接口批量获取（暂未开放）</option></select><div class="hint-text">仅码池供货需要配置，用于说明 CDKey 如何批量进入平台码池；创建后不可变更。</div></div></div>`;
       if (stockMethod === "手工上传") {
         body.innerHTML = `
           ${methodField}
@@ -7215,7 +7224,7 @@
             <div class="alert info" style="grid-column:1/-1">如上传文件中存在重复 CDKey，本次导入请求全部退回，不做部分入库。</div>
           </div>`;
       } else {
-        body.innerHTML = `${methodField}<div class="alert warning">“平台内部生成”作为码入库方式预留，本期暂未开放。当前可保存草稿，但不能保存并上架。</div>`;
+        body.innerHTML = `${methodField}<div class="alert warning">“接口批量获取”作为码入库方式预留，本期暂未开放。当前可保存草稿，但不能保存并上架。</div>`;
       }
       document.getElementById("cdkeyPoolFormStockMethod")?.addEventListener("change", event => renderCdkeyPoolInitialData(event.target.value));
     }
@@ -7227,9 +7236,9 @@
 
     function createInitialCdkeyDataIfNeeded(pool) {
       if (pendingCdkeyAction?.mode !== "new") return;
-      if (cdkeyProviderType(pool) !== "平台自营" || cdkeySupplyMode(pool) === "接口直供") return;
-      if (pool.stockMethod === "平台内部生成") return;
-      const source = pool.stockMethod === "手工上传" ? "手工上传码" : "平台内部生成码";
+      if (cdkeySupplyMode(pool) === "接口直供") return;
+      if (pool.stockMethod === "接口批量获取") return;
+      const source = pool.stockMethod === "手工上传" ? "手工上传码" : "接口批量获取码";
       const expireId = source === "手工上传码" ? "cdkeyInitialUploadExpire" : "cdkeyInitialGenerateExpire";
       const expireAt = valueOf(expireId);
       const count = source === "手工上传码" ? 100 : Number(valueOf("cdkeyInitialGenerateCount"));
@@ -7256,27 +7265,30 @@
 
     function buildCdkeyPoolFromForm(state) {
       const existing = getPoolById(pendingCdkeyAction?.poolId);
-      const providerType = existing?.providerType || valueOf("cdkeyPoolFormProvider");
+      const providerName = existing ? cdkeyProviderName(existing) : valueOf("cdkeyPoolFormProvider");
+      const providerConfig = cdkeyProviderConfig(providerName) || { providerType: "", interfaceConfig: "", products: [], supportedModes: [] };
+      const providerType = providerConfig.providerType;
       const supplyMode = existing?.supplyMode || valueOf("cdkeyPoolFormSource");
-      const stockMethod = providerType === "平台自营" && supplyMode === "码池供货" ? (existing?.stockMethod || cdkeyStockMethodDraft || "手工上传") : "";
-      const supplier = providerType === "三方供应商" ? valueOf("cdkeyPoolFormSupplier") : "";
-      const supplierConfig = cdkeySupplierCatalog[supplier] || { interfaceConfig: "", products: [] };
+      const existingStockMethod = existing?.stockMethod === "平台内部生成" ? "接口批量获取" : existing?.stockMethod;
+      const stockMethod = supplyMode === "码池供货" ? (existingStockMethod || cdkeyStockMethodDraft || "手工上传") : "";
+      const supplier = providerType === "三方供应商" ? providerName : "";
       const supplierProduct = supplyMode === "接口直供" ? valueOf("cdkeyPoolFormSupplierProduct") : "";
-      const supplierProductConfig = supplierConfig.products.find(product => product.name === supplierProduct);
+      const supplierProductConfig = providerConfig.products.find(product => product.name === supplierProduct);
       return {
         ...(existing || {}),
         id: existing?.id || generateCdkeyPoolId(),
         name: valueOf("cdkeyPoolFormName"),
         state,
+        providerName,
         providerType,
         supplyMode,
         supplier,
         stockMethod,
-        source: supplyMode === "接口直供" ? "接口直供" : stockMethod === "手工上传" ? "手工上传码" : "平台内部生成码",
+        source: supplyMode === "接口直供" ? "接口直供" : stockMethod === "手工上传" ? "手工上传码" : "接口批量获取码",
         supplierProduct,
         supplierSku: supplyMode === "接口直供" ? (supplierProductConfig?.productId || "") : "",
-        interfaceConfig: supplyMode === "接口直供" ? supplierConfig.interfaceConfig : "",
-        alertThreshold: providerType === "平台自营" && supplyMode === "码池供货" && valueOf("cdkeyPoolFormAlert") !== "" ? Number(valueOf("cdkeyPoolFormAlert")) : "",
+        interfaceConfig: supplyMode === "接口直供" ? providerConfig.interfaceConfig : "",
+        alertThreshold: supplyMode === "码池供货" && valueOf("cdkeyPoolFormAlert") !== "" ? Number(valueOf("cdkeyPoolFormAlert")) : "",
         creator: existing?.creator || "平台运营",
         dedupeRule: "全局唯一",
         total: existing?.total || 0,
@@ -7295,15 +7307,13 @@
       const errors = [];
       if (!pool.id) errors.push("货源 ID 必填");
       if (!pool.name) errors.push("货源名称必填");
-      if (!["平台自营", "三方供应商"].includes(pool.providerType)) errors.push("供货方必选");
-      if (pool.providerType === "三方供应商" && !pool.supplier) errors.push("三方供应商必填");
+      const providerConfig = cdkeyProviderConfig(pool.providerName || cdkeyProviderName(pool));
+      if (!providerConfig) errors.push("供货方必选");
       if (!["码池供货", "接口直供"].includes(pool.supplyMode)) errors.push("供货方式必选");
-      if (pool.providerType === "平台自营" && pool.supplyMode !== "码池供货") errors.push("平台自营仅支持码池供货");
-      if (pool.providerType === "三方供应商" && pool.supplyMode !== "接口直供") errors.push("三方供应商仅支持接口直供");
-      if (pool.supplyMode === "接口直供" && pool.providerType !== "三方供应商") errors.push("接口直供仅支持三方供应商");
-      if (pool.providerType === "平台自营" && (!Number.isInteger(pool.alertThreshold) || pool.alertThreshold < 0 || pool.alertThreshold > 100)) errors.push("安全库存阈值必须为 0-100 的整数");
-      if (enableMode && pool.supplyMode === "码池供货" && pool.stockMethod === "平台内部生成") errors.push("平台内部生成暂未开放，当前货源不能上架");
-      if (enableMode && pool.supplyMode === "接口直供" && (!pool.supplierProduct || !/^\d{1,20}$/.test(pool.supplierSku) || !pool.interfaceConfig)) errors.push("接口直供需选择供应商商品并正确带出 product_id");
+      if (providerConfig && !providerConfig.supportedModes.includes(pool.supplyMode)) errors.push("当前供货方不支持所选供货方式");
+      if (pool.supplyMode === "码池供货" && (!Number.isInteger(pool.alertThreshold) || pool.alertThreshold < 0 || pool.alertThreshold > 100)) errors.push("安全库存阈值必须为 0-100 的整数");
+      if (enableMode && pool.supplyMode === "码池供货" && pool.stockMethod === "接口批量获取") errors.push("接口批量获取暂未开放，当前货源不能上架");
+      if (enableMode && pool.supplyMode === "接口直供" && (!pool.supplierProduct || !String(pool.supplierSku || "").trim() || !pool.interfaceConfig)) errors.push("接口直供需选择供货商品并正确带出 product_id");
       const duplicate = poolMocks.some(item => item.id === pool.id && item.id !== pendingCdkeyAction?.poolId);
       if (duplicate) errors.push("货源 ID 不允许重复");
       return errors;
@@ -7315,14 +7325,13 @@
 
     function highlightCdkeyPoolInvalidFields(pool) {
       if (!pool.name) markInvalidControl("cdkeyPoolFormName");
-      if (!["平台自营", "三方供应商"].includes(pool.providerType)) markInvalidControl("cdkeyPoolFormProvider");
-      if (pool.providerType === "三方供应商" && !pool.supplier) markInvalidControl("cdkeyPoolFormSupplier");
+      if (!cdkeyProviderConfig(pool.providerName || cdkeyProviderName(pool))) markInvalidControl("cdkeyPoolFormProvider");
       if (!["码池供货", "接口直供"].includes(pool.supplyMode)) markInvalidControl("cdkeyPoolFormSource");
-      if (pool.providerType === "平台自营" && (!Number.isInteger(pool.alertThreshold) || pool.alertThreshold < 0 || pool.alertThreshold > 100)) markInvalidControl("cdkeyPoolFormAlert");
-      if (pool.supplyMode === "码池供货" && pool.stockMethod === "平台内部生成") markInvalidControl("cdkeyPoolFormStockMethod");
+      if (pool.supplyMode === "码池供货" && (!Number.isInteger(pool.alertThreshold) || pool.alertThreshold < 0 || pool.alertThreshold > 100)) markInvalidControl("cdkeyPoolFormAlert");
+      if (pool.supplyMode === "码池供货" && pool.stockMethod === "接口批量获取") markInvalidControl("cdkeyPoolFormStockMethod");
       if (pool.supplyMode === "接口直供") {
         if (!pool.supplierProduct) markInvalidControl("cdkeyPoolFormSupplierProduct");
-        if (!/^\d{1,20}$/.test(pool.supplierSku)) markInvalidControl("cdkeyPoolFormSupplierSku");
+        if (!String(pool.supplierSku || "").trim()) markInvalidControl("cdkeyPoolFormSupplierSku");
         return;
       }
       return;
@@ -7387,13 +7396,12 @@
       if (!pool) return;
       const isDirect = cdkeySupplyMode(pool) === "接口直供";
       const supplyConfig = isDirect
-        ? infoGrid([["供应商商品", pool.supplierProduct || "-"], ["供应商商品编码（product_id）", pool.supplierSku || "-"], ["接口配置（随供应商关联）", pool.interfaceConfig || "-"]])
+        ? infoGrid([["供货商品", pool.supplierProduct || "-"], ["供货商品编码（product_id）", pool.supplierSku || "-"], ["接口配置（随供货方关联）", pool.interfaceConfig || "-"]])
         : infoGrid([["码入库方式", pool.stockMethod || "-"], ["总码数", pool.total], ["可用码数量", pool.available], ["安全库存阈值", percentText(pool.alertThreshold)], ["待补货数量", pendingCdkeyCountForPool(pool.id)]]);
       const basicItems = [
         ["货源 ID", pool.id], ["货源名称", pool.name], ["货源状态", pool.state], ["创建时间", pool.createdAt || pool.updatedAt || "-"]
       ];
-      const providerItems = [["供货方", cdkeyProviderType(pool)]];
-      if (cdkeyProviderType(pool) === "三方供应商") providerItems.push(["三方供应商", pool.supplier || "-"]);
+      const providerItems = [["供货方", cdkeyProviderName(pool) || "-"], ["供货方类型", cdkeyProviderType(pool)]];
       providerItems.push(["供货方式", cdkeySupplyMode(pool)]);
       basicItems.push(["备注", pool.remark || "-"]);
       document.getElementById("cdkeyPoolDetailBody").innerHTML = `
@@ -7408,7 +7416,7 @@
     function openCdkeyGenerateModal(poolId) {
       const pool = getPoolById(poolId);
       if (!pool) return;
-      if (pool.source !== "平台内部生成码") return toast("该码池不是平台内部生成类型。");
+      if (!["接口批量获取码", "平台内部生成码"].includes(pool.source)) return toast("该码池不是接口批量获取类型。");
       selectedCdkeyPool = pool;
       document.getElementById("cdkeyGenerateInfo").innerHTML = infoGrid([["货源 ID", pool.id], ["货源名称", pool.name], ["码入库方式", pool.stockMethod], ["当前可用码数量", pool.available], ["待补货数量", pendingCdkeyCountForPool(pool.id)], ["当前履约缺口", cdkeyFulfillmentGap(pool)], ["当前货源状态", pool.state]]) + `<div class="alert info">补货入库后，系统会优先按支付成功时间 FIFO 自动发放待补货订单，剩余 CDKey 才进入新订单可用库存。</div>`;
       document.getElementById("cdkeyGenerateBatchList").innerHTML = cdkeyBatchTable(getCdkeyBatchesByPool(pool.id), false, true);
@@ -7425,9 +7433,9 @@
       const expireAt = valueOf("cdkeyGenerateExpire");
       if (!name) return toast("请输入补货名称。");
       if (!Number.isInteger(count) || count <= 0 || count > 99999) return toast("生成数量必须为 1-99999 的正整数。");
-      const fulfilledCount = createCdkeyBatchAndCodes(pool, name, "平台内部生成码", count, "平台内部生成补货", expireAt);
+      const fulfilledCount = createCdkeyBatchAndCodes(pool, name, "接口批量获取码", count, "接口批量获取补货", expireAt);
       closeModal("cdkeyGenerateModal");
-      toast(`平台内部生成补货完成；自动履约 ${fulfilledCount} 笔待补货订单。`);
+      toast(`接口批量获取补货完成；自动履约 ${fulfilledCount} 笔待补货订单。`);
     }
 
     function openCdkeyUploadModal(poolId) {
@@ -7466,7 +7474,7 @@
       pool.total += count;
       pool.available += count;
       pool.updatedAt = nowText();
-      addCdkeyLog(pool.id, source === "平台内部生成码" ? "平台内部生成补货" : "手工上传补货", "-", `${name} / ${count} 个`, reason);
+      addCdkeyLog(pool.id, source === "接口批量获取码" ? "接口批量获取补货" : "手工上传补货", "-", `${name} / ${count} 个`, reason);
       const fulfilledCount = allocatePendingCdkeyDeliveries(pool.id);
       syncCdkeyStatusByPool(pool.id);
       renderCdkeyPoolTable();
@@ -7540,7 +7548,7 @@
       const pool = getPoolById(poolId);
       if (!pool) return;
       document.getElementById("cdkeyBatchBody").innerHTML = `${detailSection("码池信息", infoGrid([["货源 ID", pool.id], ["货源名称", pool.name], ["货源状态", pool.state], ["码入库方式", pool.stockMethod]]))}
-        <div class="form-grid two" style="margin-bottom:12px"><div class="field"><label>补货记录 ID</label><input placeholder="请输入补货记录 ID"></div><div class="field"><label>码入库来源</label><select><option>全部</option><option>平台内部生成码</option><option>手工上传码</option></select></div></div>
+        <div class="form-grid two" style="margin-bottom:12px"><div class="field"><label>补货记录 ID</label><input placeholder="请输入补货记录 ID"></div><div class="field"><label>码入库来源</label><select><option>全部</option><option>接口批量获取码</option><option>手工上传码</option></select></div></div>
         ${cdkeyBatchTable(getCdkeyBatchesByPool(pool.id), true)}`;
       openDrawer("cdkeyBatchDrawer");
       document.querySelectorAll("[data-batch-code]").forEach(btn => btn.addEventListener("click", () => openCdkeyCodeDrawer(btn.dataset.poolId, btn.dataset.batchCode)));
