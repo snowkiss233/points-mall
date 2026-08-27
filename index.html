@@ -784,14 +784,13 @@
     .inventory-flow-table { min-width: 1350px; }
     .delivery-table { min-width: 2400px; }
     .delivery-log-table { min-width: 1600px; }
-    .cdkey-pool-table { min-width: 1750px; }
-    .cdkey-batch-table { min-width: 1600px; }
+    .cdkey-pool-table { min-width: 1900px; }
+    .cdkey-batch-table { min-width: 2200px; }
+    .direct-cost-table { min-width: 1500px; }
     .cdkey-code-table { min-width: 1650px; }
-    .restock-table-wrap { overflow-x: visible; }
+    .restock-table-wrap { overflow-x: auto; }
     .restock-batch-table {
-      min-width: 0;
-      table-layout: fixed;
-      width: 100%;
+      min-width: 1500px;
     }
     .restock-batch-table th,
     .restock-batch-table td {
@@ -1795,7 +1794,7 @@
           <div class="table-head">
             <div>
               <div class="table-title">CDKey 货源数据</div>
-              <div class="table-meta">这里只维护货源本身；商品与价格仍由商品 SKU 管理，客户端提取与退款责任状态由订单管理记录。</div>
+              <div class="table-meta">码池供货按入库批次记录成本，接口直供按每次取码结果记录实际成本；商品售价仍由商品 SKU 管理。</div>
             </div>
             <div class="table-meta" id="cdkeyPoolTableCount">共 0 条</div>
           </div>
@@ -1809,6 +1808,7 @@
                   <th>供货方</th>
                   <th>供货配置</th>
                   <th>可用情况</th>
+                  <th>批次 / 成本</th>
                   <th>绑定 SKU 数</th>
                   <th>货源状态</th>
                   <th>创建时间</th>
@@ -2227,8 +2227,13 @@
   </aside>
 
   <aside class="drawer" id="cdkeyBatchDrawer">
-    <div class="drawer-head"><div class="drawer-title">补货记录</div><button class="btn" data-close="cdkeyBatchDrawer">关闭</button></div>
+    <div class="drawer-head"><div class="drawer-title">入库批次记录</div><button class="btn" data-close="cdkeyBatchDrawer">关闭</button></div>
     <div class="drawer-body" id="cdkeyBatchBody"></div>
+  </aside>
+
+  <aside class="drawer" id="cdkeyCostDrawer">
+    <div class="drawer-head"><div class="drawer-title">接口取码成本记录</div><button class="btn" data-close="cdkeyCostDrawer">关闭</button></div>
+    <div class="drawer-body" id="cdkeyCostBody"></div>
   </aside>
 
   <aside class="drawer" id="cdkeyCodeDrawer">
@@ -2241,11 +2246,13 @@
     <div class="modal-body">
       <div id="cdkeyGenerateInfo"></div>
       <div class="form-grid" style="margin-top:12px">
-        <div class="field"><label><span class="required-star">*</span>补货名称</label><input id="cdkeyGenerateName" placeholder="请输入补货名称"></div>
+        <div class="field"><label><span class="required-star">*</span>批次名称</label><input id="cdkeyGenerateName" placeholder="请输入批次名称"></div>
         <div class="field"><label><span class="required-star">*</span>生成数量</label><input id="cdkeyGenerateCount" type="number" placeholder="请输入生成数量，1-99999"></div>
+        <div class="field"><label><span class="required-star">*</span>成本币种</label><select id="cdkeyGenerateCostCurrency"><option>人民币</option><option>美元</option></select></div>
+        <div class="field"><label><span class="required-star">*</span>单件成本</label><input id="cdkeyGenerateUnitCost" type="number" min="0" step="0.01" placeholder="请输入本批次单件成本"></div>
         <div class="field"><label>过期时间</label><input id="cdkeyGenerateExpire" placeholder="2026-12-31 23:59"></div>
       </div>
-      <div class="table-title" style="margin-top:16px">补货记录列表</div>
+      <div class="table-title" style="margin-top:16px">历史入库批次</div>
       <div id="cdkeyGenerateBatchList"></div>
     </div>
     <div class="modal-foot"><button class="btn" data-close-modal="cdkeyGenerateModal">取消</button><button class="btn primary" id="confirmCdkeyGenerateBtn">确认生成</button></div>
@@ -2256,11 +2263,13 @@
     <div class="modal-body">
       <div id="cdkeyUploadInfo"></div>
       <div class="form-grid" style="margin-top:12px">
-        <div class="field"><label><span class="required-star">*</span>补货名称</label><input id="cdkeyUploadName" placeholder="请输入补货名称"></div>
+        <div class="field"><label><span class="required-star">*</span>批次名称</label><input id="cdkeyUploadName" placeholder="请输入批次名称"></div>
         <div class="field"><label><span class="required-star">*</span>上传文件</label><div class="file-action-row"><button class="btn" type="button" onclick="toast('已打开本地文件选择器。')">上传</button><button class="btn" type="button" onclick="toast('CDKey 导入模板已开始下载。')">下载模板</button><input id="cdkeyUploadFile" value="mock_cdkey_upload.xlsx" disabled></div></div>
+        <div class="field"><label><span class="required-star">*</span>成本币种</label><select id="cdkeyUploadCostCurrency"><option>人民币</option><option>美元</option></select></div>
+        <div class="field"><label><span class="required-star">*</span>单件成本</label><input id="cdkeyUploadUnitCost" type="number" min="0" step="0.01" placeholder="请输入本批次单件成本"></div>
         <div class="field"><label>过期时间</label><input id="cdkeyUploadExpire" placeholder="2026-12-31 23:59"></div>
       </div>
-      <div class="table-title" style="margin-top:16px">补货记录列表</div>
+      <div class="table-title" style="margin-top:16px">历史入库批次</div>
       <div id="cdkeyUploadBatchList"></div>
       <div class="alert info">上传文件将按模板解析并执行补货入库，导入数量由上传文件解析。如上传文件中存在重复 CDKey，本次导入请求全部退回，不做部分入库。</div>
     </div>
@@ -2288,7 +2297,7 @@
   <section class="modal" id="cdkeyDeleteModal" role="dialog" aria-modal="true">
     <div class="modal-head"><span>删除 CDKey 货源</span><button class="btn text" data-close-modal="cdkeyDeleteModal">关闭</button></div>
     <div class="modal-body">
-      <p>仅未绑定 SKU 的草稿货源允许删除。码池供货删除后，其补货记录与 CDKey 明细也会移除，删除后不可恢复。</p>
+      <p>仅未绑定 SKU 的草稿货源允许删除。码池供货删除后，其入库批次与 CDKey 明细也会移除，删除后不可恢复。</p>
       <div id="cdkeyDeleteInfo"></div>
       <div class="field"><label>删除原因</label><textarea id="cdkeyDeleteReason" rows="4" placeholder="请输入删除原因，选填"></textarea></div>
     </div>
@@ -2458,7 +2467,7 @@
     let mallOrders = [
       { no: "ORD20260706005", userId: "U100870", nnNo: "NN100870", phone: "13755556666", nick: "林十二", product: "300 G-COIN", productSnapshot: "300 G-COIN / 规格：300 G-COIN / 类型：CDKey", productType: "CDKey", quantity: 1, currencyType: "人民币", paymentMethod: "微信支付", unitAmount: 24.9, paymentAmount: 24.9, inventoryType: "接口直供", acquireForm: "发放至客户端订单，用户主动提取后查看 CDKey", fulfillmentChannel: "客户端订单", fulfill: DELIVERY_AUTO_CDKEY, status: "已关闭", fulfillmentStatus: "履约失败", supplyMode: "接口直供", supplySourceId: "PUBG_VENDOR_API", supplySourceName: "星核 G-COIN 官方直供", supplier: "星核卡券", supplierProduct: "PUBG 300 G-COIN", supplierProductId: "1153796224", supplierRequestResult: "明确无库存", extractStatus: "待发码", reason: "支付成功后，三方接口明确返回无库存，系统已自动退款", paymentResult: "微信支付成功后已退款：¥24.90", stockResult: "接口直供，不维护本地库存数量", fulfillResult: "三方接口明确无库存，未发放商品", retrySummary: "未重试；已自动退款", refundStatus: "退款成功", refundedAmount: 24.9, refundType: "自动退款", refundRemark: "支付成功后取货时明确无库存，系统自动退款", refundNo: "RF202607060001", refundChannel: "微信支付原路退款", refundOperator: "系统", refundAppliedAt: "2026-07-06 09:02:14", refundedAt: "2026-07-06 09:02:19", refundFailureReason: "-", refundHistory: [{ time: "2026-07-06 09:02:14", action: "自动发起退款", result: "退款处理中", operator: "系统" }, { time: "2026-07-06 09:02:19", action: "退款结果回写", result: "退款成功", operator: "系统" }], created: "2026-07-06 09:01:50", updated: "2026-07-06 09:02:19", completed: "2026-07-06 09:02:19" },
       { no: "ORD20260706001", userId: "U100862", nnNo: "NN100862", phone: "13888888888", nick: "李四", product: "NN加速器3天卡", productSnapshot: "NN加速器3天卡 / 规格：3天 / 类型：CDKey", productType: "CDKey", quantity: 1, currencyType: "积分", paymentMethod: "积分支付", unitAmount: 500, paymentAmount: 500, inventoryType: "CDKey 码池库存", acquireForm: "发放至客户端订单，用户主动提取后查看 CDKey", fulfillmentChannel: "客户端订单", fulfill: DELIVERY_AUTO_CDKEY, status: "已完成", fulfillmentStatus: "履约完成", supplyMode: "码池供货", supplySourceId: "ACCELERATOR_3D_POOL", supplySourceName: "NN 加速器 3 天码池", extractStatus: "已提取", phoneVerifiedAt: "2026-07-06 09:48:11", realNameVerifiedAt: "2026-07-06 09:48:13", extractedAt: "2026-07-06 09:48:16", extractionChannel: "客户端订单详情", codeIssueStatus: "正常", reason: "-", paymentResult: "积分扣减成功：-500 积分", stockResult: "库存已扣减：-1", fulfillResult: "CDKey 发放成功", retrySummary: "无需重试", maskedCdkey: "NN3D-****-8K2Q", fullCdkey: "NN3D-7P9A-8K2Q", created: "2026-07-06 09:45:33", updated: "2026-07-06 09:48:16", completed: "2026-07-06 09:45:58" },
-      { no: "ORD20260706004", userId: "U100869", nnNo: "NN100869", phone: "13912345678", nick: "陈十一", product: "300 G-COIN", productSnapshot: "300 G-COIN / 规格：300 G-COIN / 类型：CDKey", productType: "CDKey", quantity: 1, currencyType: "人民币", paymentMethod: "微信支付", unitAmount: 24.9, paymentAmount: 24.9, inventoryType: "接口直供", acquireForm: "发放至客户端订单，用户主动提取后查看 CDKey", fulfillmentChannel: "客户端订单", fulfill: DELIVERY_AUTO_CDKEY, status: "已完成", fulfillmentStatus: "履约完成", supplyMode: "接口直供", supplySourceId: "PUBG_VENDOR_API", supplySourceName: "星核 G-COIN 官方直供", supplier: "星核卡券", supplierProduct: "PUBG 300 G-COIN", supplierProductId: "1153796224", supplierRequestResult: "取码成功", extractStatus: "待提取", phoneVerifiedAt: "-", realNameVerifiedAt: "-", extractedAt: "-", extractionChannel: "-", codeIssueStatus: "未提取", reason: "-", paymentResult: "微信支付成功：¥24.90", stockResult: "接口直供，不维护本地库存数量", fulfillResult: "供应商取码成功，待用户提取", retrySummary: "无需重试", maskedCdkey: "PUBG-****-P7Q2", fullCdkey: "PUBG-GC30-X91M-P7Q2", created: "2026-07-06 09:18:20", updated: "2026-07-06 09:18:31", completed: "2026-07-06 09:18:31" },
+      { no: "ORD20260706004", userId: "U100869", nnNo: "NN100869", phone: "13912345678", nick: "陈十一", product: "300 G-COIN", productSnapshot: "300 G-COIN / 规格：300 G-COIN / 类型：CDKey", productType: "CDKey", quantity: 1, currencyType: "人民币", paymentMethod: "微信支付", unitAmount: 24.9, paymentAmount: 24.9, inventoryType: "接口直供", acquireForm: "发放至客户端订单，用户主动提取后查看 CDKey", fulfillmentChannel: "客户端订单", fulfill: DELIVERY_AUTO_CDKEY, status: "已完成", fulfillmentStatus: "履约完成", supplyMode: "接口直供", supplySourceId: "PUBG_VENDOR_API", supplySourceName: "星核 G-COIN 官方直供", supplier: "星核卡券", supplierProduct: "PUBG 300 G-COIN", supplierProductId: "1153796224", supplierOrderNo: "XH20260706091820", supplierRequestResult: "取码成功", costCurrency: "人民币", actualUnitCost: 18.6, actualTotalCost: 18.6, costSource: "接口返回", costRecordedAt: "2026-07-06 09:18:31", extractStatus: "待提取", phoneVerifiedAt: "-", realNameVerifiedAt: "-", extractedAt: "-", extractionChannel: "-", codeIssueStatus: "未提取", reason: "-", paymentResult: "微信支付成功：¥24.90", stockResult: "接口直供，不维护本地库存数量", fulfillResult: "供应商取码成功，待用户提取", retrySummary: "无需重试", maskedCdkey: "PUBG-****-P7Q2", fullCdkey: "PUBG-GC30-X91M-P7Q2", created: "2026-07-06 09:18:20", updated: "2026-07-06 09:18:31", completed: "2026-07-06 09:18:31" },
       { no: "ORD20260706002", userId: "U100863", nnNo: "NN100863", phone: "13966666666", nick: "王五", product: "星耀头像框30天", productSnapshot: "星耀头像框30天 / 类型：虚拟道具 / 权益：社区身份装饰", productType: "虚拟道具", quantity: 1, currencyType: "人民币", paymentMethod: "微信支付", unitAmount: 12.9, paymentAmount: 12.9, inventoryType: "无限库存", acquireForm: "发放至用户背包，用户在社区装扮中启用", fulfillmentChannel: "背包发放", fulfill: DELIVERY_AUTO_VIRTUAL, status: "异常", fulfillmentStatus: "履约中", reason: "履约结果不确定，待人工确认", paymentResult: "微信支付成功：¥12.90", stockResult: "无限库存，无需占用", fulfillResult: "履约超时，结果待确认", retrySummary: "等待重试，已重试 1/3", bagAsset: "头像框权益待确认", created: "2026-07-06 08:30:15", updated: "2026-07-06 08:36:20", completed: "-" },
       { no: "ORD20260706003", userId: "U100864", nnNo: "NN100864", phone: "13733333333", nick: "赵六", product: "NN加速器30天卡", productSnapshot: "NN加速器30天卡 / 规格：30天 / 类型：CDKey", productType: "CDKey", quantity: 1, currencyType: "人民币", paymentMethod: "支付宝", unitAmount: 29.9, paymentAmount: 29.9, inventoryType: "有限库存", acquireForm: "发放至用户背包，用户进入背包查看兑换码", fulfillmentChannel: "背包发放", fulfill: DELIVERY_AUTO_CDKEY, status: "支付失败", fulfillmentStatus: "-", reason: "支付宝支付失败，库存已释放", paymentResult: "支付宝支付失败", stockResult: "库存已释放", fulfillResult: "未进入履约发放", retrySummary: "无需重试", maskedCdkey: "-", created: "2026-07-06 07:12:08", updated: "2026-07-06 07:12:21", completed: "-" },
       { no: "ORD20260705004", userId: "U100862", nnNo: "NN100862", phone: "13888888888", nick: "李四", product: "加速卡 7 天", productSnapshot: "加速卡 7 天 / 规格：7天 / 类型：CDKey", productType: "CDKey", quantity: 1, currencyType: "积分", paymentMethod: "积分支付", unitAmount: 800, paymentAmount: 800, inventoryType: "CDKey 码池库存", acquireForm: "发放至客户端订单，用户主动提取后查看 CDKey", fulfillmentChannel: "客户端订单", fulfill: DELIVERY_AUTO_CDKEY, status: "已支付", fulfillmentStatus: "待履约", extractStatus: "待发码", supplyMode: "码池供货", supplySourceId: "ACCELERATOR_7D_POOL", supplySourceName: "加速卡 7 天码池", orderScene: "缺货下单", waitingReason: "等待 CDKey补货", pendingQuantity: 1, quotaReservationId: "PFR-20260705004", queueNo: 1, cdkeyPoolId: "ACCELERATOR_7D_POOL", reason: "等待 CDKey补货", paymentResult: "积分扣减成功：-800 积分", stockResult: "未占用 CDKey；已占用待履约额度：1", fulfillResult: "待码池补货后自动发放", retrySummary: "等待补货，不进入失败重试", maskedCdkey: "-", created: "2026-07-05 16:20:10", updated: "2026-07-05 16:20:18", completed: "-" },
@@ -2566,8 +2575,10 @@
       cdkeyPoolFormRemark: { maxLength: 200 },
       cdkeyGenerateName: { maxLength: 50 },
       cdkeyGenerateCount: { min: 1, max: 99999 },
+      cdkeyGenerateUnitCost: { min: 0, max: 99999999 },
       cdkeyGenerateExpire: { maxLength: 32 },
       cdkeyUploadName: { maxLength: 50 },
+      cdkeyUploadUnitCost: { min: 0, max: 99999999 },
       cdkeyUploadFile: { maxLength: 120 },
       cdkeyUploadExpire: { maxLength: 32 },
       cdkeyVoidReason: { maxLength: 200 },
@@ -2742,9 +2753,9 @@
       makeDeliveryRecord({ recordId: "DEL-202605220009", orderId: "ORD-202605220009", exchangeNo: "EXC-202605220009", userId: "10023896", spu: "SPU10007", skuId: "SPU10007-SKU01", deliveryMethod: DELIVERY_AUTO_VIRTUAL, deliveryState: "履约失败", payAmount: 800, inventoryFlowId: "FLOW-000020", autoResourceId: "RESOURCE_ENTRANCE_EFFECT_7D", failureReason: "库存锁定未释放", createdAt: "2026-05-22 18:10", deliveredAt: "-", updatedAt: "2026-05-22 18:11", remark: "库存锁定仍占用" })
     ];
     let cdkeyBatches = [
-      makeCdkeyBatch({ batchId: "BATCH-PUBG-202605-001", poolId: "PUBG_GCOIN_300_POOL", batchName: "PUBG 300 G-COIN 5月补货", source: "手工上传码", fileName: "pubg_gcoin_300_20260518.xlsx", state: "可用", total: 300, available: 220, issued: 72, voided: 0, failed: 0, expireAt: "2026-12-31 23:59", createdAt: "2026-05-18 10:20", updatedAt: "2026-05-22 15:10" }),
-      makeCdkeyBatch({ batchId: "BATCH-PUBG-202605-002", poolId: "PUBG_GCOIN_300_POOL", batchName: "PUBG 300 G-COIN 追加补货", source: "手工上传码", fileName: "pubg_gcoin_300_append_20260520.xlsx", state: "可用", total: 200, available: 100, issued: 100, voided: 0, failed: 0, expireAt: "2026-12-31 23:59", createdAt: "2026-05-20 14:00", updatedAt: "2026-05-22 12:30" }),
-      makeCdkeyBatch({ batchId: "BATCH-ACC-202605-001", poolId: "ACCELERATOR_7D_POOL", batchName: "加速卡 7 天 5月补货", source: "手工上传码", fileName: "accelerator_7d_20260518.xlsx", state: "可用", total: 100, available: 0, issued: 100, voided: 0, failed: 0, expireAt: "2026-10-31 23:59", createdAt: "2026-05-18 11:30", updatedAt: "2026-05-21 12:30" })
+      makeCdkeyBatch({ batchId: "BATCH-PUBG-202605-001", poolId: "PUBG_GCOIN_300_POOL", batchName: "PUBG 300 G-COIN 5月首批", source: "手工上传码", fileName: "pubg_gcoin_300_20260518.xlsx", state: "可用", total: 300, available: 220, issued: 72, voided: 0, failed: 0, costCurrency: "人民币", unitCost: 18.2, costSource: "运营填写", costStatus: "已记录", expireAt: "2026-12-31 23:59", createdAt: "2026-05-18 10:20", updatedAt: "2026-05-22 15:10" }),
+      makeCdkeyBatch({ batchId: "BATCH-PUBG-202605-002", poolId: "PUBG_GCOIN_300_POOL", batchName: "PUBG 300 G-COIN 5月追加", source: "手工上传码", fileName: "pubg_gcoin_300_append_20260520.xlsx", state: "可用", total: 200, available: 100, issued: 100, voided: 0, failed: 0, costCurrency: "人民币", unitCost: 18.6, costSource: "运营填写", costStatus: "已记录", expireAt: "2026-12-31 23:59", createdAt: "2026-05-20 14:00", updatedAt: "2026-05-22 12:30" }),
+      makeCdkeyBatch({ batchId: "BATCH-ACC-202605-001", poolId: "ACCELERATOR_7D_POOL", batchName: "加速卡 7 天 5月首批", source: "手工上传码", fileName: "accelerator_7d_20260518.xlsx", state: "可用", total: 100, available: 0, issued: 100, voided: 0, failed: 0, costCurrency: "人民币", unitCost: 3.2, costSource: "运营填写", costStatus: "已记录", expireAt: "2026-10-31 23:59", createdAt: "2026-05-18 11:30", updatedAt: "2026-05-21 12:30" })
     ];
     let cdkeyCodes = [
       makeCdkeyCode({ rowKey: "ROW-PUBG-001", poolId: "PUBG_GCOIN_300_POOL", batchId: "BATCH-PUBG-202605-001", maskedCdkey: "PUBG-****-****-8K29", state: "已履约", deliveryRecordId: "DEL-202605220001", exchangeNo: "EXC-202605220001", orderId: "ORD-202605220001", issuedAt: "2026-05-22 16:21", updatedAt: "2026-05-22 16:21" }),
@@ -6713,13 +6724,13 @@
       const pool = getPoolById(record.cdkeyPoolId);
       const codes = getCdkeysByDeliveryRecord(record);
       const summary = infoGrid([
-        ["CDKey 码池 ID", record.cdkeyPoolId || "-"], ["CDKey 码池名称", pool?.name || "-"], ["补货记录 ID", record.cdkeyBatchId || "-"],
+        ["CDKey 码池 ID", record.cdkeyPoolId || "-"], ["CDKey 码池名称", pool?.name || "-"], ["入库批次 ID", record.cdkeyBatchId || "-"],
         ["CDKey 数量", codes.length ? `${codes.length} 个` : "-"], ["码池状态", pool?.state || "-"], ["失败原因", record.failureReason || "-"]
       ]);
       if (!codes.length) {
         return summary + `<div class="empty">当前兑换单暂无 CDKey 明细。</div><div class="hint-text">一笔兑换单可以关联多个 CDKey；列表只展示摘要，明细在详情中按 CDKey 逐条展示。</div>`;
       }
-      const table = `<div class="table-wrap"><table class="cdkey-code-table"><thead><tr><th>序号</th><th>脱敏 CDKey</th><th>CDKey 状态</th><th>补货记录 ID</th><th>履约时间</th></tr></thead><tbody>${codes.map((code, index) => `<tr><td>${index + 1}</td><td>${code.maskedCdkey}</td><td>${cdkeyCodeStateTag(code.state)}</td><td>${code.batchId || "-"}</td><td>${code.issuedAt || record.deliveredAt || "-"}</td></tr>`).join("")}</tbody></table></div>`;
+      const table = `<div class="table-wrap"><table class="cdkey-code-table"><thead><tr><th>序号</th><th>脱敏 CDKey</th><th>CDKey 状态</th><th>入库批次 ID</th><th>履约时间</th></tr></thead><tbody>${codes.map((code, index) => `<tr><td>${index + 1}</td><td>${code.maskedCdkey}</td><td>${cdkeyCodeStateTag(code.state)}</td><td>${code.batchId || "-"}</td><td>${code.issuedAt || record.deliveredAt || "-"}</td></tr>`).join("")}</tbody></table></div>`;
       return summary + table + `<div class="hint-text">一笔兑换单和 CDKey 是 1:N 关系；履约记录列表按兑换单展示，详情中展示该兑换单下全部 CDKey 明细，不拆分为多条履约记录。</div>`;
     }
 
@@ -6890,8 +6901,22 @@
     }
 
     function makeCdkeyBatch(batch) {
-      const result = { voided: 0, failed: 0, fileName: "", expireAt: "", createdAt: nowText(), updatedAt: nowText(), ...batch };
+      const result = { voided: 0, failed: 0, fileName: "", costCurrency: "人民币", unitCost: 0, costSource: "运营填写", costStatus: "已记录", expireAt: "", createdAt: nowText(), updatedAt: nowText(), ...batch };
+      result.totalCost = Number((Number(result.total || 0) * Number(result.unitCost || 0)).toFixed(2));
       return result;
+    }
+
+    function costCurrencySymbol(currency) {
+      return currency === "美元" ? "$" : "¥";
+    }
+
+    function formatCostAmount(amount, currency = "人民币") {
+      if (amount === "" || amount === null || amount === undefined || Number.isNaN(Number(amount))) return "-";
+      return `${costCurrencySymbol(currency)}${Number(amount).toFixed(2)}`;
+    }
+
+    function validUnitCost(value) {
+      return value !== "" && Number.isFinite(Number(value)) && Number(value) >= 0;
     }
 
     function normalizeCdkeyCodeState(state) {
@@ -6912,7 +6937,9 @@
     }
 
     function getCdkeyBatchesByPool(poolId) {
-      return cdkeyBatches.filter(batch => batch.poolId === poolId);
+      return cdkeyBatches
+        .filter(batch => batch.poolId === poolId)
+        .sort((a, b) => String(b.createdAt || b.updatedAt || "").localeCompare(String(a.createdAt || a.updatedAt || "")));
     }
 
     function getCdkeyCodesByPool(poolId) {
@@ -6980,6 +7007,29 @@
       return `${pool.supplierProduct || "-"}${pool.supplierSku ? `<div class="minor">商品编号：${pool.supplierSku}</div>` : ""}`;
     }
 
+    function directSupplyCostRecords(poolId) {
+      return mallOrders
+        .filter(order => order.supplyMode === "接口直供" && order.supplySourceId === poolId)
+        .map(order => {
+          const result = String(order.supplierRequestResult || "-");
+          const hasCost = validUnitCost(order.actualUnitCost) && validUnitCost(order.actualTotalCost);
+          const costStatus = /成功/.test(result) ? (hasCost ? "已记录" : "成本待补充") : /无库存/.test(result) ? "不产生成本" : "待确认";
+          return { ...order, costStatus };
+        })
+        .sort((a, b) => String(b.costRecordedAt || b.updated || "").localeCompare(String(a.costRecordedAt || a.updated || "")));
+    }
+
+    function cdkeySourceCostSummary(pool) {
+      if (cdkeySupplyMode(pool) === "接口直供") {
+        const records = directSupplyCostRecords(pool.id);
+        const latest = records.find(record => record.costStatus === "已记录");
+        return `<span class="tag purple">按取码记录</span><div class="minor">${latest ? `最近成本：${formatCostAmount(latest.actualUnitCost, latest.costCurrency)} / 件` : "暂无成功取码成本"}</div>`;
+      }
+      const batches = getCdkeyBatchesByPool(pool.id).sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
+      const latest = batches[0];
+      return `<b>${batches.length} 个批次</b><div class="minor">${latest ? `最近成本：${formatCostAmount(latest.unitCost, latest.costCurrency)} / 件` : "暂无入库批次"}</div>`;
+    }
+
     function cdkeyCodeStateTag(state) {
       const cls = state === "未使用" ? "green" : state === "已履约" ? "blue" : state === "已核销" ? "orange" : state === "已过期" ? "" : "";
       return `<span class="tag ${cls}">${state}</span>`;
@@ -6993,14 +7043,14 @@
       const body = document.getElementById("cdkeyPoolTbody");
       document.getElementById("cdkeyPoolTableCount").textContent = `共 ${visibleCdkeyPools.length} 条`;
       if (!visibleCdkeyPools.length) {
-        body.innerHTML = `<tr><td colspan="11"><div class="empty">当前筛选条件下暂无 CDKey 货源</div></td></tr>`;
+        body.innerHTML = `<tr><td colspan="12"><div class="empty">当前筛选条件下暂无 CDKey 货源</div></td></tr>`;
         return;
       }
       body.innerHTML = visibleCdkeyPools.map(pool => {
         const boundCount = getAllBoundSkuByPool(pool.id).length;
         return `<tr>
           <td><b>${pool.id}</b></td><td>${pool.name}</td><td><span class="tag ${cdkeySupplyMode(pool) === "接口直供" ? "purple" : "blue"}">${cdkeySupplyMode(pool)}</span></td>
-          <td>${cdkeyProviderSummary(pool)}</td><td>${cdkeySupplyConfig(pool)}</td><td>${cdkeySupplyAvailability(pool)}</td><td>${boundCount}</td><td>${cdkeyPoolStateTag(pool.state)}</td><td>${pool.createdAt || pool.updatedAt}</td>
+          <td>${cdkeyProviderSummary(pool)}</td><td>${cdkeySupplyConfig(pool)}</td><td>${cdkeySupplyAvailability(pool)}</td><td>${cdkeySourceCostSummary(pool)}</td><td>${boundCount}</td><td>${cdkeyPoolStateTag(pool.state)}</td><td>${pool.createdAt || pool.updatedAt}</td>
           <td>${lastCdkeyOperator(pool)}</td>
           <td><div class="action-list">${cdkeyPoolActions(pool)}</div></td>
         </tr>`;
@@ -7015,8 +7065,9 @@
       ];
       if (cdkeySupplyMode(pool) === "码池供货") {
         if (pool.state !== "下架" && pool.stockMethod === "手工上传") actions.push(`<button class="btn text" data-cdkey-action="restock" data-pool-id="${pool.id}">补货</button>`);
+        actions.push(`<button class="btn text" data-cdkey-action="batch" data-pool-id="${pool.id}">批次记录</button>`);
         actions.push(`<button class="btn text" data-cdkey-action="code" data-pool-id="${pool.id}">CDKey 明细</button>`);
-      }
+      } else actions.push(`<button class="btn text" data-cdkey-action="cost" data-pool-id="${pool.id}">成本记录</button>`);
       if (pool.state === "上架") actions.push(`<button class="btn text" data-cdkey-action="disable" data-pool-id="${pool.id}">下架</button>`);
       if (pool.state !== "上架") actions.push(`<button class="btn text" data-cdkey-action="enable" data-pool-id="${pool.id}">上架</button>`);
       if (pool.state === "草稿") actions.push(`<button class="btn text danger" data-cdkey-action="delete" data-pool-id="${pool.id}">删除</button>`);
@@ -7026,6 +7077,8 @@
     function handleCdkeyPoolAction(action, poolId) {
       if (action === "detail") openCdkeyPoolDetail(poolId);
       if (action === "edit") openCdkeyPoolForm("edit", getPoolById(poolId));
+      if (action === "batch") openCdkeyBatchDrawer(poolId);
+      if (action === "cost") openCdkeyDirectCostDrawer(poolId);
       if (action === "restock") {
         const pool = getPoolById(poolId);
         if (pool?.stockMethod === "手工上传") openCdkeyUploadModal(poolId);
@@ -7217,8 +7270,11 @@
       if (stockMethod === "手工上传") {
         body.innerHTML = `
           ${methodField}
-          <div class="alert info">首次新建码池时可同时上传初始 CDKey 数据；导入数量由上传文件解析，不在页面手工填写。码池保存后，后续新增码统一通过列表「补货」处理。</div>
+          <div class="alert info">首次新建码池时必须创建首个入库批次；导入数量由上传文件解析，不在页面手工填写。后续每次补货都会生成新的入库批次，并分别记录成本。</div>
           <div class="form-grid">
+            <div class="field"><label><span class="required-star">*</span>批次名称</label><input id="cdkeyInitialBatchName" maxlength="50" placeholder="请输入首批入库批次名称"></div>
+            <div class="field"><label><span class="required-star">*</span>成本币种</label><select id="cdkeyInitialCostCurrency"><option>人民币</option><option>美元</option></select></div>
+            <div class="field"><label><span class="required-star">*</span>单件成本</label><input id="cdkeyInitialUnitCost" type="number" min="0" step="0.01" placeholder="请输入本批次单件成本"></div>
             <div class="field"><label>上传文件</label><div class="file-action-row"><button class="btn" type="button" onclick="toast('已打开本地文件选择器。')">上传</button><button class="btn" type="button" onclick="toast('CDKey 导入模板已开始下载。')">下载模板</button><input id="cdkeyInitialUploadFile" value="mock_cdkey_upload.xlsx" disabled></div></div>
             <div class="field"><label>过期时间</label><input id="cdkeyInitialUploadExpire" placeholder="2026-12-31 23:59"></div>
             <div class="alert info" style="grid-column:1/-1">如上传文件中存在重复 CDKey，本次导入请求全部退回，不做部分入库。</div>
@@ -7231,7 +7287,19 @@
 
     function initialCdkeyDataError(pool) {
       if (pendingCdkeyAction?.mode !== "new") return "";
+      if (cdkeySupplyMode(pool) !== "码池供货" || pool.stockMethod !== "手工上传") return "";
+      if (!valueOf("cdkeyInitialBatchName")) return "首批入库批次名称必填";
+      if (!valueOf("cdkeyInitialUploadFile")) return "请先上传首批 CDKey 文件";
+      if (!valueOf("cdkeyInitialCostCurrency")) return "首批入库成本币种必填";
+      if (!validUnitCost(valueOf("cdkeyInitialUnitCost"))) return "首批入库单件成本必须为大于或等于 0 的数字";
       return "";
+    }
+
+    function highlightInitialCdkeyInvalidFields(pool) {
+      if (pendingCdkeyAction?.mode !== "new" || cdkeySupplyMode(pool) !== "码池供货" || pool.stockMethod !== "手工上传") return;
+      if (!valueOf("cdkeyInitialBatchName")) markInvalidControl("cdkeyInitialBatchName");
+      if (!valueOf("cdkeyInitialCostCurrency")) markInvalidControl("cdkeyInitialCostCurrency");
+      if (!validUnitCost(valueOf("cdkeyInitialUnitCost"))) markInvalidControl("cdkeyInitialUnitCost");
     }
 
     function createInitialCdkeyDataIfNeeded(pool) {
@@ -7242,9 +7310,11 @@
       const expireId = source === "手工上传码" ? "cdkeyInitialUploadExpire" : "cdkeyInitialGenerateExpire";
       const expireAt = valueOf(expireId);
       const count = source === "手工上传码" ? 100 : Number(valueOf("cdkeyInitialGenerateCount"));
-      const batchName = source === "手工上传码" ? `${pool.name || pool.id} 初始导入` : `${pool.name || pool.id} 初始生成`;
+      const batchName = source === "手工上传码" ? valueOf("cdkeyInitialBatchName") : `${pool.name || pool.id} 初始生成`;
       const fileName = source === "手工上传码" ? valueOf("cdkeyInitialUploadFile") : "";
-      createCdkeyBatchAndCodes(pool, batchName, source, count, "首次新建码池初始化数据", expireAt, fileName);
+      const costCurrency = source === "手工上传码" ? valueOf("cdkeyInitialCostCurrency") : "人民币";
+      const unitCost = source === "手工上传码" ? Number(valueOf("cdkeyInitialUnitCost")) : 0;
+      createCdkeyBatchAndCodes(pool, batchName, source, count, "首次新建码池初始化数据", expireAt, fileName, costCurrency, unitCost, "运营填写");
     }
 
     function renderCdkeyPoolImpact(poolId) {
@@ -7356,7 +7426,10 @@
       const errors = validateCdkeyPool(pool, targetState === "上架");
       if (errors.length) return toast(errors[0]);
       const initialError = initialCdkeyDataError(pool);
-      if (initialError) return toast(initialError);
+      if (initialError) {
+        highlightInitialCdkeyInvalidFields(pool);
+        return toast(initialError);
+      }
       upsertCdkeyPool(pool);
       createInitialCdkeyDataIfNeeded(pool);
       showCdkeyPoolPage();
@@ -7374,7 +7447,7 @@
       }
       const initialError = initialCdkeyDataError(pool);
       if (initialError) {
-        highlightCdkeyPoolInvalidFields(pool);
+        highlightInitialCdkeyInvalidFields(pool);
         focusFirstInvalid("#cdkeyPoolFormPage");
         return toast("信息不完整，无法上架");
       }
@@ -7408,6 +7481,7 @@
         ${detailSection("货源基础信息", infoGrid(basicItems))}
         ${detailSection("供货配置", infoGrid(providerItems))}
         ${detailSection(isDirect ? "接口直供配置" : "码池供货配置", supplyConfig)}
+        ${detailSection(isDirect ? "取码及成本记录" : "入库批次", isDirect ? directSupplyCostTable(directSupplyCostRecords(pool.id)) : cdkeyBatchTable(getCdkeyBatchesByPool(pool.id), false))}
         ${detailSection("绑定 SKU", boundSkuTable(getBoundSkuByPool(pool.id)))}
       `;
       openDrawer("cdkeyPoolDetailDrawer");
@@ -7420,7 +7494,8 @@
       selectedCdkeyPool = pool;
       document.getElementById("cdkeyGenerateInfo").innerHTML = infoGrid([["货源 ID", pool.id], ["货源名称", pool.name], ["码入库方式", pool.stockMethod], ["当前可用码数量", pool.available], ["待补货数量", pendingCdkeyCountForPool(pool.id)], ["当前履约缺口", cdkeyFulfillmentGap(pool)], ["当前货源状态", pool.state]]) + `<div class="alert info">补货入库后，系统会优先按支付成功时间 FIFO 自动发放待补货订单，剩余 CDKey 才进入新订单可用库存。</div>`;
       document.getElementById("cdkeyGenerateBatchList").innerHTML = cdkeyBatchTable(getCdkeyBatchesByPool(pool.id), false, true);
-      ["cdkeyGenerateName", "cdkeyGenerateCount", "cdkeyGenerateExpire"].forEach(id => document.getElementById(id).value = "");
+      ["cdkeyGenerateName", "cdkeyGenerateCount", "cdkeyGenerateUnitCost", "cdkeyGenerateExpire"].forEach(id => document.getElementById(id).value = "");
+      document.getElementById("cdkeyGenerateCostCurrency").value = "人民币";
       openModal("cdkeyGenerateModal");
     }
 
@@ -7430,10 +7505,13 @@
       if (pool.state === "下架") return toast("码池下架时不允许补货。");
       const name = valueOf("cdkeyGenerateName");
       const count = Number(valueOf("cdkeyGenerateCount"));
+      const costCurrency = valueOf("cdkeyGenerateCostCurrency");
+      const unitCostText = valueOf("cdkeyGenerateUnitCost");
       const expireAt = valueOf("cdkeyGenerateExpire");
-      if (!name) return toast("请输入补货名称。");
+      if (!name) return toast("请输入批次名称。");
       if (!Number.isInteger(count) || count <= 0 || count > 99999) return toast("生成数量必须为 1-99999 的正整数。");
-      const fulfilledCount = createCdkeyBatchAndCodes(pool, name, "接口批量获取码", count, "接口批量获取补货", expireAt);
+      if (!validUnitCost(unitCostText)) return toast("请输入正确的单件成本。");
+      const fulfilledCount = createCdkeyBatchAndCodes(pool, name, "接口批量获取码", count, "接口批量获取补货", expireAt, "", costCurrency, Number(unitCostText), "接口返回");
       closeModal("cdkeyGenerateModal");
       toast(`接口批量获取补货完成；自动履约 ${fulfilledCount} 笔待补货订单。`);
     }
@@ -7445,7 +7523,8 @@
       selectedCdkeyPool = pool;
       document.getElementById("cdkeyUploadInfo").innerHTML = infoGrid([["货源 ID", pool.id], ["货源名称", pool.name], ["码入库方式", pool.stockMethod], ["当前可用码数量", pool.available], ["待补货数量", pendingCdkeyCountForPool(pool.id)], ["当前履约缺口", cdkeyFulfillmentGap(pool)], ["当前货源状态", pool.state]]) + `<div class="alert info">补货入库后，系统会优先按支付成功时间 FIFO 自动发放待补货订单，剩余 CDKey 才进入新订单可用库存。</div>`;
       document.getElementById("cdkeyUploadBatchList").innerHTML = cdkeyBatchTable(getCdkeyBatchesByPool(pool.id), false, true);
-      ["cdkeyUploadName", "cdkeyUploadExpire"].forEach(id => document.getElementById(id).value = "");
+      ["cdkeyUploadName", "cdkeyUploadUnitCost", "cdkeyUploadExpire"].forEach(id => document.getElementById(id).value = "");
+      document.getElementById("cdkeyUploadCostCurrency").value = "人民币";
       openModal("cdkeyUploadModal");
     }
 
@@ -7455,18 +7534,21 @@
       if (pool.state === "下架") return toast("码池下架时不允许补货。");
       const name = valueOf("cdkeyUploadName");
       const count = 100;
+      const costCurrency = valueOf("cdkeyUploadCostCurrency");
+      const unitCostText = valueOf("cdkeyUploadUnitCost");
       const expireAt = valueOf("cdkeyUploadExpire");
       const fileName = valueOf("cdkeyUploadFile");
-      if (!name) return toast("请输入补货名称。");
+      if (!name) return toast("请输入批次名称。");
       if (!fileName) return toast("请先上传补货文件。");
-      const fulfilledCount = createCdkeyBatchAndCodes(pool, name, "手工上传码", count, "手工上传补货", expireAt, fileName);
+      if (!validUnitCost(unitCostText)) return toast("请输入正确的单件成本。");
+      const fulfilledCount = createCdkeyBatchAndCodes(pool, name, "手工上传码", count, "手工上传补货", expireAt, fileName, costCurrency, Number(unitCostText), "运营填写");
       closeModal("cdkeyUploadModal");
-      toast(`手工上传补货完成；自动履约 ${fulfilledCount} 笔待补货订单。`);
+      toast(`入库批次已创建；自动履约 ${fulfilledCount} 笔待补货订单。`);
     }
 
-    function createCdkeyBatchAndCodes(pool, name, source, count, reason, expireAt = "", fileName = "") {
+    function createCdkeyBatchAndCodes(pool, name, source, count, reason, expireAt = "", fileName = "", costCurrency = "人民币", unitCost = 0, costSource = "运营填写") {
       const batchId = `BATCH-${pool.id}-${Date.now()}`.replace(/[^A-Z0-9_-]/g, "");
-      const batch = makeCdkeyBatch({ batchId, poolId: pool.id, batchName: name, source, fileName, state: "可用", total: count, available: count, issued: 0, voided: 0, failed: 0, expireAt, createdAt: nowText(), updatedAt: nowText() });
+      const batch = makeCdkeyBatch({ batchId, poolId: pool.id, batchName: name, source, fileName, state: "可用", total: count, available: count, issued: 0, voided: 0, failed: 0, costCurrency, unitCost, costSource, costStatus: "已记录", expireAt, createdAt: nowText(), updatedAt: nowText() });
       cdkeyBatches.unshift(batch);
       for (let i = 1; i <= Math.min(count, 5); i++) {
         cdkeyCodes.unshift(makeCdkeyCode({ rowKey: `ROW-${batchId}-${i}`, poolId: pool.id, batchId, maskedCdkey: `${pool.id.slice(0,4)}-****-****-${String(i).padStart(4, "0")}`, state: "未使用", expireAt, updatedAt: nowText() }));
@@ -7548,25 +7630,44 @@
       const pool = getPoolById(poolId);
       if (!pool) return;
       document.getElementById("cdkeyBatchBody").innerHTML = `${detailSection("码池信息", infoGrid([["货源 ID", pool.id], ["货源名称", pool.name], ["货源状态", pool.state], ["码入库方式", pool.stockMethod]]))}
-        <div class="form-grid two" style="margin-bottom:12px"><div class="field"><label>补货记录 ID</label><input placeholder="请输入补货记录 ID"></div><div class="field"><label>码入库来源</label><select><option>全部</option><option>接口批量获取码</option><option>手工上传码</option></select></div></div>
+        <div class="alert info" style="margin-bottom:12px">每次首次入库或后续补货都会形成独立批次。批次成本用于对账；已有履约记录的批次成本不允许直接覆盖。</div>
+        <div class="form-grid two" style="margin-bottom:12px"><div class="field"><label>批次 ID</label><input placeholder="请输入批次 ID"></div><div class="field"><label>码入库来源</label><select><option>全部</option><option>接口批量获取码</option><option>手工上传码</option></select></div></div>
         ${cdkeyBatchTable(getCdkeyBatchesByPool(pool.id), true)}`;
       openDrawer("cdkeyBatchDrawer");
       document.querySelectorAll("[data-batch-code]").forEach(btn => btn.addEventListener("click", () => openCdkeyCodeDrawer(btn.dataset.poolId, btn.dataset.batchCode)));
     }
 
     function cdkeyBatchTable(rows, withActions, compact = false) {
-      if (!rows.length) return `<div class="empty">暂无补货记录</div>`;
+      if (!rows.length) return `<div class="empty">暂无入库批次</div>`;
       if (compact) {
-        return `<div class="table-wrap restock-table-wrap"><table class="restock-batch-table"><thead><tr><th>补货记录 ID</th><th>补货名称</th><th>码入库来源</th><th>上传文件名</th><th>总码数</th><th>可用码数量</th><th>已履约数量</th><th>核销数量</th><th>过期时间</th><th>创建时间</th></tr></thead><tbody>${rows.map(batch => `<tr><td>${batch.batchId}</td><td>${batch.batchName}</td><td>${batch.source}</td><td>${batch.fileName || "-"}</td><td>${batch.total}</td><td>${batch.available}</td><td>${batch.issued}</td><td>${batch.voided}</td><td>${batch.expireAt || "-"}</td><td>${batch.createdAt || batch.updatedAt}</td></tr>`).join("")}</tbody></table></div>`;
+        return `<div class="table-wrap restock-table-wrap"><table class="restock-batch-table"><thead><tr><th>批次 ID</th><th>批次名称</th><th>码入库来源</th><th>总码数</th><th>可用码数量</th><th>成本币种</th><th>单件成本</th><th>批次总成本</th><th>成本来源</th><th>过期时间</th><th>创建时间</th></tr></thead><tbody>${rows.map(batch => `<tr><td>${batch.batchId}</td><td>${batch.batchName}</td><td>${batch.source}</td><td>${batch.total}</td><td>${batch.available}</td><td>${batch.costCurrency}</td><td>${formatCostAmount(batch.unitCost, batch.costCurrency)}</td><td>${formatCostAmount(batch.totalCost, batch.costCurrency)}</td><td>${batch.costSource}</td><td>${batch.expireAt || "-"}</td><td>${batch.createdAt || batch.updatedAt}</td></tr>`).join("")}</tbody></table></div>`;
       }
-      return `<div class="table-wrap"><table class="cdkey-batch-table"><thead><tr><th>补货记录 ID</th><th>补货名称</th><th>码池 ID</th><th>码入库来源</th><th>上传文件名</th><th>总码数</th><th>可用码数量</th><th>已履约数量</th><th>核销数量</th><th>失败数量</th><th>过期时间</th><th>创建时间</th>${withActions ? "<th>最后操作人</th><th>操作</th>" : ""}</tr></thead><tbody>${rows.map(batch => `<tr><td>${batch.batchId}</td><td>${batch.batchName}</td><td>${batch.poolId}</td><td>${batch.source}</td><td>${batch.fileName || "-"}</td><td>${batch.total}</td><td>${batch.available}</td><td>${batch.issued}</td><td>${batch.voided}</td><td>${batch.failed}</td><td>${batch.expireAt || "-"}</td><td>${batch.createdAt || batch.updatedAt}</td>${withActions ? `<td>${lastCdkeyOperator(getPoolById(batch.poolId))}</td><td><button class="btn text" data-pool-id="${batch.poolId}" data-batch-code="${batch.batchId}">查看 CDKey 明细</button></td>` : ""}</tr>`).join("")}</tbody></table></div>`;
+      return `<div class="table-wrap"><table class="cdkey-batch-table"><thead><tr><th>批次 ID</th><th>批次名称</th><th>码池 ID</th><th>码入库来源</th><th>上传文件名</th><th>总码数</th><th>可用码数量</th><th>已履约数量</th><th>核销数量</th><th>成本币种</th><th>单件成本</th><th>批次总成本</th><th>成本来源</th><th>过期时间</th><th>创建时间</th>${withActions ? "<th>最后操作人</th><th>操作</th>" : ""}</tr></thead><tbody>${rows.map(batch => `<tr><td>${batch.batchId}</td><td>${batch.batchName}</td><td>${batch.poolId}</td><td>${batch.source}</td><td>${batch.fileName || "-"}</td><td>${batch.total}</td><td>${batch.available}</td><td>${batch.issued}</td><td>${batch.voided}</td><td>${batch.costCurrency}</td><td>${formatCostAmount(batch.unitCost, batch.costCurrency)}</td><td>${formatCostAmount(batch.totalCost, batch.costCurrency)}</td><td>${batch.costSource}</td><td>${batch.expireAt || "-"}</td><td>${batch.createdAt || batch.updatedAt}</td>${withActions ? `<td>${lastCdkeyOperator(getPoolById(batch.poolId))}</td><td><button class="btn text" data-pool-id="${batch.poolId}" data-batch-code="${batch.batchId}">查看 CDKey 明细</button></td>` : ""}</tr>`).join("")}</tbody></table></div>`;
+    }
+
+    function directSupplyCostStatusTag(status) {
+      const cls = status === "已记录" ? "green" : status === "成本待补充" ? "orange" : status === "待确认" ? "red" : "";
+      return `<span class="tag ${cls}">${status}</span>`;
+    }
+
+    function directSupplyCostTable(rows) {
+      if (!rows.length) return `<div class="empty">暂无接口取码记录</div>`;
+      return `<div class="table-wrap"><table class="direct-cost-table"><thead><tr><th>平台订单号</th><th>供货方订单号</th><th>供货商品</th><th>数量</th><th>接口结果</th><th>成本状态</th><th>成本币种</th><th>单件成本</th><th>实际总成本</th><th>成本来源</th><th>记录时间</th></tr></thead><tbody>${rows.map(record => `<tr><td>${record.no}</td><td>${record.supplierOrderNo || "-"}</td><td>${record.supplierProduct || "-"}</td><td>${record.quantity || 1}</td><td>${record.supplierRequestResult || "-"}</td><td>${directSupplyCostStatusTag(record.costStatus)}</td><td>${record.costStatus === "已记录" ? record.costCurrency : "-"}</td><td>${record.costStatus === "已记录" ? formatCostAmount(record.actualUnitCost, record.costCurrency) : "-"}</td><td>${record.costStatus === "已记录" ? formatCostAmount(record.actualTotalCost, record.costCurrency) : "-"}</td><td>${record.costStatus === "已记录" ? (record.costSource || "接口返回") : "-"}</td><td>${record.costRecordedAt || record.updated || "-"}</td></tr>`).join("")}</tbody></table></div><div class="hint-text">接口直供不在货源上预填固定成本；每次取码成功后，将接口返回的实际成本写入对应订单。成功取码但未返回成本时标记为“成本待补充”。</div>`;
+    }
+
+    function openCdkeyDirectCostDrawer(poolId) {
+      const pool = getPoolById(poolId);
+      if (!pool) return;
+      document.getElementById("cdkeyCostBody").innerHTML = `${detailSection("货源信息", infoGrid([["货源 ID", pool.id], ["货源名称", pool.name], ["供货方", cdkeyProviderName(pool)], ["供货商品", pool.supplierProduct || "-"], ["商品编码", pool.supplierSku || "-"]]))}
+        ${detailSection("取码及成本记录", directSupplyCostTable(directSupplyCostRecords(pool.id)))}`;
+      openDrawer("cdkeyCostDrawer");
     }
 
     function openCdkeyCodeDrawer(poolId, batchId = "") {
       const pool = getPoolById(poolId);
       if (!pool) return;
       const rows = getCdkeyCodesByPool(poolId).filter(code => !batchId || code.batchId === batchId);
-      document.getElementById("cdkeyCodeBody").innerHTML = `${detailSection("码池信息", infoGrid([["码池 ID", pool.id], ["码池名称", pool.name], ["码池状态", pool.state], ["补货记录 ID", batchId || "全部补货记录"]]))}
+      document.getElementById("cdkeyCodeBody").innerHTML = `${detailSection("码池信息", infoGrid([["码池 ID", pool.id], ["码池名称", pool.name], ["码池状态", pool.state], ["入库批次 ID", batchId || "全部入库批次"]]))}
         <div class="form-grid three" style="margin-bottom:12px"><div class="field"><label>码值，默认脱敏查询</label><input placeholder="请输入脱敏码关键词"></div><div class="field"><label>CDKey 状态</label><select><option>全部</option><option>未使用</option><option>已核销</option><option>已履约</option><option>已过期</option></select></div><div class="field"><label>兑换单号</label><input placeholder="请输入兑换单号"></div></div>
         ${cdkeyCodeTable(rows)}`;
       openDrawer("cdkeyCodeDrawer");
@@ -7575,14 +7676,14 @@
 
     function cdkeyCodeTable(rows) {
       if (!rows.length) return `<div class="empty">暂无 CDKey 明细</div>`;
-      return `<div class="table-wrap"><table class="cdkey-code-table"><thead><tr><th>脱敏 CDKey</th><th>码池 ID</th><th>补货记录 ID</th><th>CDKey 状态</th><th>关联兑换单号</th><th>关联订单号</th><th>履约时间</th><th>核销时间</th><th>创建时间</th><th>最后操作人</th><th>操作</th></tr></thead><tbody>${rows.map(code => `<tr><td>${code.maskedCdkey}</td><td>${code.poolId}</td><td>${code.batchId}</td><td>${cdkeyCodeStateTag(code.state)}</td><td>${code.exchangeNo || code.deliveryRecordId || "-"}</td><td>${code.orderId || "-"}</td><td>${code.issuedAt || "-"}</td><td>${code.voidedAt || "-"}</td><td>${code.createdAt || code.updatedAt}</td><td>${lastCdkeyOperator(getPoolById(code.poolId))}</td><td>${code.state === "未使用" ? `<button class="btn text danger" data-void-key="${code.rowKey}">核销</button>` : `<span class="muted">只读</span>`}</td></tr>`).join("")}</tbody></table></div><div class="hint-text">CDKey 明细不展示完整 CDKey 明文，不提供复制明文码，不提供修改已履约码状态。</div>`;
+      return `<div class="table-wrap"><table class="cdkey-code-table"><thead><tr><th>脱敏 CDKey</th><th>码池 ID</th><th>入库批次 ID</th><th>CDKey 状态</th><th>关联兑换单号</th><th>关联订单号</th><th>履约时间</th><th>核销时间</th><th>创建时间</th><th>最后操作人</th><th>操作</th></tr></thead><tbody>${rows.map(code => `<tr><td>${code.maskedCdkey}</td><td>${code.poolId}</td><td>${code.batchId}</td><td>${cdkeyCodeStateTag(code.state)}</td><td>${code.exchangeNo || code.deliveryRecordId || "-"}</td><td>${code.orderId || "-"}</td><td>${code.issuedAt || "-"}</td><td>${code.voidedAt || "-"}</td><td>${code.createdAt || code.updatedAt}</td><td>${lastCdkeyOperator(getPoolById(code.poolId))}</td><td>${code.state === "未使用" ? `<button class="btn text danger" data-void-key="${code.rowKey}">核销</button>` : `<span class="muted">只读</span>`}</td></tr>`).join("")}</tbody></table></div><div class="hint-text">CDKey 明细不展示完整 CDKey 明文，不提供复制明文码，不提供修改已履约码状态。</div>`;
     }
 
     function openCdkeyVoidModal(rowKey) {
       const code = cdkeyCodes.find(item => item.rowKey === rowKey);
       if (!code) return;
       selectedCdkeyCode = code;
-      document.getElementById("cdkeyVoidInfo").innerHTML = infoGrid([["脱敏 CDKey", code.maskedCdkey], ["码池 ID", code.poolId], ["补货记录 ID", code.batchId], ["当前 CDKey 状态", code.state]]);
+      document.getElementById("cdkeyVoidInfo").innerHTML = infoGrid([["脱敏 CDKey", code.maskedCdkey], ["码池 ID", code.poolId], ["入库批次 ID", code.batchId], ["当前 CDKey 状态", code.state]]);
       document.getElementById("cdkeyVoidReason").value = "";
       openModal("cdkeyVoidModal");
     }
@@ -7650,7 +7751,7 @@
       selectedCdkeyPool = pool;
       document.getElementById("cdkeyDeleteInfo").innerHTML = infoGrid([
         ["货源 ID", pool.id], ["货源名称", pool.name], ["供货方式", cdkeySupplyMode(pool)], ["当前货源状态", pool.state],
-        ["绑定 SKU 数量", boundRows.length], ["补货记录数", getCdkeyBatchesByPool(pool.id).length]
+        ["绑定 SKU 数量", boundRows.length], ["入库批次数", getCdkeyBatchesByPool(pool.id).length]
       ]);
       document.getElementById("cdkeyDeleteReason").value = "";
       openModal("cdkeyDeleteModal");
