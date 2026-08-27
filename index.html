@@ -1186,7 +1186,7 @@
               <div class="field"><label>货币类型</label><select id="mallOrderCurrencyFilter"><option value="">全部</option><option>积分</option><option>人民币</option></select></div>
               <div class="field"><label>支付方式</label><select id="mallOrderPaymentMethodFilter"><option value="">全部</option><option>积分支付</option><option>支付宝</option><option>微信支付</option></select></div>
               <div class="field"><label>履约方式</label><select id="mallOrderDeliveryFilter"><option value="">全部</option><option>自动履约（虚拟道具）</option><option>自动履约（CDKey）</option><option>手动履约（实物）</option></select></div>
-              <div class="field"><label>退款状态</label><select id="mallOrderRefundStatusFilter"><option value="">全部</option><option>未退款</option><option>退款处理中</option><option>部分退款</option><option>退款成功</option><option>退款失败</option></select></div>
+              <div class="field"><label>退款状态</label><select id="mallOrderRefundStatusFilter"><option value="">全部</option><option>未退款</option><option>退款处理中</option><option>退款成功</option><option>退款失败</option></select></div>
             </div>
             <div class="filter-actions">
               <button class="btn primary" id="searchOrdersBtn">查询</button>
@@ -2373,14 +2373,12 @@
   </section>
 
   <section class="modal wide" id="orderRefundModal" role="dialog" aria-modal="true">
-    <div class="modal-head"><span id="orderRefundModalTitle">发起退款</span><button class="btn text" data-close-modal="orderRefundModal">关闭</button></div>
+    <div class="modal-head"><span id="orderRefundModalTitle">退款</span><button class="btn text" data-close-modal="orderRefundModal">关闭</button></div>
     <div class="modal-body">
       <div class="info-grid" id="orderRefundInfo"></div>
       <div class="form-grid" style="margin-top:14px">
-        <div class="field"><label>退款方式</label><input id="orderRefundChannel" disabled></div>
-        <div class="field"><label><span class="required-star">*</span>本次退款金额</label><input id="orderRefundAmount" type="number"><div class="hint-text" id="orderRefundAmountHint"></div></div>
-        <div class="field"><label><span class="required-star">*</span>退款原因</label><select id="orderRefundReason"><option>三方接口明确无库存</option><option>履约失败</option><option>缺货等待取消</option><option>商品异常</option><option>客服协商</option><option>运营纠错</option><option>其他</option></select></div>
-        <div class="field"><label>退款说明</label><textarea id="orderRefundRemark" rows="3" maxlength="200" placeholder="补充退款背景，最多 200 字"></textarea></div>
+        <div class="field"><label>退款金额</label><input id="orderRefundAmount" type="number" disabled><div class="hint-text" id="orderRefundAmountHint"></div></div>
+        <div class="field"><label><span class="required-star">*</span>退款说明</label><textarea id="orderRefundRemark" rows="3" maxlength="200" required placeholder="请填写退款说明，最多 200 字"></textarea></div>
       </div>
       <div class="alert warning" id="orderRefundImpact" style="margin-top:14px"></div>
     </div>
@@ -2450,14 +2448,14 @@
       { id: "FL20260703005", userId: "U100862", nnNo: "NN100862", phone: "13888888888", type: "获取", amount: 500, balance: 1700, source: "活动增量", time: "2026-07-03 10:23:15", desc: "活动奖励发放" }
     ];
     let mallOrders = [
-      { no: "ORD20260706005", userId: "U100870", nnNo: "NN100870", phone: "13755556666", nick: "林十二", product: "300 G-COIN", productSnapshot: "300 G-COIN / 规格：300 G-COIN / 类型：CDKey", productType: "CDKey", quantity: 1, currencyType: "人民币", paymentMethod: "微信支付", unitAmount: 24.9, paymentAmount: 24.9, inventoryType: "接口直供", acquireForm: "发放至客户端订单，用户主动提取后查看 CDKey", fulfillmentChannel: "客户端订单", fulfill: DELIVERY_AUTO_CDKEY, status: "已关闭", fulfillmentStatus: "履约失败", supplyMode: "接口直供", supplySourceId: "PUBG_VENDOR_API", supplySourceName: "星核 G-COIN 官方直供", supplier: "星核卡券", supplierProduct: "PUBG 300 G-COIN", supplierProductId: "1153796224", supplierRequestResult: "明确无库存", extractStatus: "待发码", reason: "支付成功后，三方接口明确返回无库存，系统已自动退款", paymentResult: "微信支付成功后已原路退款：¥24.90", stockResult: "接口直供，不维护本地库存数量", fulfillResult: "三方接口明确无库存，未发放商品", retrySummary: "未重试；已自动退款", refundStatus: "退款成功", refundedAmount: 24.9, refundType: "自动退款", refundReason: "三方接口明确无库存", refundRemark: "支付成功后取货时明确无库存，系统自动退款", refundNo: "RF202607060001", refundChannel: "微信支付原路退款", refundOperator: "系统", refundAppliedAt: "2026-07-06 09:02:14", refundedAt: "2026-07-06 09:02:19", refundFailureReason: "-", refundHistory: [{ time: "2026-07-06 09:02:14", action: "自动发起退款", result: "退款处理中", operator: "系统" }, { time: "2026-07-06 09:02:19", action: "退款结果回写", result: "退款成功", operator: "系统" }], created: "2026-07-06 09:01:50", updated: "2026-07-06 09:02:19", completed: "2026-07-06 09:02:19" },
+      { no: "ORD20260706005", userId: "U100870", nnNo: "NN100870", phone: "13755556666", nick: "林十二", product: "300 G-COIN", productSnapshot: "300 G-COIN / 规格：300 G-COIN / 类型：CDKey", productType: "CDKey", quantity: 1, currencyType: "人民币", paymentMethod: "微信支付", unitAmount: 24.9, paymentAmount: 24.9, inventoryType: "接口直供", acquireForm: "发放至客户端订单，用户主动提取后查看 CDKey", fulfillmentChannel: "客户端订单", fulfill: DELIVERY_AUTO_CDKEY, status: "已关闭", fulfillmentStatus: "履约失败", supplyMode: "接口直供", supplySourceId: "PUBG_VENDOR_API", supplySourceName: "星核 G-COIN 官方直供", supplier: "星核卡券", supplierProduct: "PUBG 300 G-COIN", supplierProductId: "1153796224", supplierRequestResult: "明确无库存", extractStatus: "待发码", reason: "支付成功后，三方接口明确返回无库存，系统已自动退款", paymentResult: "微信支付成功后已退款：¥24.90", stockResult: "接口直供，不维护本地库存数量", fulfillResult: "三方接口明确无库存，未发放商品", retrySummary: "未重试；已自动退款", refundStatus: "退款成功", refundedAmount: 24.9, refundType: "自动退款", refundRemark: "支付成功后取货时明确无库存，系统自动退款", refundNo: "RF202607060001", refundChannel: "微信支付原路退款", refundOperator: "系统", refundAppliedAt: "2026-07-06 09:02:14", refundedAt: "2026-07-06 09:02:19", refundFailureReason: "-", refundHistory: [{ time: "2026-07-06 09:02:14", action: "自动发起退款", result: "退款处理中", operator: "系统" }, { time: "2026-07-06 09:02:19", action: "退款结果回写", result: "退款成功", operator: "系统" }], created: "2026-07-06 09:01:50", updated: "2026-07-06 09:02:19", completed: "2026-07-06 09:02:19" },
       { no: "ORD20260706001", userId: "U100862", nnNo: "NN100862", phone: "13888888888", nick: "李四", product: "NN加速器3天卡", productSnapshot: "NN加速器3天卡 / 规格：3天 / 类型：CDKey", productType: "CDKey", quantity: 1, currencyType: "积分", paymentMethod: "积分支付", unitAmount: 500, paymentAmount: 500, inventoryType: "CDKey 码池库存", acquireForm: "发放至客户端订单，用户主动提取后查看 CDKey", fulfillmentChannel: "客户端订单", fulfill: DELIVERY_AUTO_CDKEY, status: "已完成", fulfillmentStatus: "履约完成", supplyMode: "码池供货", supplySourceId: "ACCELERATOR_3D_POOL", supplySourceName: "NN 加速器 3 天码池", extractStatus: "已提取", phoneVerifiedAt: "2026-07-06 09:48:11", realNameVerifiedAt: "2026-07-06 09:48:13", extractedAt: "2026-07-06 09:48:16", extractionChannel: "客户端订单详情", codeIssueStatus: "正常", reason: "-", paymentResult: "积分扣减成功：-500 积分", stockResult: "库存已扣减：-1", fulfillResult: "CDKey 发放成功", retrySummary: "无需重试", maskedCdkey: "NN3D-****-8K2Q", fullCdkey: "NN3D-7P9A-8K2Q", created: "2026-07-06 09:45:33", updated: "2026-07-06 09:48:16", completed: "2026-07-06 09:45:58" },
       { no: "ORD20260706004", userId: "U100869", nnNo: "NN100869", phone: "13912345678", nick: "陈十一", product: "300 G-COIN", productSnapshot: "300 G-COIN / 规格：300 G-COIN / 类型：CDKey", productType: "CDKey", quantity: 1, currencyType: "人民币", paymentMethod: "微信支付", unitAmount: 24.9, paymentAmount: 24.9, inventoryType: "接口直供", acquireForm: "发放至客户端订单，用户主动提取后查看 CDKey", fulfillmentChannel: "客户端订单", fulfill: DELIVERY_AUTO_CDKEY, status: "已完成", fulfillmentStatus: "履约完成", supplyMode: "接口直供", supplySourceId: "PUBG_VENDOR_API", supplySourceName: "星核 G-COIN 官方直供", supplier: "星核卡券", supplierProduct: "PUBG 300 G-COIN", supplierProductId: "1153796224", supplierRequestResult: "取码成功", extractStatus: "待提取", phoneVerifiedAt: "-", realNameVerifiedAt: "-", extractedAt: "-", extractionChannel: "-", codeIssueStatus: "未提取", reason: "-", paymentResult: "微信支付成功：¥24.90", stockResult: "接口直供，不维护本地库存数量", fulfillResult: "供应商取码成功，待用户提取", retrySummary: "无需重试", maskedCdkey: "PUBG-****-P7Q2", fullCdkey: "PUBG-GC30-X91M-P7Q2", created: "2026-07-06 09:18:20", updated: "2026-07-06 09:18:31", completed: "2026-07-06 09:18:31" },
       { no: "ORD20260706002", userId: "U100863", nnNo: "NN100863", phone: "13966666666", nick: "王五", product: "星耀头像框30天", productSnapshot: "星耀头像框30天 / 类型：虚拟道具 / 权益：社区身份装饰", productType: "虚拟道具", quantity: 1, currencyType: "人民币", paymentMethod: "微信支付", unitAmount: 12.9, paymentAmount: 12.9, inventoryType: "无限库存", acquireForm: "发放至用户背包，用户在社区装扮中启用", fulfillmentChannel: "背包发放", fulfill: DELIVERY_AUTO_VIRTUAL, status: "异常", fulfillmentStatus: "履约中", reason: "履约结果不确定，待人工确认", paymentResult: "微信支付成功：¥12.90", stockResult: "无限库存，无需占用", fulfillResult: "履约超时，结果待确认", retrySummary: "等待重试，已重试 1/3", bagAsset: "头像框权益待确认", created: "2026-07-06 08:30:15", updated: "2026-07-06 08:36:20", completed: "-" },
       { no: "ORD20260706003", userId: "U100864", nnNo: "NN100864", phone: "13733333333", nick: "赵六", product: "NN加速器30天卡", productSnapshot: "NN加速器30天卡 / 规格：30天 / 类型：CDKey", productType: "CDKey", quantity: 1, currencyType: "人民币", paymentMethod: "支付宝", unitAmount: 29.9, paymentAmount: 29.9, inventoryType: "有限库存", acquireForm: "发放至用户背包，用户进入背包查看兑换码", fulfillmentChannel: "背包发放", fulfill: DELIVERY_AUTO_CDKEY, status: "支付失败", fulfillmentStatus: "-", reason: "支付宝支付失败，库存已释放", paymentResult: "支付宝支付失败", stockResult: "库存已释放", fulfillResult: "未进入履约发放", retrySummary: "无需重试", maskedCdkey: "-", created: "2026-07-06 07:12:08", updated: "2026-07-06 07:12:21", completed: "-" },
       { no: "ORD20260705004", userId: "U100862", nnNo: "NN100862", phone: "13888888888", nick: "李四", product: "加速卡 7 天", productSnapshot: "加速卡 7 天 / 规格：7天 / 类型：CDKey", productType: "CDKey", quantity: 1, currencyType: "积分", paymentMethod: "积分支付", unitAmount: 800, paymentAmount: 800, inventoryType: "CDKey 码池库存", acquireForm: "发放至客户端订单，用户主动提取后查看 CDKey", fulfillmentChannel: "客户端订单", fulfill: DELIVERY_AUTO_CDKEY, status: "已支付", fulfillmentStatus: "待履约", extractStatus: "待发码", supplyMode: "码池供货", supplySourceId: "ACCELERATOR_7D_POOL", supplySourceName: "加速卡 7 天码池", orderScene: "缺货下单", waitingReason: "等待 CDKey补货", pendingQuantity: 1, quotaReservationId: "PFR-20260705004", queueNo: 1, cdkeyPoolId: "ACCELERATOR_7D_POOL", reason: "等待 CDKey补货", paymentResult: "积分扣减成功：-800 积分", stockResult: "未占用 CDKey；已占用待履约额度：1", fulfillResult: "待码池补货后自动发放", retrySummary: "等待补货，不进入失败重试", maskedCdkey: "-", created: "2026-07-05 16:20:10", updated: "2026-07-05 16:20:18", completed: "-" },
       { no: "ORD20260705006", businessSource: "积分商城", userId: "U100867", nnNo: "NN100867", phone: "13488888888", nick: "吴九", product: "NN加速器7天卡", productSnapshot: "NN加速器7天卡 / 规格：7天 / 类型：CDKey", productType: "CDKey", quantity: 10, currencyType: "积分", paymentMethod: "积分支付", unitAmount: 800, paymentAmount: 8000, inventoryType: "CDKey 码池库存", acquireForm: "发放至客户端订单，用户主动提取后查看 CDKey", fulfillmentChannel: "客户端订单", fulfill: DELIVERY_AUTO_CDKEY, status: "已支付", fulfillmentStatus: "履约中", extractStatus: "待发码", supplyMode: "码池供货", supplySourceId: "ACCELERATOR_7D_POOL", supplySourceName: "加速卡 7 天码池", orderScene: "缺货下单", fulfilledQuantity: 5, pendingQuantity: 5, waitingReason: "剩余5个等待 CDKey补货", quotaReservationId: "PFR-20260705006", queueNo: 2, cdkeyPoolId: "ACCELERATOR_7D_POOL", reason: "已履约5个，剩余5个等待 CDKey补货", paymentResult: "积分扣减成功：-8000 积分", stockResult: "已扣减5个 CDKey；剩余5个待补货", fulfillResult: "已自动发放5个 CDKey，剩余5个待履约", retrySummary: "剩余数量等待补货，不进入失败重试", maskedCdkey: "已发放5个（详情见履约记录）", maskedCdkeys: ["ACC7-****-19KQ", "ACC7-****-27XM", "ACC7-****-35DF", "ACC7-****-48RT", "ACC7-****-56WN"], created: "2026-07-05 15:30:10", updated: "2026-07-05 15:35:22", completed: "-" },
-      { no: "ORD20260705005", userId: "U100863", nnNo: "NN100863", phone: "13966666666", nick: "王五", product: "星耀昵称挂件7天", productSnapshot: "星耀昵称挂件7天 / 类型：虚拟道具 / 权益：昵称装饰", productType: "虚拟道具", quantity: 1, currencyType: "人民币", paymentMethod: "支付宝", unitAmount: 6.9, paymentAmount: 6.9, inventoryType: "无限库存", acquireForm: "发放至用户背包，用户在社区装扮中启用", fulfillmentChannel: "背包发放", fulfill: DELIVERY_AUTO_VIRTUAL, status: "已支付", fulfillmentStatus: "履约失败", reason: "自动重试已达上限，人工退款首次提交失败", paymentResult: "支付宝支付成功：¥6.90", stockResult: "无限库存，无需占用", fulfillResult: "履约失败，待人工处理", retrySummary: "已达自动重试上限 3/3", refundStatus: "退款失败", refundedAmount: 0, refundType: "人工退款", refundReason: "履约失败", refundRemark: "履约失败后由运营发起退款", refundNo: "RF202607050005", refundChannel: "支付宝原路退款", refundOperator: "运营-李敏", refundAppliedAt: "2026-07-05 15:20:11", refundedAt: "-", refundFailureReason: "支付通道返回处理失败", refundHistory: [{ time: "2026-07-05 15:20:11", action: "人工发起退款", result: "退款处理中", operator: "运营-李敏" }, { time: "2026-07-05 15:20:18", action: "退款结果回写", result: "退款失败", operator: "系统" }], bagAsset: "-", created: "2026-07-05 15:08:20", updated: "2026-07-05 15:20:18", completed: "-" },
+      { no: "ORD20260705005", userId: "U100863", nnNo: "NN100863", phone: "13966666666", nick: "王五", product: "星耀昵称挂件7天", productSnapshot: "星耀昵称挂件7天 / 类型：虚拟道具 / 权益：昵称装饰", productType: "虚拟道具", quantity: 1, currencyType: "人民币", paymentMethod: "支付宝", unitAmount: 6.9, paymentAmount: 6.9, inventoryType: "无限库存", acquireForm: "发放至用户背包，用户在社区装扮中启用", fulfillmentChannel: "背包发放", fulfill: DELIVERY_AUTO_VIRTUAL, status: "已支付", fulfillmentStatus: "履约失败", reason: "自动重试已达上限，人工退款首次提交失败", paymentResult: "支付宝支付成功：¥6.90", stockResult: "无限库存，无需占用", fulfillResult: "履约失败，待人工处理", retrySummary: "已达自动重试上限 3/3", refundStatus: "退款失败", refundedAmount: 0, refundType: "人工退款", refundRemark: "履约失败后由运营发起退款", refundNo: "RF202607050005", refundChannel: "支付宝原路退款", refundOperator: "运营-李敏", refundAppliedAt: "2026-07-05 15:20:11", refundedAt: "-", refundFailureReason: "支付通道返回处理失败", refundHistory: [{ time: "2026-07-05 15:20:11", action: "人工发起退款", result: "退款处理中", operator: "运营-李敏" }, { time: "2026-07-05 15:20:18", action: "退款结果回写", result: "退款失败", operator: "系统" }], bagAsset: "-", created: "2026-07-05 15:08:20", updated: "2026-07-05 15:20:18", completed: "-" },
       { no: "ORD20260704005", businessSource: "暑期周边兑换活动", userId: "U100865", nnNo: "NN100865", phone: "13677777777", nick: "孙七", product: "NN定制鼠标垫", productSnapshot: "NN定制鼠标垫 / 类型：实物商品 / 规格：900x400mm", productType: "实物商品", quantity: 1, currencyType: "人民币", paymentMethod: "支付宝", unitAmount: 49.9, paymentAmount: 49.9, inventoryType: "有限库存", acquireForm: "用户填写收货地址后发货", fulfillmentChannel: "实物履约 / 物流发货", addressStatus: "未填写", recipient: "-", recipientPhone: "-", address: "-", logisticsCompany: "-", trackingNo: "-", fulfill: DELIVERY_MANUAL_PHYSICAL, status: "已支付", fulfillmentStatus: "待履约", reason: "等待用户在客户端订单填写收货地址", paymentResult: "支付宝支付成功：¥49.90", stockResult: "库存已占用：1", fulfillResult: "待用户提交收货地址", retrySummary: "实物履约-地址未填写", created: "2026-07-04 10:00:00", updated: "2026-07-04 10:00:09", completed: "-" },
       { no: "ORD20260703006", businessSource: "社区装扮焕新活动", userId: "U100866", nnNo: "NN100866", phone: "13588888888", nick: "周八", product: "社区身份装饰权益", productSnapshot: "社区身份装饰权益 / 类型：虚拟道具 / 权益：身份标识与资料卡装饰", productType: "虚拟道具", quantity: 1, currencyType: "积分", paymentMethod: "积分支付", unitAmount: 500, paymentAmount: 500, inventoryType: "无限库存", acquireForm: "发放至用户背包，用户在社区身份装饰中启用", fulfillmentChannel: "背包发放", fulfill: DELIVERY_AUTO_VIRTUAL, status: "已完成", fulfillmentStatus: "履约完成", reason: "-", paymentResult: "积分扣减成功：-500 积分", stockResult: "无限库存，无需占用", fulfillResult: "背包发放成功", retrySummary: "无需重试", bagAsset: "社区身份装饰权益 x1", created: "2026-07-03 09:15:42", updated: "2026-07-03 09:15:58", completed: "2026-07-03 09:15:58" },
       { no: "ORD20260703007", userId: "U100863", nnNo: "NN100863", phone: "13966666666", nick: "王五", product: "NN定制抱枕", productSnapshot: "NN定制抱枕 / 类型：实物商品 / 规格：45x45cm", productType: "实物商品", quantity: 2, currencyType: "人民币", paymentMethod: "微信支付", unitAmount: 59.9, paymentAmount: 119.8, inventoryType: "有限库存", acquireForm: "用户填写收货地址后发货", fulfillmentChannel: "实物履约 / 物流发货", addressStatus: "已填写", recipient: "王五", recipientPhone: "13966666666", address: "湖北省武汉市武昌区中南路街道 99号 1802", addressSubmittedAt: "2026-07-03 13:28:35", logisticsCompany: "-", trackingNo: "-", fulfill: DELIVERY_MANUAL_PHYSICAL, status: "已支付", fulfillmentStatus: "待履约", reason: "已收到收货地址，待运营发货", paymentResult: "微信支付成功：¥119.80", stockResult: "库存已占用：2", fulfillResult: "已收到收货地址，待运营发货", retrySummary: "实物履约-待发货", created: "2026-07-03 13:22:00", updated: "2026-07-03 13:28:35", completed: "-" },
@@ -2468,7 +2466,6 @@
       order.refundStatus = order.refundStatus || "未退款";
       order.refundedAmount = Number(order.refundedAmount || 0);
       order.refundType = order.refundType || "-";
-      order.refundReason = order.refundReason || "-";
       order.refundRemark = order.refundRemark || "-";
       order.refundNo = order.refundNo || "-";
       order.refundChannel = order.refundChannel || "-";
@@ -9809,10 +9806,6 @@
       return `<span class="tag ${cls}">${method || "-"}</span>`;
     }
 
-    function refundActionLabel(order) {
-      return isPointsOrder(order) ? "退回积分" : "原路退款";
-    }
-
     function refundableOrderAmount(order) {
       return Math.max(0, Number(order.paymentAmount || 0) - Number(order.refundedAmount || 0));
     }
@@ -9821,8 +9814,7 @@
       const normalized = status || "未退款";
       const cls = normalized === "退款成功" ? "green"
         : normalized === "退款失败" ? "red"
-          : normalized === "退款处理中" ? "purple"
-            : normalized === "部分退款" ? "orange" : "";
+          : normalized === "退款处理中" ? "purple" : "";
       return `<span class="tag ${cls}">${normalized}</span>`;
     }
 
@@ -9832,11 +9824,12 @@
 
     function canInitiateManualRefund(order) {
       const paidOrder = ["已支付", "异常"].includes(operationalOrderStatus(order));
-      const refundAvailable = ["未退款", "部分退款", "退款失败"].includes(order.refundStatus || "未退款") && refundableOrderAmount(order) > 0;
+      const refundAvailable = ["未退款", "退款失败"].includes(order.refundStatus || "未退款") && refundableOrderAmount(order) > 0;
       const physicalNotShipped = !isPhysicalOrder(order) || !order.trackingNo || order.trackingNo === "-";
+      const noGoodsDelivered = fulfilledOrderQuantity(order) === 0;
       const directSupplyResultUnclear = order.supplyMode === "接口直供"
         && /不确定|不明确|待确认/.test(`${order.supplierRequestResult || ""}${order.reason || ""}`);
-      return paidOrder && refundAvailable && physicalNotShipped && !directSupplyResultUnclear && !isCdkeyRefundLocked(order);
+      return paidOrder && refundAvailable && physicalNotShipped && noGoodsDelivered && !directSupplyResultUnclear && !isCdkeyRefundLocked(order);
     }
 
     function isCdkeyOrder(order) {
@@ -9970,7 +9963,7 @@
       if (canHandleOrderFulfillmentFailure(order)) {
         actions.push(`<button class="btn text" data-mall-order-retry="${order.no}">重新发放</button>`);
       }
-      if (canInitiateManualRefund(order)) actions.push(`<button class="btn text danger" data-mall-order-refund="${order.no}">${canRetryOrderRefund(order) ? "重试退款" : refundActionLabel(order)}</button>`);
+      if (canInitiateManualRefund(order)) actions.push(`<button class="btn text danger" data-mall-order-refund="${order.no}">退款</button>`);
       if (canShipPhysicalOrder(order)) {
         actions.push(`<button class="btn text" data-mall-order-address="${order.no}">修改收货信息</button>`);
         actions.push(`<button class="btn text" data-mall-order-ship="${order.no}">发货</button>`);
@@ -10157,9 +10150,10 @@
         <div class="drawer-section-heading"><h3>退款信息</h3><span class="drawer-section-summary">${refundStatusTag(order.refundStatus)}</span></div>
         <div class="section-content">
           ${infoGrid([
-            ["退款类型", order.refundType], ["退款方式", order.refundChannel],
-            ["已退金额", formatOrderAmount(order, order.refundedAmount)], ["剩余可退", formatOrderAmount(order, remainingAmount)],
-            ["退款单号", order.refundNo], ["退款原因", order.refundReason],
+            ["发起方式", order.refundType], ["原支付渠道", order.paymentMethod],
+            ["退款货币", order.currencyType],
+            ["订单支付金额", formatOrderAmount(order)], ["已退金额", formatOrderAmount(order, order.refundedAmount)],
+            ["退款单号", order.refundNo],
             ["发起人", order.refundOperator], ["发起时间", order.refundAppliedAt],
             ["完成时间", order.refundedAt], ["失败原因", order.refundFailureReason],
             ["退款说明", order.refundRemark]
@@ -10186,7 +10180,7 @@
       if (canHandleOrderFulfillmentFailure(order)) {
         actions.push(`<button class="btn primary" data-mall-order-retry="${order.no}">重新发放</button>`);
       }
-      if (canInitiateManualRefund(order)) actions.push(`<button class="btn danger" data-mall-order-refund="${order.no}">${canRetryOrderRefund(order) ? "重试退款" : refundActionLabel(order)}</button>`);
+      if (canInitiateManualRefund(order)) actions.push(`<button class="btn danger" data-mall-order-refund="${order.no}">退款</button>`);
       if (canShipPhysicalOrder(order)) {
         actions.push(`<button class="btn" data-mall-order-address="${order.no}">修改收货信息</button>`);
         actions.push(`<button class="btn primary" data-mall-order-ship="${order.no}">发货</button>`);
@@ -10306,13 +10300,6 @@
       toast("已触发重新发放。");
     }
 
-    function defaultOrderRefundReason(order) {
-      if (order.supplierRequestResult === "明确无库存") return "三方接口明确无库存";
-      if (order.orderScene === "缺货下单") return "缺货等待取消";
-      if (order.fulfillmentStatus === "履约失败") return "履约失败";
-      return "客服协商";
-    }
-
     function openOrderRefundModal(orderNo) {
       const order = mallOrders.find(item => item.no === orderNo);
       if (!order) return toast("订单不存在。");
@@ -10323,25 +10310,23 @@
       const modal = document.getElementById("orderRefundModal");
       modal.dataset.orderNo = order.no;
       modal.dataset.retryMode = String(retryMode);
-      document.getElementById("orderRefundModalTitle").textContent = retryMode ? "重试退款" : "发起退款";
+      document.getElementById("orderRefundModalTitle").textContent = "退款";
       document.getElementById("orderRefundInfo").innerHTML = [
         ["订单号", order.no], ["商品", order.product], ["用户", `${order.userId} / ${order.nnNo} / ${order.phone}`],
-        ["货币类型", order.currencyType], ["原支付金额", formatOrderAmount(order)], ["已退金额", formatOrderAmount(order, order.refundedAmount)],
-        ["退款状态", refundStatusTag(order.refundStatus)], ["剩余可退", formatOrderAmount(order, remainingAmount)]
+        ["退款货币", order.currencyType], ["原支付渠道", order.paymentMethod], ["原支付金额", formatOrderAmount(order)], ["已退金额", formatOrderAmount(order, order.refundedAmount)],
+        ["退款状态", refundStatusTag(order.refundStatus)], ["退款金额", formatOrderAmount(order, remainingAmount)]
       ].map(([label, value]) => `<div class="info-item"><div class="info-label">${label}</div><div class="info-value">${value}</div></div>`).join("");
-      document.getElementById("orderRefundChannel").value = isPointsOrder(order) ? "退回原积分账户" : `${order.paymentMethod}原路退款`;
       const amountInput = document.getElementById("orderRefundAmount");
       amountInput.value = isPointsOrder(order) ? String(Math.floor(remainingAmount)) : remainingAmount.toFixed(2);
       amountInput.min = isPointsOrder(order) ? "1" : "0.01";
       amountInput.max = String(remainingAmount);
       amountInput.step = isPointsOrder(order) ? "1" : "0.01";
-      document.getElementById("orderRefundAmountHint").textContent = `最多可退 ${formatOrderAmount(order, remainingAmount)}；积分仅支持整数，人民币保留两位小数。`;
-      document.getElementById("orderRefundReason").value = order.refundReason !== "-" ? order.refundReason : defaultOrderRefundReason(order);
+      document.getElementById("orderRefundAmountHint").textContent = `本期仅支持全额退款，退款金额固定为 ${formatOrderAmount(order, remainingAmount)}。`;
       document.getElementById("orderRefundRemark").value = order.refundRemark !== "-" ? order.refundRemark : "";
       document.getElementById("orderRefundImpact").textContent = isPointsOrder(order)
-        ? "确认后积分退回用户原积分账户并生成积分流水；全额退款将关闭订单，部分退款后只可继续退剩余金额。"
-        : `确认后通过${order.paymentMethod}原支付订单和原收款商户退款；全额退款将关闭订单，部分退款后只可继续退剩余金额。`;
-      document.getElementById("confirmOrderRefundBtn").textContent = retryMode ? "确认重试退款" : "确认退款";
+        ? "确认后积分退回用户原积分账户并生成积分流水，退款成功后关闭订单。"
+        : `确认后通过${order.paymentMethod}原支付订单和原收款商户退款，退款成功后关闭订单。`;
+      document.getElementById("confirmOrderRefundBtn").textContent = "确认退款";
       closeAllLayers();
       openModal("orderRefundModal");
     }
@@ -10361,17 +10346,14 @@
       if (!order || !canInitiateManualRefund(order)) return toast("当前订单已不可退款，请刷新后重试。");
       const remainingAmount = refundableOrderAmount(order);
       const refundAmount = Number(valueOf("orderRefundAmount"));
-      if (!Number.isFinite(refundAmount) || refundAmount <= 0 || refundAmount > remainingAmount) return toast(`退款金额须大于 0 且不超过 ${formatOrderAmount(order, remainingAmount)}。`);
-      if (isPointsOrder(order) && !Number.isInteger(refundAmount)) return toast("积分退款金额必须为整数。");
-      if (!isPointsOrder(order) && Math.abs(refundAmount * 100 - Math.round(refundAmount * 100)) > 1e-8) return toast("人民币退款金额最多保留两位小数。");
-      const reason = valueOf("orderRefundReason");
-      if (!reason) return toast("请选择退款原因。");
+      if (!Number.isFinite(refundAmount) || Math.abs(refundAmount - remainingAmount) > 1e-8) return toast("本期仅支持全额退款，退款金额不可修改。");
+      const refundRemark = valueOf("orderRefundRemark");
+      if (!refundRemark) return toast("请填写退款说明。");
       const time = nowText();
       const retryMode = modal.dataset.retryMode === "true";
       order.refundStatus = "退款处理中";
       order.refundType = "人工退款";
-      order.refundReason = reason;
-      order.refundRemark = valueOf("orderRefundRemark") || "-";
+      order.refundRemark = refundRemark;
       order.refundChannel = isPointsOrder(order) ? "原积分账户" : `${order.paymentMethod}原路退款`;
       order.refundOperator = "运营-当前账号";
       order.refundAppliedAt = time;
@@ -10386,23 +10368,20 @@
         pointFlows.unshift({
           id: `FL${Date.now()}`, userId: order.userId, nnNo: order.nnNo, phone: order.phone,
           type: "获取", amount: refundAmount, balance: user.points,
-          source: "订单退款", time, desc: `${reason}：${order.product}`
+          source: "订单退款", time, desc: `${refundRemark}：${order.product}`
         });
       }
-      order.refundedAmount = Number((Number(order.refundedAmount || 0) + refundAmount).toFixed(isPointsOrder(order) ? 0 : 2));
-      const fullRefund = refundableOrderAmount(order) <= (isPointsOrder(order) ? 0 : 0.001);
-      order.refundStatus = fullRefund ? "退款成功" : "部分退款";
+      order.refundedAmount = Number(order.paymentAmount || 0);
+      order.refundStatus = "退款成功";
       order.refundedAt = time;
       order.refundHistory.push({ time, action: "退款结果回写", result: order.refundStatus, operator: "系统" });
-      order.paymentResult = `${order.paymentResult}；已${isPointsOrder(order) ? "退回积分" : "原路退款"} ${formatOrderAmount(order, refundAmount)}`;
-      order.reason = fullRefund ? `${reason}，已全额退款并关闭订单` : `${reason}，已部分退款 ${formatOrderAmount(order, refundAmount)}`;
+      order.paymentResult = `${order.paymentResult}；已退款 ${formatOrderAmount(order, refundAmount)}`;
+      order.reason = `${refundRemark}，已全额退款并关闭订单`;
       order.updated = time;
-      if (fullRefund) {
-        order.status = "已关闭";
-        order.waitingReason = "";
-        order.completed = time;
-        cancelPendingDeliveryAfterRefund(order, time);
-      }
+      order.status = "已关闭";
+      order.waitingReason = "";
+      order.completed = time;
+      cancelPendingDeliveryAfterRefund(order, time);
       closeModal("orderRefundModal");
       renderOrderManagementTable();
       renderDeliveryRecordTable();
@@ -10410,7 +10389,7 @@
       renderInventoryStats();
       renderCdkeyPoolTable();
       if (isPointsOrder(order)) renderPointsFlowTable();
-      toast(fullRefund ? "退款成功，订单已关闭。" : "部分退款成功，可继续退剩余金额。");
+      toast("退款成功，订单已关闭。");
     }
 
     function openOrderAddressEdit(orderNo) {
@@ -10521,10 +10500,10 @@
     function exportOrderManagementRecords() {
       const rows = getFilteredMallOrders().map(order => [
         order.no, orderBusinessSource(order), order.userId, order.nnNo, order.phone, order.product, order.quantity, order.orderScene || "现货下单", formatOrderAmount(order), order.paymentMethod, order.fulfill, operationalOrderStatus(order), order.status,
-        order.refundStatus, formatOrderAmount(order, order.refundedAmount), order.refundType, order.refundReason,
+        order.refundStatus, formatOrderAmount(order, order.refundedAmount), order.refundType, order.refundRemark,
         fulfilledOrderQuantity(order), pendingOrderQuantity(order), order.quotaReservationId || "-", order.created, order.updated
       ]);
-      downloadPrototypeCsv("订单列表", ["订单号", "业务来源", "用户ID", "用户NN号", "用户手机号", "商品名称", "数量", "下单场景", "支付金额", "支付方式", "履约方式", "订单状态", "技术订单状态", "退款状态", "已退金额", "退款类型", "退款原因", "已履约数量", "待履约数量", "待履约额度占用记录ID", "创建时间", "更新时间"], rows);
+      downloadPrototypeCsv("订单列表", ["订单号", "业务来源", "用户ID", "用户NN号", "用户手机号", "商品名称", "数量", "下单场景", "支付金额", "支付方式", "履约方式", "订单状态", "技术订单状态", "退款状态", "已退金额", "发起方式", "退款说明", "已履约数量", "待履约数量", "待履约额度占用记录ID", "创建时间", "更新时间"], rows);
     }
     function stateTag(state) {
       const cls = state === "上架" ? "green" : state === "草稿" ? "orange" : state === "下架" ? "" : "";
