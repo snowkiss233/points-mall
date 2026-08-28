@@ -478,20 +478,7 @@
       align-items: flex-start;
     }
     .action-list .btn.text { font-size: 13px; }
-    .action-list.compact { min-width: 138px; }
-    .action-more { display: inline-block; }
-    .action-more summary { list-style: none; }
-    .action-more summary::-webkit-details-marker { display: none; }
-    .action-more-list {
-      display: none;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 2px;
-      margin: 2px 0 0 6px;
-      padding: 4px 0 2px 6px;
-      border-left: 1px solid var(--line-strong);
-    }
-    .action-more[open] .action-more-list { display: flex; }
+    .action-list.compact { min-width: 210px; flex-wrap: nowrap; }
     .points-flow-table { min-width: 1420px; }
     .order-management-table { min-width: 1780px; }
     .points-flow-table td,
@@ -7064,17 +7051,16 @@
     }
 
     function cdkeyPoolActions(pool) {
-      const directActions = [`<button class="btn text" data-cdkey-action="detail" data-pool-id="${pool.id}">查看</button>`];
+      const actions = [`<button class="btn text" data-cdkey-action="detail" data-pool-id="${pool.id}">查看</button>`];
       if (cdkeySupplyMode(pool) === "码池供货" && pool.state === "上架" && pool.stockMethod === "手工上传") {
-        directActions.push(`<button class="btn text" data-cdkey-action="restock" data-pool-id="${pool.id}">补货</button>`);
+        actions.push(`<button class="btn text" data-cdkey-action="restock" data-pool-id="${pool.id}">补货</button>`);
       }
-      const moreActions = [`<button class="btn text" data-cdkey-action="edit" data-pool-id="${pool.id}">编辑</button>`];
-      moreActions.push(pool.state === "上架"
+      actions.push(`<button class="btn text" data-cdkey-action="edit" data-pool-id="${pool.id}">编辑</button>`);
+      actions.push(pool.state === "上架"
         ? `<button class="btn text" data-cdkey-action="disable" data-pool-id="${pool.id}">下架</button>`
         : `<button class="btn text" data-cdkey-action="enable" data-pool-id="${pool.id}">上架</button>`);
-      if (pool.state === "草稿") moreActions.push(`<button class="btn text danger" data-cdkey-action="delete" data-pool-id="${pool.id}">删除</button>`);
-      directActions.push(`<details class="action-more"><summary class="btn text">更多 ▾</summary><div class="action-more-list">${moreActions.join("")}</div></details>`);
-      return directActions.join("");
+      if (pool.state === "草稿") actions.push(`<button class="btn text danger" data-cdkey-action="delete" data-pool-id="${pool.id}">删除</button>`);
+      return actions.join("");
     }
 
     function handleCdkeyPoolAction(action, poolId) {
