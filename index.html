@@ -924,6 +924,7 @@
     .cdkey-source-picker-table td:nth-child(2) { width: 92px; }
     .cdkey-source-picker-table input[type="checkbox"] { width: 16px; height: 16px; }
     .cdkey-source-priority { width: 72px; min-height: 34px; text-align: center; }
+    #skuSupplyMethod { width: 240px; max-width: 100%; }
     .error-text { color: var(--red); font-size: 12px; margin-top: 6px; }
     .hint-text { color: var(--muted); font-size: 13px; margin-top: 8px; }
     .required-star {
@@ -9175,7 +9176,7 @@
         const sort = cdkeySourceSortValue(row, sourceId, routeIndex, sourceIds.length);
         return { sourceId, sort };
       });
-      cdkeyRouteMethodDraft = row?.cdkeySupplyMethod || (sourceModes.length === 1 ? sourceModes[0] : "");
+      cdkeyRouteMethodDraft = row?.cdkeySupplyMethod || (sourceModes.length === 1 ? sourceModes[0] : "码池供货");
       document.getElementById("skuSupplyMethod").value = cdkeyRouteMethodDraft;
       renderCdkeyRouteAddArea();
       openModal("poolModal");
