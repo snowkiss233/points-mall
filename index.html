@@ -600,6 +600,17 @@
       white-space: nowrap;
     }
     .section-content { padding: 14px; }
+    .cdkey-detail-subsection + .cdkey-detail-subsection {
+      border-top: 1px solid var(--line);
+      margin-top: 16px;
+      padding-top: 16px;
+    }
+    .cdkey-detail-subsection-title {
+      margin-bottom: 10px;
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 700;
+    }
     .info-grid {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -7466,14 +7477,24 @@
       const providerItems = [["供货方", cdkeyProviderName(pool) || "-"], ["供货方类型", cdkeyProviderType(pool)]];
       providerItems.push(["供货方式", cdkeySupplyMode(pool)]);
       basicItems.push(["备注", pool.remark || "-"]);
+      const supplyDetail = `
+        <div class="cdkey-detail-subsection">
+          <div class="cdkey-detail-subsection-title">供货配置</div>
+          ${infoGrid(providerItems)}
+        </div>
+        <div class="cdkey-detail-subsection">
+          <div class="cdkey-detail-subsection-title">${isDirect ? "接口直供配置" : "入库与库存"}</div>
+          ${supplyConfig}
+        </div>
+        <div class="cdkey-detail-subsection">
+          <div class="cdkey-detail-subsection-title">${isDirect ? "取码记录" : "入库批次"}</div>
+          ${isDirect ? directSupplyCostTable(directSupplyCostRecords(pool.id)) : cdkeyBatchTable(getCdkeyBatchesByPool(pool.id), false)}
+        </div>`;
       document.getElementById("cdkeyPoolDetailBody").innerHTML = `
         ${detailSection("货源基础信息", infoGrid(basicItems))}
-        ${detailSection("供货配置", infoGrid(providerItems))}
-        ${detailSection(isDirect ? "接口直供配置" : "入库与库存", supplyConfig)}
-        ${detailSection(isDirect ? "取码记录" : "入库批次", isDirect ? directSupplyCostTable(directSupplyCostRecords(pool.id)) : cdkeyBatchTable(getCdkeyBatchesByPool(pool.id), false))}
+        ${detailSection(isDirect ? "供货与取码" : "供货与库存", supplyDetail)}
         ${isDirect ? "" : detailSection("CDKey 明细", cdkeyCodeTable(getCdkeyCodesByPool(pool.id)))}
         ${detailSection("绑定 SKU", boundSkuTable(getBoundSkuByPool(pool.id)))}
-        ${detailSection("操作记录", cdkeyOperationLogTable(getCdkeyLogs(pool.id)))}
       `;
       openDrawer("cdkeyPoolDetailDrawer");
       document.querySelectorAll("#cdkeyPoolDetailDrawer [data-void-key]").forEach(btn => btn.addEventListener("click", () => openCdkeyVoidModal(btn.dataset.voidKey)));
