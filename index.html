@@ -475,8 +475,23 @@
       gap: 4px;
       flex-wrap: wrap;
       min-width: 190px;
+      align-items: flex-start;
     }
     .action-list .btn.text { font-size: 13px; }
+    .action-list.compact { min-width: 138px; }
+    .action-more { display: inline-block; }
+    .action-more summary { list-style: none; }
+    .action-more summary::-webkit-details-marker { display: none; }
+    .action-more-list {
+      display: none;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 2px;
+      margin: 2px 0 0 6px;
+      padding: 4px 0 2px 6px;
+      border-left: 1px solid var(--line-strong);
+    }
+    .action-more[open] .action-more-list { display: flex; }
     .points-flow-table { min-width: 1420px; }
     .order-management-table { min-width: 1780px; }
     .points-flow-table td,
@@ -902,12 +917,13 @@
     .release-row input { width:100%; }
     .release-summary { color:var(--muted); font-size:12px; line-height:1.5; }
     .release-empty { color:var(--muted); font-size:12px; margin-bottom:8px; }
-    .cdkey-route-list { display:flex; flex-direction:column; gap:8px; margin-top:8px; }
-    .cdkey-route-row { display:grid; gap:8px; align-items:center; }
-    .cdkey-route-row.pool { grid-template-columns:80px minmax(0, 1fr) 64px; }
-    .cdkey-route-row.direct { grid-template-columns:80px 160px minmax(0, 1fr) 64px; }
-    .cdkey-route-row input, .cdkey-route-row select { width:100%; min-width:0; }
-    .cdkey-route-sort { text-align:center; }
+    .cdkey-source-picker-table { min-width: 1120px; }
+    .cdkey-source-picker-table th:first-child,
+    .cdkey-source-picker-table td:first-child { width: 58px; text-align: center; }
+    .cdkey-source-picker-table th:nth-child(2),
+    .cdkey-source-picker-table td:nth-child(2) { width: 92px; }
+    .cdkey-source-picker-table input[type="checkbox"] { width: 16px; height: 16px; }
+    .cdkey-source-priority { width: 72px; min-height: 34px; text-align: center; }
     .error-text { color: var(--red); font-size: 12px; margin-top: 6px; }
     .hint-text { color: var(--muted); font-size: 13px; margin-top: 8px; }
     .required-star {
@@ -2129,21 +2145,22 @@
     </div>
   </section>
 
-  <section class="modal" id="poolModal" role="dialog" aria-modal="true">
+  <section class="modal wide" id="poolModal" role="dialog" aria-modal="true">
     <div class="modal-head"><span>CDKey 货源配置</span><button class="btn text" data-close-modal="poolModal">关闭</button></div>
     <div class="modal-body">
+      <div class="alert info">从 CDKey 货源列表选择已创建且已上架的货源。同一 SKU 可选择多个货源，但不能混用“码池供货”和“接口直供”。</div>
       <div class="field">
         <label><span class="required-star">*</span>供货方式</label>
         <select id="skuSupplyMethod"><option value="">请选择供货方式</option><option>码池供货</option><option>接口直供</option></select>
         <div class="hint-text" id="skuSupplyMethodHint">同一 SKU 只能选择一种供货方式。</div>
       </div>
       <div class="field" style="margin-top:16px">
-        <label><span class="required-star">*</span>货源配置</label>
+        <label><span class="required-star">*</span>选择货源</label>
         <div id="poolAddSourceArea"></div>
       </div>
     </div>
     <div class="modal-foot">
-      <span class="table-meta" id="poolSelectedCount">已配置 0 个货源</span><button class="btn" data-close-modal="poolModal">取消</button><button class="btn primary" id="confirmPoolRouteBtn">保存货源配置</button>
+      <span class="table-meta" id="poolSelectedCount">已选择 0 个货源</span><button class="btn" data-close-modal="poolModal">取消</button><button class="btn primary" id="confirmPoolRouteBtn">保存货源配置</button>
     </div>
   </section>
 
@@ -2656,8 +2673,6 @@
       { id: "ACCELERATOR_7D_POOL", name: "加速卡 7 天自营码池", state: "上架", providerType: "平台自营", supplyMode: "码池供货", supplier: "", stockMethod: "手工上传", source: "手工上传码", total: 100, available: 0, issued: 100, voided: 0, expired: 0, error: 0, alertThreshold: 30, creator: "平台运营", createdAt: "2026-05-18 11:20", updatedAt: "2026-05-21 12:30", remark: "加速卡 CDKey 已履约完，待补货" },
       { id: "ACCELERATOR_VENDOR_API", name: "极速加速卡接口直供", state: "上架", providerType: "三方供应商", supplyMode: "接口直供", supplier: "极速卡券", supplierProduct: "加速器 7 天卡", supplierSku: "1153796301", interfaceConfig: "极速卡券接口", source: "接口直供", total: 0, available: 0, issued: 45, voided: 0, expired: 0, error: 0, alertThreshold: "", creator: "平台运营", createdAt: "2026-05-21 09:10", updatedAt: "2026-05-23 10:15", remark: "码池缺货时作为后备货源" }
     ];
-    let skuDirectRouteSources = [];
-
     const templateExamples = {
       "虚拟装扮": [
         { code: "duration", name: "有效期", valueType: "枚举", unit: "天 / 无", options: "7天、30天、永久", sort: 1, desc: "控制虚拟装扮权益有效期" },
@@ -3311,7 +3326,7 @@
     }
 
     function getPoolById(poolId) {
-      return poolMocks.find(item => item.id === poolId) || skuDirectRouteSources.find(item => item.id === poolId);
+      return poolMocks.find(item => item.id === poolId);
     }
 
     function checkCdkeyPool(poolId) {
@@ -3399,10 +3414,8 @@
       return sourceIds.length ? sourceIds.map((sourceId, index) => {
         const source = getPoolById(sourceId);
         const sort = cdkeySourceSortValue(row, sourceId, index, sourceIds.length);
-        const reference = cdkeySupplyMode(source) === "接口直供"
-          ? `${source?.supplier || "未知供应商"} / ${source?.supplierSku || sourceId}`
-          : `旧码池 ID：${sourceId}`;
-        return `排序 ${sort}：${reference}`;
+        const reference = source ? `${source.name}（${source.id}）` : `货源不存在（${sourceId}）`;
+        return `优先级 ${sort}：${reference}`;
       }).join("<br>") : "未配置";
     }
 
@@ -3522,7 +3535,7 @@
         cdkeySourceIds,
         cdkeySourceRoutes: Array.isArray(row.cdkeySourceRoutes) && row.cdkeySourceRoutes.length
           ? row.cdkeySourceRoutes.map(route => ({ sourceId: route.sourceId, sort: Number(route.sort || 0) }))
-          : cdkeySourceIds.map((sourceId, routeIndex) => ({ sourceId, sort: cdkeySourceIds.length - routeIndex })),
+          : cdkeySourceIds.map((sourceId, routeIndex) => ({ sourceId, sort: routeIndex + 1 })),
         cdkeySupplyMethod: row.cdkeySupplyMethod || (cdkeySourceModes.length === 1 ? cdkeySourceModes[0] : ""),
         cdkeyPoolCheck: requiresCdkeySourceConfig({ delivery }, type) && cdkeySourceIds.length ? { status: "通过", ok: true, message: `已配置 ${cdkeySourceIds.length} 个货源` } : (row.cdkeyPoolCheck || null),
         deliveryParams: normalizeDeliveryParams(row, delivery),
@@ -5771,13 +5784,9 @@
       return sourceIds.map(sourceId => {
         const source = getPoolById(sourceId);
         const supplyMode = cdkeySupplyMode(source);
-        const provider = supplyMode === "接口直供"
-          ? `三方供应商${source?.supplier ? `（${source.supplier}）` : ""}`
-          : "平台自营";
-        const reference = supplyMode === "接口直供"
-          ? `商品编码：${source?.supplierSku || "-"}`
-          : `旧码池 ID：${sourceId}`;
-        return `${provider} / ${supplyMode} / ${reference}`;
+        const provider = source ? cdkeyProviderName(source) : "未知供货方";
+        const sourceName = source?.name || "货源不存在";
+        return `${sourceName}（${sourceId}） / ${provider} / ${supplyMode}`;
       }).join("<br>");
     }
 
@@ -7047,26 +7056,24 @@
           <td><b>${pool.id}</b></td><td>${pool.name}</td><td><span class="tag ${cdkeySupplyMode(pool) === "接口直供" ? "purple" : "blue"}">${cdkeySupplyMode(pool)}</span></td>
           <td>${cdkeyProviderSummary(pool)}</td><td>${cdkeySupplyConfig(pool)}</td><td>${cdkeySupplyAvailability(pool)}</td><td>${cdkeyInboundBatchSummary(pool)}</td><td>${boundCount}</td><td>${cdkeyPoolStateTag(pool.state)}</td><td>${pool.createdAt || pool.updatedAt}</td>
           <td>${lastCdkeyOperator(pool)}</td>
-          <td><div class="action-list">${cdkeyPoolActions(pool)}</div></td>
+          <td><div class="action-list compact">${cdkeyPoolActions(pool)}</div></td>
         </tr>`;
       }).join("");
       body.querySelectorAll("[data-cdkey-action]").forEach(btn => btn.addEventListener("click", () => handleCdkeyPoolAction(btn.dataset.cdkeyAction, btn.dataset.poolId)));
     }
 
     function cdkeyPoolActions(pool) {
-      const actions = [
-        `<button class="btn text" data-cdkey-action="detail" data-pool-id="${pool.id}">详情</button>`,
-        `<button class="btn text" data-cdkey-action="edit" data-pool-id="${pool.id}">编辑</button>`
-      ];
-      if (cdkeySupplyMode(pool) === "码池供货") {
-        if (pool.state !== "下架" && pool.stockMethod === "手工上传") actions.push(`<button class="btn text" data-cdkey-action="restock" data-pool-id="${pool.id}">补货</button>`);
-        actions.push(`<button class="btn text" data-cdkey-action="batch" data-pool-id="${pool.id}">批次记录</button>`);
-        actions.push(`<button class="btn text" data-cdkey-action="code" data-pool-id="${pool.id}">CDKey 明细</button>`);
-      } else actions.push(`<button class="btn text" data-cdkey-action="cost" data-pool-id="${pool.id}">成本记录</button>`);
-      if (pool.state === "上架") actions.push(`<button class="btn text" data-cdkey-action="disable" data-pool-id="${pool.id}">下架</button>`);
-      if (pool.state !== "上架") actions.push(`<button class="btn text" data-cdkey-action="enable" data-pool-id="${pool.id}">上架</button>`);
-      if (pool.state === "草稿") actions.push(`<button class="btn text danger" data-cdkey-action="delete" data-pool-id="${pool.id}">删除</button>`);
-      return actions.join("");
+      const directActions = [`<button class="btn text" data-cdkey-action="detail" data-pool-id="${pool.id}">查看</button>`];
+      if (cdkeySupplyMode(pool) === "码池供货" && pool.state === "上架" && pool.stockMethod === "手工上传") {
+        directActions.push(`<button class="btn text" data-cdkey-action="restock" data-pool-id="${pool.id}">补货</button>`);
+      }
+      const moreActions = [`<button class="btn text" data-cdkey-action="edit" data-pool-id="${pool.id}">编辑</button>`];
+      moreActions.push(pool.state === "上架"
+        ? `<button class="btn text" data-cdkey-action="disable" data-pool-id="${pool.id}">下架</button>`
+        : `<button class="btn text" data-cdkey-action="enable" data-pool-id="${pool.id}">上架</button>`);
+      if (pool.state === "草稿") moreActions.push(`<button class="btn text danger" data-cdkey-action="delete" data-pool-id="${pool.id}">删除</button>`);
+      directActions.push(`<details class="action-more"><summary class="btn text">更多 ▾</summary><div class="action-more-list">${moreActions.join("")}</div></details>`);
+      return directActions.join("");
     }
 
     function handleCdkeyPoolAction(action, poolId) {
@@ -7476,10 +7483,13 @@
         ${detailSection("货源基础信息", infoGrid(basicItems))}
         ${detailSection("供货配置", infoGrid(providerItems))}
         ${detailSection(isDirect ? "接口直供配置" : "入库与库存", supplyConfig)}
-        ${detailSection(isDirect ? "取码及成本记录" : "入库批次", isDirect ? directSupplyCostTable(directSupplyCostRecords(pool.id)) : cdkeyBatchTable(getCdkeyBatchesByPool(pool.id), false))}
+        ${detailSection(isDirect ? "取码记录" : "入库批次", isDirect ? directSupplyCostTable(directSupplyCostRecords(pool.id)) : cdkeyBatchTable(getCdkeyBatchesByPool(pool.id), false))}
+        ${isDirect ? "" : detailSection("CDKey 明细", cdkeyCodeTable(getCdkeyCodesByPool(pool.id)))}
         ${detailSection("绑定 SKU", boundSkuTable(getBoundSkuByPool(pool.id)))}
+        ${detailSection("操作记录", cdkeyOperationLogTable(getCdkeyLogs(pool.id)))}
       `;
       openDrawer("cdkeyPoolDetailDrawer");
+      document.querySelectorAll("#cdkeyPoolDetailDrawer [data-void-key]").forEach(btn => btn.addEventListener("click", () => openCdkeyVoidModal(btn.dataset.voidKey)));
     }
 
     function openCdkeyGenerateModal(poolId) {
@@ -7662,7 +7672,7 @@
       const pool = getPoolById(poolId);
       if (!pool) return;
       const rows = getCdkeyCodesByPool(poolId).filter(code => !batchId || code.batchId === batchId);
-      document.getElementById("cdkeyCodeBody").innerHTML = `${detailSection("码池信息", infoGrid([["码池 ID", pool.id], ["码池名称", pool.name], ["码池状态", pool.state], ["入库批次 ID", batchId || "全部入库批次"]]))}
+      document.getElementById("cdkeyCodeBody").innerHTML = `${detailSection("货源信息", infoGrid([["货源 ID", pool.id], ["货源名称", pool.name], ["货源状态", pool.state], ["入库批次 ID", batchId || "全部入库批次"]]))}
         <div class="form-grid three" style="margin-bottom:12px"><div class="field"><label>码值，默认脱敏查询</label><input placeholder="请输入脱敏码关键词"></div><div class="field"><label>CDKey 状态</label><select><option>全部</option><option>未使用</option><option>已核销</option><option>已履约</option><option>已过期</option></select></div><div class="field"><label>兑换单号</label><input placeholder="请输入兑换单号"></div></div>
         ${cdkeyCodeTable(rows)}`;
       openDrawer("cdkeyCodeDrawer");
@@ -7671,14 +7681,14 @@
 
     function cdkeyCodeTable(rows) {
       if (!rows.length) return `<div class="empty">暂无 CDKey 明细</div>`;
-      return `<div class="table-wrap"><table class="cdkey-code-table"><thead><tr><th>脱敏 CDKey</th><th>码池 ID</th><th>入库批次 ID</th><th>CDKey 状态</th><th>关联兑换单号</th><th>关联订单号</th><th>履约时间</th><th>核销时间</th><th>创建时间</th><th>最后操作人</th><th>操作</th></tr></thead><tbody>${rows.map(code => `<tr><td>${code.maskedCdkey}</td><td>${code.poolId}</td><td>${code.batchId}</td><td>${cdkeyCodeStateTag(code.state)}</td><td>${code.exchangeNo || code.deliveryRecordId || "-"}</td><td>${code.orderId || "-"}</td><td>${code.issuedAt || "-"}</td><td>${code.voidedAt || "-"}</td><td>${code.createdAt || code.updatedAt}</td><td>${lastCdkeyOperator(getPoolById(code.poolId))}</td><td>${code.state === "未使用" ? `<button class="btn text danger" data-void-key="${code.rowKey}">核销</button>` : `<span class="muted">只读</span>`}</td></tr>`).join("")}</tbody></table></div><div class="hint-text">CDKey 明细不展示完整 CDKey 明文，不提供复制明文码，不提供修改已履约码状态。</div>`;
+      return `<div class="table-wrap"><table class="cdkey-code-table"><thead><tr><th>脱敏 CDKey</th><th>货源 ID</th><th>入库批次 ID</th><th>CDKey 状态</th><th>关联兑换单号</th><th>关联订单号</th><th>履约时间</th><th>核销时间</th><th>创建时间</th><th>最后操作人</th><th>操作</th></tr></thead><tbody>${rows.map(code => `<tr><td>${code.maskedCdkey}</td><td>${code.poolId}</td><td>${code.batchId}</td><td>${cdkeyCodeStateTag(code.state)}</td><td>${code.exchangeNo || code.deliveryRecordId || "-"}</td><td>${code.orderId || "-"}</td><td>${code.issuedAt || "-"}</td><td>${code.voidedAt || "-"}</td><td>${code.createdAt || code.updatedAt}</td><td>${lastCdkeyOperator(getPoolById(code.poolId))}</td><td>${code.state === "未使用" ? `<button class="btn text danger" data-void-key="${code.rowKey}">核销</button>` : `<span class="muted">只读</span>`}</td></tr>`).join("")}</tbody></table></div><div class="hint-text">CDKey 明细不展示完整 CDKey 明文，不提供复制明文码，不提供修改已履约码状态。</div>`;
     }
 
     function openCdkeyVoidModal(rowKey) {
       const code = cdkeyCodes.find(item => item.rowKey === rowKey);
       if (!code) return;
       selectedCdkeyCode = code;
-      document.getElementById("cdkeyVoidInfo").innerHTML = infoGrid([["脱敏 CDKey", code.maskedCdkey], ["码池 ID", code.poolId], ["入库批次 ID", code.batchId], ["当前 CDKey 状态", code.state]]);
+      document.getElementById("cdkeyVoidInfo").innerHTML = infoGrid([["脱敏 CDKey", code.maskedCdkey], ["货源 ID", code.poolId], ["入库批次 ID", code.batchId], ["当前 CDKey 状态", code.state]]);
       document.getElementById("cdkeyVoidReason").value = "";
       openModal("cdkeyVoidModal");
     }
@@ -7809,6 +7819,11 @@
 
     function getCdkeyLogs(poolId) {
       return cdkeyLogs.filter(log => log.object === poolId);
+    }
+
+    function cdkeyOperationLogTable(rows) {
+      if (!rows.length) return `<div class="empty">暂无操作记录</div>`;
+      return `<div class="table-wrap"><table><thead><tr><th>操作时间</th><th>操作人</th><th>操作类型</th><th>变更前</th><th>变更后</th><th>说明</th></tr></thead><tbody>${rows.map(log => `<tr><td>${log.time}</td><td>${log.user}</td><td>${log.type}</td><td>${log.before}</td><td>${log.after}</td><td>${log.remark || "-"}</td></tr>`).join("")}</tbody></table></div>`;
     }
 
     function inventoryRecordUsesCdkeySource(record, poolId) {
@@ -8574,10 +8589,9 @@
         const source = getPoolById(sourceId);
         const sort = cdkeySourceSortValue(row, sourceId, routeIndex, sourceIds.length);
         const tagClass = !source || source.state !== "上架" ? "red" : "blue";
-        const reference = method === "接口直供"
-          ? `${source?.supplier || "未知供应商"} / ${source?.supplierSku || sourceId}`
-          : `旧码池 ID：${sourceId}`;
-        return `<div><span class="tag ${tagClass}">排序 ${sort}</span> ${reference}<div class="minor">${source?.name || "货源不存在"}${source ? ` · ${source.state}` : ""}</div></div>`;
+        const reference = source?.name || "货源不存在";
+        const sourceMeta = source ? `${source.id} · ${cdkeyProviderName(source)} · ${source.state}` : sourceId;
+        return `<div><span class="tag ${tagClass}">优先级 ${sort}</span> ${reference}<div class="minor">${sourceMeta}</div></div>`;
       }).join("");
       const methodClass = method === "接口直供" ? "purple" : method === "码池供货" ? "blue" : "red";
       return `<div style="margin-bottom:6px"><span class="tag ${methodClass}">供货方式：${method}</span></div><div class="route-stack">${routeLines}</div><button class="btn text" type="button" data-select-pool="${index}" style="margin-top:6px">编辑配置</button>`;
@@ -8593,7 +8607,7 @@
       const configured = Array.isArray(row?.cdkeySourceRoutes)
         ? row.cdkeySourceRoutes.find(route => route.sourceId === sourceId)
         : null;
-      return configured ? Number(configured.sort) : Math.max(1, total - index);
+      return configured ? Number(configured.sort) : index + 1;
     }
 
     function deliveryDisplayName(delivery) {
@@ -9128,7 +9142,7 @@
         }
         const routeSorts = sourceIds.map((sourceId, routeIndex) => cdkeySourceSortValue(row, sourceId, routeIndex, sourceIds.length));
         if (routeSorts.some(sort => !Number.isInteger(sort) || sort <= 0) || new Set(routeSorts).size !== routeSorts.length) {
-          errors.push({ item: "CDKey 货源配置", problem: `SKU「${skuName}」的货源排序值无效或重复`, suggestion: "请配置不重复的正整数排序值" });
+          errors.push({ item: "CDKey 货源配置", problem: `SKU「${skuName}」的货源优先级无效或重复`, suggestion: "请配置不重复的正整数，数字越小越优先" });
           return;
         }
         const modes = [...new Set(sources.map(source => cdkeySupplyMode(source)).filter(Boolean))];
@@ -9158,11 +9172,8 @@
       const sourceIds = skuCdkeySourceIds(row);
       const sourceModes = [...new Set(sourceIds.map(sourceId => cdkeySupplyMode(getPoolById(sourceId))).filter(Boolean))];
       cdkeyRouteDraft = sourceIds.map((sourceId, routeIndex) => {
-        const source = getPoolById(sourceId);
         const sort = cdkeySourceSortValue(row, sourceId, routeIndex, sourceIds.length);
-        return cdkeySupplyMode(source) === "接口直供"
-          ? { sourceId, sort, supplier: source?.supplier || "", productId: String(source?.supplierSku || "") }
-          : { sourceId, sort, poolId: sourceId };
+        return { sourceId, sort };
       });
       cdkeyRouteMethodDraft = row?.cdkeySupplyMethod || (sourceModes.length === 1 ? sourceModes[0] : "");
       document.getElementById("skuSupplyMethod").value = cdkeyRouteMethodDraft;
@@ -9178,34 +9189,31 @@
       if (!methodSelect || !hint || !area || !count) return;
       methodSelect.value = cdkeyRouteMethodDraft;
       methodSelect.disabled = cdkeyRouteDraft.length > 0;
-      count.textContent = `已配置 ${cdkeyRouteDraft.length} 个货源`;
+      count.textContent = `已选择 ${cdkeyRouteDraft.length} 个货源`;
       hint.textContent = cdkeyRouteDraft.length ? "当前供货方式已锁定；删除全部货源后可切换。" : "同一 SKU 只能选择一种供货方式。";
       if (!cdkeyRouteMethodDraft) {
         area.innerHTML = `<div class="release-empty">请先选择供货方式。</div>`;
         return;
       }
-      const supplierNames = cdkeySupplierNamesForMode("接口直供");
-      const rows = cdkeyRouteDraft.length ? cdkeyRouteDraft.map((route, index) => {
-        if (cdkeyRouteMethodDraft === "码池供货") {
-          return `<div class="cdkey-route-row pool">
-            <input class="cdkey-route-sort" type="number" min="1" placeholder="排序值" value="${route.sort || ""}" data-route-index="${index}" data-route-field="sort">
-            <input maxlength="64" placeholder="请输入旧码池 ID" value="${route.poolId || ""}" data-route-index="${index}" data-route-field="poolId">
-            <button class="btn text danger" type="button" data-route-remove="${index}">删除</button>
-          </div>`;
-        }
-        return `<div class="cdkey-route-row direct">
-          <input class="cdkey-route-sort" type="number" min="1" placeholder="排序值" value="${route.sort || ""}" data-route-index="${index}" data-route-field="sort">
-          <select data-route-index="${index}" data-route-field="supplier"><option value="">选择供应商</option>${supplierNames.map(name => `<option value="${name}" ${route.supplier === name ? "selected" : ""}>${name}</option>`).join("")}</select>
-          <input maxlength="20" placeholder="输入三方商品编码" value="${route.productId || ""}" data-route-index="${index}" data-route-field="productId">
-          <button class="btn text danger" type="button" data-route-remove="${index}">删除</button>
-        </div>`;
-      }).join("") : `<div class="release-empty">未配置，请添加货源。</div>`;
-      area.innerHTML = `<div class="cdkey-route-list">${rows}<button class="btn text" type="button" id="addCdkeyRouteSourceBtn">添加货源</button><div class="hint-text">排序值越大越优先；必须为正整数且不可重复。</div></div>`;
-      area.querySelectorAll("[data-route-field]").forEach(control => {
-        control.addEventListener(control.tagName === "SELECT" ? "change" : "input", updateCdkeyRouteDraft);
-      });
-      area.querySelectorAll("[data-route-remove]").forEach(button => button.addEventListener("click", removeCdkeyRouteSource));
-      document.getElementById("addCdkeyRouteSourceBtn")?.addEventListener("click", addCdkeyRouteSource);
+      const selectedIds = new Set(cdkeyRouteDraft.map(route => route.sourceId));
+      const sources = poolMocks.filter(source => cdkeySupplyMode(source) === cdkeyRouteMethodDraft && (source.state === "上架" || selectedIds.has(source.id)));
+      if (!sources.length) {
+        area.innerHTML = `<div class="release-empty">当前没有可选择的已上架货源，请先前往 CDKey 货源列表创建并上架货源。</div>`;
+        return;
+      }
+      area.innerHTML = `<div class="table-wrap"><table class="cdkey-source-picker-table"><thead><tr><th>选择</th><th>优先级</th><th>货源 ID</th><th>货源名称</th><th>供货方</th><th>供货方式</th><th>供货配置</th><th>库存情况</th><th>货源状态</th></tr></thead><tbody>${sources.map(source => {
+        const route = cdkeyRouteDraft.find(item => item.sourceId === source.id);
+        const selected = Boolean(route);
+        return `<tr>
+          <td><input type="checkbox" data-route-source-toggle="${source.id}" ${selected ? "checked" : ""}></td>
+          <td><input class="cdkey-source-priority" type="number" min="1" step="1" placeholder="正整数" value="${selected ? route.sort : ""}" data-route-priority="${source.id}" ${selected ? "" : "disabled"}></td>
+          <td><b>${source.id}</b></td><td>${source.name}</td><td>${cdkeyProviderSummary(source)}</td>
+          <td><span class="tag ${cdkeySupplyMode(source) === "接口直供" ? "purple" : "blue"}">${cdkeySupplyMode(source)}</span></td>
+          <td>${cdkeySupplyConfig(source)}</td><td>${cdkeySupplyAvailability(source)}</td><td>${cdkeyPoolStateTag(source.state)}</td>
+        </tr>`;
+      }).join("")}</tbody></table></div><div class="hint-text">只展示当前供货方式下的货源；优先级必须为不重复的正整数，数字越小越优先。</div>`;
+      area.querySelectorAll("[data-route-source-toggle]").forEach(control => control.addEventListener("change", toggleCdkeyRouteSource));
+      area.querySelectorAll("[data-route-priority]").forEach(control => control.addEventListener("input", updateCdkeyRoutePriority));
     }
 
     function updateCdkeyRouteMethod(event) {
@@ -9218,53 +9226,25 @@
       renderCdkeyRouteAddArea();
     }
 
-    function ensureSupplierProductRouteSource(supplier, product) {
-      const managedSource = poolMocks.find(source => cdkeySupplyMode(source) === "接口直供" && source.supplier === supplier && String(source.supplierSku) === String(product.productId));
-      if (managedSource) return managedSource;
-      const supplierIndex = Math.max(1, Object.keys(cdkeySupplierCatalog).indexOf(supplier) + 1);
-      const sourceId = `SUPPLIER_PRODUCT_${supplierIndex}_${product.productId}`;
-      let source = skuDirectRouteSources.find(item => item.id === sourceId);
-      if (!source) {
-        source = {
-          id: sourceId,
-          name: `${supplier} · ${product.name}`,
-          state: "上架",
-          providerType: "三方供应商",
-          supplyMode: "接口直供",
-          supplier,
-          supplierProduct: product.name,
-          supplierSku: product.productId,
-          interfaceConfig: cdkeySupplierCatalog[supplier]?.interfaceConfig || "",
-          total: 0,
-          available: 0,
-          issued: 0
-        };
-        skuDirectRouteSources.push(source);
+    function toggleCdkeyRouteSource(event) {
+      const sourceId = event.currentTarget.dataset.routeSourceToggle;
+      const source = poolMocks.find(item => item.id === sourceId);
+      if (!source || cdkeySupplyMode(source) !== cdkeyRouteMethodDraft) return renderCdkeyRouteAddArea();
+      if (event.currentTarget.checked) {
+        if (source.state !== "上架") return renderCdkeyRouteAddArea();
+        const usedPriorities = new Set(cdkeyRouteDraft.map(route => Number(route.sort)).filter(Number.isInteger));
+        let nextPriority = 1;
+        while (usedPriorities.has(nextPriority)) nextPriority += 1;
+        cdkeyRouteDraft.push({ sourceId, sort: nextPriority });
+      } else {
+        cdkeyRouteDraft = cdkeyRouteDraft.filter(route => route.sourceId !== sourceId);
       }
-      return source;
-    }
-
-    function addCdkeyRouteSource() {
-      if (!cdkeyRouteMethodDraft) return toast("请先选择供货方式。");
-      cdkeyRouteDraft.push(cdkeyRouteMethodDraft === "码池供货"
-        ? { sourceId: "", sort: "", poolId: "" }
-        : { sourceId: "", sort: "", supplier: "", productId: "" });
       renderCdkeyRouteAddArea();
     }
 
-    function updateCdkeyRouteDraft(event) {
-      const index = Number(event.currentTarget.dataset.routeIndex);
-      const field = event.currentTarget.dataset.routeField;
-      if (!cdkeyRouteDraft[index]) return;
-      cdkeyRouteDraft[index][field] = event.currentTarget.value;
-      cdkeyRouteDraft[index].sourceId = "";
-    }
-
-    function removeCdkeyRouteSource(event) {
-      const index = Number(event.currentTarget.dataset.routeRemove);
-      if (!cdkeyRouteDraft[index]) return;
-      cdkeyRouteDraft.splice(index, 1);
-      renderCdkeyRouteAddArea();
+    function updateCdkeyRoutePriority(event) {
+      const route = cdkeyRouteDraft.find(item => item.sourceId === event.currentTarget.dataset.routePriority);
+      if (route) route.sort = event.currentTarget.value;
     }
 
     function renderPoolTable() {
@@ -9281,29 +9261,17 @@
       for (let index = 0; index < cdkeyRouteDraft.length; index += 1) {
         const route = cdkeyRouteDraft[index];
         const sort = String(route.sort || "").trim();
-        if (!/^[1-9]\d*$/.test(sort)) return toast(`请填写第 ${index + 1} 条排序值，且必须为正整数。`);
-        if (sortValues.has(sort)) return toast(`排序值 ${sort} 重复，请调整后保存。`);
+        if (!/^[1-9]\d*$/.test(sort)) return toast(`请填写第 ${index + 1} 条货源优先级，且必须为正整数。`);
+        if (sortValues.has(sort)) return toast(`优先级 ${sort} 重复，请调整后保存。`);
         sortValues.add(sort);
-        let source = null;
-        if (cdkeyRouteMethodDraft === "码池供货") {
-          const poolId = String(route.poolId || "").trim();
-          if (!poolId) return toast(`请填写第 ${index + 1} 条旧码池 ID。`);
-          source = poolMocks.find(item => item.id.toUpperCase() === poolId.toUpperCase() && cdkeySupplyMode(item) === "码池供货");
-          if (!source) return toast(`第 ${index + 1} 条旧码池 ID 不存在。`);
-        } else {
-          const supplier = String(route.supplier || "").trim();
-          const productId = String(route.productId || "").trim();
-          if (!supplier) return toast(`请选择第 ${index + 1} 条三方供应商。`);
-          if (!productId) return toast(`请填写第 ${index + 1} 条三方商品编码。`);
-          const product = cdkeySupplierCatalog[supplier]?.products.find(item => String(item.productId) === productId);
-          if (!product) return toast(`第 ${index + 1} 条商品编码不属于所选供应商。`);
-          source = ensureSupplierProductRouteSource(supplier, product);
-        }
+        const source = poolMocks.find(item => item.id === route.sourceId);
+        if (!source) return toast(`第 ${index + 1} 条货源不存在，请重新选择。`);
+        if (cdkeySupplyMode(source) !== cdkeyRouteMethodDraft) return toast(`第 ${index + 1} 条货源的供货方式不一致。`);
         if (source.state !== "上架") return toast(`第 ${index + 1} 条货源不是上架状态。`);
         if (sources.some(item => item.source.id === source.id)) return toast(`第 ${index + 1} 条货源重复，请删除重复项。`);
         sources.push({ source, sort: Number(sort) });
       }
-      sources.sort((a, b) => b.sort - a.sort);
+      sources.sort((a, b) => a.sort - b.sort);
       const sourceIds = sources.map(item => item.source.id);
       row.cdkeySourceIds = sourceIds;
       row.cdkeySourceRoutes = sources.map(item => ({ sourceId: item.source.id, sort: item.sort }));
@@ -10227,14 +10195,11 @@
     function orderCdkeySourceConfigHtml(order) {
       const supplyMode = order.supplyMode || "-";
       const isDirectSupply = supplyMode === "接口直供";
-      const referenceLabel = isDirectSupply ? "三方商品编码" : "旧码池 ID";
-      const referenceValue = isDirectSupply
-        ? (order.supplierProductId || "-")
-        : (order.cdkeyPoolId || order.supplySourceId || "-");
-      const provider = isDirectSupply
-        ? `三方供应商${order.supplier ? `（${order.supplier}）` : ""}`
-        : supplyMode === "码池供货" ? "平台自营" : "-";
-      return `<div>${referenceLabel}：${referenceValue}</div><div class="minor">供货方式：${supplyMode}</div><div class="minor">供货方：${provider}</div>`;
+      const sourceId = order.supplySourceId || order.cdkeyPoolId || "";
+      const source = sourceId ? getPoolById(sourceId) : null;
+      const sourceName = order.supplySourceName || source?.name || "-";
+      const provider = source ? cdkeyProviderName(source) : isDirectSupply ? (order.supplier || "三方供应商") : supplyMode === "码池供货" ? "平台自营" : "-";
+      return `<div>货源：${sourceName}${sourceId ? `（${sourceId}）` : ""}</div><div class="minor">供货方式：${supplyMode}</div><div class="minor">供货方：${provider}</div>`;
     }
 
     function cdkeyExtractionInfoSection(order) {
