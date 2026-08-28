@@ -1807,7 +1807,7 @@
                   <th>供货方式</th>
                   <th>供货方</th>
                   <th>供货配置</th>
-                  <th>可用情况</th>
+                  <th>库存情况</th>
                   <th>入库批次</th>
                   <th>绑定 SKU 数</th>
                   <th>货源状态</th>
@@ -6991,8 +6991,8 @@
 
     function cdkeySupplyAvailability(pool) {
       return cdkeySupplyMode(pool) === "接口直供"
-        ? `<span class="tag blue">实时判断</span><div class="minor">平台不维护库存</div>`
-        : `<b>${pool.available || 0}</b> / ${pool.total || 0}`;
+        ? `<span class="tag blue">支付后判断</span><div class="minor">平台不记录库存数量</div>`
+        : `<b>${pool.available || 0} 个可用</b><div class="minor">总数 ${pool.total || 0}</div>`;
     }
 
     function latestCdkeyUploadFile(poolId) {
@@ -7475,7 +7475,7 @@
       document.getElementById("cdkeyPoolDetailBody").innerHTML = `
         ${detailSection("货源基础信息", infoGrid(basicItems))}
         ${detailSection("供货配置", infoGrid(providerItems))}
-        ${detailSection(isDirect ? "接口直供配置" : "码池供货配置", supplyConfig)}
+        ${detailSection(isDirect ? "接口直供配置" : "入库与库存", supplyConfig)}
         ${detailSection(isDirect ? "取码及成本记录" : "入库批次", isDirect ? directSupplyCostTable(directSupplyCostRecords(pool.id)) : cdkeyBatchTable(getCdkeyBatchesByPool(pool.id), false))}
         ${detailSection("绑定 SKU", boundSkuTable(getBoundSkuByPool(pool.id)))}
       `;
@@ -7624,7 +7624,7 @@
     function openCdkeyBatchDrawer(poolId) {
       const pool = getPoolById(poolId);
       if (!pool) return;
-      document.getElementById("cdkeyBatchBody").innerHTML = `${detailSection("码池信息", infoGrid([["货源 ID", pool.id], ["货源名称", pool.name], ["货源状态", pool.state], ["码入库方式", pool.stockMethod]]))}
+      document.getElementById("cdkeyBatchBody").innerHTML = `${detailSection("货源信息", infoGrid([["货源 ID", pool.id], ["货源名称", pool.name], ["货源状态", pool.state], ["码入库方式", pool.stockMethod]]))}
         <div class="alert info" style="margin-bottom:12px">每次首次入库或后续补货都会形成独立批次。批次成本用于对账；已有履约记录的批次成本不允许直接覆盖。</div>
         <div class="form-grid two" style="margin-bottom:12px"><div class="field"><label>批次 ID</label><input placeholder="请输入批次 ID"></div><div class="field"><label>码入库来源</label><select><option>全部</option><option>接口批量获取码</option><option>手工上传码</option></select></div></div>
         ${cdkeyBatchTable(getCdkeyBatchesByPool(pool.id), true)}`;
@@ -7635,9 +7635,9 @@
     function cdkeyBatchTable(rows, withActions, compact = false) {
       if (!rows.length) return `<div class="empty">暂无入库批次</div>`;
       if (compact) {
-        return `<div class="table-wrap restock-table-wrap"><table class="restock-batch-table"><thead><tr><th>批次 ID</th><th>批次名称</th><th>码入库来源</th><th>总码数</th><th>可用码数量</th><th>成本币种</th><th>单件成本</th><th>批次总成本</th><th>成本来源</th><th>过期时间</th><th>创建时间</th></tr></thead><tbody>${rows.map(batch => `<tr><td>${batch.batchId}</td><td>${batch.batchName}</td><td>${batch.source}</td><td>${batch.total}</td><td>${batch.available}</td><td>${batch.costCurrency}</td><td>${formatCostAmount(batch.unitCost, batch.costCurrency)}</td><td>${formatCostAmount(batch.totalCost, batch.costCurrency)}</td><td>${batch.costSource}</td><td>${batch.expireAt || "-"}</td><td>${batch.createdAt || batch.updatedAt}</td></tr>`).join("")}</tbody></table></div>`;
+        return `<div class="table-wrap restock-table-wrap"><table class="restock-batch-table"><thead><tr><th>批次 ID</th><th>批次名称</th><th>码入库来源</th><th>总码数</th><th>可用码数量</th><th>成本币种</th><th>单件成本</th><th>成本来源</th><th>过期时间</th><th>创建时间</th></tr></thead><tbody>${rows.map(batch => `<tr><td>${batch.batchId}</td><td>${batch.batchName}</td><td>${batch.source}</td><td>${batch.total}</td><td>${batch.available}</td><td>${batch.costCurrency}</td><td>${formatCostAmount(batch.unitCost, batch.costCurrency)}</td><td>${batch.costSource}</td><td>${batch.expireAt || "-"}</td><td>${batch.createdAt || batch.updatedAt}</td></tr>`).join("")}</tbody></table></div>`;
       }
-      return `<div class="table-wrap"><table class="cdkey-batch-table"><thead><tr><th>批次 ID</th><th>批次名称</th><th>码池 ID</th><th>码入库来源</th><th>上传文件名</th><th>总码数</th><th>可用码数量</th><th>已履约数量</th><th>核销数量</th><th>成本币种</th><th>单件成本</th><th>批次总成本</th><th>成本来源</th><th>过期时间</th><th>创建时间</th>${withActions ? "<th>最后操作人</th><th>操作</th>" : ""}</tr></thead><tbody>${rows.map(batch => `<tr><td>${batch.batchId}</td><td>${batch.batchName}</td><td>${batch.poolId}</td><td>${batch.source}</td><td>${batch.fileName || "-"}</td><td>${batch.total}</td><td>${batch.available}</td><td>${batch.issued}</td><td>${batch.voided}</td><td>${batch.costCurrency}</td><td>${formatCostAmount(batch.unitCost, batch.costCurrency)}</td><td>${formatCostAmount(batch.totalCost, batch.costCurrency)}</td><td>${batch.costSource}</td><td>${batch.expireAt || "-"}</td><td>${batch.createdAt || batch.updatedAt}</td>${withActions ? `<td>${lastCdkeyOperator(getPoolById(batch.poolId))}</td><td><button class="btn text" data-pool-id="${batch.poolId}" data-batch-code="${batch.batchId}">查看 CDKey 明细</button></td>` : ""}</tr>`).join("")}</tbody></table></div>`;
+      return `<div class="table-wrap"><table class="cdkey-batch-table"><thead><tr><th>批次 ID</th><th>批次名称</th><th>货源 ID</th><th>码入库来源</th><th>上传文件名</th><th>总码数</th><th>可用码数量</th><th>已履约数量</th><th>核销数量</th><th>成本币种</th><th>单件成本</th><th>成本来源</th><th>过期时间</th><th>创建时间</th>${withActions ? "<th>最后操作人</th><th>操作</th>" : ""}</tr></thead><tbody>${rows.map(batch => `<tr><td>${batch.batchId}</td><td>${batch.batchName}</td><td>${batch.poolId}</td><td>${batch.source}</td><td>${batch.fileName || "-"}</td><td>${batch.total}</td><td>${batch.available}</td><td>${batch.issued}</td><td>${batch.voided}</td><td>${batch.costCurrency}</td><td>${formatCostAmount(batch.unitCost, batch.costCurrency)}</td><td>${batch.costSource}</td><td>${batch.expireAt || "-"}</td><td>${batch.createdAt || batch.updatedAt}</td>${withActions ? `<td>${lastCdkeyOperator(getPoolById(batch.poolId))}</td><td><button class="btn text" data-pool-id="${batch.poolId}" data-batch-code="${batch.batchId}">查看 CDKey 明细</button></td>` : ""}</tr>`).join("")}</tbody></table></div>`;
     }
 
     function directSupplyCostStatusTag(status) {
