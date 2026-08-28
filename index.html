@@ -1794,7 +1794,7 @@
           <div class="table-head">
             <div>
               <div class="table-title">CDKey 货源数据</div>
-              <div class="table-meta">码池供货按入库批次记录成本，接口直供按每次取码结果记录实际成本；商品售价仍由商品 SKU 管理。</div>
+              <div class="table-meta">码池供货按入库批次管理库存与成本；接口直供按订单实时取码，不产生入库批次。</div>
             </div>
             <div class="table-meta" id="cdkeyPoolTableCount">共 0 条</div>
           </div>
@@ -1808,7 +1808,7 @@
                   <th>供货方</th>
                   <th>供货配置</th>
                   <th>可用情况</th>
-                  <th>批次 / 成本</th>
+                  <th>入库批次</th>
                   <th>绑定 SKU 数</th>
                   <th>货源状态</th>
                   <th>创建时间</th>
@@ -7019,15 +7019,10 @@
         .sort((a, b) => String(b.costRecordedAt || b.updated || "").localeCompare(String(a.costRecordedAt || a.updated || "")));
     }
 
-    function cdkeySourceCostSummary(pool) {
-      if (cdkeySupplyMode(pool) === "接口直供") {
-        const records = directSupplyCostRecords(pool.id);
-        const latest = records.find(record => record.costStatus === "已记录");
-        return `<span class="tag purple">按取码记录</span><div class="minor">${latest ? `最近成本：${formatCostAmount(latest.actualUnitCost, latest.costCurrency)} / 件` : "暂无成功取码成本"}</div>`;
-      }
-      const batches = getCdkeyBatchesByPool(pool.id).sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
-      const latest = batches[0];
-      return `<b>${batches.length} 个批次</b><div class="minor">${latest ? `最近成本：${formatCostAmount(latest.unitCost, latest.costCurrency)} / 件` : "暂无入库批次"}</div>`;
+    function cdkeyInboundBatchSummary(pool) {
+      if (cdkeySupplyMode(pool) === "接口直供") return `<span class="muted">—</span>`;
+      const batchCount = getCdkeyBatchesByPool(pool.id).length;
+      return batchCount ? `<b>${batchCount} 个批次</b>` : `<span class="muted">暂无批次</span>`;
     }
 
     function cdkeyCodeStateTag(state) {
@@ -7050,7 +7045,7 @@
         const boundCount = getAllBoundSkuByPool(pool.id).length;
         return `<tr>
           <td><b>${pool.id}</b></td><td>${pool.name}</td><td><span class="tag ${cdkeySupplyMode(pool) === "接口直供" ? "purple" : "blue"}">${cdkeySupplyMode(pool)}</span></td>
-          <td>${cdkeyProviderSummary(pool)}</td><td>${cdkeySupplyConfig(pool)}</td><td>${cdkeySupplyAvailability(pool)}</td><td>${cdkeySourceCostSummary(pool)}</td><td>${boundCount}</td><td>${cdkeyPoolStateTag(pool.state)}</td><td>${pool.createdAt || pool.updatedAt}</td>
+          <td>${cdkeyProviderSummary(pool)}</td><td>${cdkeySupplyConfig(pool)}</td><td>${cdkeySupplyAvailability(pool)}</td><td>${cdkeyInboundBatchSummary(pool)}</td><td>${boundCount}</td><td>${cdkeyPoolStateTag(pool.state)}</td><td>${pool.createdAt || pool.updatedAt}</td>
           <td>${lastCdkeyOperator(pool)}</td>
           <td><div class="action-list">${cdkeyPoolActions(pool)}</div></td>
         </tr>`;
