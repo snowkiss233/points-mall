@@ -1706,7 +1706,7 @@
         <section class="card" aria-label="履约记录筛选区">
           <div class="card-body">
             <div class="filter-grid">
-              <div class="field"><label>兑换单号</label><input id="deliveryFilterRecord" placeholder="请输入兑换单号"></div>
+              <div class="field"><label>履约单号</label><input id="deliveryFilterRecord" placeholder="请输入履约单号"></div>
               <div class="field"><label>订单号</label><input id="deliveryFilterOrder" placeholder="请输入订单号"></div>
               <div class="field"><label>用户 ID</label><input id="deliveryFilterUser" placeholder="请输入用户 ID"></div>
               <div class="field"><label>商品对外名称</label><input id="deliveryFilterProduct" placeholder="请输入商品对外名称"></div>
@@ -1741,7 +1741,7 @@
             <table class="delivery-table">
               <thead>
                 <tr>
-                  <th>兑换单号</th>
+                  <th>履约单号</th>
                   <th>订单号</th>
                   <th>下单场景</th>
                   <th>业务来源</th>
@@ -2245,11 +2245,6 @@
   <aside class="drawer" id="cdkeyBatchDrawer">
     <div class="drawer-head"><div class="drawer-title">入库批次记录</div><button class="btn" data-close="cdkeyBatchDrawer">关闭</button></div>
     <div class="drawer-body" id="cdkeyBatchBody"></div>
-  </aside>
-
-  <aside class="drawer" id="cdkeyCostDrawer">
-    <div class="drawer-head"><div class="drawer-title">接口取码成本记录</div><button class="btn" data-close="cdkeyCostDrawer">关闭</button></div>
-    <div class="drawer-body" id="cdkeyCostBody"></div>
   </aside>
 
   <aside class="drawer" id="cdkeyCodeDrawer">
@@ -2757,15 +2752,15 @@
       makeInventoryRecord({ inventoryId: "INV-SPU10008-SKU01", spu: "SPU10008", skuId: "SPU10008-SKU01", stockMode: "限量", totalStock: 100, availableStock: 100, lockedStock: 0, deductedStock: 0, abnormalLockedStock: 0, todayLimit: 30, todayRemaining: 30, warningThreshold: 20, lastSyncTime: "2026-05-19 19:48", updatedAt: "2026-05-19 19:48", remark: "游戏道具礼包初始化库存，CDKey 码池待配置" })
     ];
     let deliveryRecords = [
-      makeDeliveryRecord({ recordId: "DEL-202605220001", orderId: "ORD-202605220001", exchangeNo: "EXC-202605220001", userId: "10023888", spu: "SPU10002", skuId: "SPU10002-SKU01", deliveryMethod: DELIVERY_AUTO_CDKEY, deliveryState: "已履约", quantity: 3, payAmount: 9000, inventoryFlowId: "FLOW-000012", cdkeyPoolId: "PUBG_GCOIN_300_POOL", cdkeyBatchId: "BATCH-PUBG-202605-001", maskedCdkey: "PUBG-****-****-8K29", createdAt: "2026-05-22 16:20", deliveredAt: "2026-05-22 16:21", updatedAt: "2026-05-22 16:21", remark: "CDKey 已履约 3 个" }),
-      makeDeliveryRecord({ recordId: "DEL-202607050004", orderId: "ORD20260705004", exchangeNo: "EXC-202607050004", userId: "U100862", userNnNo: "NN100862", userPhone: "13888888888", spu: "SPU10003", skuId: "SPU10003-SKU01", deliveryMethod: DELIVERY_AUTO_CDKEY, deliveryState: "待履约", orderScene: "缺货下单", waitingReason: "等待 CDKey补货", pendingQuantity: 1, queueNo: 1, quotaReservationId: "PFR-20260705004", payAmount: 800, inventoryFlowId: "-", cdkeyPoolId: "ACCELERATOR_7D_POOL", cdkeyBatchId: "", maskedCdkey: "-", failureReason: "", createdAt: "2026-07-05 16:20:18", deliveredAt: "-", updatedAt: "2026-07-05 16:20:18", remark: "支付成功，已占用待履约额度，等待码池补货" }),
-      makeDeliveryRecord({ recordId: "DEL-202605220003", orderId: "ORD-202605220003", exchangeNo: "EXC-202605220003", businessSource: "xx活动", userId: "10023890", spu: "SPU10001", skuId: "SPU10001-SKU01", deliveryMethod: DELIVERY_AUTO_VIRTUAL, deliveryState: "已履约", payAmount: 800, inventoryFlowId: "FLOW-000014", autoResourceId: "RESOURCE_AVATAR_FRAME_7D", createdAt: "2026-05-22 17:10", deliveredAt: "2026-05-22 17:10", updatedAt: "2026-05-22 17:10", remark: "权益服务已履约" }),
-      makeDeliveryRecord({ recordId: "DEL-202605220004", orderId: "ORD-202605220004", exchangeNo: "EXC-202605220004", userId: "10023891", spu: "SPU10007", skuId: "SPU10007-SKU01", deliveryMethod: DELIVERY_AUTO_VIRTUAL, deliveryState: "待履约", payAmount: 800, inventoryFlowId: "FLOW-000015", autoResourceId: "RESOURCE_ENTRANCE_EFFECT_7D", callbackState: "等待回调", createdAt: "2026-05-22 17:20", deliveredAt: "-", updatedAt: "2026-05-22 17:20", remark: "等待权益服务回调" }),
-      makeDeliveryRecord({ recordId: "DEL-202605220005", orderId: "ORD-202605220005", exchangeNo: "EXC-202605220005", userId: "10023892", spu: "SPU10008", skuId: "SPU10008-SKU01", deliveryMethod: DELIVERY_AUTO_CDKEY, deliveryState: "履约失败", payAmount: 800, inventoryFlowId: "FLOW-000016", failureReason: "CDKey 码池未配置", createdAt: "2026-05-22 17:28", deliveredAt: "-", updatedAt: "2026-05-22 17:28", remark: "商品码池配置缺失" }),
-      makeDeliveryRecord({ recordId: "DEL-202605220006", orderId: "ORD-202605220006", exchangeNo: "EXC-202605220006", userId: "10023893", spu: "SPU10004", skuId: "SPU10004-SKU01", deliveryMethod: DELIVERY_MANUAL_PHYSICAL, deliveryState: "待履约", payAmount: 6800, inventoryFlowId: "FLOW-000017", externalFulfillmentNo: "-", externalFulfillmentState: "待履约", createdAt: "2026-05-22 17:40", deliveredAt: "-", updatedAt: "2026-05-22 17:40", remark: "订单 / 履约后台承接发货" }),
-      makeDeliveryRecord({ recordId: "DEL-202605220007", orderId: "ORD-202605220007", exchangeNo: "EXC-202605220007", userId: "10023894", spu: "SPU10004", skuId: "SPU10004-SKU02", deliveryMethod: DELIVERY_MANUAL_PHYSICAL, deliveryState: "待履约", payAmount: 6800, inventoryFlowId: "FLOW-000018", externalFulfillmentNo: "FUL-202605220007", externalFulfillmentState: "外部履约中", createdAt: "2026-05-22 17:48", deliveredAt: "-", updatedAt: "2026-05-22 17:50", remark: "只读展示外部履约单号" }),
-      makeDeliveryRecord({ recordId: "DEL-202605220008", orderId: "ORD-202605220008", exchangeNo: "EXC-202605220008", businessSource: "xx活动", userId: "10023895", spu: "SPU10005", skuId: "SPU10005-SKU01", deliveryMethod: DELIVERY_AUTO_VIRTUAL, deliveryState: "履约失败", payAmount: 800, inventoryFlowId: "FLOW-000019", autoResourceId: "RESOURCE_NICKNAME_DECOR_7D", failureReason: "订单取消", createdAt: "2026-05-22 18:02", deliveredAt: "-", updatedAt: "2026-05-22 18:05", remark: "用户取消兑换" }),
-      makeDeliveryRecord({ recordId: "DEL-202605220009", orderId: "ORD-202605220009", exchangeNo: "EXC-202605220009", userId: "10023896", spu: "SPU10007", skuId: "SPU10007-SKU01", deliveryMethod: DELIVERY_AUTO_VIRTUAL, deliveryState: "履约失败", payAmount: 800, inventoryFlowId: "FLOW-000020", autoResourceId: "RESOURCE_ENTRANCE_EFFECT_7D", failureReason: "库存锁定未释放", createdAt: "2026-05-22 18:10", deliveredAt: "-", updatedAt: "2026-05-22 18:11", remark: "库存锁定仍占用" })
+      makeDeliveryRecord({ recordId: "DEL-202605220001", orderId: "ORD-202605220001", exchangeNo: "FUL-202605220001", userId: "10023888", spu: "SPU10002", skuId: "SPU10002-SKU01", deliveryMethod: DELIVERY_AUTO_CDKEY, deliveryState: "已履约", quantity: 3, payAmount: 9000, inventoryFlowId: "FLOW-000012", cdkeyPoolId: "PUBG_GCOIN_300_POOL", cdkeyBatchId: "BATCH-PUBG-202605-001", maskedCdkey: "PUBG-****-****-8K29", createdAt: "2026-05-22 16:20", deliveredAt: "2026-05-22 16:21", updatedAt: "2026-05-22 16:21", remark: "CDKey 已履约 3 个" }),
+      makeDeliveryRecord({ recordId: "DEL-202607050004", orderId: "ORD20260705004", exchangeNo: "FUL-202607050004", userId: "U100862", userNnNo: "NN100862", userPhone: "13888888888", spu: "SPU10003", skuId: "SPU10003-SKU01", deliveryMethod: DELIVERY_AUTO_CDKEY, deliveryState: "待履约", orderScene: "缺货下单", waitingReason: "等待 CDKey补货", pendingQuantity: 1, queueNo: 1, quotaReservationId: "PFR-20260705004", payAmount: 800, inventoryFlowId: "-", cdkeyPoolId: "ACCELERATOR_7D_POOL", cdkeyBatchId: "", maskedCdkey: "-", failureReason: "", createdAt: "2026-07-05 16:20:18", deliveredAt: "-", updatedAt: "2026-07-05 16:20:18", remark: "支付成功，已占用待履约额度，等待码池补货" }),
+      makeDeliveryRecord({ recordId: "DEL-202605220003", orderId: "ORD-202605220003", exchangeNo: "FUL-202605220003", businessSource: "xx活动", userId: "10023890", spu: "SPU10001", skuId: "SPU10001-SKU01", deliveryMethod: DELIVERY_AUTO_VIRTUAL, deliveryState: "已履约", payAmount: 800, inventoryFlowId: "FLOW-000014", autoResourceId: "RESOURCE_AVATAR_FRAME_7D", createdAt: "2026-05-22 17:10", deliveredAt: "2026-05-22 17:10", updatedAt: "2026-05-22 17:10", remark: "权益服务已履约" }),
+      makeDeliveryRecord({ recordId: "DEL-202605220004", orderId: "ORD-202605220004", exchangeNo: "FUL-202605220004", userId: "10023891", spu: "SPU10007", skuId: "SPU10007-SKU01", deliveryMethod: DELIVERY_AUTO_VIRTUAL, deliveryState: "待履约", payAmount: 800, inventoryFlowId: "FLOW-000015", autoResourceId: "RESOURCE_ENTRANCE_EFFECT_7D", callbackState: "等待回调", createdAt: "2026-05-22 17:20", deliveredAt: "-", updatedAt: "2026-05-22 17:20", remark: "等待权益服务回调" }),
+      makeDeliveryRecord({ recordId: "DEL-202605220005", orderId: "ORD-202605220005", exchangeNo: "FUL-202605220005", userId: "10023892", spu: "SPU10008", skuId: "SPU10008-SKU01", deliveryMethod: DELIVERY_AUTO_CDKEY, deliveryState: "履约失败", payAmount: 800, inventoryFlowId: "FLOW-000016", failureReason: "CDKey 码池未配置", createdAt: "2026-05-22 17:28", deliveredAt: "-", updatedAt: "2026-05-22 17:28", remark: "商品码池配置缺失" }),
+      makeDeliveryRecord({ recordId: "DEL-202605220006", orderId: "ORD-202605220006", exchangeNo: "FUL-202605220006", userId: "10023893", spu: "SPU10004", skuId: "SPU10004-SKU01", deliveryMethod: DELIVERY_MANUAL_PHYSICAL, deliveryState: "待履约", payAmount: 6800, inventoryFlowId: "FLOW-000017", externalFulfillmentNo: "-", externalFulfillmentState: "待履约", createdAt: "2026-05-22 17:40", deliveredAt: "-", updatedAt: "2026-05-22 17:40", remark: "订单 / 履约后台承接发货" }),
+      makeDeliveryRecord({ recordId: "DEL-202605220007", orderId: "ORD-202605220007", exchangeNo: "FUL-202605220007", userId: "10023894", spu: "SPU10004", skuId: "SPU10004-SKU02", deliveryMethod: DELIVERY_MANUAL_PHYSICAL, deliveryState: "待履约", payAmount: 6800, inventoryFlowId: "FLOW-000018", externalFulfillmentNo: "FUL-202605220007", externalFulfillmentState: "外部履约中", createdAt: "2026-05-22 17:48", deliveredAt: "-", updatedAt: "2026-05-22 17:50", remark: "只读展示外部履约单号" }),
+      makeDeliveryRecord({ recordId: "DEL-202605220008", orderId: "ORD-202605220008", exchangeNo: "FUL-202605220008", businessSource: "xx活动", userId: "10023895", spu: "SPU10005", skuId: "SPU10005-SKU01", deliveryMethod: DELIVERY_AUTO_VIRTUAL, deliveryState: "履约失败", payAmount: 800, inventoryFlowId: "FLOW-000019", autoResourceId: "RESOURCE_NICKNAME_DECOR_7D", failureReason: "订单取消", createdAt: "2026-05-22 18:02", deliveredAt: "-", updatedAt: "2026-05-22 18:05", remark: "用户取消兑换" }),
+      makeDeliveryRecord({ recordId: "DEL-202605220009", orderId: "ORD-202605220009", exchangeNo: "FUL-202605220009", userId: "10023896", spu: "SPU10007", skuId: "SPU10007-SKU01", deliveryMethod: DELIVERY_AUTO_VIRTUAL, deliveryState: "履约失败", payAmount: 800, inventoryFlowId: "FLOW-000020", autoResourceId: "RESOURCE_ENTRANCE_EFFECT_7D", failureReason: "库存锁定未释放", createdAt: "2026-05-22 18:10", deliveredAt: "-", updatedAt: "2026-05-22 18:11", remark: "库存锁定仍占用" })
     ];
     let cdkeyBatches = [
       makeCdkeyBatch({ batchId: "BATCH-PUBG-202605-001", poolId: "PUBG_GCOIN_300_POOL", batchName: "PUBG 300 G-COIN 5月首批", source: "手工上传码", fileName: "pubg_gcoin_300_20260518.xlsx", state: "可用", total: 300, available: 220, issued: 72, voided: 0, failed: 0, costCurrency: "人民币", unitCost: 18.2, costSource: "运营填写", costStatus: "已记录", expireAt: "2026-12-31 23:59", createdAt: "2026-05-18 10:20", updatedAt: "2026-05-22 15:10" }),
@@ -2773,11 +2768,11 @@
       makeCdkeyBatch({ batchId: "BATCH-ACC-202605-001", poolId: "ACCELERATOR_7D_POOL", batchName: "加速卡 7 天 5月首批", source: "手工上传码", fileName: "accelerator_7d_20260518.xlsx", state: "可用", total: 100, available: 0, issued: 100, voided: 0, failed: 0, costCurrency: "人民币", unitCost: 3.2, costSource: "运营填写", costStatus: "已记录", expireAt: "2026-10-31 23:59", createdAt: "2026-05-18 11:30", updatedAt: "2026-05-21 12:30" })
     ];
     let cdkeyCodes = [
-      makeCdkeyCode({ rowKey: "ROW-PUBG-001", poolId: "PUBG_GCOIN_300_POOL", batchId: "BATCH-PUBG-202605-001", maskedCdkey: "PUBG-****-****-8K29", state: "已履约", deliveryRecordId: "DEL-202605220001", exchangeNo: "EXC-202605220001", orderId: "ORD-202605220001", issuedAt: "2026-05-22 16:21", updatedAt: "2026-05-22 16:21" }),
-      makeCdkeyCode({ rowKey: "ROW-PUBG-002", poolId: "PUBG_GCOIN_300_POOL", batchId: "BATCH-PUBG-202605-001", maskedCdkey: "PUBG-****-****-A21C", state: "已履约", deliveryRecordId: "DEL-202605220001", exchangeNo: "EXC-202605220001", orderId: "ORD-202605220001", issuedAt: "2026-05-22 16:21", updatedAt: "2026-05-22 16:21" }),
-      makeCdkeyCode({ rowKey: "ROW-PUBG-003", poolId: "PUBG_GCOIN_300_POOL", batchId: "BATCH-PUBG-202605-001", maskedCdkey: "PUBG-****-****-K91M", state: "已履约", deliveryRecordId: "DEL-202605220001", exchangeNo: "EXC-202605220001", orderId: "ORD-202605220001", issuedAt: "2026-05-22 16:21", updatedAt: "2026-05-22 16:21" }),
+      makeCdkeyCode({ rowKey: "ROW-PUBG-001", poolId: "PUBG_GCOIN_300_POOL", batchId: "BATCH-PUBG-202605-001", maskedCdkey: "PUBG-****-****-8K29", state: "已履约", deliveryRecordId: "DEL-202605220001", exchangeNo: "FUL-202605220001", orderId: "ORD-202605220001", issuedAt: "2026-05-22 16:21", updatedAt: "2026-05-22 16:21" }),
+      makeCdkeyCode({ rowKey: "ROW-PUBG-002", poolId: "PUBG_GCOIN_300_POOL", batchId: "BATCH-PUBG-202605-001", maskedCdkey: "PUBG-****-****-A21C", state: "已履约", deliveryRecordId: "DEL-202605220001", exchangeNo: "FUL-202605220001", orderId: "ORD-202605220001", issuedAt: "2026-05-22 16:21", updatedAt: "2026-05-22 16:21" }),
+      makeCdkeyCode({ rowKey: "ROW-PUBG-003", poolId: "PUBG_GCOIN_300_POOL", batchId: "BATCH-PUBG-202605-001", maskedCdkey: "PUBG-****-****-K91M", state: "已履约", deliveryRecordId: "DEL-202605220001", exchangeNo: "FUL-202605220001", orderId: "ORD-202605220001", issuedAt: "2026-05-22 16:21", updatedAt: "2026-05-22 16:21" }),
       makeCdkeyCode({ rowKey: "ROW-PUBG-004", poolId: "PUBG_GCOIN_300_POOL", batchId: "BATCH-PUBG-202605-002", maskedCdkey: "PUBG-****-****-P7Q2", state: "未使用", updatedAt: "2026-05-22 12:30" }),
-      makeCdkeyCode({ rowKey: "ROW-ACC-001", poolId: "ACCELERATOR_7D_POOL", batchId: "BATCH-ACC-202605-001", maskedCdkey: "ACC7-****-****-19KQ", state: "已履约", deliveryRecordId: "DEL-202605210011", exchangeNo: "EXC-202605210011", orderId: "ORD-202605210011", issuedAt: "2026-05-21 12:30", updatedAt: "2026-05-21 12:30" })
+      makeCdkeyCode({ rowKey: "ROW-ACC-001", poolId: "ACCELERATOR_7D_POOL", batchId: "BATCH-ACC-202605-001", maskedCdkey: "ACC7-****-****-19KQ", state: "已履约", deliveryRecordId: "DEL-202605210011", exchangeNo: "FUL-202605210011", orderId: "ORD-202605210011", issuedAt: "2026-05-21 12:30", updatedAt: "2026-05-21 12:30" })
     ];
     let cdkeyLogs = [];
     let cdkeyExtractionLogs = [
@@ -3770,7 +3765,7 @@
       if (label.includes("码值")) return { maxLength: 128 };
       if (label.includes("文件")) return { maxLength: 120 };
       if (label.includes("时间")) return { maxLength: 32 };
-      if (label.includes("订单") || label.includes("工单") || label.includes("业务单号") || label.includes("兑换单号")) return { maxLength: 64 };
+      if (label.includes("订单") || label.includes("工单") || label.includes("业务单号") || label.includes("履约单号")) return { maxLength: 64 };
       if (label.includes("用户 ID")) return { maxLength: 32 };
       if (label.includes("商品ID") || label.includes("商品 ID") || label.includes("SPU") || label.includes("SKU") || label.includes("码池 ID") || label.includes("模板 ID") || label.includes("社区 ID") || label.includes("活动 ID") || label.includes("投放对象 ID")) return { maxLength: 64 };
       if (label.includes("名称")) return { maxLength: 50 };
@@ -6712,7 +6707,10 @@
 
     function getCdkeysByDeliveryRecord(record) {
       if (!record || !isCdkeyDelivery(record.deliveryMethod)) return [];
-      return cdkeyCodes.filter(code => {
+      const order = mallOrders.find(item => item.no === record.orderId);
+      const poolId = record.cdkeyPoolId || order?.supplySourceId || "";
+      const sourceCodes = poolId ? getCdkeySourceCodes(poolId) : cdkeyCodes;
+      return sourceCodes.filter(code => {
         if (code.deliveryRecordId && code.deliveryRecordId === record.recordId) return true;
         if (code.exchangeNo && code.exchangeNo === record.exchangeNo) return true;
         return !code.deliveryRecordId && !code.exchangeNo && code.orderId === record.orderId;
@@ -6737,10 +6735,10 @@
         ["CDKey 数量", codes.length ? `${codes.length} 个` : "-"], ["码池状态", pool?.state || "-"], ["失败原因", record.failureReason || "-"]
       ]);
       if (!codes.length) {
-        return summary + `<div class="empty">当前兑换单暂无 CDKey 明细。</div><div class="hint-text">一笔兑换单可以关联多个 CDKey；列表只展示摘要，明细在详情中按 CDKey 逐条展示。</div>`;
+        return summary + `<div class="empty">当前履约单暂无 CDKey 明细。</div><div class="hint-text">一笔履约单可以关联多个 CDKey；列表只展示摘要，明细在详情中按 CDKey 逐条展示。</div>`;
       }
       const table = `<div class="table-wrap"><table class="cdkey-code-table"><thead><tr><th>序号</th><th>脱敏 CDKey</th><th>CDKey 状态</th><th>入库批次 ID</th><th>履约时间</th></tr></thead><tbody>${codes.map((code, index) => `<tr><td>${index + 1}</td><td>${code.maskedCdkey}</td><td>${cdkeyCodeStateTag(code.state)}</td><td>${code.batchId || "-"}</td><td>${code.issuedAt || record.deliveredAt || "-"}</td></tr>`).join("")}</tbody></table></div>`;
-      return summary + table + `<div class="hint-text">一笔兑换单和 CDKey 是 1:N 关系；履约记录列表按兑换单展示，详情中展示该兑换单下全部 CDKey 明细，不拆分为多条履约记录。</div>`;
+      return summary + table + `<div class="hint-text">一笔履约单和 CDKey 是 1:N 关系；履约记录列表按履约单展示，详情中展示该履约单下全部 CDKey 明细，不拆分为多条履约记录。</div>`;
     }
 
     function renderDeliveryRecordStats() {
@@ -6847,7 +6845,7 @@
       const inventory = inventoryRecords.find(item => item.spu === record.spu && item.skuId === record.skuId);
       document.getElementById("deliveryDetailBody").innerHTML = `
         ${detailSection("履约基础信息", infoGrid([
-          ["兑换单号", record.exchangeNo], ["订单号", record.orderId], ["业务来源", record.businessSource || "积分商城"], ["内部履约记录 ID", record.recordId], ["用户 ID", record.userId],
+          ["履约单号", record.exchangeNo], ["订单号", record.orderId], ["业务来源", record.businessSource || "积分商城"], ["内部履约记录 ID", record.recordId], ["用户 ID", record.userId],
           ["用户 NN号", record.userNnNo || "-"], ["用户手机号", record.userPhone || "-"],
           ["履约状态", record.deliveryState], ["运营展示状态", deliveryDisplayState(record)], ["下单场景", record.orderScene || "现货下单"], ["履约方式", normalizeDelivery(record.deliveryMethod)],
           ["履约等待原因", record.waitingReason || "-"], ["待履约数量", record.pendingQuantity || "-"], ["履约队列序号", record.queueNo || "-"],
@@ -7050,6 +7048,68 @@
         .sort((a, b) => String(b.costRecordedAt || b.updated || "").localeCompare(String(a.costRecordedAt || a.updated || "")));
     }
 
+    function fulfillmentNoForOrder(order) {
+      const linkedRecord = deliveryRecords.find(record => record.orderId === order?.no);
+      if (linkedRecord?.exchangeNo) return linkedRecord.exchangeNo;
+      const orderSuffix = String(order?.no || "").replace(/^ORD-?/, "").replace(/[^A-Z0-9]/gi, "");
+      return orderSuffix ? `FUL-${orderSuffix}` : "-";
+    }
+
+    function directCdkeyCodeRows(poolId) {
+      return directSupplyCostRecords(poolId)
+        .filter(order => /成功/.test(String(order.supplierRequestResult || "")))
+        .flatMap(order => {
+          const maskedCodes = Array.isArray(order.maskedCdkeys)
+            ? order.maskedCdkeys.filter(code => code && code !== "-")
+            : order.maskedCdkey && order.maskedCdkey !== "-" ? [order.maskedCdkey] : [];
+          return maskedCodes.map((maskedCdkey, index) => ({
+            rowKey: `DIRECT-${order.no}-${index + 1}`,
+            poolId,
+            batchId: "",
+            maskedCdkey,
+            state: "已履约",
+            exchangeNo: fulfillmentNoForOrder(order),
+            orderId: order.no,
+            supplierOrderNo: order.supplierOrderNo || "",
+            issuedAt: order.completed || order.updated || "",
+            createdAt: order.costRecordedAt || order.completed || order.updated || order.created || "",
+            updatedAt: order.updated || order.completed || "",
+            supplyMode: "接口直供",
+            costStatus: order.costStatus,
+            costCurrency: order.costCurrency || "",
+            unitCost: order.actualUnitCost,
+            costSource: order.costSource || "接口返回",
+            operator: "系统"
+          }));
+        });
+    }
+
+    function getCdkeySourceCodes(poolId) {
+      const pool = getPoolById(poolId);
+      const storedCodes = getCdkeyCodesByPool(poolId).map(code => ({ ...code, supplyMode: cdkeySupplyMode(pool) }));
+      return [...storedCodes, ...directCdkeyCodeRows(poolId)]
+        .sort((a, b) => String(b.issuedAt || b.createdAt || b.updatedAt || "").localeCompare(String(a.issuedAt || a.createdAt || a.updatedAt || "")));
+    }
+
+    function cdkeyCodeCostInfo(code) {
+      if (code.supplyMode === "接口直供") {
+        const recorded = code.costStatus === "已记录";
+        return {
+          status: code.costStatus || "成本待补充",
+          currency: recorded ? (code.costCurrency || "-") : "-",
+          unitCost: recorded ? formatCostAmount(code.unitCost, code.costCurrency) : "-",
+          source: recorded ? (code.costSource || "接口返回") : "-"
+        };
+      }
+      const batch = cdkeyBatches.find(item => item.batchId === code.batchId && item.poolId === code.poolId);
+      return {
+        status: batch?.costStatus || "-",
+        currency: batch?.costCurrency || "-",
+        unitCost: batch ? formatCostAmount(batch.unitCost, batch.costCurrency) : "-",
+        source: batch?.costSource || "-"
+      };
+    }
+
     function cdkeyInboundBatchSummary(pool) {
       if (cdkeySupplyMode(pool) !== "码池供货") return `<span class="muted">—</span>`;
       const batchCount = getCdkeyBatchesByPool(pool.id).length;
@@ -7101,7 +7161,6 @@
       if (action === "detail") openCdkeyPoolDetail(poolId);
       if (action === "edit") openCdkeyPoolForm("edit", getPoolById(poolId));
       if (action === "batch") openCdkeyBatchDrawer(poolId);
-      if (action === "cost") openCdkeyDirectCostDrawer(poolId);
       if (action === "restock") {
         const pool = getPoolById(poolId);
         if (pool?.stockMethod === "手工上传") openCdkeyUploadModal(poolId);
@@ -7568,14 +7627,14 @@
           <div class="cdkey-detail-subsection-title">${isDirect ? "接口直供配置" : "入库与库存"}</div>
           ${supplyConfig}
         </div>
-        <div class="cdkey-detail-subsection">
-          <div class="cdkey-detail-subsection-title">${isDirect ? "取码记录" : "入库批次"}</div>
-          ${isDirect ? directSupplyCostTable(directSupplyCostRecords(pool.id)) : cdkeyBatchTable(getCdkeyBatchesByPool(pool.id), false)}
-        </div>`;
+        ${isDirect ? "" : `<div class="cdkey-detail-subsection">
+          <div class="cdkey-detail-subsection-title">入库批次</div>
+          ${cdkeyBatchTable(getCdkeyBatchesByPool(pool.id), false)}
+        </div>`}`;
       document.getElementById("cdkeyPoolDetailBody").innerHTML = `
         ${detailSection("货源基础信息", infoGrid(basicItems))}
-        ${detailSection(isUnconfigured ? "供货配置" : isDirect ? "供货与取码" : "供货与库存", supplyDetail)}
-        ${isDirect || isUnconfigured ? "" : detailSection("CDKey 明细", cdkeyCodeTable(getCdkeyCodesByPool(pool.id)))}
+        ${detailSection(isUnconfigured ? "供货配置" : "供货信息", supplyDetail)}
+        ${isUnconfigured ? "" : detailSection("CDKey 明细", cdkeyCodeTable(getCdkeySourceCodes(pool.id), supplyMode))}
         ${detailSection("绑定 SKU", boundSkuTable(getBoundSkuByPool(pool.id)))}
       `;
       openDrawer("cdkeyPoolDetailDrawer");
@@ -7749,33 +7808,49 @@
       return `<span class="tag ${cls}">${status}</span>`;
     }
 
-    function directSupplyCostTable(rows) {
-      if (!rows.length) return `<div class="empty">暂无接口取码记录</div>`;
-      return `<div class="table-wrap"><table class="direct-cost-table"><thead><tr><th>平台订单号</th><th>供货方订单号</th><th>供货商品</th><th>数量</th><th>接口结果</th><th>成本状态</th><th>成本币种</th><th>单件成本</th><th>实际总成本</th><th>成本来源</th><th>记录时间</th></tr></thead><tbody>${rows.map(record => `<tr><td>${record.no}</td><td>${record.supplierOrderNo || "-"}</td><td>${record.supplierProduct || "-"}</td><td>${record.quantity || 1}</td><td>${record.supplierRequestResult || "-"}</td><td>${directSupplyCostStatusTag(record.costStatus)}</td><td>${record.costStatus === "已记录" ? record.costCurrency : "-"}</td><td>${record.costStatus === "已记录" ? formatCostAmount(record.actualUnitCost, record.costCurrency) : "-"}</td><td>${record.costStatus === "已记录" ? formatCostAmount(record.actualTotalCost, record.costCurrency) : "-"}</td><td>${record.costStatus === "已记录" ? (record.costSource || "接口返回") : "-"}</td><td>${record.costRecordedAt || record.updated || "-"}</td></tr>`).join("")}</tbody></table></div><div class="hint-text">接口直供不在货源上预填固定成本；每次取码成功后，将接口返回的实际成本写入对应订单。成功取码但未返回成本时标记为“成本待补充”。</div>`;
-    }
-
-    function openCdkeyDirectCostDrawer(poolId) {
-      const pool = getPoolById(poolId);
-      if (!pool) return;
-      document.getElementById("cdkeyCostBody").innerHTML = `${detailSection("货源信息", infoGrid([["货源 ID", pool.id], ["货源名称", pool.name], ["供货方", cdkeyProviderName(pool)], ["供货商品", pool.supplierProduct || "-"], ["商品编码", pool.supplierSku || "-"]]))}
-        ${detailSection("取码及成本记录", directSupplyCostTable(directSupplyCostRecords(pool.id)))}`;
-      openDrawer("cdkeyCostDrawer");
-    }
-
     function openCdkeyCodeDrawer(poolId, batchId = "") {
       const pool = getPoolById(poolId);
       if (!pool) return;
       const rows = getCdkeyCodesByPool(poolId).filter(code => !batchId || code.batchId === batchId);
       document.getElementById("cdkeyCodeBody").innerHTML = `${detailSection("货源信息", infoGrid([["货源 ID", pool.id], ["货源名称", pool.name], ["货源状态", pool.state], ["入库批次 ID", batchId || "全部入库批次"]]))}
-        <div class="form-grid three" style="margin-bottom:12px"><div class="field"><label>码值，默认脱敏查询</label><input placeholder="请输入脱敏码关键词"></div><div class="field"><label>CDKey 状态</label><select><option>全部</option><option>未使用</option><option>已核销</option><option>已履约</option><option>已过期</option></select></div><div class="field"><label>兑换单号</label><input placeholder="请输入兑换单号"></div></div>
+        <div class="form-grid three" style="margin-bottom:12px"><div class="field"><label>码值，默认脱敏查询</label><input placeholder="请输入脱敏码关键词"></div><div class="field"><label>CDKey 状态</label><select><option>全部</option><option>未使用</option><option>已核销</option><option>已履约</option><option>已过期</option></select></div><div class="field"><label>履约单号</label><input placeholder="请输入履约单号"></div></div>
         ${cdkeyCodeTable(rows)}`;
       openDrawer("cdkeyCodeDrawer");
       document.querySelectorAll("[data-void-key]").forEach(btn => btn.addEventListener("click", () => openCdkeyVoidModal(btn.dataset.voidKey)));
     }
 
-    function cdkeyCodeTable(rows) {
-      if (!rows.length) return `<div class="empty">暂无 CDKey 明细</div>`;
-      return `<div class="table-wrap"><table class="cdkey-code-table"><thead><tr><th>脱敏 CDKey</th><th>货源 ID</th><th>入库批次 ID</th><th>CDKey 状态</th><th>关联兑换单号</th><th>关联订单号</th><th>履约时间</th><th>核销时间</th><th>创建时间</th><th>最后操作人</th><th>操作</th></tr></thead><tbody>${rows.map(code => `<tr><td>${code.maskedCdkey}</td><td>${code.poolId}</td><td>${code.batchId}</td><td>${cdkeyCodeStateTag(code.state)}</td><td>${code.exchangeNo || code.deliveryRecordId || "-"}</td><td>${code.orderId || "-"}</td><td>${code.issuedAt || "-"}</td><td>${code.voidedAt || "-"}</td><td>${code.createdAt || code.updatedAt}</td><td>${lastCdkeyOperator(getPoolById(code.poolId))}</td><td>${code.state === "未使用" ? `<button class="btn text danger" data-void-key="${code.rowKey}">核销</button>` : `<span class="muted">只读</span>`}</td></tr>`).join("")}</tbody></table></div><div class="hint-text">CDKey 明细不展示完整 CDKey 明文，不提供复制明文码，不提供修改已履约码状态。</div>`;
+    function cdkeyCodeTable(rows, supplyMode = "") {
+      if (!rows.length) {
+        const directEmptyHint = supplyMode === "接口直供" ? `<div class="hint-text">接口直供仅将成功取得的码写入本表；无库存、失败或结果不明确的请求没有产出 CDKey，统一在履约记录中查看。</div>` : "";
+        return `<div class="empty">暂无 CDKey 明细</div>${directEmptyHint}`;
+      }
+      const hasDirectCode = supplyMode === "接口直供" || rows.some(code => code.supplyMode === "接口直供");
+      const body = rows.map(code => {
+        const pool = getPoolById(code.poolId);
+        const supplyMode = code.supplyMode || cdkeySupplyMode(pool);
+        const cost = cdkeyCodeCostInfo({ ...code, supplyMode });
+        return `<tr>
+          <td>${code.maskedCdkey}</td>
+          <td>${code.poolId}</td>
+          <td>${supplyMode}</td>
+          <td>${code.batchId || "—"}</td>
+          <td>${cdkeyCodeStateTag(code.state)}</td>
+          <td>${code.exchangeNo || code.deliveryRecordId || "-"}</td>
+          <td>${code.orderId || "-"}</td>
+          <td>${code.supplierOrderNo || "—"}</td>
+          <td>${code.issuedAt || "-"}</td>
+          <td>${directSupplyCostStatusTag(cost.status)}</td>
+          <td>${cost.currency}</td>
+          <td>${cost.unitCost}</td>
+          <td>${cost.source}</td>
+          <td>${code.voidedAt || "-"}</td>
+          <td>${code.createdAt || code.updatedAt}</td>
+          <td>${code.operator || lastCdkeyOperator(pool)}</td>
+          <td>${code.state === "未使用" ? `<button class="btn text danger" data-void-key="${code.rowKey}">核销</button>` : `<span class="muted">只读</span>`}</td>
+        </tr>`;
+      }).join("");
+      const directHint = hasDirectCode ? " 接口直供仅将成功取得的码写入本表；无库存、失败或结果不明确的请求没有产出 CDKey，统一在履约记录中查看。" : "";
+      return `<div class="table-wrap"><table class="cdkey-code-table"><thead><tr><th>脱敏 CDKey</th><th>货源 ID</th><th>供货方式</th><th>入库批次 ID</th><th>CDKey 状态</th><th>履约单号</th><th>订单号</th><th>供货方订单号</th><th>履约时间</th><th>成本状态</th><th>成本币种</th><th>单件成本</th><th>成本来源</th><th>核销时间</th><th>创建时间</th><th>最后操作人</th><th>操作</th></tr></thead><tbody>${body}</tbody></table></div><div class="hint-text">CDKey 明细不展示完整 CDKey 明文，不提供复制明文码，不提供修改已履约码状态。${directHint}</div>`;
     }
 
     function openCdkeyVoidModal(rowKey) {
