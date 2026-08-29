@@ -1861,7 +1861,7 @@
             <div class="sub">选择供货方式并配置主链路参数；商品 SKU 可同时引用多个货源。</div>
           </div>
           <div class="btn-row">
-            <button class="btn" id="cdkeyPoolSaveDraftBtn">保存草稿</button>
+            <button class="btn" id="cdkeyPoolSaveBtn">保存</button>
             <button class="btn primary" id="cdkeyPoolSaveEnableBtn">保存并上架</button>
             <button class="btn" id="cdkeyPoolCancelBtn">取消</button>
           </div>
@@ -1875,7 +1875,7 @@
                 <div class="form-grid">
                   <div class="field"><label>货源 ID</label><input id="cdkeyPoolFormId" value="新建后生成" disabled></div>
                   <div class="field"><label><span class="required-star">*</span>货源名称</label><input id="cdkeyPoolFormName" placeholder="请输入货源名称"></div>
-                  <div class="field"><label>货源状态</label><input id="cdkeyPoolFormState" value="草稿" disabled></div>
+                  <div class="field"><label>货源状态</label><input id="cdkeyPoolFormState" value="下架" disabled></div>
                 </div>
               </div>
             </section>
@@ -2322,16 +2322,6 @@
     <div class="modal-foot"><button class="btn" data-close-modal="cdkeyDisableModal">取消</button><button class="btn warning" id="confirmCdkeyDisableBtn">确认下架</button></div>
   </section>
 
-  <section class="modal" id="cdkeyDeleteModal" role="dialog" aria-modal="true">
-    <div class="modal-head"><span>删除 CDKey 货源</span><button class="btn text" data-close-modal="cdkeyDeleteModal">关闭</button></div>
-    <div class="modal-body">
-      <p>仅未绑定 SKU 的草稿货源允许删除。码池供货删除后，其入库批次与 CDKey 明细也会移除，删除后不可恢复。</p>
-      <div id="cdkeyDeleteInfo"></div>
-      <div class="field"><label>删除原因</label><textarea id="cdkeyDeleteReason" rows="4" placeholder="请输入删除原因，选填"></textarea></div>
-    </div>
-    <div class="modal-foot"><button class="btn" data-close-modal="cdkeyDeleteModal">取消</button><button class="btn danger" id="confirmCdkeyDeleteBtn">确认删除</button></div>
-  </section>
-
   <aside class="drawer" id="orderDetailDrawer">
     <div class="drawer-head">
       <div class="drawer-title" id="orderDetailTitle">订单详情</div>
@@ -2610,7 +2600,6 @@
       cdkeyUploadFile: { maxLength: 120 },
       cdkeyUploadExpire: { maxLength: 32 },
       cdkeyVoidReason: { maxLength: 200 },
-      cdkeyDeleteReason: { maxLength: 200 },
       cdkeyInitialUploadFile: { maxLength: 120 },
       cdkeyInitialUploadExpire: { maxLength: 32 },
       cdkeyInitialGenerateCount: { min: 1, max: 99999 },
@@ -3863,7 +3852,7 @@
       fillSelect("deliveryFilterSource", businessSources);
       fillSelect("deliveryFilterType", types);
       fillSelect("deliveryFilterMethod", deliveries);
-      fillSelect("cdkeyPoolFilterState", configStates);
+      fillSelect("cdkeyPoolFilterState", ["全部", "上架", "下架"]);
       seedInventoryFlows();
       seedCdkeyLogs();
       products.forEach(product => syncProductStockSummaryByInventory(product.spu));
@@ -3949,7 +3938,7 @@
       document.getElementById("newCdkeyPoolBtn").addEventListener("click", () => openCdkeyPoolForm("new"));
       document.getElementById("backToCdkeyPoolListBtn").addEventListener("click", showCdkeyPoolPage);
       document.getElementById("cdkeyPoolCancelBtn").addEventListener("click", showCdkeyPoolPage);
-      document.getElementById("cdkeyPoolSaveDraftBtn").addEventListener("click", saveCdkeyPoolDraft);
+      document.getElementById("cdkeyPoolSaveBtn").addEventListener("click", saveCdkeyPool);
       document.getElementById("cdkeyPoolSaveEnableBtn").addEventListener("click", saveCdkeyPoolEnable);
       document.getElementById("cdkeyPoolFormProvider").addEventListener("change", () => {
         updateCdkeyProviderFields();
@@ -3967,7 +3956,6 @@
       document.getElementById("confirmCdkeyUploadBtn").addEventListener("click", confirmCdkeyUpload);
       document.getElementById("confirmCdkeyVoidBtn").addEventListener("click", confirmCdkeyVoid);
       document.getElementById("confirmCdkeyDisableBtn").addEventListener("click", confirmCdkeyDisable);
-      document.getElementById("confirmCdkeyDeleteBtn").addEventListener("click", confirmCdkeyDelete);
       document.getElementById("toggleMoreBtn").addEventListener("click", toggleMoreFilters);
       document.getElementById("searchBtn").addEventListener("click", applyFilters);
       document.getElementById("resetBtn").addEventListener("click", resetFilters);
@@ -7027,13 +7015,12 @@
     }
 
     function cdkeyPoolStateTag(state) {
-      const cls = state === "上架" ? "green" : state === "草稿" ? "orange" : state === "异常" ? "red" : "";
+      const cls = state === "上架" ? "green" : state === "异常" ? "red" : "";
       return `<span class="tag ${cls}">${state}</span>`;
     }
 
     function cdkeySupplyMode(pool) {
-      if (pool?.supplyMode) return pool.supplyMode;
-      return pool?.state === "草稿" ? "未配置" : "码池供货";
+      return pool?.supplyMode || "码池供货";
     }
 
     function cdkeySupplyAvailability(pool) {
@@ -7175,7 +7162,6 @@
       actions.push(pool.state === "上架"
         ? `<button class="btn text" data-cdkey-action="disable" data-pool-id="${pool.id}">下架</button>`
         : `<button class="btn text" data-cdkey-action="enable" data-pool-id="${pool.id}">上架</button>`);
-      if (pool.state === "草稿") actions.push(`<button class="btn text danger" data-cdkey-action="delete" data-pool-id="${pool.id}">删除</button>`);
       return actions.join("");
     }
 
@@ -7191,7 +7177,6 @@
       if (action === "code") openCdkeyCodeDrawer(poolId);
       if (action === "disable") openCdkeyDisableModal(poolId);
       if (action === "enable") enableCdkeyPool(poolId);
-      if (action === "delete") openCdkeyDeleteModal(poolId);
     }
 
     function applyCdkeyPoolFilters() {
@@ -7267,14 +7252,12 @@
 
     function cdkeyProviderType(pool) {
       if (pool?.providerType) return pool.providerType;
-      if (!pool?.providerName && !pool?.supplier && pool?.state === "草稿") return "未配置";
+      if (!pool?.providerName && !pool?.supplier) return "未配置";
       return pool?.supplier && pool.supplier !== "平台自营" ? "三方供应商" : "平台自营";
     }
 
     function cdkeyProviderSummary(pool) {
-      const providerType = cdkeyProviderType(pool);
-      const providerName = cdkeyProviderName(pool) || "-";
-      return `${providerName}${providerType === "三方供应商" ? `<div class="minor">三方供应商</div>` : ""}`;
+      return cdkeyProviderName(pool) || "-";
     }
 
     function cdkeyProviderText(pool) {
@@ -7286,8 +7269,7 @@
     }
 
     function cdkeyCoreConfigLocked() {
-      const pool = currentEditingCdkeyPool();
-      return Boolean(pool && pool.state !== "草稿");
+      return Boolean(currentEditingCdkeyPool());
     }
 
     function cdkeySupplyProductLocked(pool) {
@@ -7336,14 +7318,14 @@
       document.getElementById("cdkeyPoolFormPage").style.display = "block";
       setActiveMenu("CDKey 货源列表");
       document.getElementById("cdkeyPoolFormTitle").textContent = mode === "edit" ? "编辑 CDKey 货源" : "新建 CDKey 货源";
-      document.getElementById("cdkeyPoolSaveDraftBtn").textContent = mode === "edit" && pool?.state !== "草稿" ? "保存修改" : "保存草稿";
+      document.getElementById("cdkeyPoolSaveBtn").textContent = mode === "edit" ? "保存修改" : "保存";
       const enableButton = document.getElementById("cdkeyPoolSaveEnableBtn");
       enableButton.textContent = "保存并上架";
       enableButton.style.display = mode === "edit" && pool?.state === "上架" ? "none" : "";
       document.getElementById("cdkeyPoolFormId").value = pool?.id || "新建后生成";
       document.getElementById("cdkeyPoolFormId").disabled = true;
       document.getElementById("cdkeyPoolFormName").value = pool?.name || "";
-      document.getElementById("cdkeyPoolFormState").value = pool?.state || "草稿";
+      document.getElementById("cdkeyPoolFormState").value = pool?.state || "下架";
       document.getElementById("cdkeyPoolFormAlert").value = pool?.alertThreshold ?? "";
       renderCdkeyProviderOptions(pool ? cdkeyProviderName(pool) : "");
       document.getElementById("cdkeyPoolFormProvider").disabled = cdkeyCoreConfigLocked();
@@ -7355,7 +7337,7 @@
       document.getElementById("cdkeyPoolFormRemark").value = pool?.remark || "";
       updateCdkeyPoolTypeField();
       const initialSection = document.getElementById("cdkeyPoolSectionInitialData");
-      const showInitialSection = mode === "new" || pool?.state === "草稿";
+      const showInitialSection = mode === "new";
       if (initialSection) initialSection.style.display = showInitialSection ? "" : "none";
       const initialAnchor = document.getElementById("cdkeyPoolInitialDataAnchor");
       if (initialAnchor) initialAnchor.style.display = showInitialSection ? "" : "none";
@@ -7376,14 +7358,13 @@
         : !supplyMode
           ? `${providerName}已选择，请继续选择供货方式。`
           : isPoolSupply
-            ? "码池供货会提前将 CDKey 存入平台，并在支付前结合优先级和可用码确定货源。供货方和供货方式首次上架后不可变更。"
-            : "接口直供不记录库存；支付前按优先级确定并锁定货源，支付后明确无货直接退款，不切换供货方。供货方和供货方式首次上架后不可变更。";
+            ? "码池供货会提前将 CDKey 存入平台，并在支付前结合优先级和可用码确定货源。供货方和供货方式创建后不可变更。"
+            : "接口直供不记录库存；支付前按优先级确定并锁定货源，支付后明确无货直接退款，不切换供货方。供货方和供货方式创建后不可变更。";
     }
 
     function renderCdkeyPoolInitialData(selectedMethod = "") {
       const body = document.getElementById("cdkeyPoolInitialDataBody");
-      const editingDraft = currentEditingCdkeyPool()?.state === "草稿";
-      if (!body || (pendingCdkeyAction?.mode !== "new" && !editingDraft)) return;
+      if (!body || pendingCdkeyAction?.mode !== "new") return;
       const supplyMode = valueOf("cdkeyPoolFormSource");
       if (!supplyMode) {
         body.innerHTML = `<div class="alert info">请先在供货配置中选择供货方和供货方式。</div>`;
@@ -7396,7 +7377,7 @@
       cdkeyStockMethodDraft = selectedMethod || cdkeyStockMethodDraft || "手工上传";
       const stockMethod = cdkeyStockMethodDraft;
       const draftBatch = currentEditingCdkeyPool()?.initialBatchDraft || {};
-      const methodField = `<div class="form-grid" style="margin-bottom:12px"><div class="field"><label><span class="required-star">*</span>码入库方式</label><select id="cdkeyPoolFormStockMethod"><option value="手工上传" ${stockMethod === "手工上传" ? "selected" : ""}>手工上传</option><option value="接口批量获取" ${stockMethod === "接口批量获取" ? "selected" : ""}>接口批量获取（暂未开放）</option></select><div class="hint-text">仅码池供货需要配置，用于说明 CDKey 如何批量进入平台码池；创建后不可变更。</div></div></div>`;
+      const methodField = `<div class="form-grid" style="margin-bottom:12px"><div class="field"><label><span class="required-star">*</span>码入库方式</label><select id="cdkeyPoolFormStockMethod"><option value="手工上传" ${stockMethod === "手工上传" ? "selected" : ""}>手工上传</option><option value="接口批量获取" ${stockMethod === "接口批量获取" ? "selected" : ""} disabled>接口批量获取（暂未开放）</option></select><div class="hint-text">仅码池供货需要配置，用于说明 CDKey 如何批量进入平台码池；创建后不可变更。</div></div></div>`;
       if (stockMethod === "手工上传") {
         body.innerHTML = `
           ${methodField}
@@ -7410,7 +7391,7 @@
             <div class="alert info" style="grid-column:1/-1">如上传文件中存在重复 CDKey，本次导入请求全部退回，不做部分入库。</div>
           </div>`;
       } else {
-        body.innerHTML = `${methodField}<div class="alert warning">“接口批量获取”作为码入库方式预留，本期暂未开放。当前可保存草稿，但不能保存并上架。</div>`;
+        body.innerHTML = `${methodField}<div class="alert warning">“接口批量获取”作为码入库方式预留，本期暂未开放，当前不可选择或保存。</div>`;
       }
       document.getElementById("cdkeyPoolFormStockMethod")?.addEventListener("change", event => renderCdkeyPoolInitialData(event.target.value));
     }
@@ -7466,7 +7447,7 @@
 
     function buildCdkeyPoolFromForm(state) {
       const existing = getPoolById(pendingCdkeyAction?.poolId);
-      const lockCoreConfig = existing && existing.state !== "草稿";
+      const lockCoreConfig = Boolean(existing);
       const providerName = lockCoreConfig ? cdkeyProviderName(existing) : valueOf("cdkeyPoolFormProvider");
       const providerConfig = cdkeyProviderConfig(providerName) || { providerType: "", interfaceConfig: "", products: [], supportedModes: [] };
       const providerType = providerConfig.providerType;
@@ -7525,8 +7506,8 @@
       if (!["码池供货", "接口直供"].includes(pool.supplyMode)) errors.push("供货方式必选");
       if (providerConfig && !providerConfig.supportedModes.includes(pool.supplyMode)) errors.push("当前供货方不支持所选供货方式");
       if (pool.supplyMode === "码池供货" && (!Number.isInteger(pool.alertThreshold) || pool.alertThreshold < 0 || pool.alertThreshold > 100)) errors.push("安全库存阈值必须为 0-100 的整数");
-      if (enableMode && pool.supplyMode === "码池供货" && pool.stockMethod === "接口批量获取") errors.push("接口批量获取暂未开放，当前货源不能上架");
-      if (enableMode && pool.supplyMode === "接口直供" && (!pool.supplierProduct || !String(pool.supplierSku || "").trim() || !pool.interfaceConfig)) errors.push("接口直供需选择供货商品并正确带出 product_id");
+      if (pool.supplyMode === "码池供货" && pool.stockMethod === "接口批量获取") errors.push("接口批量获取暂未开放，当前不可保存");
+      if (pool.supplyMode === "接口直供" && (!pool.supplierProduct || !String(pool.supplierSku || "").trim() || !pool.interfaceConfig)) errors.push("接口直供需选择供货商品并正确带出 product_id");
       const duplicate = poolMocks.some(item => item.id === pool.id && item.id !== pendingCdkeyAction?.poolId);
       if (duplicate) errors.push("货源 ID 不允许重复");
       return errors;
@@ -7562,32 +7543,27 @@
       visibleCdkeyPools = [...poolMocks];
     }
 
-    function saveCdkeyPoolDraft() {
+    function saveCdkeyPool() {
       clearCdkeyPoolInvalidHighlights();
       const existing = getPoolById(pendingCdkeyAction?.poolId);
-      const targetState = pendingCdkeyAction?.mode === "edit" ? (existing?.state || "草稿") : "草稿";
+      const targetState = pendingCdkeyAction?.mode === "edit" ? (existing?.state || "下架") : "下架";
       const pool = buildCdkeyPoolFromForm(targetState);
-      if (targetState === "草稿") {
-        if (!pool.name) {
-          markInvalidControl("cdkeyPoolFormName");
-          focusFirstInvalid("#cdkeyPoolFormPage");
-          return toast("请先填写货源名称。草稿允许暂不配置供货方、供货方式和首批入库数据。");
-        }
-        upsertCdkeyPool(pool);
-        showCdkeyPoolPage();
-        return toast("CDKey 货源草稿已保存，可稍后继续配置。");
-      }
       const errors = validateCdkeyPool(pool, targetState === "上架");
-      if (errors.length) return toast(errors[0]);
+      if (errors.length) {
+        highlightCdkeyPoolInvalidFields(pool);
+        focusFirstInvalid("#cdkeyPoolFormPage");
+        return toast("信息不完整，无法保存");
+      }
       const initialError = initialCdkeyDataError(pool);
       if (initialError) {
         highlightInitialCdkeyInvalidFields(pool);
-        return toast(initialError);
+        focusFirstInvalid("#cdkeyPoolFormPage");
+        return toast("信息不完整，无法保存");
       }
       upsertCdkeyPool(pool);
       createInitialCdkeyDataIfNeeded(pool);
       showCdkeyPoolPage();
-      toast(pendingCdkeyAction?.mode === "edit" ? "CDKey 货源修改已保存。" : "CDKey 货源草稿已保存。");
+      toast(pendingCdkeyAction?.mode === "edit" ? "CDKey 货源修改已保存。" : "CDKey 货源已创建，当前为下架状态。");
     }
 
     function saveCdkeyPoolEnable() {
@@ -8018,41 +7994,6 @@
       renderCdkeyPoolStats();
       renderTable();
       toast("CDKey 货源已下架。");
-    }
-
-    function openCdkeyDeleteModal(poolId) {
-      const pool = getPoolById(poolId);
-      if (!pool) return;
-      if (pool.state !== "草稿") return toast("仅草稿状态的 CDKey 货源允许删除。");
-      const boundRows = getAllBoundSkuByPool(pool.id);
-      if (boundRows.length) return toast("该货源仍绑定商品 SKU，请先解除绑定后再删除。");
-      selectedCdkeyPool = pool;
-      document.getElementById("cdkeyDeleteInfo").innerHTML = infoGrid([
-        ["货源 ID", pool.id], ["货源名称", pool.name], ["供货方式", cdkeySupplyMode(pool)], ["当前货源状态", pool.state],
-        ["绑定 SKU 数量", boundRows.length], ["入库批次数", getCdkeyBatchesByPool(pool.id).length]
-      ]);
-      document.getElementById("cdkeyDeleteReason").value = "";
-      openModal("cdkeyDeleteModal");
-    }
-
-    function confirmCdkeyDelete() {
-      const pool = selectedCdkeyPool;
-      if (!pool) return;
-      if (pool.state !== "草稿") return toast("仅草稿状态的 CDKey 货源允许删除。");
-      if (getAllBoundSkuByPool(pool.id).length) return toast("该货源仍绑定商品 SKU，请先解除绑定后再删除。");
-      const poolId = pool.id;
-      const reason = valueOf("cdkeyDeleteReason") || "列表操作删除草稿货源";
-      addCdkeyLog(poolId, "删除货源", "草稿", "已删除", reason);
-      poolMocks = poolMocks.filter(item => item.id !== poolId);
-      visibleCdkeyPools = visibleCdkeyPools.filter(item => item.id !== poolId);
-      cdkeyBatches = cdkeyBatches.filter(item => item.poolId !== poolId);
-      cdkeyCodes = cdkeyCodes.filter(item => item.poolId !== poolId);
-      syncCdkeyStatusByPool(poolId);
-      closeModal("cdkeyDeleteModal");
-      renderCdkeyPoolTable();
-      renderCdkeyPoolStats();
-      renderTable();
-      toast("CDKey 货源已删除。");
     }
 
     function enableCdkeyPool(poolId) {
