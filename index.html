@@ -556,6 +556,7 @@
     }
     .drawer.show { transform: translateX(0); }
     .drawer.small { width: min(720px, 84vw); }
+    .drawer.wide { width: min(1280px, 94vw); }
     .drawer-head {
       height: 62px;
       border-bottom: 1px solid var(--line);
@@ -760,6 +761,21 @@
       gap: 12px;
     }
     .form-grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .form-grid.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .drawer-list-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 14px 0 10px;
+    }
+    .drawer-list-pagination {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 12px;
+    }
     .side-anchor {
       background: #fff;
       border: 1px solid var(--line);
@@ -1021,7 +1037,7 @@
       .sidebar { width: 76px; }
       .brand span, .nav-title, .nav-item span, .role { display: none; }
       .main { margin-left: 76px; width: calc(100% - 76px); }
-      .filter-grid, .form-grid, .form-grid.three, .info-grid, .order-overview-status .info-grid, .material-grid, .upload-row { grid-template-columns: 1fr; }
+      .filter-grid, .form-grid, .form-grid.three, .form-grid.four, .info-grid, .order-overview-status .info-grid, .material-grid, .upload-row { grid-template-columns: 1fr; }
       .topbar { align-items: flex-start; height: auto; gap: 10px; padding: 12px; flex-direction: column; }
       .points-account-layout { grid-template-columns: 1fr; }
       .global-search { width: 100%; }
@@ -2247,7 +2263,7 @@
     <div class="drawer-body" id="cdkeyBatchBody"></div>
   </aside>
 
-  <aside class="drawer" id="cdkeyCodeDrawer">
+  <aside class="drawer wide" id="cdkeyCodeDrawer">
     <div class="drawer-head"><div class="drawer-title">CDKey 明细</div><button class="btn" data-close="cdkeyCodeDrawer">关闭</button></div>
     <div class="drawer-body" id="cdkeyCodeBody"></div>
   </aside>
@@ -2791,6 +2807,11 @@
     let selectedDeliveryRecord = null;
     let selectedCdkeyPool = null;
     let selectedCdkeyCode = null;
+    let selectedCdkeySourceId = "";
+    let selectedCdkeyBatchId = "";
+    let visibleCdkeySourceCodes = [];
+    let cdkeyCodePage = 1;
+    const CDKEY_CODE_PAGE_SIZE = 20;
     let pendingActionProduct = null;
     let pendingTemplateAction = null;
     let pendingDisplayAction = null;
@@ -7146,6 +7167,7 @@
 
     function cdkeyPoolActions(pool) {
       const actions = [`<button class="btn text" data-cdkey-action="detail" data-pool-id="${pool.id}">查看</button>`];
+      actions.push(`<button class="btn text" data-cdkey-action="code" data-pool-id="${pool.id}">CDKey 明细</button>`);
       if (cdkeySupplyMode(pool) === "码池供货" && ["上架", "下架"].includes(pool.state) && pool.stockMethod === "手工上传") {
         actions.push(`<button class="btn text" data-cdkey-action="restock" data-pool-id="${pool.id}">补货</button>`);
       }
@@ -7634,11 +7656,9 @@
       document.getElementById("cdkeyPoolDetailBody").innerHTML = `
         ${detailSection("货源基础信息", infoGrid(basicItems))}
         ${detailSection(isUnconfigured ? "供货配置" : "供货信息", supplyDetail)}
-        ${isUnconfigured ? "" : detailSection("CDKey 明细", cdkeyCodeTable(getCdkeySourceCodes(pool.id), supplyMode))}
         ${detailSection("绑定 SKU", boundSkuTable(getBoundSkuByPool(pool.id)))}
       `;
       openDrawer("cdkeyPoolDetailDrawer");
-      document.querySelectorAll("#cdkeyPoolDetailDrawer [data-void-key]").forEach(btn => btn.addEventListener("click", () => openCdkeyVoidModal(btn.dataset.voidKey)));
     }
 
     function openCdkeyGenerateModal(poolId) {
@@ -7811,12 +7831,88 @@
     function openCdkeyCodeDrawer(poolId, batchId = "") {
       const pool = getPoolById(poolId);
       if (!pool) return;
-      const rows = getCdkeyCodesByPool(poolId).filter(code => !batchId || code.batchId === batchId);
-      document.getElementById("cdkeyCodeBody").innerHTML = `${detailSection("货源信息", infoGrid([["货源 ID", pool.id], ["货源名称", pool.name], ["货源状态", pool.state], ["入库批次 ID", batchId || "全部入库批次"]]))}
-        <div class="form-grid three" style="margin-bottom:12px"><div class="field"><label>码值，默认脱敏查询</label><input placeholder="请输入脱敏码关键词"></div><div class="field"><label>CDKey 状态</label><select><option>全部</option><option>未使用</option><option>已核销</option><option>已履约</option><option>已过期</option></select></div><div class="field"><label>履约单号</label><input placeholder="请输入履约单号"></div></div>
-        ${cdkeyCodeTable(rows)}`;
+      selectedCdkeySourceId = poolId;
+      selectedCdkeyBatchId = batchId;
+      visibleCdkeySourceCodes = getCdkeySourceCodes(poolId).filter(code => !batchId || code.batchId === batchId);
+      cdkeyCodePage = 1;
+      const isDirect = cdkeySupplyMode(pool) === "接口直供";
+      document.getElementById("cdkeyCodeBody").innerHTML = `
+        ${detailSection("货源信息", infoGrid([
+          ["货源 ID", pool.id], ["货源名称", pool.name], ["供货方", cdkeyProviderName(pool)], ["供货方式", cdkeySupplyMode(pool)], ["货源状态", pool.state]
+        ]))}
+        <section class="form-card">
+          <h2 style="display:flex;align-items:center;justify-content:space-between;gap:12px"><span>明细查询</span><span class="minor">默认展示该货源下全部已产生的 CDKey</span></h2>
+          <div class="body">
+            <div class="form-grid four">
+              <div class="field"><label>CDKey 关键词</label><input id="cdkeyCodeFilterKeyword" placeholder="请输入脱敏码关键词"></div>
+              <div class="field"><label>CDKey 状态</label><select id="cdkeyCodeFilterState"><option>全部</option><option>未使用</option><option>已核销</option><option>已履约</option><option>已过期</option></select></div>
+              <div class="field"><label>履约单号</label><input id="cdkeyCodeFilterFulfillment" placeholder="请输入履约单号"></div>
+              <div class="field"><label>订单号</label><input id="cdkeyCodeFilterOrder" placeholder="请输入订单号"></div>
+              <div class="field"><label>入库批次 ID</label><input id="cdkeyCodeFilterBatch" placeholder="${isDirect ? "接口直供不适用" : "请输入入库批次 ID"}" ${isDirect ? "disabled" : ""} value="${batchId}"></div>
+            </div>
+            <div class="drawer-list-toolbar">
+              <span class="table-meta" id="cdkeyCodeResultMeta"></span>
+              <div class="actions"><button class="btn primary" id="cdkeyCodeQueryBtn">查询</button><button class="btn" id="cdkeyCodeResetBtn">重置</button></div>
+            </div>
+            <div id="cdkeyCodeResultBody"></div>
+            <div class="drawer-list-pagination" id="cdkeyCodePagination"></div>
+          </div>
+        </section>`;
+      document.getElementById("cdkeyCodeBody").scrollTop = 0;
       openDrawer("cdkeyCodeDrawer");
-      document.querySelectorAll("[data-void-key]").forEach(btn => btn.addEventListener("click", () => openCdkeyVoidModal(btn.dataset.voidKey)));
+      document.getElementById("cdkeyCodeQueryBtn").addEventListener("click", applyCdkeyCodeFilters);
+      document.getElementById("cdkeyCodeResetBtn").addEventListener("click", resetCdkeyCodeFilters);
+      renderCdkeyCodeDrawerResults();
+    }
+
+    function applyCdkeyCodeFilters() {
+      const pool = getPoolById(selectedCdkeySourceId);
+      if (!pool) return;
+      const keyword = valueOf("cdkeyCodeFilterKeyword").toUpperCase();
+      const state = valueOf("cdkeyCodeFilterState");
+      const fulfillmentNo = valueOf("cdkeyCodeFilterFulfillment").toUpperCase();
+      const orderNo = valueOf("cdkeyCodeFilterOrder").toUpperCase();
+      const batchId = valueOf("cdkeyCodeFilterBatch").toUpperCase();
+      visibleCdkeySourceCodes = getCdkeySourceCodes(pool.id).filter(code => {
+        return (!selectedCdkeyBatchId || code.batchId === selectedCdkeyBatchId)
+          && (!keyword || String(code.maskedCdkey || "").toUpperCase().includes(keyword))
+          && (state === "全部" || code.state === state)
+          && (!fulfillmentNo || String(code.exchangeNo || code.deliveryRecordId || "").toUpperCase().includes(fulfillmentNo))
+          && (!orderNo || String(code.orderId || "").toUpperCase().includes(orderNo))
+          && (!batchId || String(code.batchId || "").toUpperCase().includes(batchId));
+      });
+      cdkeyCodePage = 1;
+      renderCdkeyCodeDrawerResults();
+    }
+
+    function resetCdkeyCodeFilters() {
+      ["cdkeyCodeFilterKeyword", "cdkeyCodeFilterFulfillment", "cdkeyCodeFilterOrder"].forEach(id => document.getElementById(id).value = "");
+      document.getElementById("cdkeyCodeFilterState").value = "全部";
+      const batchInput = document.getElementById("cdkeyCodeFilterBatch");
+      if (batchInput && !batchInput.disabled) batchInput.value = selectedCdkeyBatchId;
+      const pool = getPoolById(selectedCdkeySourceId);
+      visibleCdkeySourceCodes = getCdkeySourceCodes(selectedCdkeySourceId).filter(code => !selectedCdkeyBatchId || code.batchId === selectedCdkeyBatchId);
+      cdkeyCodePage = 1;
+      renderCdkeyCodeDrawerResults();
+    }
+
+    function renderCdkeyCodeDrawerResults() {
+      const pool = getPoolById(selectedCdkeySourceId);
+      if (!pool) return;
+      const total = visibleCdkeySourceCodes.length;
+      const pageCount = Math.max(1, Math.ceil(total / CDKEY_CODE_PAGE_SIZE));
+      cdkeyCodePage = Math.min(Math.max(1, cdkeyCodePage), pageCount);
+      const start = (cdkeyCodePage - 1) * CDKEY_CODE_PAGE_SIZE;
+      const pageRows = visibleCdkeySourceCodes.slice(start, start + CDKEY_CODE_PAGE_SIZE);
+      document.getElementById("cdkeyCodeResultMeta").textContent = `共 ${total} 条；每页 ${CDKEY_CODE_PAGE_SIZE} 条`;
+      document.getElementById("cdkeyCodeResultBody").innerHTML = cdkeyCodeTable(pageRows, cdkeySupplyMode(pool));
+      document.getElementById("cdkeyCodePagination").innerHTML = `
+        <button class="btn" id="cdkeyCodePrevPage" ${cdkeyCodePage <= 1 ? "disabled" : ""}>上一页</button>
+        <span class="table-meta">第 ${cdkeyCodePage} / ${pageCount} 页</span>
+        <button class="btn" id="cdkeyCodeNextPage" ${cdkeyCodePage >= pageCount ? "disabled" : ""}>下一页</button>`;
+      document.getElementById("cdkeyCodePrevPage").addEventListener("click", () => { cdkeyCodePage -= 1; renderCdkeyCodeDrawerResults(); });
+      document.getElementById("cdkeyCodeNextPage").addEventListener("click", () => { cdkeyCodePage += 1; renderCdkeyCodeDrawerResults(); });
+      document.querySelectorAll("#cdkeyCodeDrawer [data-void-key]").forEach(btn => btn.addEventListener("click", () => openCdkeyVoidModal(btn.dataset.voidKey)));
     }
 
     function cdkeyCodeTable(rows, supplyMode = "") {
