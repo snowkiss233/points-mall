@@ -1785,7 +1785,7 @@
           </div>
         </div>
 
-        <div class="page-note">先选择具体供货方，再选择该供货方支持的供货方式。供货方与供货方式不再固定绑定：码池供货需要配置码池入库方式并维护本地 CDKey 库存；接口直供在订单履约时实时取码，不维护本地库存数量。一个商品 SKU 可配置多个同供货方式货源并按优先级依次尝试，不支持两种供货方式混用。</div>
+        <div class="page-note">先选择供货方，再选择其支持的供货方式。码池供货提前入库，并在支付前按优先级和可用码确定货源；接口直供不记录库存，支付前按优先级确定并锁定货源，支付后无货直接退款，不切换供货方。同一 SKU 不支持混用两种供货方式。</div>
 
         <section class="card" aria-label="CDKey 货源筛选区">
           <div class="card-body">
@@ -1875,7 +1875,7 @@
                   <div class="field"><label><span class="required-star">*</span>安全库存阈值（%）</label><input id="cdkeyPoolFormAlert" type="number" min="0" max="100" placeholder="请输入 0-100"></div>
                 </div>
                 <div class="form-grid" id="cdkeyPoolDirectFields" style="margin-top:12px;display:none">
-                  <div class="field"><label><span class="required-star">*</span>供货商品</label><select id="cdkeyPoolFormSupplierProduct"></select></div>
+                  <div class="field"><label><span class="required-star">*</span>供货商品</label><select id="cdkeyPoolFormSupplierProduct"></select><div class="hint-text" id="cdkeySupplierProductHint">选择供货商品后自动带出商品编码。</div></div>
                   <div class="field"><label><span class="required-star">*</span>供货商品编码（product_id）</label><input id="cdkeyPoolFormSupplierSku" placeholder="选择供货商品后自动带出" disabled></div>
                 </div>
                 <div class="hint-text" id="cdkeySupplyModeHint">请先选择供货方，再选择供货方式。</div>
@@ -1896,7 +1896,7 @@
               <h2>备注</h2>
               <div class="body">
                 <div class="field"><label>备注</label><textarea id="cdkeyPoolFormRemark" rows="4" placeholder="运营内部备注"></textarea></div>
-                <div class="alert info">一个商品 SKU 可配置多个同供货方式货源，并设置优先级；码池供货与接口直供不可混用。订单实际命中的货源需写入订单快照，避免后续配置变化影响审计。</div>
+                <div class="alert info">一个 SKU 可配置多个同供货方式货源；优先级用于支付前确定货源，进入支付后锁定供货方，不再切换。码池供货与接口直供不可混用。</div>
               </div>
             </section>
           </div>
@@ -2304,8 +2304,9 @@
   <section class="modal" id="cdkeyDisableModal" role="dialog" aria-modal="true">
     <div class="modal-head"><span>下架 CDKey 货源</span><button class="btn text" data-close-modal="cdkeyDisableModal">关闭</button></div>
     <div class="modal-body">
-      <p>下架后，该货源不会再参与后续 CDKey 履约路由。历史履约记录不受影响；若该货源已被商品 SKU 引用，系统将按优先级继续尝试其他上架货源。</p>
+      <p>下架后，该货源不再参与新订单选源；已进入支付或履约的订单继续使用订单中已锁定的货源。</p>
       <div id="cdkeyDisableInfo"></div>
+      <div id="cdkeyDisableImpact" style="margin-top:14px"></div>
     </div>
     <div class="modal-foot"><button class="btn" data-close-modal="cdkeyDisableModal">取消</button><button class="btn warning" id="confirmCdkeyDisableBtn">确认下架</button></div>
   </section>
@@ -6978,6 +6979,24 @@
       return rows;
     }
 
+    function cdkeyDisableImpact(poolId) {
+      const pool = getPoolById(poolId);
+      const boundRows = getAllBoundSkuByPool(poolId);
+      const blockingRows = boundRows.filter(({ product, sku }) => {
+        if (product.state !== "上架") return false;
+        return !skuCdkeySourceIds(sku).some(sourceId => {
+          if (sourceId === poolId) return false;
+          const alternative = getPoolById(sourceId);
+          return alternative?.state === "上架" && cdkeySupplyMode(alternative) === cdkeySupplyMode(pool);
+        });
+      });
+      return { boundRows, blockingRows };
+    }
+
+    function cdkeyDisableBlockingList(rows) {
+      return `<div style="margin-top:8px">${rows.map(({ product, sku }) => `<div>• ${product.name} / ${sku.skuId} / ${skuSpecText(sku)}</div>`).join("")}</div>`;
+    }
+
     function cdkeyPoolBindingError(poolId, currentSkuId = "") {
       return "";
     }
@@ -6994,12 +7013,15 @@
     }
 
     function cdkeySupplyMode(pool) {
-      return pool?.supplyMode || "码池供货";
+      if (pool?.supplyMode) return pool.supplyMode;
+      return pool?.state === "草稿" ? "未配置" : "码池供货";
     }
 
     function cdkeySupplyAvailability(pool) {
-      return cdkeySupplyMode(pool) === "接口直供"
-        ? `<span class="tag blue">支付后判断</span><div class="minor">平台不记录库存数量</div>`
+      const supplyMode = cdkeySupplyMode(pool);
+      if (supplyMode === "未配置") return `<span class="muted">待配置</span>`;
+      return supplyMode === "接口直供"
+        ? `<span class="muted">不记录库存，支付后实时判断</span>`
         : `<b>${pool.available || 0} 个可用</b><div class="minor">总数 ${pool.total || 0}</div>`;
     }
 
@@ -7011,6 +7033,7 @@
     }
 
     function cdkeySupplyConfig(pool) {
+      if (cdkeySupplyMode(pool) === "未配置") return `<span class="muted">待配置</span>`;
       if (cdkeySupplyMode(pool) !== "接口直供") return `码入库方式：${pool.stockMethod || "手工上传"}<div class="minor">上传文件：${latestCdkeyUploadFile(pool.id)}</div>`;
       return `${pool.supplierProduct || "-"}${pool.supplierSku ? `<div class="minor">商品编号：${pool.supplierSku}</div>` : ""}`;
     }
@@ -7028,7 +7051,7 @@
     }
 
     function cdkeyInboundBatchSummary(pool) {
-      if (cdkeySupplyMode(pool) === "接口直供") return `<span class="muted">—</span>`;
+      if (cdkeySupplyMode(pool) !== "码池供货") return `<span class="muted">—</span>`;
       const batchCount = getCdkeyBatchesByPool(pool.id).length;
       return batchCount ? `<b>${batchCount} 个批次</b>` : `<span class="muted">暂无批次</span>`;
     }
@@ -7052,7 +7075,7 @@
       body.innerHTML = visibleCdkeyPools.map(pool => {
         const boundCount = getAllBoundSkuByPool(pool.id).length;
         return `<tr>
-          <td><b>${pool.id}</b></td><td>${pool.name}</td><td><span class="tag ${cdkeySupplyMode(pool) === "接口直供" ? "purple" : "blue"}">${cdkeySupplyMode(pool)}</span></td>
+          <td><b>${pool.id}</b></td><td>${pool.name}</td><td><span class="tag ${cdkeySupplyMode(pool) === "接口直供" ? "purple" : cdkeySupplyMode(pool) === "未配置" ? "orange" : "blue"}">${cdkeySupplyMode(pool)}</span></td>
           <td>${cdkeyProviderSummary(pool)}</td><td>${cdkeySupplyConfig(pool)}</td><td>${cdkeySupplyAvailability(pool)}</td><td>${cdkeyInboundBatchSummary(pool)}</td><td>${boundCount}</td><td>${cdkeyPoolStateTag(pool.state)}</td><td>${pool.createdAt || pool.updatedAt}</td>
           <td>${lastCdkeyOperator(pool)}</td>
           <td><div class="action-list compact">${cdkeyPoolActions(pool)}</div></td>
@@ -7063,7 +7086,7 @@
 
     function cdkeyPoolActions(pool) {
       const actions = [`<button class="btn text" data-cdkey-action="detail" data-pool-id="${pool.id}">查看</button>`];
-      if (cdkeySupplyMode(pool) === "码池供货" && pool.state === "上架" && pool.stockMethod === "手工上传") {
+      if (cdkeySupplyMode(pool) === "码池供货" && ["上架", "下架"].includes(pool.state) && pool.stockMethod === "手工上传") {
         actions.push(`<button class="btn text" data-cdkey-action="restock" data-pool-id="${pool.id}">补货</button>`);
       }
       actions.push(`<button class="btn text" data-cdkey-action="edit" data-pool-id="${pool.id}">编辑</button>`);
@@ -7149,6 +7172,7 @@
     function cdkeyProviderName(pool) {
       if (!pool) return "";
       if (pool.providerName) return pool.providerName;
+      if (cdkeyProviderType(pool) === "未配置") return "";
       return cdkeyProviderType(pool) === "三方供应商" ? (pool.supplier || "") : "平台自营";
     }
 
@@ -7162,6 +7186,7 @@
 
     function cdkeyProviderType(pool) {
       if (pool?.providerType) return pool.providerType;
+      if (!pool?.providerName && !pool?.supplier && pool?.state === "草稿") return "未配置";
       return pool?.supplier && pool.supplier !== "平台自营" ? "三方供应商" : "平台自营";
     }
 
@@ -7175,6 +7200,22 @@
       return cdkeyProviderName(pool) || "-";
     }
 
+    function currentEditingCdkeyPool() {
+      return pendingCdkeyAction?.mode === "edit" ? getPoolById(pendingCdkeyAction.poolId) : null;
+    }
+
+    function cdkeyCoreConfigLocked() {
+      const pool = currentEditingCdkeyPool();
+      return Boolean(pool && pool.state !== "草稿");
+    }
+
+    function cdkeySupplyProductLocked(pool) {
+      if (!pool || cdkeySupplyMode(pool) !== "接口直供") return false;
+      const hasBoundSku = getAllBoundSkuByPool(pool.id).length > 0;
+      const hasOrder = mallOrders.some(order => order.supplySourceId === pool.id || order.cdkeyPoolId === pool.id);
+      return hasBoundSku || hasOrder;
+    }
+
     function updateCdkeyProviderFields(selectedMode = "") {
       const providerName = valueOf("cdkeyPoolFormProvider");
       const sourceSelect = document.getElementById("cdkeyPoolFormSource");
@@ -7182,7 +7223,7 @@
       const currentMode = selectedMode || sourceSelect.value;
       sourceSelect.innerHTML = `<option value="">${providerName ? "请选择供货方式" : "请先选择供货方"}</option>${allowedModes.map(mode => `<option value="${mode}">${mode}</option>`).join("")}`;
       sourceSelect.value = allowedModes.includes(currentMode) ? currentMode : "";
-      sourceSelect.disabled = !providerName || pendingCdkeyAction?.mode === "edit";
+      sourceSelect.disabled = !providerName || cdkeyCoreConfigLocked();
     }
 
     function renderCdkeySupplyProducts(selectedProduct = "") {
@@ -7192,7 +7233,12 @@
       const products = valueOf("cdkeyPoolFormSource") === "接口直供" ? (cdkeyProviderConfig(providerName)?.products || []) : [];
       select.innerHTML = `<option value="">${providerName ? "请选择供货商品" : "请先选择供货方"}</option>${products.map(product => `<option value="${product.name}" data-product-id="${product.productId}">${product.name}</option>`).join("")}`;
       select.value = products.some(product => product.name === selectedProduct) ? selectedProduct : "";
-      select.disabled = !providerName || valueOf("cdkeyPoolFormSource") !== "接口直供";
+      const locked = cdkeySupplyProductLocked(currentEditingCdkeyPool());
+      select.disabled = !providerName || valueOf("cdkeyPoolFormSource") !== "接口直供" || locked;
+      const hint = document.getElementById("cdkeySupplierProductHint");
+      if (hint) hint.textContent = locked
+        ? "该货源已绑定 SKU 或已有订单，供货商品不可修改；如需更换，请新建货源后调整 SKU 配置。"
+        : "选择供货商品后自动带出商品编码。";
       syncCdkeySupplyProductCode();
     }
 
@@ -7209,7 +7255,7 @@
       document.getElementById("cdkeyPoolFormPage").style.display = "block";
       setActiveMenu("CDKey 货源列表");
       document.getElementById("cdkeyPoolFormTitle").textContent = mode === "edit" ? "编辑 CDKey 货源" : "新建 CDKey 货源";
-      document.getElementById("cdkeyPoolSaveDraftBtn").textContent = mode === "edit" ? "保存修改" : "保存草稿";
+      document.getElementById("cdkeyPoolSaveDraftBtn").textContent = mode === "edit" && pool?.state !== "草稿" ? "保存修改" : "保存草稿";
       const enableButton = document.getElementById("cdkeyPoolSaveEnableBtn");
       enableButton.textContent = "保存并上架";
       enableButton.style.display = mode === "edit" && pool?.state === "上架" ? "none" : "";
@@ -7219,7 +7265,7 @@
       document.getElementById("cdkeyPoolFormState").value = pool?.state || "草稿";
       document.getElementById("cdkeyPoolFormAlert").value = pool?.alertThreshold ?? "";
       renderCdkeyProviderOptions(pool ? cdkeyProviderName(pool) : "");
-      document.getElementById("cdkeyPoolFormProvider").disabled = mode === "edit";
+      document.getElementById("cdkeyPoolFormProvider").disabled = cdkeyCoreConfigLocked();
       updateCdkeyProviderFields(pool ? cdkeySupplyMode(pool) : "");
       renderCdkeySupplyProducts(pool?.supplierProduct || "");
       cdkeyStockMethodDraft = pool?.stockMethod === "平台内部生成" || pool?.source === "平台内部生成码"
@@ -7228,9 +7274,10 @@
       document.getElementById("cdkeyPoolFormRemark").value = pool?.remark || "";
       updateCdkeyPoolTypeField();
       const initialSection = document.getElementById("cdkeyPoolSectionInitialData");
-      if (initialSection) initialSection.style.display = mode === "new" ? "" : "none";
+      const showInitialSection = mode === "new" || pool?.state === "草稿";
+      if (initialSection) initialSection.style.display = showInitialSection ? "" : "none";
       const initialAnchor = document.getElementById("cdkeyPoolInitialDataAnchor");
-      if (initialAnchor) initialAnchor.style.display = mode === "new" ? "" : "none";
+      if (initialAnchor) initialAnchor.style.display = showInitialSection ? "" : "none";
       renderCdkeyPoolInitialData();
       renderCdkeyPoolImpact(pool?.id || "");
       window.scrollTo(0,0);
@@ -7248,13 +7295,14 @@
         : !supplyMode
           ? `${providerName}已选择，请继续选择供货方式。`
           : isPoolSupply
-            ? "码池供货会提前将 CDKey 存入平台；继续在下方选择码池入库方式。供货方和供货方式创建后不可变更。"
-            : "接口直供不提前入库；订单支付成功后才实时取码，明确无货时按订单规则自动退款。供货方和供货方式创建后不可变更。";
+            ? "码池供货会提前将 CDKey 存入平台，并在支付前结合优先级和可用码确定货源。供货方和供货方式首次上架后不可变更。"
+            : "接口直供不记录库存；支付前按优先级确定并锁定货源，支付后明确无货直接退款，不切换供货方。供货方和供货方式首次上架后不可变更。";
     }
 
     function renderCdkeyPoolInitialData(selectedMethod = "") {
       const body = document.getElementById("cdkeyPoolInitialDataBody");
-      if (!body || pendingCdkeyAction?.mode !== "new") return;
+      const editingDraft = currentEditingCdkeyPool()?.state === "草稿";
+      if (!body || (pendingCdkeyAction?.mode !== "new" && !editingDraft)) return;
       const supplyMode = valueOf("cdkeyPoolFormSource");
       if (!supplyMode) {
         body.innerHTML = `<div class="alert info">请先在供货配置中选择供货方和供货方式。</div>`;
@@ -7266,17 +7314,18 @@
       }
       cdkeyStockMethodDraft = selectedMethod || cdkeyStockMethodDraft || "手工上传";
       const stockMethod = cdkeyStockMethodDraft;
+      const draftBatch = currentEditingCdkeyPool()?.initialBatchDraft || {};
       const methodField = `<div class="form-grid" style="margin-bottom:12px"><div class="field"><label><span class="required-star">*</span>码入库方式</label><select id="cdkeyPoolFormStockMethod"><option value="手工上传" ${stockMethod === "手工上传" ? "selected" : ""}>手工上传</option><option value="接口批量获取" ${stockMethod === "接口批量获取" ? "selected" : ""}>接口批量获取（暂未开放）</option></select><div class="hint-text">仅码池供货需要配置，用于说明 CDKey 如何批量进入平台码池；创建后不可变更。</div></div></div>`;
       if (stockMethod === "手工上传") {
         body.innerHTML = `
           ${methodField}
           <div class="alert info">首次新建码池时必须创建首个入库批次；导入数量由上传文件解析，不在页面手工填写。后续每次补货都会生成新的入库批次，并分别记录成本。</div>
           <div class="form-grid">
-            <div class="field"><label><span class="required-star">*</span>批次名称</label><input id="cdkeyInitialBatchName" maxlength="50" placeholder="请输入首批入库批次名称"></div>
-            <div class="field"><label><span class="required-star">*</span>成本币种</label><select id="cdkeyInitialCostCurrency"><option>人民币</option><option>美元</option></select></div>
-            <div class="field"><label><span class="required-star">*</span>单件成本</label><input id="cdkeyInitialUnitCost" type="number" min="0" step="0.01" placeholder="请输入本批次单件成本"></div>
-            <div class="field"><label>上传文件</label><div class="file-action-row"><button class="btn" type="button" onclick="toast('已打开本地文件选择器。')">上传</button><button class="btn" type="button" onclick="toast('CDKey 导入模板已开始下载。')">下载模板</button><input id="cdkeyInitialUploadFile" value="mock_cdkey_upload.xlsx" disabled></div></div>
-            <div class="field"><label>过期时间</label><input id="cdkeyInitialUploadExpire" placeholder="2026-12-31 23:59"></div>
+            <div class="field"><label><span class="required-star">*</span>批次名称</label><input id="cdkeyInitialBatchName" maxlength="50" value="${draftBatch.batchName || ""}" placeholder="请输入首批入库批次名称"></div>
+            <div class="field"><label><span class="required-star">*</span>成本币种</label><select id="cdkeyInitialCostCurrency"><option ${draftBatch.costCurrency !== "美元" ? "selected" : ""}>人民币</option><option ${draftBatch.costCurrency === "美元" ? "selected" : ""}>美元</option></select></div>
+            <div class="field"><label><span class="required-star">*</span>单件成本</label><input id="cdkeyInitialUnitCost" type="number" min="0" step="0.01" value="${draftBatch.unitCost ?? ""}" placeholder="请输入本批次单件成本"></div>
+            <div class="field"><label>上传文件</label><div class="file-action-row"><button class="btn" type="button" onclick="toast('已打开本地文件选择器。')">上传</button><button class="btn" type="button" onclick="toast('CDKey 导入模板已开始下载。')">下载模板</button><input id="cdkeyInitialUploadFile" value="${draftBatch.fileName || "mock_cdkey_upload.xlsx"}" disabled></div></div>
+            <div class="field"><label>过期时间</label><input id="cdkeyInitialUploadExpire" value="${draftBatch.expireAt || ""}" placeholder="2026-12-31 23:59"></div>
             <div class="alert info" style="grid-column:1/-1">如上传文件中存在重复 CDKey，本次导入请求全部退回，不做部分入库。</div>
           </div>`;
       } else {
@@ -7286,8 +7335,8 @@
     }
 
     function initialCdkeyDataError(pool) {
-      if (pendingCdkeyAction?.mode !== "new") return "";
       if (cdkeySupplyMode(pool) !== "码池供货" || pool.stockMethod !== "手工上传") return "";
+      if (getCdkeyBatchesByPool(pool.id).length) return "";
       if (!valueOf("cdkeyInitialBatchName")) return "首批入库批次名称必填";
       if (!valueOf("cdkeyInitialUploadFile")) return "请先上传首批 CDKey 文件";
       if (!valueOf("cdkeyInitialCostCurrency")) return "首批入库成本币种必填";
@@ -7296,15 +7345,15 @@
     }
 
     function highlightInitialCdkeyInvalidFields(pool) {
-      if (pendingCdkeyAction?.mode !== "new" || cdkeySupplyMode(pool) !== "码池供货" || pool.stockMethod !== "手工上传") return;
+      if (cdkeySupplyMode(pool) !== "码池供货" || pool.stockMethod !== "手工上传" || getCdkeyBatchesByPool(pool.id).length) return;
       if (!valueOf("cdkeyInitialBatchName")) markInvalidControl("cdkeyInitialBatchName");
       if (!valueOf("cdkeyInitialCostCurrency")) markInvalidControl("cdkeyInitialCostCurrency");
       if (!validUnitCost(valueOf("cdkeyInitialUnitCost"))) markInvalidControl("cdkeyInitialUnitCost");
     }
 
     function createInitialCdkeyDataIfNeeded(pool) {
-      if (pendingCdkeyAction?.mode !== "new") return;
       if (cdkeySupplyMode(pool) === "接口直供") return;
+      if (getCdkeyBatchesByPool(pool.id).length) return;
       if (pool.stockMethod === "接口批量获取") return;
       const source = pool.stockMethod === "手工上传" ? "手工上传码" : "接口批量获取码";
       const expireId = source === "手工上传码" ? "cdkeyInitialUploadExpire" : "cdkeyInitialGenerateExpire";
@@ -7315,6 +7364,7 @@
       const costCurrency = source === "手工上传码" ? valueOf("cdkeyInitialCostCurrency") : "人民币";
       const unitCost = source === "手工上传码" ? Number(valueOf("cdkeyInitialUnitCost")) : 0;
       createCdkeyBatchAndCodes(pool, batchName, source, count, "首次新建码池初始化数据", expireAt, fileName, costCurrency, unitCost, "运营填写");
+      pool.initialBatchDraft = null;
     }
 
     function renderCdkeyPoolImpact(poolId) {
@@ -7323,7 +7373,7 @@
     }
 
     function boundSkuTable(rows) {
-      return `<div class="table-wrap"><table><thead><tr><th>商品ID</th><th>商品信息</th><th>商品类型</th><th>SKU ID</th><th>SKU 规格</th><th>履约方式</th><th>商品状态</th></tr></thead><tbody>${rows.map(({ product, sku }) => `<tr><td>${product.spu}</td><td>${productInfoHtml(product)}</td><td>${product.type}</td><td>${sku.skuId}</td><td>${skuSpecText(sku)}</td><td>${deliveryTag(product.delivery || sku.delivery)}</td><td>${stateTag(product.state)}</td></tr>`).join("")}</tbody></table></div><div class="hint-text">同一 SKU 可绑定多个货源，路由顺序由 SKU 货源优先级决定。</div>`;
+      return `<div class="table-wrap"><table><thead><tr><th>商品ID</th><th>商品信息</th><th>商品类型</th><th>SKU ID</th><th>SKU 规格</th><th>履约方式</th><th>商品状态</th></tr></thead><tbody>${rows.map(({ product, sku }) => `<tr><td>${product.spu}</td><td>${productInfoHtml(product)}</td><td>${product.type}</td><td>${sku.skuId}</td><td>${skuSpecText(sku)}</td><td>${deliveryTag(product.delivery || sku.delivery)}</td><td>${stateTag(product.state)}</td></tr>`).join("")}</tbody></table></div><div class="hint-text">优先级用于支付前确定货源；进入支付后使用订单已锁定的货源，不再切换供货方。</div>`;
     }
 
     function generateCdkeyPoolId() {
@@ -7335,15 +7385,26 @@
 
     function buildCdkeyPoolFromForm(state) {
       const existing = getPoolById(pendingCdkeyAction?.poolId);
-      const providerName = existing ? cdkeyProviderName(existing) : valueOf("cdkeyPoolFormProvider");
+      const lockCoreConfig = existing && existing.state !== "草稿";
+      const providerName = lockCoreConfig ? cdkeyProviderName(existing) : valueOf("cdkeyPoolFormProvider");
       const providerConfig = cdkeyProviderConfig(providerName) || { providerType: "", interfaceConfig: "", products: [], supportedModes: [] };
       const providerType = providerConfig.providerType;
-      const supplyMode = existing?.supplyMode || valueOf("cdkeyPoolFormSource");
-      const existingStockMethod = existing?.stockMethod === "平台内部生成" ? "接口批量获取" : existing?.stockMethod;
+      const supplyMode = lockCoreConfig ? existing.supplyMode : valueOf("cdkeyPoolFormSource");
+      const existingStockMethod = lockCoreConfig ? (existing?.stockMethod === "平台内部生成" ? "接口批量获取" : existing?.stockMethod) : "";
       const stockMethod = supplyMode === "码池供货" ? (existingStockMethod || cdkeyStockMethodDraft || "手工上传") : "";
       const supplier = providerType === "三方供应商" ? providerName : "";
-      const supplierProduct = supplyMode === "接口直供" ? valueOf("cdkeyPoolFormSupplierProduct") : "";
+      const lockSupplyProduct = cdkeySupplyProductLocked(existing);
+      const supplierProduct = supplyMode === "接口直供" ? (lockSupplyProduct ? existing.supplierProduct : valueOf("cdkeyPoolFormSupplierProduct")) : "";
       const supplierProductConfig = providerConfig.products.find(product => product.name === supplierProduct);
+      const initialBatchDraft = supplyMode === "码池供货" && stockMethod === "手工上传" && document.getElementById("cdkeyInitialBatchName")
+        ? {
+          batchName: valueOf("cdkeyInitialBatchName"),
+          fileName: valueOf("cdkeyInitialUploadFile"),
+          costCurrency: valueOf("cdkeyInitialCostCurrency"),
+          unitCost: valueOf("cdkeyInitialUnitCost"),
+          expireAt: valueOf("cdkeyInitialUploadExpire")
+        }
+        : supplyMode === "码池供货" ? (existing?.initialBatchDraft || null) : null;
       return {
         ...(existing || {}),
         id: existing?.id || generateCdkeyPoolId(),
@@ -7354,10 +7415,11 @@
         supplyMode,
         supplier,
         stockMethod,
-        source: supplyMode === "接口直供" ? "接口直供" : stockMethod === "手工上传" ? "手工上传码" : "接口批量获取码",
+        source: !supplyMode ? "" : supplyMode === "接口直供" ? "接口直供" : stockMethod === "手工上传" ? "手工上传码" : "接口批量获取码",
         supplierProduct,
-        supplierSku: supplyMode === "接口直供" ? (supplierProductConfig?.productId || "") : "",
-        interfaceConfig: supplyMode === "接口直供" ? providerConfig.interfaceConfig : "",
+        supplierSku: supplyMode === "接口直供" ? (lockSupplyProduct ? existing.supplierSku : (supplierProductConfig?.productId || "")) : "",
+        interfaceConfig: supplyMode === "接口直供" ? (lockSupplyProduct ? existing.interfaceConfig : providerConfig.interfaceConfig) : "",
+        initialBatchDraft,
         alertThreshold: supplyMode === "码池供货" && valueOf("cdkeyPoolFormAlert") !== "" ? Number(valueOf("cdkeyPoolFormAlert")) : "",
         creator: existing?.creator || "平台运营",
         dedupeRule: "全局唯一",
@@ -7420,9 +7482,20 @@
     }
 
     function saveCdkeyPoolDraft() {
+      clearCdkeyPoolInvalidHighlights();
       const existing = getPoolById(pendingCdkeyAction?.poolId);
       const targetState = pendingCdkeyAction?.mode === "edit" ? (existing?.state || "草稿") : "草稿";
       const pool = buildCdkeyPoolFromForm(targetState);
+      if (targetState === "草稿") {
+        if (!pool.name) {
+          markInvalidControl("cdkeyPoolFormName");
+          focusFirstInvalid("#cdkeyPoolFormPage");
+          return toast("请先填写货源名称。草稿允许暂不配置供货方、供货方式和首批入库数据。");
+        }
+        upsertCdkeyPool(pool);
+        showCdkeyPoolPage();
+        return toast("CDKey 货源草稿已保存，可稍后继续配置。");
+      }
       const errors = validateCdkeyPool(pool, targetState === "上架");
       if (errors.length) return toast(errors[0]);
       const initialError = initialCdkeyDataError(pool);
@@ -7467,8 +7540,12 @@
     function openCdkeyPoolDetail(poolId) {
       const pool = getPoolById(poolId);
       if (!pool) return;
-      const isDirect = cdkeySupplyMode(pool) === "接口直供";
-      const supplyConfig = isDirect
+      const supplyMode = cdkeySupplyMode(pool);
+      const isDirect = supplyMode === "接口直供";
+      const isUnconfigured = supplyMode === "未配置";
+      const supplyConfig = isUnconfigured
+        ? `<div class="alert info">当前为未完成配置的草稿，可点击“编辑”继续选择供货方和供货方式。</div>`
+        : isDirect
         ? infoGrid([["供货商品", pool.supplierProduct || "-"], ["供货商品编码（product_id）", pool.supplierSku || "-"], ["接口配置（随供货方关联）", pool.interfaceConfig || "-"]])
         : infoGrid([["码入库方式", pool.stockMethod || "-"], ["总码数", pool.total], ["可用码数量", pool.available], ["安全库存阈值", percentText(pool.alertThreshold)], ["待补货数量", pendingCdkeyCountForPool(pool.id)]]);
       const basicItems = [
@@ -7477,7 +7554,12 @@
       const providerItems = [["供货方", cdkeyProviderName(pool) || "-"], ["供货方类型", cdkeyProviderType(pool)]];
       providerItems.push(["供货方式", cdkeySupplyMode(pool)]);
       basicItems.push(["备注", pool.remark || "-"]);
-      const supplyDetail = `
+      const supplyDetail = isUnconfigured ? `
+        <div class="cdkey-detail-subsection">
+          <div class="cdkey-detail-subsection-title">供货配置</div>
+          ${infoGrid(providerItems)}
+          <div style="margin-top:12px">${supplyConfig}</div>
+        </div>` : `
         <div class="cdkey-detail-subsection">
           <div class="cdkey-detail-subsection-title">供货配置</div>
           ${infoGrid(providerItems)}
@@ -7492,8 +7574,8 @@
         </div>`;
       document.getElementById("cdkeyPoolDetailBody").innerHTML = `
         ${detailSection("货源基础信息", infoGrid(basicItems))}
-        ${detailSection(isDirect ? "供货与取码" : "供货与库存", supplyDetail)}
-        ${isDirect ? "" : detailSection("CDKey 明细", cdkeyCodeTable(getCdkeyCodesByPool(pool.id)))}
+        ${detailSection(isUnconfigured ? "供货配置" : isDirect ? "供货与取码" : "供货与库存", supplyDetail)}
+        ${isDirect || isUnconfigured ? "" : detailSection("CDKey 明细", cdkeyCodeTable(getCdkeyCodesByPool(pool.id)))}
         ${detailSection("绑定 SKU", boundSkuTable(getBoundSkuByPool(pool.id)))}
       `;
       openDrawer("cdkeyPoolDetailDrawer");
@@ -7505,7 +7587,10 @@
       if (!pool) return;
       if (!["接口批量获取码", "平台内部生成码"].includes(pool.source)) return toast("该码池不是接口批量获取类型。");
       selectedCdkeyPool = pool;
-      document.getElementById("cdkeyGenerateInfo").innerHTML = infoGrid([["货源 ID", pool.id], ["货源名称", pool.name], ["码入库方式", pool.stockMethod], ["当前可用码数量", pool.available], ["待补货数量", pendingCdkeyCountForPool(pool.id)], ["当前履约缺口", cdkeyFulfillmentGap(pool)], ["当前货源状态", pool.state]]) + `<div class="alert info">补货入库后，系统会优先按支付成功时间 FIFO 自动发放待补货订单，剩余 CDKey 才进入新订单可用库存。</div>`;
+      const effectText = pool.state === "上架"
+        ? "补货入库后，系统会优先按支付成功时间 FIFO 自动发放待补货订单，剩余 CDKey 才进入新订单可用库存。"
+        : "当前货源已下架，本次只完成入库，不自动发放；重新上架后才参与新订单和待履约订单处理。";
+      document.getElementById("cdkeyGenerateInfo").innerHTML = infoGrid([["货源 ID", pool.id], ["货源名称", pool.name], ["码入库方式", pool.stockMethod], ["当前可用码数量", pool.available], ["待补货数量", pendingCdkeyCountForPool(pool.id)], ["当前履约缺口", cdkeyFulfillmentGap(pool)], ["当前货源状态", pool.state]]) + `<div class="alert info">${effectText}</div>`;
       document.getElementById("cdkeyGenerateBatchList").innerHTML = cdkeyBatchTable(getCdkeyBatchesByPool(pool.id), false, true);
       ["cdkeyGenerateName", "cdkeyGenerateCount", "cdkeyGenerateUnitCost", "cdkeyGenerateExpire"].forEach(id => document.getElementById(id).value = "");
       document.getElementById("cdkeyGenerateCostCurrency").value = "人民币";
@@ -7515,7 +7600,6 @@
     function confirmCdkeyGenerate() {
       const pool = selectedCdkeyPool;
       if (!pool) return;
-      if (pool.state === "下架") return toast("码池下架时不允许补货。");
       const name = valueOf("cdkeyGenerateName");
       const count = Number(valueOf("cdkeyGenerateCount"));
       const costCurrency = valueOf("cdkeyGenerateCostCurrency");
@@ -7526,7 +7610,7 @@
       if (!validUnitCost(unitCostText)) return toast("请输入正确的单件成本。");
       const fulfilledCount = createCdkeyBatchAndCodes(pool, name, "接口批量获取码", count, "接口批量获取补货", expireAt, "", costCurrency, Number(unitCostText), "接口返回");
       closeModal("cdkeyGenerateModal");
-      toast(`接口批量获取补货完成；自动履约 ${fulfilledCount} 笔待补货订单。`);
+      toast(pool.state === "上架" ? `接口批量获取补货完成；自动履约 ${fulfilledCount} 笔待补货订单。` : "接口批量获取补货完成；货源当前下架，本次未自动履约。");
     }
 
     function openCdkeyUploadModal(poolId) {
@@ -7534,7 +7618,10 @@
       if (!pool) return;
       if (pool.stockMethod !== "手工上传") return toast("该货源不是手工上传类型，不能执行上传补货。");
       selectedCdkeyPool = pool;
-      document.getElementById("cdkeyUploadInfo").innerHTML = infoGrid([["货源 ID", pool.id], ["货源名称", pool.name], ["码入库方式", pool.stockMethod], ["当前可用码数量", pool.available], ["待补货数量", pendingCdkeyCountForPool(pool.id)], ["当前履约缺口", cdkeyFulfillmentGap(pool)], ["当前货源状态", pool.state]]) + `<div class="alert info">补货入库后，系统会优先按支付成功时间 FIFO 自动发放待补货订单，剩余 CDKey 才进入新订单可用库存。</div>`;
+      const effectText = pool.state === "上架"
+        ? "补货入库后，系统会优先按支付成功时间 FIFO 自动发放待补货订单，剩余 CDKey 才进入新订单可用库存。"
+        : "当前货源已下架，本次只完成入库，不自动发放；重新上架后才参与新订单和待履约订单处理。";
+      document.getElementById("cdkeyUploadInfo").innerHTML = infoGrid([["货源 ID", pool.id], ["货源名称", pool.name], ["码入库方式", pool.stockMethod], ["当前可用码数量", pool.available], ["待补货数量", pendingCdkeyCountForPool(pool.id)], ["当前履约缺口", cdkeyFulfillmentGap(pool)], ["当前货源状态", pool.state]]) + `<div class="alert info">${effectText}</div>`;
       document.getElementById("cdkeyUploadBatchList").innerHTML = cdkeyBatchTable(getCdkeyBatchesByPool(pool.id), false, true);
       ["cdkeyUploadName", "cdkeyUploadUnitCost", "cdkeyUploadExpire"].forEach(id => document.getElementById(id).value = "");
       document.getElementById("cdkeyUploadCostCurrency").value = "人民币";
@@ -7544,7 +7631,6 @@
     function confirmCdkeyUpload() {
       const pool = selectedCdkeyPool;
       if (!pool) return;
-      if (pool.state === "下架") return toast("码池下架时不允许补货。");
       const name = valueOf("cdkeyUploadName");
       const count = 100;
       const costCurrency = valueOf("cdkeyUploadCostCurrency");
@@ -7556,7 +7642,7 @@
       if (!validUnitCost(unitCostText)) return toast("请输入正确的单件成本。");
       const fulfilledCount = createCdkeyBatchAndCodes(pool, name, "手工上传码", count, "手工上传补货", expireAt, fileName, costCurrency, Number(unitCostText), "运营填写");
       closeModal("cdkeyUploadModal");
-      toast(`入库批次已创建；自动履约 ${fulfilledCount} 笔待补货订单。`);
+      toast(pool.state === "上架" ? `入库批次已创建；自动履约 ${fulfilledCount} 笔待补货订单。` : "入库批次已创建；货源当前下架，本次未自动履约。");
     }
 
     function createCdkeyBatchAndCodes(pool, name, source, count, reason, expireAt = "", fileName = "", costCurrency = "人民币", unitCost = 0, costSource = "运营填写") {
@@ -7735,14 +7821,22 @@
       const pool = getPoolById(poolId);
       if (!pool) return;
       selectedCdkeyPool = pool;
-      const boundRows = getAllBoundSkuByPool(pool.id);
+      const { boundRows, blockingRows } = cdkeyDisableImpact(pool.id);
       document.getElementById("cdkeyDisableInfo").innerHTML = infoGrid([["货源 ID", pool.id], ["货源名称", pool.name], ["供货方式", cdkeySupplyMode(pool)], ["当前货源状态", pool.state], ["绑定 SKU 数量", boundRows.length]]);
+      document.getElementById("cdkeyDisableImpact").innerHTML = blockingRows.length
+        ? `<div class="alert error"><b>当前不能下架。</b>以下上架商品的 SKU 下架后将没有其他可用货源，请先配置替代货源或下架商品：${cdkeyDisableBlockingList(blockingRows)}</div>`
+        : boundRows.length
+          ? `<div class="alert info">下架后，相关 SKU 的新订单将在支付前选择其他已上架货源；已进入支付或履约的订单不受影响。</div>`
+          : `<div class="alert info">当前货源未绑定 SKU，可以直接下架。</div>`;
+      document.getElementById("confirmCdkeyDisableBtn").disabled = blockingRows.length > 0;
       openModal("cdkeyDisableModal");
     }
 
     function confirmCdkeyDisable() {
       const pool = selectedCdkeyPool;
       if (!pool) return;
+      const { blockingRows } = cdkeyDisableImpact(pool.id);
+      if (blockingRows.length) return toast("当前仍有上架 SKU 缺少替代货源，不能下架。");
       const before = pool.state;
       pool.state = "下架";
       pool.updatedAt = nowText();
@@ -9219,7 +9313,7 @@
           <td><span class="tag ${cdkeySupplyMode(source) === "接口直供" ? "purple" : "blue"}">${cdkeySupplyMode(source)}</span></td>
           <td>${cdkeySupplyConfig(source)}</td><td>${cdkeySupplyAvailability(source)}</td><td>${cdkeyPoolStateTag(source.state)}</td>
         </tr>`;
-      }).join("")}</tbody></table></div><div class="hint-text">只展示当前供货方式下的货源；优先级必须为不重复的正整数，数字越小越优先。</div>`;
+      }).join("")}</tbody></table></div><div class="hint-text">只展示当前供货方式下的货源；优先级必须为不重复的正整数，数字越小越优先。接口直供在支付前锁定货源，支付后不切换供货方。</div>`;
       area.querySelectorAll("[data-route-source-toggle]").forEach(control => control.addEventListener("change", toggleCdkeyRouteSource));
       area.querySelectorAll("[data-route-priority]").forEach(control => control.addEventListener("input", updateCdkeyRoutePriority));
     }
