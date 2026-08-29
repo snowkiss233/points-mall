@@ -2322,6 +2322,16 @@
     <div class="modal-foot"><button class="btn" data-close-modal="cdkeyDisableModal">取消</button><button class="btn warning" id="confirmCdkeyDisableBtn">确认下架</button></div>
   </section>
 
+  <section class="modal" id="cdkeyDeleteModal" role="dialog" aria-modal="true">
+    <div class="modal-head"><span>删除 CDKey 货源</span><button class="btn text" data-close-modal="cdkeyDeleteModal">关闭</button></div>
+    <div class="modal-body">
+      <p>仅下架且未绑定 SKU 的货源可以删除。删除后不再出现在货源列表和新订单选源中，已有入库批次、CDKey 明细及历史订单记录继续保留。</p>
+      <div id="cdkeyDeleteInfo"></div>
+      <div class="field"><label>删除说明</label><textarea id="cdkeyDeleteNote" rows="4" maxlength="200" placeholder="请输入删除说明，选填"></textarea></div>
+    </div>
+    <div class="modal-foot"><button class="btn" data-close-modal="cdkeyDeleteModal">取消</button><button class="btn danger" id="confirmCdkeyDeleteBtn">确认删除</button></div>
+  </section>
+
   <aside class="drawer" id="orderDetailDrawer">
     <div class="drawer-head">
       <div class="drawer-title" id="orderDetailTitle">订单详情</div>
@@ -2600,6 +2610,7 @@
       cdkeyUploadFile: { maxLength: 120 },
       cdkeyUploadExpire: { maxLength: 32 },
       cdkeyVoidReason: { maxLength: 200 },
+      cdkeyDeleteNote: { maxLength: 200 },
       cdkeyInitialUploadFile: { maxLength: 120 },
       cdkeyInitialUploadExpire: { maxLength: 32 },
       cdkeyInitialGenerateCount: { min: 1, max: 99999 },
@@ -2789,7 +2800,7 @@
     let visibleInventoryRecords = [...inventoryRecords];
     let inventorySortConfig = { field: "totalStock", direction: "desc" };
     let visibleDeliveryRecords = [...deliveryRecords];
-    let visibleCdkeyPools = [...poolMocks];
+    let visibleCdkeyPools = poolMocks.filter(pool => !pool.deleted);
     let selectedProduct = null;
     let selectedTemplate = null;
     let selectedInventoryRecord = null;
@@ -3956,6 +3967,7 @@
       document.getElementById("confirmCdkeyUploadBtn").addEventListener("click", confirmCdkeyUpload);
       document.getElementById("confirmCdkeyVoidBtn").addEventListener("click", confirmCdkeyVoid);
       document.getElementById("confirmCdkeyDisableBtn").addEventListener("click", confirmCdkeyDisable);
+      document.getElementById("confirmCdkeyDeleteBtn").addEventListener("click", confirmCdkeyDelete);
       document.getElementById("toggleMoreBtn").addEventListener("click", toggleMoreFilters);
       document.getElementById("searchBtn").addEventListener("click", applyFilters);
       document.getElementById("resetBtn").addEventListener("click", resetFilters);
@@ -4168,7 +4180,7 @@
       hideAllPages();
       document.getElementById("cdkeyPoolPage").style.display = "block";
       setActiveMenu("CDKey 货源列表");
-      visibleCdkeyPools = [...poolMocks];
+      visibleCdkeyPools = poolMocks.filter(pool => !pool.deleted);
       renderCdkeyPoolTable();
       renderCdkeyPoolStats();
       window.scrollTo(0,0);
@@ -7162,6 +7174,7 @@
       actions.push(pool.state === "上架"
         ? `<button class="btn text" data-cdkey-action="disable" data-pool-id="${pool.id}">下架</button>`
         : `<button class="btn text" data-cdkey-action="enable" data-pool-id="${pool.id}">上架</button>`);
+      actions.push(`<button class="btn text danger" data-cdkey-action="delete" data-pool-id="${pool.id}">删除</button>`);
       return actions.join("");
     }
 
@@ -7177,6 +7190,7 @@
       if (action === "code") openCdkeyCodeDrawer(poolId);
       if (action === "disable") openCdkeyDisableModal(poolId);
       if (action === "enable") enableCdkeyPool(poolId);
+      if (action === "delete") openCdkeyDeleteModal(poolId);
     }
 
     function applyCdkeyPoolFilters() {
@@ -7188,6 +7202,7 @@
       const bound = valueOf("cdkeyPoolFilterBound");
       const updated = valueOf("cdkeyPoolFilterUpdated");
       visibleCdkeyPools = poolMocks.filter(pool => {
+        if (pool.deleted) return false;
         const boundCount = getAllBoundSkuByPool(pool.id).length;
         return (!poolName || pool.name.toUpperCase().includes(poolName))
           && (!poolId || pool.id.toUpperCase().includes(poolId))
@@ -7205,7 +7220,7 @@
     function resetCdkeyPoolFilters() {
       ["cdkeyPoolFilterName", "cdkeyPoolFilterId", "cdkeyPoolFilterUpdated"].forEach(id => document.getElementById(id).value = "");
       ["cdkeyPoolFilterState", "cdkeyPoolFilterSource", "cdkeyPoolFilterProvider", "cdkeyPoolFilterBound"].forEach(id => document.getElementById(id).value = "全部");
-      visibleCdkeyPools = [...poolMocks];
+      visibleCdkeyPools = poolMocks.filter(pool => !pool.deleted);
       renderCdkeyPoolTable();
       renderCdkeyPoolStats();
       toast("CDKey 货源筛选项已重置。");
@@ -7540,7 +7555,7 @@
       }
       addCdkeyLog(pool.id, pendingCdkeyAction?.mode === "edit" ? "编辑货源" : "新建货源", "-", pool.state, pool.remark || "货源配置保存");
       syncCdkeyStatusByPool(pool.id);
-      visibleCdkeyPools = [...poolMocks];
+      visibleCdkeyPools = poolMocks.filter(pool => !pool.deleted);
     }
 
     function saveCdkeyPool() {
@@ -7994,6 +8009,41 @@
       renderCdkeyPoolStats();
       renderTable();
       toast("CDKey 货源已下架。");
+    }
+
+    function openCdkeyDeleteModal(poolId) {
+      const pool = getPoolById(poolId);
+      if (!pool || pool.deleted) return;
+      if (pool.state !== "下架") return toast("请先下架该货源，再执行删除。");
+      const boundRows = getAllBoundSkuByPool(pool.id);
+      if (boundRows.length) return toast("该货源仍绑定商品 SKU，请先解除绑定后再删除。");
+      selectedCdkeyPool = pool;
+      document.getElementById("cdkeyDeleteInfo").innerHTML = infoGrid([
+        ["货源 ID", pool.id], ["货源名称", pool.name], ["供货方式", cdkeySupplyMode(pool)], ["当前货源状态", pool.state],
+        ["绑定 SKU 数量", boundRows.length], ["入库批次数", getCdkeyBatchesByPool(pool.id).length], ["CDKey 明细数", getCdkeySourceCodes(pool.id).length]
+      ]);
+      document.getElementById("cdkeyDeleteNote").value = "";
+      openModal("cdkeyDeleteModal");
+    }
+
+    function confirmCdkeyDelete() {
+      const pool = selectedCdkeyPool;
+      if (!pool || pool.deleted) return;
+      if (pool.state !== "下架") return toast("请先下架该货源，再执行删除。");
+      if (getAllBoundSkuByPool(pool.id).length) return toast("该货源仍绑定商品 SKU，请先解除绑定后再删除。");
+      const note = valueOf("cdkeyDeleteNote") || "列表操作删除货源";
+      pool.deleted = true;
+      pool.deletedAt = nowText();
+      pool.deletedBy = "平台运营";
+      pool.deleteNote = note;
+      pool.updatedAt = pool.deletedAt;
+      addCdkeyLog(pool.id, "删除货源", "下架", "已删除", note);
+      visibleCdkeyPools = visibleCdkeyPools.filter(item => item.id !== pool.id);
+      closeModal("cdkeyDeleteModal");
+      renderCdkeyPoolTable();
+      renderCdkeyPoolStats();
+      renderTable();
+      toast("CDKey 货源已删除，历史记录已保留。");
     }
 
     function enableCdkeyPool(poolId) {
