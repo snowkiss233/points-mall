@@ -794,6 +794,29 @@
     }
     .side-anchor a:hover { background: var(--primary-weak); color: var(--primary); }
     .sku-edit-table { min-width: 1380px; }
+    .supply-inventory-table { min-width: 1680px; }
+    .supply-inventory-table th,
+    .supply-inventory-table td { vertical-align: top; }
+    .supply-inventory-table th:nth-child(1),
+    .supply-inventory-table td:nth-child(1) { min-width: 140px; }
+    .supply-inventory-table th:nth-child(2),
+    .supply-inventory-table td:nth-child(2) { min-width: 300px; }
+    .supply-inventory-table th:nth-child(3),
+    .supply-inventory-table td:nth-child(3) { min-width: 190px; }
+    .supply-inventory-table th:nth-child(4),
+    .supply-inventory-table td:nth-child(4) { min-width: 190px; }
+    .supply-inventory-table th:nth-child(5),
+    .supply-inventory-table td:nth-child(5) { min-width: 170px; }
+    .supply-inventory-table th:nth-child(6),
+    .supply-inventory-table td:nth-child(6) { min-width: 170px; }
+    .supply-inventory-table th:nth-child(7),
+    .supply-inventory-table td:nth-child(7) { min-width: 260px; }
+    .supply-inventory-table th:nth-child(8),
+    .supply-inventory-table td:nth-child(8) { min-width: 150px; }
+    .supply-inventory-table th:nth-child(9),
+    .supply-inventory-table td:nth-child(9) { min-width: 110px; }
+    .supply-inventory-table th:nth-child(10),
+    .supply-inventory-table td:nth-child(10) { min-width: 220px; }
     .display-table { min-width: 1680px; }
     .display-product-table { min-width: 1400px; }
     #productPickerModal {
@@ -9139,7 +9162,7 @@
       const inventoryReadonly = formMode === "edit";
       body.innerHTML = `
         <div class="table-wrap">
-          <table>
+          <table class="supply-inventory-table">
             <thead><tr><th>SKU 名称</th><th>货源配置</th><th><span class="required-star">*</span>库存模式</th><th><span class="required-star">*</span>库存情况</th><th><span class="required-star">*</span>下单策略</th><th>待履约数量上限<br><span class="minor">缺货可下单时必填</span></th><th>时段库存重置配置</th><th>安全库存阈值</th><th>库存状态</th><th>备注</th></tr></thead>
             <tbody>${inventoryRows.map((row, index) => {
               const isCdkeyRow = isCdkeyInventoryRow(index, row);
