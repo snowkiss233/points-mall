@@ -1772,7 +1772,7 @@
           <div class="table-head">
             <div>
               <div class="table-title">履约记录数据</div>
-              <div class="table-meta">履约记录只读展示，不提供重新履约、补偿履约、改状态、改库存、核销 CDKey 等处理动作。</div>
+              <div class="table-meta">履约记录只读展示，不提供重新履约、补偿履约、改状态、改库存或标记异常 CDKey 等处理动作。</div>
             </div>
             <div class="table-meta" id="deliveryTableCount">共 0 条</div>
           </div>
@@ -2327,12 +2327,12 @@
   </section>
 
   <section class="modal" id="cdkeyVoidModal" role="dialog" aria-modal="true">
-    <div class="modal-head"><span>核销 CDKey</span><button class="btn text" data-close-modal="cdkeyVoidModal">关闭</button></div>
+    <div class="modal-head"><span>标记异常 CDKey</span><button class="btn text" data-close-modal="cdkeyVoidModal">关闭</button></div>
     <div class="modal-body">
       <div id="cdkeyVoidInfo"></div>
-      <div class="field" style="margin-top:12px"><label><span class="required-star">*</span>核销原因</label><textarea id="cdkeyVoidReason" rows="4" placeholder="请输入核销原因"></textarea></div>
+      <div class="field" style="margin-top:12px"><label><span class="required-star">*</span>异常说明</label><textarea id="cdkeyVoidReason" rows="4" placeholder="请输入异常说明"></textarea></div>
     </div>
-    <div class="modal-foot"><button class="btn" data-close-modal="cdkeyVoidModal">取消</button><button class="btn danger" id="confirmCdkeyVoidBtn">确认核销</button></div>
+    <div class="modal-foot"><button class="btn" data-close-modal="cdkeyVoidModal">取消</button><button class="btn danger" id="confirmCdkeyVoidBtn">确认标记异常</button></div>
   </section>
 
   <section class="modal" id="cdkeyDisableModal" role="dialog" aria-modal="true">
@@ -6265,7 +6265,7 @@
       const cdkeyNotice = isCdkeyDelivery(delivery)
         ? hasDirectSupply
           ? `<div class="alert info">该 SKU 的货源路由包含接口直供，库存显示为“不限量”；平台不维护供应商库存数量，实际是否有货以下单履约时的接口结果为准。</div>`
-          : `<div class="alert info">该 SKU 仅使用码池供货，总库存和可用库存由关联码池同步。补货、核销和 CDKey 维护请前往 CDKey 货源列表。</div>`
+          : `<div class="alert info">该 SKU 仅使用码池供货，总库存和可用库存由关联码池同步。补货、异常码处理和 CDKey 维护请前往 CDKey 货源列表。</div>`
         : "";
       const physicalNotice = isPhysicalDelivery(delivery) ? `<div class="alert info">库存列表只维护实物商品可兑换库存，不承接用户收货地址、物流单号和完整发货流程；收货地址与发货状态由订单 / 履约后台承接。</div>` : "";
       document.getElementById("inventoryDetailBody").innerHTML = `
@@ -6971,13 +6971,13 @@
     }
 
     function normalizeCdkeyCodeState(state) {
-      if (["可用", "异常"].includes(state)) return "未使用";
-      if (state === "已作废") return "已核销";
+      if (state === "可用") return "未使用";
+      if (["已核销", "已作废"].includes(state)) return "异常";
       return state || "未使用";
     }
 
     function makeCdkeyCode(code) {
-      const result = { deliveryRecordId: "", exchangeNo: "", orderId: "", issuedAt: "", voidedAt: "", createdAt: code.updatedAt || nowText(), updatedAt: nowText(), ...code };
+      const result = { deliveryRecordId: "", exchangeNo: "", orderId: "", issuedAt: "", createdAt: code.updatedAt || nowText(), updatedAt: nowText(), ...code };
       result.rowKey = result.rowKey || `ROW-${result.poolId}-${result.batchId}-${result.maskedCdkey}`.replace(/[^A-Z0-9_-]/g, "");
       result.state = normalizeCdkeyCodeState(result.state);
       return result;
@@ -7160,7 +7160,7 @@
     }
 
     function cdkeyCodeStateTag(state) {
-      const cls = state === "未使用" ? "green" : state === "已履约" ? "blue" : state === "已核销" ? "orange" : state === "已过期" ? "" : "";
+      const cls = state === "未使用" ? "green" : state === "已履约" ? "blue" : state === "异常" ? "red" : "";
       return `<span class="tag ${cls}">${state}</span>`;
     }
 
@@ -7836,7 +7836,7 @@
       if (compact) {
         return `<div class="table-wrap restock-table-wrap"><table class="restock-batch-table"><thead><tr><th>批次 ID</th><th>批次名称</th><th>码入库来源</th><th>总码数</th><th>可用码数量</th><th>成本币种</th><th>单件成本</th><th>成本来源</th><th>过期时间</th><th>创建时间</th></tr></thead><tbody>${rows.map(batch => `<tr><td>${batch.batchId}</td><td>${batch.batchName}</td><td>${batch.source}</td><td>${batch.total}</td><td>${batch.available}</td><td>${batch.costCurrency}</td><td>${formatCostAmount(batch.unitCost, batch.costCurrency)}</td><td>${batch.costSource}</td><td>${batch.expireAt || "-"}</td><td>${batch.createdAt || batch.updatedAt}</td></tr>`).join("")}</tbody></table></div>`;
       }
-      return `<div class="table-wrap"><table class="cdkey-batch-table"><thead><tr><th>批次 ID</th><th>批次名称</th><th>货源 ID</th><th>码入库来源</th><th>上传文件名</th><th>总码数</th><th>可用码数量</th><th>已履约数量</th><th>核销数量</th><th>成本币种</th><th>单件成本</th><th>成本来源</th><th>过期时间</th><th>创建时间</th>${withActions ? "<th>最后操作人</th><th>操作</th>" : ""}</tr></thead><tbody>${rows.map(batch => `<tr><td>${batch.batchId}</td><td>${batch.batchName}</td><td>${batch.poolId}</td><td>${batch.source}</td><td>${batch.fileName || "-"}</td><td>${batch.total}</td><td>${batch.available}</td><td>${batch.issued}</td><td>${batch.voided}</td><td>${batch.costCurrency}</td><td>${formatCostAmount(batch.unitCost, batch.costCurrency)}</td><td>${batch.costSource}</td><td>${batch.expireAt || "-"}</td><td>${batch.createdAt || batch.updatedAt}</td>${withActions ? `<td>${lastCdkeyOperator(getPoolById(batch.poolId))}</td><td><button class="btn text" data-pool-id="${batch.poolId}" data-batch-code="${batch.batchId}">查看 CDKey 明细</button></td>` : ""}</tr>`).join("")}</tbody></table></div>`;
+      return `<div class="table-wrap"><table class="cdkey-batch-table"><thead><tr><th>批次 ID</th><th>批次名称</th><th>货源 ID</th><th>码入库来源</th><th>上传文件名</th><th>总码数</th><th>可用码数量</th><th>已履约数量</th><th>异常数量</th><th>成本币种</th><th>单件成本</th><th>成本来源</th><th>过期时间</th><th>创建时间</th>${withActions ? "<th>最后操作人</th><th>操作</th>" : ""}</tr></thead><tbody>${rows.map(batch => `<tr><td>${batch.batchId}</td><td>${batch.batchName}</td><td>${batch.poolId}</td><td>${batch.source}</td><td>${batch.fileName || "-"}</td><td>${batch.total}</td><td>${batch.available}</td><td>${batch.issued}</td><td>${batch.voided}</td><td>${batch.costCurrency}</td><td>${formatCostAmount(batch.unitCost, batch.costCurrency)}</td><td>${batch.costSource}</td><td>${batch.expireAt || "-"}</td><td>${batch.createdAt || batch.updatedAt}</td>${withActions ? `<td>${lastCdkeyOperator(getPoolById(batch.poolId))}</td><td><button class="btn text" data-pool-id="${batch.poolId}" data-batch-code="${batch.batchId}">查看 CDKey 明细</button></td>` : ""}</tr>`).join("")}</tbody></table></div>`;
     }
 
     function directSupplyCostStatusTag(status) {
@@ -7861,7 +7861,7 @@
           <div class="body">
             <div class="form-grid four">
               <div class="field"><label>CDKey 关键词</label><input id="cdkeyCodeFilterKeyword" placeholder="请输入脱敏码关键词"></div>
-              <div class="field"><label>CDKey 状态</label><select id="cdkeyCodeFilterState"><option>全部</option><option>未使用</option><option>已核销</option><option>已履约</option><option>已过期</option></select></div>
+              <div class="field"><label>CDKey 状态</label><select id="cdkeyCodeFilterState"><option>全部</option><option>未使用</option><option>已履约</option><option>已过期</option><option>异常</option></select></div>
               <div class="field"><label>履约单号</label><input id="cdkeyCodeFilterFulfillment" placeholder="请输入履约单号"></div>
               <div class="field"><label>订单号</label><input id="cdkeyCodeFilterOrder" placeholder="请输入订单号"></div>
               <div class="field"><label>入库批次 ID</label><input id="cdkeyCodeFilterBatch" placeholder="${isDirect ? "接口直供不适用" : "请输入入库批次 ID"}" ${isDirect ? "disabled" : ""} value="${batchId}"></div>
@@ -7955,14 +7955,13 @@
           <td>${cost.currency}</td>
           <td>${cost.unitCost}</td>
           <td>${cost.source}</td>
-          <td>${code.voidedAt || "-"}</td>
           <td>${code.createdAt || code.updatedAt}</td>
           <td>${code.operator || lastCdkeyOperator(pool)}</td>
-          <td>${code.state === "未使用" ? `<button class="btn text danger" data-void-key="${code.rowKey}">核销</button>` : `<span class="muted">只读</span>`}</td>
+          <td>${code.state === "未使用" ? `<button class="btn text danger" data-void-key="${code.rowKey}">标记异常</button>` : `<span class="muted">只读</span>`}</td>
         </tr>`;
       }).join("");
       const directHint = hasDirectCode ? " 接口直供仅将成功取得的码写入本表；无库存、失败或结果不明确的请求没有产出 CDKey，统一在履约记录中查看。" : "";
-      return `<div class="table-wrap"><table class="cdkey-code-table"><thead><tr><th>脱敏 CDKey</th><th>货源 ID</th><th>供货方式</th><th>入库批次 ID</th><th>CDKey 状态</th><th>履约单号</th><th>订单号</th><th>供货方订单号</th><th>履约时间</th><th>成本状态</th><th>成本币种</th><th>单件成本</th><th>成本来源</th><th>核销时间</th><th>创建时间</th><th>最后操作人</th><th>操作</th></tr></thead><tbody>${body}</tbody></table></div><div class="hint-text">CDKey 明细不展示完整 CDKey 明文，不提供复制明文码，不提供修改已履约码状态。${directHint}</div>`;
+      return `<div class="table-wrap"><table class="cdkey-code-table"><thead><tr><th>脱敏 CDKey</th><th>货源 ID</th><th>供货方式</th><th>入库批次 ID</th><th>CDKey 状态</th><th>履约单号</th><th>订单号</th><th>供货方订单号</th><th>履约时间</th><th>成本状态</th><th>成本币种</th><th>单件成本</th><th>成本来源</th><th>创建时间</th><th>最后操作人</th><th>操作</th></tr></thead><tbody>${body}</tbody></table></div><div class="hint-text">CDKey 明细不展示完整 CDKey 明文，不提供复制明文码，不提供修改已履约码状态。${directHint}</div>`;
     }
 
     function openCdkeyVoidModal(rowKey) {
@@ -7977,13 +7976,12 @@
     function confirmCdkeyVoid() {
       const code = selectedCdkeyCode;
       if (!code) return;
-      if (code.state !== "未使用") return toast("只有未使用状态 CDKey 才允许核销。");
+      if (code.state !== "未使用") return toast("只有未使用状态 CDKey 才允许标记异常。");
       const reason = valueOf("cdkeyVoidReason");
-      if (!reason) return toast("请输入核销原因。");
+      if (!reason) return toast("请输入异常说明。");
       const pool = getPoolById(code.poolId);
       const batch = cdkeyBatches.find(item => item.batchId === code.batchId);
-      code.state = "已核销";
-      code.voidedAt = nowText();
+      code.state = "异常";
       code.updatedAt = nowText();
       if (pool) {
         pool.available = Math.max(0, pool.available - 1);
@@ -7995,13 +7993,13 @@
         batch.voided += 1;
         batch.updatedAt = nowText();
       }
-      addCdkeyLog(code.poolId, "CDKey 核销", "未使用", "已核销", reason);
+      addCdkeyLog(code.poolId, "CDKey 标记异常", "未使用", "异常", reason);
       syncCdkeyStatusByPool(code.poolId);
       closeModal("cdkeyVoidModal");
       openCdkeyCodeDrawer(code.poolId);
       renderCdkeyPoolTable();
       renderCdkeyPoolStats();
-      toast("CDKey 已核销。");
+      toast("CDKey 已标记为异常。");
     }
 
     function openCdkeyDisableModal(poolId) {
