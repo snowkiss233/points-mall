@@ -1250,7 +1250,7 @@
           <div>
             <button class="btn text" id="backToListBtn">返回商品列表</button>
             <h1 id="formTitle">新建商品</h1>
-            <div class="sub">配置商品类型、基础信息、商品素材、SKU多币种价格、履约方式、CDKey 货源配置和初始库存。商品创建后，后续库存调整统一前往库存列表维护。</div>
+            <div class="sub">配置商品类型、基础信息、商品素材、SKU 多币种价格、履约方式，以及 SKU 的供货与库存。商品创建后，可在编辑商品时增加或调整 CDKey 货源；库存数量和下单策略的后续调整统一前往库存列表维护。</div>
           </div>
           <div class="btn-row">
             <button class="btn" id="saveDraftBtn">保存草稿</button>
@@ -1395,7 +1395,7 @@
             <section class="form-card" id="sectionSku">
               <h2><span class="required-star">*</span>SKU 配置</h2>
               <div class="body">
-                <div class="alert info">单个 SKU 可同时配置积分、N币、RMB价格。三种价格独立维护，不按充值汇率自动换算；用户下单后锁定所选币种。下单策略与待履约数量上限统一在初始化库存配置中维护。</div>
+                <div class="alert info">单个 SKU 可同时配置积分、N币、RMB 价格。三种价格独立维护，不按充值汇率自动换算；用户下单后锁定所选币种。CDKey 货源、库存模式、下单策略与待履约数量上限统一在下方“供货与库存配置”中维护。</div>
                 <div class="btn-row" style="margin-bottom:10px">
                   <button class="btn primary" id="addSkuBtn" type="button">添加 SKU</button>
                   <button class="btn danger" id="clearSkuBtn" type="button">清空 SKU</button>
@@ -1411,11 +1411,11 @@
             </section>
 
             <section class="form-card" id="sectionInitialInventory">
-              <h2><span class="required-star">*</span>初始库存配置</h2>
+              <h2><span class="required-star">*</span>供货与库存配置</h2>
               <div class="body">
-                <div class="alert info">首次新建商品时支持配置 SKU 初始库存和下单策略；选择“缺货可下单”时，还需配置待履约数量上限。CDKey SKU 的库存模式由货源路由自动判定：仅码池供货时同步真实码库存；包含接口直供时显示为“不限量”。</div>
+                <div class="alert info">先为 CDKey SKU 配置货源，系统再根据供货方式自动确定库存模式和当前库存：码池供货同步实际 CDKey 数量，接口直供显示“不限量，履约时判断”。新建商品时继续配置下单策略；存量商品需要增加、减少或调整货源时，进入“编辑商品”，在本区域找到对应 SKU 后点击“增加 / 调整货源”。</div>
                 <div id="inventoryConfigBody"></div>
-                <div class="hint-text">非 CDKey 商品的初始库存只用于商品首次创建时初始化库存记录；下单策略和待履约数量上限均属于库存配置。CDKey 商品不在此手工维护库存数量，库存与可售判断来自已绑定的货源路由。</div>
+                <div class="hint-text">非 CDKey 商品在新建时填写初始库存。商品保存后，库存数量、下单策略和待履约数量上限的调整仍前往库存列表；CDKey 货源关系及优先级继续在商品编辑页的本区域维护。</div>
               </div>
             </section>
 
@@ -1435,7 +1435,7 @@
             <a href="#sectionMaterial">商品素材</a>
             <a href="#sectionScopeTags">适用范围与标签</a>
             <a href="#sectionSku">SKU 配置</a>
-            <a href="#sectionInitialInventory">初始库存配置</a>
+            <a href="#sectionInitialInventory">供货与库存配置</a>
             <a href="#sectionRemark">备注</a>
           </aside>
         </div>
@@ -8373,7 +8373,8 @@
       skuRows = product ? JSON.parse(JSON.stringify(product.skuList)).map((row, index) => normalizeSkuRow(row, type, index, selectedSkuAttrCodes)) : buildDefaultSkuRows(type);
       inventoryRows = product ? buildReadonlyInventoryRows(product) : [];
       syncInventoryRows(false);
-      toggleInitialInventorySection(mode !== "edit");
+      const hasCdkeySku = skuRows.some(row => requiresCdkeySourceConfig(row, type));
+      toggleInitialInventorySection(mode !== "edit" || hasCdkeySku);
       previousFormType = type;
       handleTemplateChange(false);
       renderSpuAttrPanel();
@@ -8724,7 +8725,7 @@
       const showValidityTypeColumn = skuRows.some(row => isTimeSkuSpecType(row.specType));
       const validityTypeHeader = showValidityTypeColumn ? `<th>有效期类型<br><span class="minor">小时/天必填</span></th>` : "";
       const durationHeader = showValidityTypeColumn ? `<th>数值<br><span class="minor">限时必填</span></th>` : `<th>数值</th>`;
-      head.innerHTML = `<th>SKU 名称</th><th><span class="required-star">*</span>排序<br><span class="minor">越大越靠前</span></th><th><span class="required-star">*</span>计量单位</th>${validityTypeHeader}${durationHeader}<th><span class="required-star">*</span>多币种价格<br><span class="minor">积分 / N币 / RMB</span></th><th>CDKey 货源配置</th><th>每人总兑换次数</th><th>每人每日兑换次数</th>${dynamicHeaders}<th>SKU 备注</th><th>操作</th>`;
+      head.innerHTML = `<th>SKU 名称</th><th><span class="required-star">*</span>排序<br><span class="minor">越大越靠前</span></th><th><span class="required-star">*</span>计量单位</th>${validityTypeHeader}${durationHeader}<th><span class="required-star">*</span>多币种价格<br><span class="minor">积分 / N币 / RMB</span></th><th>每人总兑换次数</th><th>每人每日兑换次数</th>${dynamicHeaders}<th>SKU 备注</th><th>操作</th>`;
       body.innerHTML = skuRows.length ? skuRows.map((s, i) => {
         const attrCells = editableAttrs.map(attr => {
           const value = s.attributeValues[attr.code] || "";
@@ -8752,14 +8753,13 @@
             ${validityTypeColumnCell}
             <td>${durationCell}</td>
             <td class="price-config-cell">${skuPriceSummary(s)}<button class="btn text" type="button" data-edit-sku-price="${i}">配置多币种价格</button></td>
-            <td>${cdkeyPoolEditor(s, i)}</td>
             <td><input class="mini-input" type="number" data-sku="${i}" data-field="totalLimit" value="${s.totalLimit}"></td>
             <td><input class="mini-input" type="number" data-sku="${i}" data-field="dayLimit" value="${s.dayLimit}"></td>
             ${attrCells}
             <td><input class="mini-input" data-sku="${i}" data-field="remark" value="${s.remark || ""}"></td>
             <td><button class="btn text" data-copy-sku="${i}">复制</button><button class="btn text" data-del-sku="${i}">删除</button></td>
           </tr>`;
-      }).join("") : `<tr><td colspan="${10 + (showValidityTypeColumn ? 1 : 0) + editableAttrs.length}"><div class="empty">请添加至少 1 条 SKU。</div></td></tr>`;
+      }).join("") : `<tr><td colspan="${9 + (showValidityTypeColumn ? 1 : 0) + editableAttrs.length}"><div class="empty">请添加至少 1 条 SKU。</div></td></tr>`;
       body.querySelectorAll("[data-attr]:not(select)").forEach(el => el.addEventListener("input", updateSkuFromInput));
       body.querySelectorAll("select[data-attr]").forEach(el => el.addEventListener("change", updateSkuFromInput));
       body.querySelectorAll("[data-field]:not(select)").forEach(el => el.addEventListener("input", updateSkuFromInput));
@@ -8858,7 +8858,8 @@
         return `<div><span class="tag ${tagClass}">优先级 ${sort}</span> ${reference}<div class="minor">${sourceMeta}</div></div>`;
       }).join("");
       const methodClass = method === "接口直供" ? "purple" : method === "码池供货" ? "blue" : "red";
-      return `<div style="margin-bottom:6px"><span class="tag ${methodClass}">供货方式：${method}</span></div><div class="route-stack">${routeLines}</div><button class="btn text" type="button" data-select-pool="${index}" style="margin-top:6px">编辑配置</button>`;
+      const actionText = formMode === "edit" ? "增加 / 调整货源" : "编辑配置";
+      return `<div style="margin-bottom:6px"><span class="tag ${methodClass}">供货方式：${method}</span></div><div class="route-stack">${routeLines}</div><button class="btn text" type="button" data-select-pool="${index}" style="margin-top:6px">${actionText}</button>`;
     }
 
     function skuCdkeySourceIds(row) {
@@ -9039,7 +9040,6 @@
     }
 
     function syncInventoryRows(forceReset = false) {
-      if (formMode === "edit") return;
       syncSkuDeliveryFromForm();
       const productType = valueOf("formType");
       inventoryRows = skuRows.map((sku, index) => {
@@ -9112,8 +9112,8 @@
 
     function cdkeyInventoryDisplayValue(index) {
       const route = cdkeyRouteForInventoryRow(index);
-      if (route.hasActiveDirect) return "接口实时判断";
-      return route.activePoolSources.length ? `码池同步：总码数 ${route.totalPoolStock}` : "配置货源后同步";
+      if (route.hasActiveDirect) return "不限量，履约时判断";
+      return route.activePoolSources.length ? `${route.availablePoolStock} 可用 / 总数 ${route.totalPoolStock}` : "配置货源后同步";
     }
 
     function applyCdkeyInventorySync(row, index) {
@@ -9131,19 +9131,16 @@
     function renderInventoryConfig() {
       const body = document.getElementById("inventoryConfigBody");
       if (!body) return;
-      if (formMode === "edit") {
-        body.innerHTML = "";
-        return;
-      }
       syncInventoryRows(false);
       if (!inventoryRows.length) {
-        body.innerHTML = `<div class="empty">请先配置 SKU，系统会按 SKU 生成初始库存配置行。</div>`;
+        body.innerHTML = `<div class="empty">请先配置 SKU，系统会按 SKU 生成供货与库存配置行。</div>`;
         return;
       }
+      const inventoryReadonly = formMode === "edit";
       body.innerHTML = `
         <div class="table-wrap">
           <table>
-            <thead><tr><th>SKU 名称</th><th><span class="required-star">*</span>库存模式</th><th><span class="required-star">*</span>初始总库存</th><th><span class="required-star">*</span>下单策略</th><th>待履约数量上限<br><span class="minor">缺货可下单时必填</span></th><th>时段库存重置配置</th><th>安全库存阈值</th><th>库存状态</th><th>备注</th></tr></thead>
+            <thead><tr><th>SKU 名称</th><th>货源配置</th><th><span class="required-star">*</span>库存模式</th><th><span class="required-star">*</span>库存情况</th><th><span class="required-star">*</span>下单策略</th><th>待履约数量上限<br><span class="minor">缺货可下单时必填</span></th><th>时段库存重置配置</th><th>安全库存阈值</th><th>库存状态</th><th>备注</th></tr></thead>
             <tbody>${inventoryRows.map((row, index) => {
               const isCdkeyRow = isCdkeyInventoryRow(index, row);
               const backorderEnabled = isBackorderAllowed(row);
@@ -9151,27 +9148,29 @@
               const stockModeEditor = isCdkeyRow
                 ? `<select class="mini-input" data-inv="${index}" data-inv-field="stockMode" disabled><option selected>${cdkeyInventoryModeLabel(index)}</option></select><div class="minor">由已配置的 CDKey 货源路由自动判定</div>`
                 : `<select class="mini-input" data-inv="${index}" data-inv-field="stockMode"><option ${row.stockMode === "限量" ? "selected" : ""}>限量</option><option ${row.stockMode === "不限量" ? "selected" : ""}>不限量</option></select>`;
-              const totalStockDisabled = unlimitedDisabled || isCdkeyRow;
+              const totalStockDisabled = unlimitedDisabled || isCdkeyRow || inventoryReadonly;
               const totalStockValue = isCdkeyRow ? cdkeyInventoryDisplayValue(index) : (unlimitedDisabled ? "不限量" : row.totalStock);
               return `<tr>
                 <td>${row.skuDisplayText || "-"}</td>
+                <td>${cdkeyPoolEditor(skuRows[index], index)}</td>
                 <td>${stockModeEditor}</td>
                 <td><input class="mini-input" ${totalStockDisabled ? "disabled" : ""} data-inv="${index}" data-inv-field="totalStock" value="${totalStockValue}"></td>
-                <td><select class="mini-input" data-inv="${index}" data-inv-field="shortageOrderPolicy"><option ${backorderEnabled ? "" : "selected"}>${SHORTAGE_POLICY_STOCK_ONLY}</option><option ${backorderEnabled ? "selected" : ""}>${SHORTAGE_POLICY_ALLOW_BACKORDER}</option></select></td>
-                <td><input class="mini-input" type="number" min="1" data-inv="${index}" data-inv-field="pendingFulfillmentLimit" value="${backorderEnabled ? row.pendingFulfillmentLimit : ""}" ${backorderEnabled ? "" : "disabled"} placeholder="${backorderEnabled ? "请输入正整数" : "当前策略不适用"}"></td>
-                <td>${dailyReleaseEditorHtml(row.dailyReleases, "inv", index, unlimitedDisabled)}</td>
-                <td><input class="mini-input" ${unlimitedDisabled ? "disabled" : ""} data-inv="${index}" data-inv-field="warningThreshold" value="${unlimitedDisabled ? "不限量" : row.warningThreshold}"></td>
+                <td><select class="mini-input" data-inv="${index}" data-inv-field="shortageOrderPolicy" ${inventoryReadonly ? "disabled" : ""}><option ${backorderEnabled ? "" : "selected"}>${SHORTAGE_POLICY_STOCK_ONLY}</option><option ${backorderEnabled ? "selected" : ""}>${SHORTAGE_POLICY_ALLOW_BACKORDER}</option></select></td>
+                <td><input class="mini-input" type="number" min="1" data-inv="${index}" data-inv-field="pendingFulfillmentLimit" value="${backorderEnabled ? row.pendingFulfillmentLimit : ""}" ${backorderEnabled && !inventoryReadonly ? "" : "disabled"} placeholder="${backorderEnabled ? "请输入正整数" : "当前策略不适用"}"></td>
+                <td>${dailyReleaseEditorHtml(row.dailyReleases, "inv", index, unlimitedDisabled || inventoryReadonly)}</td>
+                <td><input class="mini-input" ${unlimitedDisabled || inventoryReadonly ? "disabled" : ""} data-inv="${index}" data-inv-field="warningThreshold" value="${unlimitedDisabled ? "不限量" : row.warningThreshold}"></td>
                 <td>${row.stockState}</td>
-                <td><input class="mini-input" data-inv="${index}" data-inv-field="remark" value="${row.remark}">${cdkeyInventoryHint(index)}</td>
+                <td><input class="mini-input" data-inv="${index}" data-inv-field="remark" value="${row.remark}" ${inventoryReadonly ? "disabled" : ""}>${cdkeyInventoryHint(index)}</td>
               </tr>`;
             }).join("")}</tbody>
           </table>
-        </div>`;
+        </div>${inventoryReadonly ? `<div class="hint-text">编辑存量商品时，本区域只调整 CDKey 货源及优先级；库存数量、下单策略和待履约数量上限请前往库存列表维护。</div>` : ""}`;
       body.querySelectorAll("[data-inv-field]").forEach(el => el.addEventListener("input", updateInventoryFromInput));
       body.querySelectorAll("select[data-inv-field]").forEach(el => el.addEventListener("change", updateInventoryFromInput));
       body.querySelectorAll("[data-inv-release]").forEach(input => input.addEventListener("input", updateInventoryDailyRelease));
       body.querySelectorAll("[data-add-inv-release]").forEach(btn => btn.addEventListener("click", addInventoryDailyRelease));
       body.querySelectorAll("[data-remove-inv-release]").forEach(btn => btn.addEventListener("click", removeInventoryDailyRelease));
+      body.querySelectorAll("[data-select-pool]").forEach(btn => btn.addEventListener("click", () => openPoolModal(Number(btn.dataset.selectPool))));
     }
 
     function cdkeyInventoryHint(index) {
@@ -9355,29 +9354,29 @@
     function validateInventoryRows() {
       const errors = [];
       if (inventoryRows.length !== skuRows.length) {
-        errors.push({ item: "初始库存配置", problem: "SKU 与初始库存配置行数量不一致", suggestion: "请检查 SKU 配置后重新进入初始库存配置" });
+        errors.push({ item: "供货与库存配置", problem: "SKU 与供货库存配置行数量不一致", suggestion: "请检查 SKU 配置后重新进入供货与库存配置" });
       }
       inventoryRows.forEach((row, index) => {
         const isCdkeyRow = isCdkeyInventoryRow(index, row);
         if (isCdkeyRow) applyCdkeyInventorySync(row, index);
         const name = row.skuDisplayText || "未命名 SKU";
         if (!isCdkeyRow && row.stockMode === "限量" && !/^[1-9]\d*$/.test(String(row.totalStock))) {
-          errors.push({ item: "初始库存配置", problem: `SKU「${name}」初始总库存缺失`, suggestion: "请填写当前 SKU 的初始总库存" });
+          errors.push({ item: "供货与库存配置", problem: `SKU「${name}」初始库存缺失`, suggestion: "请填写当前 SKU 的初始库存" });
         }
         if (isBackorderAllowed(row) && !/^[1-9]\d*$/.test(String(row.pendingFulfillmentLimit))) {
-          errors.push({ item: "初始库存配置", problem: `SKU「${name}」待履约数量上限缺失`, suggestion: "缺货可下单时，请填写正整数待履约数量上限" });
+          errors.push({ item: "供货与库存配置", problem: `SKU「${name}」待履约数量上限缺失`, suggestion: "缺货可下单时，请填写正整数待履约数量上限" });
         }
         [["warningThreshold", "安全库存阈值"]].forEach(([field, label]) => {
           if (row[field] !== "" && !/^\d+$/.test(String(row[field]))) {
-            errors.push({ item: "初始库存配置", problem: `SKU「${name}」${label}格式错误`, suggestion: "请填写非负整数" });
+            errors.push({ item: "供货与库存配置", problem: `SKU「${name}」${label}格式错误`, suggestion: "请填写非负整数" });
           }
         });
         if (row.warningThreshold !== "" && Number(row.warningThreshold) > 100) {
-          errors.push({ item: "初始库存配置", problem: `SKU「${name}」安全库存阈值不能大于 100`, suggestion: "请填写 0-100 的整数" });
+          errors.push({ item: "供货与库存配置", problem: `SKU「${name}」安全库存阈值不能大于 100`, suggestion: "请填写 0-100 的整数" });
         }
         if (row.stockMode === "限量" && (!isCdkeyRow || row.totalStock)) {
           const releaseError = validateDailyReleaseRows(row.dailyReleases, row.totalStock);
-          if (releaseError) errors.push({ item: "初始库存配置", problem: `SKU「${name}」时段库存重置配置错误`, suggestion: releaseError });
+          if (releaseError) errors.push({ item: "供货与库存配置", problem: `SKU「${name}」时段库存重置配置错误`, suggestion: releaseError });
         }
       });
       return errors;
@@ -9475,7 +9474,7 @@
           <td><span class="tag ${cdkeySupplyMode(source) === "接口直供" ? "purple" : "blue"}">${cdkeySupplyMode(source)}</span></td>
           <td>${cdkeySupplyConfig(source)}</td><td>${cdkeySupplyAvailability(source)}</td><td>${cdkeyPoolStateTag(source.state)}</td>
         </tr>`;
-      }).join("")}</tbody></table></div><div class="hint-text">只展示当前供货方式下的货源；优先级必须为不重复的正整数，数字越小越优先。接口直供在支付前锁定货源，支付后不切换供货方。</div>`;
+      }).join("")}</tbody></table></div><div class="hint-text">只展示当前供货方式下的货源；优先级必须为不重复的正整数，数字越小越优先。接口直供在支付成功后按优先级依次请求，当前货源明确无库存时继续尝试下一货源，全部货源均无库存后自动退款；结果不明确时暂停切换。</div>`;
       area.querySelectorAll("[data-route-source-toggle]").forEach(control => control.addEventListener("change", toggleCdkeyRouteSource));
       area.querySelectorAll("[data-route-priority]").forEach(control => control.addEventListener("input", updateCdkeyRoutePriority));
     }
@@ -9665,7 +9664,7 @@
       syncSkuDeliveryFromForm();
       syncInventoryRows(false);
       const stock = editingProduct ? editingProduct.stock : buildStockFromInventoryRows();
-      const savedInventoryRows = (editingProduct ? (editingProduct.inventoryRows || inventoryRows) : inventoryRows).map((row, index) => {
+      const savedInventoryRows = inventoryRows.map((row, index) => {
         const next = { ...row };
         applyCdkeyInventorySync(next, index);
         return {
@@ -9721,7 +9720,7 @@
       if (!skuRows.length) issues.push("SKU 配置缺失");
       if (!getFormDelivery()) issues.push("履约方式缺失");
       if (skuRows.some(s => requiresCdkeySourceConfig(s, valueOf("formType")) && !skuCdkeySourceIds(s).length)) issues.push("CDKey 货源未配置");
-      if (!buildStockFromInventoryRows()) issues.push("初始库存配置缺失");
+      if (!buildStockFromInventoryRows()) issues.push("供货与库存配置缺失");
       return issues;
     }
 
@@ -9892,7 +9891,7 @@
         validateSkuCdkeyPools().forEach(err => list.push([err.item, err.problem, err.suggestion]));
         validateInventoryRows().forEach(err => list.push([err.item, err.problem, err.suggestion]));
       } else {
-        if (product.issues.includes("初始库存配置缺失")) list.push(["初始库存配置", "初始库存配置缺失或不完整", "请在新建商品时配置初始库存，后续调整前往库存列表维护"]);
+        if (product.issues.includes("供货与库存配置缺失") || product.issues.includes("初始库存配置缺失")) list.push(["供货与库存配置", "供货与库存配置缺失或不完整", "请配置 SKU 货源与初始库存，后续库存调整前往库存列表维护"]);
         if (product.issues.includes("商品头图缺失")) list.push(["商品素材", "商品头图缺失", "请上传商品头图"]);
         if (product.issues.includes("商品说明缺失")) list.push(["商品素材", "商品说明缺失", "请补充商品说明富文本"]);
         if (product.issues.includes("权益素材缺失")) list.push(["虚拟权益素材", "虚拟装扮类商品缺少商品详情图", "请补充商品详情图"]);
