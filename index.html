@@ -1106,7 +1106,7 @@
         <div class="page-head">
           <div>
             <h1>商品列表</h1>
-            <div class="sub">查询和管理积分商城商品与 SKU 基础配置，支持积分、N币、RMB多币种价格，进入商品详情 / 编辑页</div>
+          <div class="sub">查询和管理积分商城商品与 SKU 基础配置，支持积分、N币、RMB多币种价格；上架商品仅可查看或下架，草稿和下架商品可进入编辑页。</div>
           </div>
           <div class="btn-row">
             <button class="btn primary" id="newProductBtn">新建商品</button>
@@ -1273,7 +1273,7 @@
           <div>
             <button class="btn text" id="backToListBtn">返回商品列表</button>
             <h1 id="formTitle">新建商品</h1>
-            <div class="sub">配置商品类型、基础信息、商品素材、SKU 多币种价格、履约方式，以及 SKU 的供货与库存。商品创建后，可在编辑商品时增加或调整 CDKey 货源；库存数量和下单策略的后续调整统一前往库存列表维护。</div>
+            <div class="sub">配置商品类型、基础信息、商品素材、SKU 多币种价格、履约方式，以及 SKU 的供货与库存。商品创建后如需增加或调整 CDKey 货源，必须先下架商品再进入编辑；库存数量和下单策略的后续调整统一前往库存列表维护。</div>
           </div>
           <div class="btn-row">
             <button class="btn" id="saveDraftBtn">保存草稿</button>
@@ -1436,9 +1436,9 @@
             <section class="form-card" id="sectionInitialInventory">
               <h2><span class="required-star">*</span>供货与库存配置</h2>
               <div class="body">
-                <div class="alert info">先为 CDKey SKU 配置货源，系统再根据供货方式自动确定库存模式和当前库存：码池供货同步实际 CDKey 数量，接口直供显示“不限量，履约时判断”。新建商品时继续配置下单策略；存量商品需要增加、减少或调整货源时，进入“编辑商品”，在本区域找到对应 SKU 后点击“增加 / 调整货源”。</div>
+                <div class="alert info">先为 CDKey SKU 配置货源，系统再根据供货方式自动确定库存模式和当前库存：码池供货同步实际 CDKey 数量，接口直供显示“不限量，履约时判断”。新建商品时继续配置下单策略；存量商品需要增加、减少或调整货源时，先下架商品，再进入“编辑商品”，在本区域找到对应 SKU 后点击“增加 / 调整货源”。</div>
                 <div id="inventoryConfigBody"></div>
-                <div class="hint-text">非 CDKey 商品在新建时填写初始库存。商品保存后，库存数量、下单策略和待履约数量上限的调整仍前往库存列表；CDKey 货源关系及优先级继续在商品编辑页的本区域维护。</div>
+                <div class="hint-text">非 CDKey 商品在新建时填写初始库存。商品保存后，库存数量、下单策略和待履约数量上限的调整仍前往库存列表；下架或草稿商品的 CDKey 货源关系及优先级在商品编辑页的本区域维护。</div>
               </div>
             </section>
 
@@ -8223,15 +8223,16 @@
 
     function actionButtons(p) {
       const base = [
-        `<button class="btn text" data-action="view" data-spu="${p.spu}">查看</button>`,
-        `<button class="btn text" data-action="edit" data-spu="${p.spu}">编辑</button>`
+        `<button class="btn text" data-action="view" data-spu="${p.spu}">查看</button>`
       ];
       if (p.state === "草稿") {
+        base.push(`<button class="btn text" data-action="edit" data-spu="${p.spu}">编辑</button>`);
         base.push(`<button class="btn text" data-action="enable" data-spu="${p.spu}">上架</button>`);
         base.push(`<button class="btn text" data-action="delete" data-spu="${p.spu}">删除</button>`);
       } else if (p.state === "上架") {
         base.push(`<button class="btn text" data-action="disable" data-spu="${p.spu}">下架</button>`);
       } else if (p.state === "下架") {
+        base.push(`<button class="btn text" data-action="edit" data-spu="${p.spu}">编辑</button>`);
         base.push(`<button class="btn text" data-action="enable" data-spu="${p.spu}">上架</button>`);
       }
       return base.join("");
@@ -8362,6 +8363,10 @@
       ]) + `<div class="hint-text">商品上架不等于前台投放，投放关系由商品投放管理维护。</div>`;
     }
     function openForm(mode, product) {
+      if (mode === "edit" && product?.state === "上架") {
+        toast("上架商品不能编辑，请先下架后再修改。");
+        return;
+      }
       formMode = mode;
       editingProduct = product || null;
       hideAllPages();
