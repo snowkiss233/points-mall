@@ -7197,7 +7197,9 @@
       actions.push(pool.state === "上架"
         ? `<button class="btn text" data-cdkey-action="disable" data-pool-id="${pool.id}">下架</button>`
         : `<button class="btn text" data-cdkey-action="enable" data-pool-id="${pool.id}">上架</button>`);
-      actions.push(`<button class="btn text danger" data-cdkey-action="delete" data-pool-id="${pool.id}">删除</button>`);
+      if (pool.state === "下架") {
+        actions.push(`<button class="btn text danger" data-cdkey-action="delete" data-pool-id="${pool.id}">删除</button>`);
+      }
       return actions.join("");
     }
 
