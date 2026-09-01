@@ -2421,6 +2421,8 @@
             <div class="field"><label>库存情况</label><input id="inventorySupplyStockSummary" disabled></div>
             <div class="field"><label><span class="required-star">*</span>下单策略</label><select id="inventorySupplyOrderPolicy"><option>仅有货可下单</option><option>缺货可下单</option></select></div>
             <div class="field" id="inventorySupplyPendingField"><label><span class="required-star">*</span>待履约数量上限</label><input id="inventorySupplyPendingLimit" type="number" min="1" placeholder="请输入正整数"></div>
+            <div class="field" id="inventorySupplyDailyReleaseField" style="grid-column:1/-1"><label>时段库存重置配置</label><div id="inventorySupplyDailyReleaseEditor"></div></div>
+            <div class="field" id="inventorySupplySafetyField"><label>安全库存阈值（%）</label><input id="inventorySupplySafetyPercent" type="number" min="0" max="100" placeholder="请输入 0-100"></div>
             <div class="field" id="inventorySupplyReasonField" style="grid-column:1/-1"><label>修改说明</label><textarea id="inventorySupplyReason" rows="3" placeholder="可填写本次货源或库存规则的调整说明"></textarea></div>
           </div>
           <div class="alert info" id="inventorySupplyRuleHint" style="margin-top:12px"></div>
@@ -3042,6 +3044,8 @@
     let inventorySupplyRouteDraft = [];
     let inventorySupplyProviderDraft = "";
     let inventorySupplyMethodDraft = "码池供货";
+    let inventorySupplyDailyReleases = [];
+    let inventorySupplySafetyPercentDraft = "";
     let inventorySupplyReadonly = false;
     let displayProductRows = [];
     let displaySubTemplateRows = [];
@@ -4168,6 +4172,7 @@
       document.getElementById("inventorySupplyProvider").addEventListener("change", updateInventorySupplyProvider);
       document.getElementById("inventorySupplyMethod").addEventListener("change", updateInventorySupplyMethod);
       document.getElementById("inventorySupplyOrderPolicy").addEventListener("change", renderInventorySupplyModal);
+      document.getElementById("inventorySupplySafetyPercent").addEventListener("input", updateInventorySupplySafetyPercent);
       document.getElementById("confirmInventorySupplyBtn").addEventListener("click", confirmInventorySupplyConfig);
       document.querySelectorAll("[data-inventory-sort]").forEach(btn => btn.addEventListener("click", () => setInventorySort(btn.dataset.inventorySort)));
       document.getElementById("confirmInventoryLockBtn").addEventListener("click", confirmInventoryLockAction);
@@ -6446,6 +6451,54 @@
       renderAdjustDailyReleaseEditor(false);
     }
 
+    function renderInventorySupplyDailyReleaseEditor() {
+      const field = document.getElementById("inventorySupplyDailyReleaseField");
+      const container = document.getElementById("inventorySupplyDailyReleaseEditor");
+      const safetyField = document.getElementById("inventorySupplySafetyField");
+      const safetyInput = document.getElementById("inventorySupplySafetyPercent");
+      if (!field || !container || !safetyField || !safetyInput) return;
+      const isDirect = inventorySupplyMethodDraft === "接口直供";
+      field.style.display = isDirect ? "none" : "";
+      safetyField.style.display = isDirect ? "none" : "";
+      if (isDirect) {
+        container.innerHTML = "";
+        return;
+      }
+      safetyInput.value = inventorySupplySafetyPercentDraft;
+      safetyInput.disabled = inventorySupplyReadonly;
+      if (inventorySupplyReadonly) {
+        container.innerHTML = `<div class="tag-input-box template-option-input disabled">${safeText(dailyReleaseLines(inventorySupplyDailyReleases).join("，") || "未配置，表示不限制时段库存。")}</div>`;
+        return;
+      }
+      container.innerHTML = dailyReleaseEditorHtml(inventorySupplyDailyReleases, "supply", 0, false);
+      container.querySelectorAll("[data-supply-release]").forEach(input => input.addEventListener("input", updateInventorySupplyDailyRelease));
+      container.querySelectorAll("[data-add-supply-release]").forEach(btn => btn.addEventListener("click", addInventorySupplyDailyRelease));
+      container.querySelectorAll("[data-remove-supply-release]").forEach(btn => btn.addEventListener("click", removeInventorySupplyDailyRelease));
+    }
+
+    function updateInventorySupplyDailyRelease(event) {
+      const [, rowIndex] = event.target.dataset.supplyRelease.split(":").map(Number);
+      if (!inventorySupplyDailyReleases[rowIndex]) return;
+      inventorySupplyDailyReleases[rowIndex][event.target.dataset.field] = event.target.value;
+    }
+
+    function addInventorySupplyDailyRelease() {
+      if (inventorySupplyReadonly || inventorySupplyMethodDraft === "接口直供") return;
+      inventorySupplyDailyReleases.push({ time: "", qty: "" });
+      renderInventorySupplyDailyReleaseEditor();
+    }
+
+    function removeInventorySupplyDailyRelease(event) {
+      if (inventorySupplyReadonly) return;
+      const [, rowIndex] = event.currentTarget.dataset.removeSupplyRelease.split(":").map(Number);
+      inventorySupplyDailyReleases.splice(rowIndex, 1);
+      renderInventorySupplyDailyReleaseEditor();
+    }
+
+    function updateInventorySupplySafetyPercent(event) {
+      inventorySupplySafetyPercentDraft = event.target.value;
+    }
+
     function dailyRefreshTimeValues(value) {
       const normalized = normalizeDailyRefreshTimesText(value, false);
       return normalized ? normalized.split(",") : [];
@@ -6791,6 +6844,8 @@
       const sourceModes = [...new Set(sourceIds.map(sourceId => cdkeySupplyMode(getPoolById(sourceId))).filter(Boolean))];
       inventorySupplyMethodDraft = sku.cdkeySupplyMethod || (sourceModes.length === 1 ? sourceModes[0] : "码池供货");
       inventorySupplyProviderDraft = cdkeyProviderName(getPoolById(sourceIds[0])) || cdkeySupplyProviderOptions(sourceIds)[0] || "";
+      inventorySupplyDailyReleases = cloneEditableDailyReleases(record.stockMode === "不限量" ? (record.lastLimitedDailyReleases || []) : cloneDailyReleases(record));
+      inventorySupplySafetyPercentDraft = String(record.stockMode === "不限量" ? (record.lastLimitedWarningThreshold ?? "") : (record.warningThreshold ?? ""));
       document.getElementById("inventorySupplyOrderPolicy").value = inventorySupplyMethodDraft === "接口直供" ? SHORTAGE_POLICY_STOCK_ONLY : shortageOrderPolicyText(record);
       document.getElementById("inventorySupplyPendingLimit").value = isBackorderAllowed(record) ? inventoryPendingLimit(record) : "";
       document.getElementById("inventorySupplyReason").value = "";
@@ -6859,9 +6914,10 @@
       const backorderEnabled = !isDirect && policySelect.value === SHORTAGE_POLICY_ALLOW_BACKORDER;
       document.getElementById("inventorySupplyPendingField").style.display = backorderEnabled ? "" : "none";
       document.getElementById("inventorySupplyPendingLimit").disabled = inventorySupplyReadonly || !backorderEnabled;
+      renderInventorySupplyDailyReleaseEditor();
       document.getElementById("inventorySupplyRuleHint").textContent = (inventorySupplyReadonly ? "当前为查看模式。" : "") + (isDirect
-        ? "接口直供固定为“仅有货可下单”。平台不维护库存数量；支付成功后按货源优先级依次请求，全部接口明确无货后自动退款。"
-        : "码池供货的库存模式固定为限量，库存数量由所选码池汇总同步，不能在此手工修改；如允许缺货下单，需同时配置待履约数量上限。");
+        ? "接口直供固定为“仅有货可下单”，不展示时段库存和安全库存配置；原码池库存规则停止生效并保留，切回码池供货时恢复。"
+        : "码池供货固定为限量库存，真实码数量由所选货源汇总同步；可在此一并维护下单策略、时段库存重置配置和安全库存阈值。");
     }
 
     function updateInventorySupplyProvider(event) {
@@ -6946,6 +7002,15 @@
       const orderPolicy = inventorySupplyMethodDraft === "接口直供" ? SHORTAGE_POLICY_STOCK_ONLY : valueOf("inventorySupplyOrderPolicy");
       const pendingText = valueOf("inventorySupplyPendingLimit");
       if (orderPolicy === SHORTAGE_POLICY_ALLOW_BACKORDER && !/^[1-9]\d*$/.test(pendingText)) return toast("缺货可下单时，待履约数量上限必须为正整数。");
+      const nextTotalStock = routes.reduce((sum, item) => sum + Number(item.source.total || 0), 0);
+      const nextDailyReleases = normalizeDailyReleaseRows(inventorySupplyDailyReleases);
+      const safetyText = String(inventorySupplySafetyPercentDraft || "").trim();
+      const safetyValue = safetyText === "" ? 0 : Number(safetyText);
+      if (inventorySupplyMethodDraft !== "接口直供") {
+        const releaseError = validateDailyReleaseRows(inventorySupplyDailyReleases, nextTotalStock);
+        if (releaseError) return toast(releaseError);
+        if (!Number.isInteger(safetyValue) || safetyValue < 0 || safetyValue > 100) return toast("安全库存阈值必须为 0-100 的整数。");
+      }
       const before = snapshotInventory(record);
       const beforeSources = skuCdkeySourceIds(sku).join("、") || "未配置";
       const topSource = routes[0].source;
@@ -6960,6 +7025,8 @@
       record.shortageOrderPolicy = orderPolicy;
       record.pendingFulfillmentLimit = orderPolicy === SHORTAGE_POLICY_ALLOW_BACKORDER ? Number(pendingText) : 0;
       if (inventorySupplyMethodDraft === "接口直供") {
+        record.lastLimitedDailyReleases = cloneEditableDailyReleases(nextDailyReleases);
+        record.lastLimitedWarningThreshold = safetyValue;
         record.stockMode = "不限量";
         record.totalStock = "不限量";
         record.availableStock = "不限量";
@@ -6969,10 +7036,14 @@
         record.warningThreshold = 0;
       } else {
         record.stockMode = "限量";
-        record.totalStock = routes.reduce((sum, item) => sum + Number(item.source.total || 0), 0);
+        record.totalStock = nextTotalStock;
         record.availableStock = routes.reduce((sum, item) => sum + Number(item.source.available || 0), 0);
-        if (record.todayLimit === "不限量") record.todayLimit = "";
-        if (record.todayRemaining === "不限量") record.todayRemaining = "";
+        record.dailyReleases = cloneEditableDailyReleases(nextDailyReleases);
+        record.warningThreshold = safetyValue;
+        record.lastLimitedDailyReleases = cloneEditableDailyReleases(nextDailyReleases);
+        record.lastLimitedWarningThreshold = safetyValue;
+        record.todayLimit = nextDailyReleases.length ? Number(nextDailyReleases[0].qty) : "";
+        record.todayRemaining = nextDailyReleases.length ? Math.min(Number(record.availableStock || 0), Number(record.todayLimit || 0)) : "";
       }
       record.stockState = calculateInventoryState(record);
       record.lastSyncTime = nowText();
