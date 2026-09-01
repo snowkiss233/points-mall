@@ -6819,12 +6819,13 @@
         inventorySupplyProviderDraft = cdkeyProviderName(getPoolById(inventorySupplyRouteDraft[0]?.sourceId)) || providerOptions[0] || "";
       }
       renderCdkeySupplyProviderSelect(providerSelect, inventorySupplyProviderDraft, [...selectedIds]);
+      providerSelect.disabled = inventorySupplyReadonly;
       const methodOptions = cdkeySourceMethodOptions(inventorySupplyProviderDraft, [...selectedIds]).filter(method => !lockedMethod || method === lockedMethod);
       inventorySupplyMethodDraft = lockedMethod || preferredCdkeySupplyMethod(methodOptions, inventorySupplyMethodDraft);
       renderCdkeyCascadeSelect(methodSelect, methodOptions, inventorySupplyMethodDraft, inventorySupplyProviderDraft ? "请选择供货方式" : "请先选择供货方");
       methodSelect.disabled = inventorySupplyReadonly || !inventorySupplyProviderDraft || inventorySupplyRouteDraft.length > 0;
       methodHint.textContent = inventorySupplyReadonly
-        ? "当前为查看模式；可切换供货方查看对应的已配置货源，不会修改现有配置。"
+        ? "当前为查看模式，供货方和供货方式均不可修改。"
         : inventorySupplyRouteDraft.length
           ? "已选货源后供货方式锁定；切换到相同供货方式可继续添加，切换到其他供货方式会清空已选货源。"
           : "供货方式根据供货方自动切换；同一 SKU 只能选择一种。";
@@ -6865,7 +6866,6 @@
 
     function updateInventorySupplyProvider(event) {
       if (inventorySupplyReadonly) {
-        inventorySupplyProviderDraft = event.target.value;
         return renderInventorySupplyModal();
       }
       const nextProvider = event.target.value;
@@ -8059,12 +8059,8 @@
 
     function renderCdkeySupplyProviderSelect(select, selectedValue, selectedSourceIds = []) {
       const providerNames = cdkeySupplyProviderOptions(selectedSourceIds);
-      const platformOptions = providerNames.filter(name => name === "平台自营");
-      const supplierOptions = providerNames.filter(name => name !== "平台自营");
-      const optionHtml = names => names.map(name => `<option value="${safeText(name)}">${safeText(name)}</option>`).join("");
       select.innerHTML = `<option value="">请选择供货方</option>`
-        + (platformOptions.length ? `<optgroup label="平台">${optionHtml(platformOptions)}</optgroup>` : "")
-        + (supplierOptions.length ? `<optgroup label="三方供应商">${optionHtml(supplierOptions)}</optgroup>` : "");
+        + providerNames.map(name => `<option value="${safeText(name)}">${safeText(name)}</option>`).join("");
       select.value = providerNames.includes(selectedValue) ? selectedValue : "";
     }
 
