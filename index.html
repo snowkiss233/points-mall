@@ -1877,7 +1877,7 @@
                   <div class="field"><label>供应商 ID</label><input id="supplierFormId" value="新建后生成" disabled></div>
                   <div class="field"><label><span class="required-star">*</span>供应商名称</label><input id="supplierFormName" maxlength="50" placeholder="请输入供应商名称"></div>
                   <div class="field"><label>供应商状态</label><input id="supplierFormState" value="启用" disabled><div class="hint-text">本期新建供应商默认启用，不提供启停操作。</div></div>
-                  <div class="field"><label><span class="required-star">*</span>收款策略</label><select id="supplierFormCollection"><option>平台收款</option><option>供货方直接收款</option></select><div class="hint-text">只确定货款由平台还是供应商收取，不在此处维护支付商户信息。</div></div>
+                  <div class="field"><label><span class="required-star">*</span>收款策略</label><select id="supplierFormCollection"><option>平台收款</option><option>供货方直接收款</option></select><div class="hint-text" id="supplierFormCollectionHint">只确定货款由平台还是供应商收取；供应商创建后不可修改。</div></div>
                   <div class="field"><label>联系人</label><input id="supplierFormContact" maxlength="30" placeholder="请输入联系人"></div>
                   <div class="field"><label>联系电话</label><input id="supplierFormPhone" maxlength="30" placeholder="请输入联系电话"></div>
                 </div>
@@ -3596,8 +3596,15 @@
       }).join("<br>") : "未配置";
     }
 
+    function inventoryUsesDirectSupply(inventoryConfig) {
+      if (!inventoryConfig) return false;
+      const listIndex = inventoryRows.indexOf(inventoryConfig);
+      const sku = listIndex >= 0 ? skuRows[listIndex] : getInventorySku(inventoryConfig);
+      return Boolean(sku && evaluateSkuCdkeyRoute(sku).hasActiveDirect);
+    }
+
     function isBackorderAllowed(inventoryConfig) {
-      return inventoryConfig?.shortageOrderPolicy === SHORTAGE_POLICY_ALLOW_BACKORDER;
+      return !inventoryUsesDirectSupply(inventoryConfig) && inventoryConfig?.shortageOrderPolicy === SHORTAGE_POLICY_ALLOW_BACKORDER;
     }
 
     function shortageOrderPolicyText(inventoryConfig) {
@@ -3712,7 +3719,7 @@
         cdkeySourceIds,
         cdkeySourceRoutes: Array.isArray(row.cdkeySourceRoutes) && row.cdkeySourceRoutes.length
           ? row.cdkeySourceRoutes.map(route => ({ sourceId: route.sourceId, sort: Number(route.sort || 0) }))
-          : cdkeySourceIds.map((sourceId, routeIndex) => ({ sourceId, sort: routeIndex + 1 })),
+          : cdkeySourceIds.map((sourceId, routeIndex) => ({ sourceId, sort: cdkeySourceIds.length - routeIndex })),
         cdkeySupplyMethod: row.cdkeySupplyMethod || (cdkeySourceModes.length === 1 ? cdkeySourceModes[0] : ""),
         cdkeyPoolCheck: requiresCdkeySourceConfig({ delivery }, type) && cdkeySourceIds.length ? { status: "通过", ok: true, message: `已配置 ${cdkeySourceIds.length} 个货源` } : (row.cdkeyPoolCheck || null),
         deliveryParams: normalizeDeliveryParams(row, delivery),
@@ -4435,7 +4442,12 @@
       document.getElementById("supplierFormId").value = supplier?.id || "新建后生成";
       document.getElementById("supplierFormName").value = supplier?.name || "";
       document.getElementById("supplierFormState").value = supplier?.state || "启用";
-      document.getElementById("supplierFormCollection").value = supplier?.collectionStrategy || "平台收款";
+      const collectionSelect = document.getElementById("supplierFormCollection");
+      collectionSelect.value = supplier?.collectionStrategy || "平台收款";
+      collectionSelect.disabled = Boolean(supplier);
+      document.getElementById("supplierFormCollectionHint").textContent = supplier
+        ? "收款策略在供应商创建时确定，创建后不允许修改。"
+        : "只确定货款由平台还是供应商收取；供应商创建后不可修改。";
       document.getElementById("supplierFormContact").value = supplier?.contact || "";
       document.getElementById("supplierFormPhone").value = supplier?.phone || "";
       document.getElementById("supplierFormRemark").value = supplier?.remark || "";
@@ -4465,7 +4477,7 @@
         id: existing?.id || generateSupplierId(),
         name,
         state: "启用",
-        collectionStrategy: valueOf("supplierFormCollection"),
+        collectionStrategy: existing?.collectionStrategy || valueOf("supplierFormCollection"),
         contact: valueOf("supplierFormContact"),
         phone: valueOf("supplierFormPhone"),
         remark: valueOf("supplierFormRemark"),
@@ -8103,7 +8115,7 @@
       const effectText = pool.state === "上架"
         ? "补货入库后，系统会优先按支付成功时间 FIFO 自动发放待补货订单，剩余 CDKey 才进入新订单可用库存。"
         : "当前货源已下架，本次只完成入库，不自动发放；重新上架后才参与新订单和待履约订单处理。";
-      document.getElementById("cdkeyGenerateInfo").innerHTML = infoGrid([["货源 ID", pool.id], ["货源名称", pool.name], ["码入库方式", pool.stockMethod], ["当前可用码数量", pool.available], ["待补货数量", pendingCdkeyCountForPool(pool.id)], ["当前履约缺口", cdkeyFulfillmentGap(pool)], ["当前货源状态", pool.state]]) + `<div class="alert info">${effectText}</div>`;
+      document.getElementById("cdkeyGenerateInfo").innerHTML = infoGrid([["货源 ID", pool.id], ["货源名称", pool.name], ["码入库方式", pool.stockMethod], ["当前可用码数量", pool.available], ["当前货源状态", pool.state]]) + `<div class="alert info">${effectText}</div>`;
       document.getElementById("cdkeyGenerateBatchList").innerHTML = cdkeyBatchTable(getCdkeyBatchesByPool(pool.id), false, true);
       ["cdkeyGenerateName", "cdkeyGenerateCount", "cdkeyGenerateUnitCost", "cdkeyGenerateExpire"].forEach(id => document.getElementById(id).value = "");
       document.getElementById("cdkeyGenerateCostCurrency").value = "人民币";
@@ -8134,7 +8146,7 @@
       const effectText = pool.state === "上架"
         ? "补货入库后，系统会优先按支付成功时间 FIFO 自动发放待补货订单，剩余 CDKey 才进入新订单可用库存。"
         : "当前货源已下架，本次只完成入库，不自动发放；重新上架后才参与新订单和待履约订单处理。";
-      document.getElementById("cdkeyUploadInfo").innerHTML = infoGrid([["货源 ID", pool.id], ["货源名称", pool.name], ["码入库方式", pool.stockMethod], ["当前可用码数量", pool.available], ["待补货数量", pendingCdkeyCountForPool(pool.id)], ["当前履约缺口", cdkeyFulfillmentGap(pool)], ["当前货源状态", pool.state]]) + `<div class="alert info">${effectText}</div>`;
+      document.getElementById("cdkeyUploadInfo").innerHTML = infoGrid([["货源 ID", pool.id], ["货源名称", pool.name], ["码入库方式", pool.stockMethod], ["当前可用码数量", pool.available], ["当前货源状态", pool.state]]) + `<div class="alert info">${effectText}</div>`;
       document.getElementById("cdkeyUploadBatchList").innerHTML = cdkeyBatchTable(getCdkeyBatchesByPool(pool.id), false, true);
       ["cdkeyUploadName", "cdkeyUploadUnitCost", "cdkeyUploadExpire"].forEach(id => document.getElementById(id).value = "");
       document.getElementById("cdkeyUploadCostCurrency").value = "人民币";
@@ -9318,7 +9330,7 @@
       const configured = Array.isArray(row?.cdkeySourceRoutes)
         ? row.cdkeySourceRoutes.find(route => route.sourceId === sourceId)
         : null;
-      return configured ? Number(configured.sort) : index + 1;
+      return configured ? Number(configured.sort) : Math.max(1, Number(total || 0) - index);
     }
 
     function deliveryDisplayName(delivery) {
@@ -9568,6 +9580,8 @@
       row.stockMode = route.hasActiveDirect ? "不限量" : "限量";
       row.totalStock = route.hasActiveDirect ? "" : route.totalPoolStock || "";
       if (route.hasActiveDirect) {
+        row.shortageOrderPolicy = SHORTAGE_POLICY_STOCK_ONLY;
+        row.pendingFulfillmentLimit = "";
         row.dailyReleases = [];
         row.warningThreshold = "";
       }
@@ -9589,6 +9603,7 @@
             <thead><tr><th>SKU 名称</th><th>货源配置</th><th><span class="required-star">*</span>库存模式</th><th><span class="required-star">*</span>库存情况</th><th><span class="required-star">*</span>下单策略</th><th>待履约数量上限<br><span class="minor">缺货可下单时必填</span></th><th>时段库存重置配置</th><th>安全库存阈值</th><th>库存状态</th><th>备注</th></tr></thead>
             <tbody>${inventoryRows.map((row, index) => {
               const isCdkeyRow = isCdkeyInventoryRow(index, row);
+              const hasDirectSupply = isCdkeyRow && cdkeyRouteForInventoryRow(index).hasActiveDirect;
               const backorderEnabled = isBackorderAllowed(row);
               const unlimitedDisabled = row.stockMode === "不限量";
               const stockModeEditor = isCdkeyRow
@@ -9601,7 +9616,7 @@
                 <td>${cdkeyPoolEditor(skuRows[index], index)}</td>
                 <td>${stockModeEditor}</td>
                 <td><input class="mini-input" ${totalStockDisabled ? "disabled" : ""} data-inv="${index}" data-inv-field="totalStock" value="${totalStockValue}"></td>
-                <td><select class="mini-input" data-inv="${index}" data-inv-field="shortageOrderPolicy" ${inventoryReadonly ? "disabled" : ""}><option ${backorderEnabled ? "" : "selected"}>${SHORTAGE_POLICY_STOCK_ONLY}</option><option ${backorderEnabled ? "selected" : ""}>${SHORTAGE_POLICY_ALLOW_BACKORDER}</option></select></td>
+                <td><select class="mini-input" data-inv="${index}" data-inv-field="shortageOrderPolicy" ${inventoryReadonly || hasDirectSupply ? "disabled" : ""}><option ${backorderEnabled ? "" : "selected"}>${SHORTAGE_POLICY_STOCK_ONLY}</option><option ${backorderEnabled ? "selected" : ""}>${SHORTAGE_POLICY_ALLOW_BACKORDER}</option></select>${hasDirectSupply ? `<div class="minor">接口直供不支持缺货下单</div>` : ""}</td>
                 <td><input class="mini-input" type="number" min="1" data-inv="${index}" data-inv-field="pendingFulfillmentLimit" value="${backorderEnabled ? row.pendingFulfillmentLimit : ""}" ${backorderEnabled && !inventoryReadonly ? "" : "disabled"} placeholder="${backorderEnabled ? "请输入正整数" : "当前策略不适用"}"></td>
                 <td>${dailyReleaseEditorHtml(row.dailyReleases, "inv", index, unlimitedDisabled || inventoryReadonly)}</td>
                 <td><input class="mini-input" ${unlimitedDisabled || inventoryReadonly ? "disabled" : ""} data-inv="${index}" data-inv-field="warningThreshold" value="${unlimitedDisabled ? "不限量" : row.warningThreshold}"></td>
@@ -9851,7 +9866,7 @@
         }
         const routeSorts = sourceIds.map((sourceId, routeIndex) => cdkeySourceSortValue(row, sourceId, routeIndex, sourceIds.length));
         if (routeSorts.some(sort => !Number.isInteger(sort) || sort <= 0) || new Set(routeSorts).size !== routeSorts.length) {
-          errors.push({ item: "CDKey 货源配置", problem: `SKU「${skuName}」的货源优先级无效或重复`, suggestion: "请配置不重复的正整数，数字越小越优先" });
+          errors.push({ item: "CDKey 货源配置", problem: `SKU「${skuName}」的货源优先级无效或重复`, suggestion: "请配置不重复的正整数，数字越大越优先" });
           return;
         }
         const modes = [...new Set(sources.map(source => cdkeySupplyMode(source)).filter(Boolean))];
@@ -9920,7 +9935,7 @@
           <td><span class="tag ${cdkeySupplyMode(source) === "接口直供" ? "purple" : "blue"}">${cdkeySupplyMode(source)}</span></td>
           <td>${cdkeySupplyConfig(source)}</td><td>${cdkeySupplyAvailability(source)}</td><td>${cdkeyPoolStateTag(source.state)}</td>
         </tr>`;
-      }).join("")}</tbody></table></div><div class="hint-text">只展示当前供货方式下的货源；优先级必须为不重复的正整数，数字越小越优先。接口直供在支付成功后按优先级依次请求，当前货源明确无库存时继续尝试下一货源，全部货源均无库存后自动退款；结果不明确时暂停切换。</div>`;
+      }).join("")}</tbody></table></div><div class="hint-text">只展示当前供货方式下的货源；优先级必须为不重复的正整数，数字越大越优先。接口直供在支付成功后从高到低依次请求，当前货源明确无库存时继续尝试下一货源，全部货源均无库存后自动退款；结果不明确时暂停切换。</div>`;
       area.querySelectorAll("[data-route-source-toggle]").forEach(control => control.addEventListener("change", toggleCdkeyRouteSource));
       area.querySelectorAll("[data-route-priority]").forEach(control => control.addEventListener("input", updateCdkeyRoutePriority));
     }
@@ -9941,9 +9956,8 @@
       if (!source || cdkeySupplyMode(source) !== cdkeyRouteMethodDraft) return renderCdkeyRouteAddArea();
       if (event.currentTarget.checked) {
         if (source.state !== "上架") return renderCdkeyRouteAddArea();
-        const usedPriorities = new Set(cdkeyRouteDraft.map(route => Number(route.sort)).filter(Number.isInteger));
-        let nextPriority = 1;
-        while (usedPriorities.has(nextPriority)) nextPriority += 1;
+        const usedPriorities = cdkeyRouteDraft.map(route => Number(route.sort)).filter(Number.isInteger);
+        const nextPriority = usedPriorities.length ? Math.max(...usedPriorities) + 1 : 1;
         cdkeyRouteDraft.push({ sourceId, sort: nextPriority });
       } else {
         cdkeyRouteDraft = cdkeyRouteDraft.filter(route => route.sourceId !== sourceId);
@@ -9980,7 +9994,7 @@
         if (sources.some(item => item.source.id === source.id)) return toast(`第 ${index + 1} 条货源重复，请删除重复项。`);
         sources.push({ source, sort: Number(sort) });
       }
-      sources.sort((a, b) => a.sort - b.sort);
+      sources.sort((a, b) => b.sort - a.sort);
       const sourceIds = sources.map(item => item.source.id);
       row.cdkeySourceIds = sourceIds;
       row.cdkeySourceRoutes = sources.map(item => ({ sourceId: item.source.id, sort: item.sort }));
