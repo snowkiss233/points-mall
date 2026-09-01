@@ -762,6 +762,13 @@
     }
     .form-grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .form-grid.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .supply-cascade-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 240px);
+      gap: 20px;
+      align-items: start;
+      justify-content: start;
+    }
     .drawer-list-toolbar {
       display: flex;
       align-items: center;
@@ -832,7 +839,7 @@
       min-width: 0;
       table-layout: fixed;
     }
-    .inventory-table { min-width: 2250px; }
+    .inventory-table { min-width: 2340px; }
     .inventory-flow-table { min-width: 1350px; }
     .delivery-table { min-width: 2400px; }
     .delivery-log-table { min-width: 1600px; }
@@ -1063,7 +1070,7 @@
       .sidebar { width: 76px; }
       .brand span, .nav-title, .nav-item span, .role { display: none; }
       .main { margin-left: 76px; width: calc(100% - 76px); }
-      .filter-grid, .form-grid, .form-grid.three, .form-grid.four, .info-grid, .order-overview-status .info-grid, .material-grid, .upload-row { grid-template-columns: 1fr; }
+      .filter-grid, .form-grid, .form-grid.three, .form-grid.four, .supply-cascade-grid, .info-grid, .order-overview-status .info-grid, .material-grid, .upload-row { grid-template-columns: 1fr; }
       .topbar { align-items: flex-start; height: auto; gap: 10px; padding: 12px; flex-direction: column; }
       .points-account-layout { grid-template-columns: 1fr; }
       .global-search { width: 100%; }
@@ -1699,7 +1706,7 @@
           <div class="table-head">
             <div>
               <div class="table-title">库存主数据</div>
-              <div class="table-meta">库存按 SPU ID + SKU ID 唯一维护；默认按总库存、可用库存从高到低展示。</div>
+              <div class="table-meta">库存按 SPU ID + SKU ID 唯一维护；SKU 状态随所属 SPU 状态变化，仅下架状态允许编辑供货配置。</div>
             </div>
             <div class="table-meta" id="inventoryTableCount">共 0 条</div>
           </div>
@@ -1709,6 +1716,7 @@
                 <tr>
                   <th>SPU ID</th>
                   <th>SKU ID</th>
+                  <th>SKU 状态</th>
                   <th>商品信息</th>
                   <th>商品类型</th>
                   <th>SKU 规格</th>
@@ -2325,11 +2333,11 @@
     <div class="modal-head"><span>CDKey 货源配置</span><button class="btn text" data-close-modal="poolModal">关闭</button></div>
     <div class="modal-body">
       <div class="alert info">先选择供货方，再选择其支持的供货方式和货源。同一 SKU 可配置多个供货方的货源，但不能混用“码池供货”和“接口直供”。</div>
-      <div class="form-grid">
+      <div class="supply-cascade-grid">
         <div class="field">
           <label><span class="required-star">*</span>供货方</label>
           <select id="skuSupplyProvider"><option value="">请选择供货方</option></select>
-          <div class="hint-text">切换供货方时，供货方式会随之联动；如新供货方不支持当前方式，系统将清空已选货源。</div>
+          <div class="hint-text">供货方包括平台自营和供应商管理中的全部供应商；切换后供货方式会随之联动。</div>
         </div>
         <div class="field">
           <label><span class="required-star">*</span>供货方式</label>
@@ -2398,8 +2406,8 @@
       <div class="form-card" style="margin-top:14px">
         <h2>货源配置</h2>
         <div class="body">
-          <div class="form-grid">
-            <div class="field"><label><span class="required-star">*</span>供货方</label><select id="inventorySupplyProvider"><option value="">请选择供货方</option></select><div class="hint-text">切换供货方时，供货方式会随之联动；如新供货方不支持当前方式，系统将清空已选货源。</div></div>
+          <div class="supply-cascade-grid">
+            <div class="field"><label><span class="required-star">*</span>供货方</label><select id="inventorySupplyProvider"><option value="">请选择供货方</option></select><div class="hint-text">供货方包括平台自营和供应商管理中的全部供应商。</div></div>
             <div class="field"><label><span class="required-star">*</span>供货方式</label><select id="inventorySupplyMethod"><option value="">请先选择供货方</option></select><div class="hint-text" id="inventorySupplyMethodHint"></div></div>
           </div>
           <div id="inventorySupplySourceArea" style="margin-top:12px"></div>
@@ -6628,7 +6636,7 @@
       updateInventorySortHeaders();
       document.getElementById("inventoryTableCount").textContent = `共 ${visibleInventoryRecords.length} 条`;
       if (!visibleInventoryRecords.length) {
-        body.innerHTML = `<tr><td colspan="19"><div class="empty">当前筛选条件下暂无库存记录</div></td></tr>`;
+        body.innerHTML = `<tr><td colspan="20"><div class="empty">当前筛选条件下暂无库存记录</div></td></tr>`;
         return;
       }
       const rows = sortedInventoryRecords(visibleInventoryRecords);
@@ -6640,6 +6648,7 @@
         return `<tr>
           <td><b>${record.spu}</b></td>
           <td>${record.skuId}</td>
+          <td>${stateTag(product?.state || "-")}</td>
           <td>${product ? productInfoHtml(product) : "-"}</td>
           <td>${product?.type || "-"}</td>
           <td>${skuSpecText(sku)}</td>
@@ -6670,7 +6679,7 @@
       const sku = getInventorySku(record);
       const isCdkeyRecord = isCdkeyDelivery(sku?.delivery || product?.delivery || "未配置");
       if (isCdkeyRecord) {
-        const editable = product?.state !== "上架";
+        const editable = product?.state === "下架";
         actions.push(`<button class="btn text" data-inventory-action="supply" data-inventory-id="${record.inventoryId}" title="${editable ? "编辑货源及联动库存规则" : "查看当前供货及库存规则"}">供货配置</button>`);
       }
       actions.push(`<button class="btn text" data-inventory-action="adjust" data-inventory-id="${record.inventoryId}">调整库存</button>`);
@@ -6773,7 +6782,7 @@
       const sku = record ? getInventorySku(record) : null;
       if (!record || !product || !sku || !isCdkeyDelivery(sku.delivery || product.delivery)) return;
       inventorySupplyRecord = record;
-      inventorySupplyReadonly = product.state === "上架";
+      inventorySupplyReadonly = product.state !== "下架";
       const sourceIds = skuCdkeySourceIds(sku);
       inventorySupplyRouteDraft = sourceIds.map((sourceId, index) => ({
         sourceId,
@@ -6781,7 +6790,7 @@
       }));
       const sourceModes = [...new Set(sourceIds.map(sourceId => cdkeySupplyMode(getPoolById(sourceId))).filter(Boolean))];
       inventorySupplyMethodDraft = sku.cdkeySupplyMethod || (sourceModes.length === 1 ? sourceModes[0] : "码池供货");
-      inventorySupplyProviderDraft = cdkeyProviderName(getPoolById(sourceIds[0])) || cdkeySourceProviderOptions(inventorySupplyMethodDraft, sourceIds)[0] || "";
+      inventorySupplyProviderDraft = cdkeyProviderName(getPoolById(sourceIds[0])) || cdkeySupplyProviderOptions(sourceIds)[0] || "";
       document.getElementById("inventorySupplyOrderPolicy").value = inventorySupplyMethodDraft === "接口直供" ? SHORTAGE_POLICY_STOCK_ONLY : shortageOrderPolicyText(record);
       document.getElementById("inventorySupplyPendingLimit").value = isBackorderAllowed(record) ? inventoryPendingLimit(record) : "";
       document.getElementById("inventorySupplyReason").value = "";
@@ -6791,8 +6800,8 @@
       document.getElementById("inventorySupplyReasonField").style.display = inventorySupplyReadonly ? "none" : "";
       document.getElementById("inventorySupplyInfo").innerHTML = infoGrid([
         ["SPU ID", record.spu], ["商品名称", product.name], ["SKU ID", record.skuId], ["SKU 规格", skuSpecText(sku)],
-        ["商品状态", product.state], ["当前货源数", sourceIds.length]
-      ]) + (inventorySupplyReadonly ? `<div class="alert info" style="margin-top:12px">商品已上架，当前仅支持查看；如需调整货源或联动库存规则，请先下架商品。</div>` : "");
+        ["商品状态", product.state], ["SKU 状态", product.state], ["当前货源数", sourceIds.length]
+      ]) + (inventorySupplyReadonly ? `<div class="alert info" style="margin-top:12px">当前 SKU 不是下架状态，仅支持查看；所属 SPU 下架后才允许编辑供货配置。</div>` : "");
       renderInventorySupplyModal();
       openModal("inventorySupplyModal");
     }
@@ -6805,20 +6814,20 @@
       if (!providerSelect || !methodSelect || !sourceArea || !inventorySupplyRecord) return;
       const selectedIds = new Set(inventorySupplyRouteDraft.map(route => route.sourceId));
       const lockedMethod = inventorySupplyRouteDraft.length ? inventorySupplyMethodDraft : "";
-      const providerOptions = inventorySupplyReadonly
-        ? [...new Set(inventorySupplyRouteDraft.map(route => cdkeyProviderName(getPoolById(route.sourceId))).filter(Boolean))]
-        : cdkeySourceProviderOptions("", [...selectedIds]);
+      const providerOptions = cdkeySupplyProviderOptions([...selectedIds]);
       if (!providerOptions.includes(inventorySupplyProviderDraft)) {
         inventorySupplyProviderDraft = cdkeyProviderName(getPoolById(inventorySupplyRouteDraft[0]?.sourceId)) || providerOptions[0] || "";
       }
-      renderCdkeyCascadeSelect(providerSelect, providerOptions, inventorySupplyProviderDraft, "请选择供货方");
+      renderCdkeySupplyProviderSelect(providerSelect, inventorySupplyProviderDraft, [...selectedIds]);
       const methodOptions = cdkeySourceMethodOptions(inventorySupplyProviderDraft, [...selectedIds]).filter(method => !lockedMethod || method === lockedMethod);
       inventorySupplyMethodDraft = lockedMethod || preferredCdkeySupplyMethod(methodOptions, inventorySupplyMethodDraft);
       renderCdkeyCascadeSelect(methodSelect, methodOptions, inventorySupplyMethodDraft, inventorySupplyProviderDraft ? "请选择供货方式" : "请先选择供货方");
       methodSelect.disabled = inventorySupplyReadonly || !inventorySupplyProviderDraft || inventorySupplyRouteDraft.length > 0;
-      methodHint.textContent = inventorySupplyRouteDraft.length
-        ? "已选货源后供货方式锁定；切换到相同供货方式可继续添加，切换到其他供货方式会清空已选货源。"
-        : "供货方式根据供货方自动切换；同一 SKU 只能选择一种。";
+      methodHint.textContent = inventorySupplyReadonly
+        ? "当前为查看模式；可切换供货方查看对应的已配置货源，不会修改现有配置。"
+        : inventorySupplyRouteDraft.length
+          ? "已选货源后供货方式锁定；切换到相同供货方式可继续添加，切换到其他供货方式会清空已选货源。"
+          : "供货方式根据供货方自动切换；同一 SKU 只能选择一种。";
       const sources = selectableCdkeySources([...selectedIds]).filter(source =>
         cdkeyProviderName(source) === inventorySupplyProviderDraft
         && cdkeySupplyMode(source) === inventorySupplyMethodDraft
@@ -6867,7 +6876,9 @@
       if (inventorySupplyRouteDraft.length && !supportedMethods.includes(previousMethod)) {
         inventorySupplyRouteDraft = [];
         inventorySupplyMethodDraft = preferredCdkeySupplyMethod(supportedMethods);
-        toast(`该供货方不支持“${previousMethod}”，已清空原货源并自动切换为“${inventorySupplyMethodDraft}”。`);
+        toast(inventorySupplyMethodDraft
+          ? `该供货方不支持“${previousMethod}”，已清空原货源并自动切换为“${inventorySupplyMethodDraft}”。`
+          : `该供货方暂无可选择的上架货源，已清空原货源。`);
       } else if (!inventorySupplyRouteDraft.length) {
         inventorySupplyMethodDraft = preferredCdkeySupplyMethod(supportedMethods, previousMethod);
       }
@@ -6915,7 +6926,7 @@
       const product = record ? getInventoryProduct(record) : null;
       const sku = record ? getInventorySku(record) : null;
       if (!record || !product || !sku) return;
-      if (product.state === "上架") return toast("商品已上架，不能修改供货与库存配置。");
+      if (product.state !== "下架") return toast("仅下架状态的 SKU 允许修改供货配置。");
       if (!inventorySupplyRouteDraft.length) return toast("请至少选择 1 个上架货源。");
       const priorities = new Set();
       const routes = [];
@@ -8037,6 +8048,24 @@
         .filter(source => !method || cdkeySupplyMode(source) === method)
         .map(source => cdkeyProviderName(source))
         .filter(Boolean))];
+    }
+
+    function cdkeySupplyProviderOptions(selectedSourceIds = []) {
+      const selectedProviderNames = selectedSourceIds
+        .map(sourceId => cdkeyProviderName(getPoolById(sourceId)))
+        .filter(Boolean);
+      return [...new Set([...cdkeyProviderNames(), ...selectedProviderNames])];
+    }
+
+    function renderCdkeySupplyProviderSelect(select, selectedValue, selectedSourceIds = []) {
+      const providerNames = cdkeySupplyProviderOptions(selectedSourceIds);
+      const platformOptions = providerNames.filter(name => name === "平台自营");
+      const supplierOptions = providerNames.filter(name => name !== "平台自营");
+      const optionHtml = names => names.map(name => `<option value="${safeText(name)}">${safeText(name)}</option>`).join("");
+      select.innerHTML = `<option value="">请选择供货方</option>`
+        + (platformOptions.length ? `<optgroup label="平台">${optionHtml(platformOptions)}</optgroup>` : "")
+        + (supplierOptions.length ? `<optgroup label="三方供应商">${optionHtml(supplierOptions)}</optgroup>` : "");
+      select.value = providerNames.includes(selectedValue) ? selectedValue : "";
     }
 
     function cdkeySourceMethodOptions(providerName, selectedSourceIds = []) {
@@ -10236,7 +10265,7 @@
         return { sourceId, sort };
       });
       cdkeyRouteMethodDraft = row?.cdkeySupplyMethod || (sourceModes.length === 1 ? sourceModes[0] : "码池供货");
-      cdkeyRouteProviderDraft = cdkeyProviderName(getPoolById(sourceIds[0])) || cdkeySourceProviderOptions(cdkeyRouteMethodDraft, sourceIds)[0] || "";
+      cdkeyRouteProviderDraft = cdkeyProviderName(getPoolById(sourceIds[0])) || cdkeySupplyProviderOptions(sourceIds)[0] || "";
       renderCdkeyRouteAddArea();
       openModal("poolModal");
     }
@@ -10250,11 +10279,11 @@
       if (!providerSelect || !methodSelect || !hint || !area || !count) return;
       const selectedIds = new Set(cdkeyRouteDraft.map(route => route.sourceId));
       const lockedMethod = cdkeyRouteDraft.length ? cdkeyRouteMethodDraft : "";
-      const providerOptions = cdkeySourceProviderOptions("", [...selectedIds]);
+      const providerOptions = cdkeySupplyProviderOptions([...selectedIds]);
       if (!providerOptions.includes(cdkeyRouteProviderDraft)) {
         cdkeyRouteProviderDraft = cdkeyProviderName(getPoolById(cdkeyRouteDraft[0]?.sourceId)) || providerOptions[0] || "";
       }
-      renderCdkeyCascadeSelect(providerSelect, providerOptions, cdkeyRouteProviderDraft, "请选择供货方");
+      renderCdkeySupplyProviderSelect(providerSelect, cdkeyRouteProviderDraft, [...selectedIds]);
       const methodOptions = cdkeySourceMethodOptions(cdkeyRouteProviderDraft, [...selectedIds]).filter(method => !lockedMethod || method === lockedMethod);
       cdkeyRouteMethodDraft = lockedMethod || preferredCdkeySupplyMethod(methodOptions, cdkeyRouteMethodDraft);
       renderCdkeyCascadeSelect(methodSelect, methodOptions, cdkeyRouteMethodDraft, cdkeyRouteProviderDraft ? "请选择供货方式" : "请先选择供货方");
@@ -10304,7 +10333,9 @@
       if (cdkeyRouteDraft.length && !supportedMethods.includes(previousMethod)) {
         cdkeyRouteDraft = [];
         cdkeyRouteMethodDraft = preferredCdkeySupplyMethod(supportedMethods);
-        toast(`该供货方不支持“${previousMethod}”，已清空原货源并自动切换为“${cdkeyRouteMethodDraft}”。`);
+        toast(cdkeyRouteMethodDraft
+          ? `该供货方不支持“${previousMethod}”，已清空原货源并自动切换为“${cdkeyRouteMethodDraft}”。`
+          : `该供货方暂无可选择的上架货源，已清空原货源。`);
       } else if (!cdkeyRouteDraft.length) {
         cdkeyRouteMethodDraft = preferredCdkeySupplyMethod(supportedMethods, previousMethod);
       }
