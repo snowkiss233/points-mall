@@ -1441,7 +1441,7 @@
             <section class="form-card" id="sectionInitialInventory">
               <h2><span class="required-star">*</span>供货与库存配置</h2>
               <div class="body">
-                <div class="alert info">新建 CDKey 商品时在此配置货源和下单策略，系统根据供货方式自动确定库存模式。存量商品的配置只读展示；需要增加、减少或调整货源时，先下架商品，再前往库存列表使用“编辑供货配置”。</div>
+                <div class="alert info">新建 CDKey 商品时在此配置货源和下单策略，系统根据供货方式自动确定库存模式。存量商品的配置只读展示；需要增加、减少或调整货源时，先下架商品，再前往库存列表使用“供货配置”。</div>
                 <div id="inventoryConfigBody"></div>
                 <div class="hint-text">普通商品保存后通过库存列表调整库存；CDKey 商品保存后通过库存列表统一维护货源、优先级和联动库存规则。</div>
               </div>
@@ -2378,8 +2378,9 @@
       <div id="inventoryAdjustInfo"></div>
       <div class="form-grid" style="margin-top:12px">
         <div class="field" id="inventoryAdjustModeField"><label><span class="required-star">*</span>库存模式</label><select id="inventoryAdjustMode"><option>限量</option><option>不限量</option></select></div>
-        <div class="field"><label><span class="required-star">*</span>调整类型</label><select id="inventoryAdjustType"><option>增加库存</option><option>减少库存</option></select></div>
+        <div class="field" id="inventoryAdjustTypeField"><label><span class="required-star">*</span>调整类型</label><select id="inventoryAdjustType"><option>增加库存</option><option>减少库存</option></select></div>
         <div class="field" id="inventoryAdjustQtyField"><label id="inventoryAdjustQtyLabel"><span class="required-star">*</span>调整数量</label><input id="inventoryAdjustQty" type="number" placeholder="请输入调整数量"></div>
+        <div class="field" id="inventoryAdjustOrderPolicyField"><label><span class="required-star">*</span>下单策略</label><select id="inventoryAdjustOrderPolicy"><option>仅有货可下单</option><option>缺货可下单</option></select></div>
         <div class="field" id="inventoryAdjustPendingLimitField" style="display:none"><label id="inventoryAdjustPendingLimitLabel"><span class="required-star">*</span>待履约数量上限</label><input id="inventoryAdjustPendingLimit" type="number" min="1" placeholder="请输入正整数"></div>
         <div class="field" id="inventoryAdjustDailyReleaseField" style="grid-column:1/-1"><label>时段库存重置配置</label><div id="inventoryAdjustDailyReleaseEditor"></div></div>
         <div class="field" id="inventoryAdjustSafetyField"><label>安全库存阈值（%）</label><input id="inventoryAdjustSafetyPercent" type="number" min="0" max="100" placeholder="请输入 0-100"></div>
@@ -4154,6 +4155,7 @@
       document.getElementById("inventoryToggleMoreBtn").addEventListener("click", toggleInventoryMoreFilters);
       document.getElementById("inventoryAdjustMode").addEventListener("change", updateInventoryAdjustFields);
       document.getElementById("inventoryAdjustType").addEventListener("change", updateInventoryAdjustFields);
+      document.getElementById("inventoryAdjustOrderPolicy").addEventListener("change", updateInventoryAdjustFields);
       document.getElementById("confirmInventoryAdjustBtn").addEventListener("click", confirmInventoryAdjust);
       document.getElementById("inventorySupplyProvider").addEventListener("change", updateInventorySupplyProvider);
       document.getElementById("inventorySupplyMethod").addEventListener("change", updateInventorySupplyMethod);
@@ -6669,10 +6671,9 @@
       const isCdkeyRecord = isCdkeyDelivery(sku?.delivery || product?.delivery || "未配置");
       if (isCdkeyRecord) {
         const editable = product?.state !== "上架";
-        actions.push(`<button class="btn text" data-inventory-action="supply" data-inventory-id="${record.inventoryId}" title="${editable ? "编辑货源及联动库存规则" : "查看当前供货及库存规则"}">${editable ? "编辑供货配置" : "查看供货配置"}</button>`);
-      } else {
-        actions.push(`<button class="btn text" data-inventory-action="adjust" data-inventory-id="${record.inventoryId}">调整库存</button>`);
+        actions.push(`<button class="btn text" data-inventory-action="supply" data-inventory-id="${record.inventoryId}" title="${editable ? "编辑货源及联动库存规则" : "查看当前供货及库存规则"}">供货配置</button>`);
       }
+      actions.push(`<button class="btn text" data-inventory-action="adjust" data-inventory-id="${record.inventoryId}">调整库存</button>`);
       actions.push(`<button class="btn text" data-inventory-action="flow" data-inventory-id="${record.inventoryId}">库存流水</button>`);
       return actions.join("");
     }
@@ -6747,7 +6748,7 @@
           ["SKU ID", record.skuId], ["SKU 规格", skuSpecText(sku)], ["SKU 属性值", product ? formatSkuAttributeValues(sku, product.type) : "-"],
           ["履约方式", normalizeDelivery(delivery)], ["商品状态", product?.state || "-"],
           ["CDKey 货源配置", inventoryCdkeySourceConfigHtml(record)]
-        ]) + `<div class="hint-text">商品基础信息、SKU 属性和履约方式来自商品列表；下架状态 CDKey SKU 的货源与联动库存规则通过“编辑供货配置”维护。</div>`)}
+        ]) + `<div class="hint-text">商品基础信息、SKU 属性和履约方式来自商品列表；下架状态 CDKey SKU 的货源与联动库存规则通过“供货配置”维护。</div>`)}
         ${detailSection("库存主数据", infoGrid([
           ["库存模式", inventoryStockModeLabel(record)], ["总库存", inventoryNumberText(record.totalStock, record)],
           ["可用库存", inventoryNumberText(record.availableStock, record)], ["锁定库存", record.lockedStock],
@@ -6980,10 +6981,12 @@
         ["当前安全库存阈值", inventoryWarningText(record)], ["当前下单策略", shortageOrderPolicyText(record)], ["当前待履约数量上限", isBackorderAllowed(record) ? inventoryPendingLimit(record) : "-"]
       ]);
       adjustDailyReleases = cloneDailyReleases(record);
-      document.getElementById("inventoryAdjustMode").value = record.stockMode === "不限量" ? "不限量" : "限量";
+      const isCdkeyRecord = isCdkeyDelivery(delivery);
+      document.getElementById("inventoryAdjustMode").value = isCdkeyRecord ? (inventoryUsesDirectSupply(record) ? "不限量" : "限量") : (record.stockMode === "不限量" ? "不限量" : "限量");
       document.getElementById("inventoryAdjustType").innerHTML = `<option>增加库存</option><option>减少库存</option>`;
       document.getElementById("inventoryAdjustType").value = "增加库存";
       document.getElementById("inventoryAdjustQty").value = "";
+      document.getElementById("inventoryAdjustOrderPolicy").value = shortageOrderPolicyText(record);
       document.getElementById("inventoryAdjustPendingLimit").value = isBackorderAllowed(record) ? inventoryPendingLimit(record) : "";
       document.getElementById("inventoryAdjustSafetyPercent").value = record.stockMode === "不限量" ? "" : (record.warningThreshold ?? "");
       document.getElementById("inventoryAdjustReason").value = "";
@@ -6998,9 +7001,12 @@
       const typeEl = document.getElementById("inventoryAdjustType");
       const type = typeEl.value;
       const qty = document.getElementById("inventoryAdjustQty");
+      const orderPolicy = document.getElementById("inventoryAdjustOrderPolicy");
       const pendingLimit = document.getElementById("inventoryAdjustPendingLimit");
       const modeField = document.getElementById("inventoryAdjustModeField");
+      const typeField = document.getElementById("inventoryAdjustTypeField");
       const qtyField = document.getElementById("inventoryAdjustQtyField");
+      const orderPolicyField = document.getElementById("inventoryAdjustOrderPolicyField");
       const pendingLimitField = document.getElementById("inventoryAdjustPendingLimitField");
       const dailyReleaseField = document.getElementById("inventoryAdjustDailyReleaseField");
       const safetyField = document.getElementById("inventoryAdjustSafetyField");
@@ -7012,11 +7018,17 @@
       const sku = getInventorySku(record);
       const product = getInventoryProduct(record);
       const isCdkeyRecord = isCdkeyDelivery(sku?.delivery || product?.delivery || "未配置");
-      const backorderEnabled = isBackorderAllowed(record);
+      const hasDirectSupply = isCdkeyRecord && inventoryUsesDirectSupply(record);
+      if (hasDirectSupply) orderPolicy.value = SHORTAGE_POLICY_STOCK_ONLY;
+      const backorderEnabled = isCdkeyRecord
+        ? !hasDirectSupply && orderPolicy.value === SHORTAGE_POLICY_ALLOW_BACKORDER
+        : isBackorderAllowed(record);
       const modeChangingToUnlimited = targetMode === "不限量";
       const modeChangingToLimited = record.stockMode === "不限量" && targetMode === "限量";
       modeField.style.display = "";
-      qtyField.style.display = "";
+      typeField.style.display = isCdkeyRecord ? "none" : "";
+      qtyField.style.display = isCdkeyRecord ? "none" : "";
+      orderPolicyField.style.display = isCdkeyRecord ? "" : "none";
       pendingLimitField.style.display = backorderEnabled ? "" : "none";
       dailyReleaseField.style.display = "";
       safetyField.style.display = "";
@@ -7024,10 +7036,11 @@
       typeEl.disabled = modeChangingToUnlimited || isCdkeyRecord;
       qty.disabled = modeChangingToUnlimited || isCdkeyRecord;
       qty.value = qty.disabled ? "" : qty.value;
+      orderPolicy.disabled = hasDirectSupply;
       pendingLimit.disabled = !backorderEnabled;
-      safetyPercent.disabled = modeChangingToUnlimited || isCdkeyRecord;
-      reason.disabled = isCdkeyRecord && !backorderEnabled;
-      confirmButton.disabled = isCdkeyRecord && !backorderEnabled;
+      safetyPercent.disabled = modeChangingToUnlimited || hasDirectSupply;
+      reason.disabled = false;
+      confirmButton.disabled = hasDirectSupply;
       if (modeChangingToUnlimited) {
         safetyPercent.value = "";
         safetyPercent.placeholder = "不限量";
@@ -7035,12 +7048,12 @@
         safetyPercent.placeholder = "请输入 0-100";
         if (safetyPercent.value === "不限量") safetyPercent.value = record.stockMode === "不限量" ? "" : (record.warningThreshold ?? "");
       }
-      renderAdjustDailyReleaseEditor(modeChangingToUnlimited || isCdkeyRecord);
+      renderAdjustDailyReleaseEditor(modeChangingToUnlimited || hasDirectSupply);
       if (modeChangingToUnlimited) {
         label.innerHTML = "调整数量";
         qty.placeholder = "不限量模式无需填写";
         tip.textContent = isCdkeyRecord
-          ? "该 CDKey SKU 包含接口直供货源，库存模式及其他库存配置均由货源路由决定；本弹窗仅展示当前配置，不支持修改。"
+          ? "接口直供的库存模式固定为不限量、下单策略固定为仅有货可下单，不维护时段库存和安全库存；当前配置仅供查看。"
           : "库存模式切换为不限量后，总库存、可用库存、时段库存重置配置和安全库存阈值按不限量展示。";
         return;
       }
@@ -7055,10 +7068,10 @@
       qty.placeholder = "请输入调整数量";
       if (isCdkeyRecord) {
         label.innerHTML = "调整数量";
-        qty.placeholder = "真实码库存请前往码池维护";
+        qty.placeholder = "真实码库存由货源同步";
         tip.textContent = backorderEnabled
-          ? `CDKey SKU 的真实码库存由关联码池同步，库存模式、调整类型和调整数量仅作展示且不可修改；待履约数量上限可在此单独调整，当前待履约数量为 ${currentPendingFulfillmentCount(record)}。`
-          : "CDKey SKU 的真实码库存由关联码池同步，不能在库存列表手动调整。";
+          ? `CDKey 的真实码数量由货源同步，不支持手工增减；可调整下单策略、待履约数量上限、时段库存重置配置和安全库存阈值，当前待履约数量为 ${currentPendingFulfillmentCount(record)}。`
+          : "CDKey 的真实码数量由货源同步，不支持手工增减；可在此调整下单策略、时段库存重置配置和安全库存阈值。";
         return;
       }
       tip.textContent = backorderEnabled
@@ -7091,7 +7104,14 @@
       const reason = valueOf("inventoryAdjustReason");
       const qty = Number(qtyText);
       const before = snapshotInventory(record);
-      const backorderEnabled = isBackorderAllowed(record);
+      const sku = getInventorySku(record);
+      const product = getInventoryProduct(record);
+      const isCdkeyRecord = isCdkeyDelivery(sku?.delivery || product?.delivery || "未配置");
+      const hasDirectSupply = isCdkeyRecord && inventoryUsesDirectSupply(record);
+      if (hasDirectSupply) return toast("接口直供不维护可调整的库存配置。");
+      const targetOrderPolicy = isCdkeyRecord ? valueOf("inventoryAdjustOrderPolicy") : shortageOrderPolicyText(record);
+      const backorderEnabled = isCdkeyRecord ? targetOrderPolicy === SHORTAGE_POLICY_ALLOW_BACKORDER : isBackorderAllowed(record);
+      const orderPolicyChanged = isCdkeyRecord && targetOrderPolicy !== shortageOrderPolicyText(record);
       const pendingLimitValue = Number(pendingLimitText);
       if (backorderEnabled && (!/^[1-9]\d*$/.test(pendingLimitText) || !Number.isInteger(pendingLimitValue))) return toast("待履约数量上限必须为正整数。");
       const pendingLimitChanged = backorderEnabled && pendingLimitValue !== inventoryPendingLimit(record);
@@ -7099,6 +7119,12 @@
       let operation = type;
       const operationParts = [];
       const nextDailyReleases = normalizeDailyReleaseRows(adjustDailyReleases);
+
+      if (orderPolicyChanged) {
+        record.shortageOrderPolicy = targetOrderPolicy;
+        operationParts.push(`下单策略调整为${targetOrderPolicy}`);
+        if (targetOrderPolicy === SHORTAGE_POLICY_STOCK_ONLY) record.pendingFulfillmentLimit = 0;
+      }
 
       if (targetMode === "不限量") {
         const limitError = validateCdkeyInventoryLimit(record, 0, "不限量");
@@ -9596,7 +9622,7 @@
       if (!requiresCdkeySourceConfig(row, valueOf("formType"))) return `<span class="minor">无需配置</span>`;
       const sourceIds = skuCdkeySourceIds(row);
       if (!sourceIds.length) return formMode === "edit"
-        ? `<span class="tag red">未配置货源</span><div class="minor">请前往库存列表使用“编辑供货配置”补充。</div>`
+        ? `<span class="tag red">未配置货源</span><div class="minor">请前往库存列表使用“供货配置”补充。</div>`
         : `<button class="btn text" type="button" data-select-pool="${index}">配置货源</button><div class="minor">至少配置 1 个上架货源</div>`;
       const sources = sourceIds.map(getPoolById);
       const methods = [...new Set(sources.map(source => cdkeySupplyMode(source)).filter(Boolean))];
@@ -9611,7 +9637,7 @@
       }).join("");
       const methodClass = method === "接口直供" ? "purple" : method === "码池供货" ? "blue" : "red";
       const action = formMode === "edit"
-        ? `<div class="minor" style="margin-top:6px">存量货源只读展示；请前往库存列表使用“编辑供货配置”维护。</div>`
+        ? `<div class="minor" style="margin-top:6px">存量货源只读展示；请前往库存列表使用“供货配置”维护。</div>`
         : `<button class="btn text" type="button" data-select-pool="${index}" style="margin-top:6px">编辑配置</button>`;
       return `<div style="margin-bottom:6px"><span class="tag ${methodClass}">供货方式：${method}</span></div><div class="route-stack">${routeLines}</div>${action}`;
     }
@@ -9921,7 +9947,7 @@
               </tr>`;
             }).join("")}</tbody>
           </table>
-        </div>${inventoryReadonly ? `<div class="hint-text">编辑存量商品时，本区域只读展示供货与库存配置；下架商品请前往库存列表使用“编辑供货配置”统一维护货源、优先级和联动库存规则。</div>` : ""}`;
+        </div>${inventoryReadonly ? `<div class="hint-text">编辑存量商品时，本区域只读展示供货与库存配置；下架商品请前往库存列表使用“供货配置”统一维护货源、优先级和联动库存规则。</div>` : ""}`;
       body.querySelectorAll("[data-inv-field]").forEach(el => el.addEventListener("input", updateInventoryFromInput));
       body.querySelectorAll("select[data-inv-field]").forEach(el => el.addEventListener("change", updateInventoryFromInput));
       body.querySelectorAll("[data-inv-release]").forEach(input => input.addEventListener("input", updateInventoryDailyRelease));
