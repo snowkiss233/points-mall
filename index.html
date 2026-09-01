@@ -744,6 +744,38 @@
     .alert.warning { background: var(--orange-bg); border-color: #fed7aa; color: #9a3412; }
 
     .form-page { display: none; }
+    .create-steps {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      max-width: 560px;
+      margin: 0 0 16px;
+      padding: 14px 18px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+    .create-step {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .create-step .step-no {
+      width: 26px;
+      height: 26px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--gray-bg);
+      color: var(--muted);
+    }
+    .create-step.active { color: var(--primary-dark); }
+    .create-step.active .step-no,
+    .create-step.done .step-no { background: var(--primary-dark); color: #fff; }
+    .create-step.done { color: #344054; }
+    .create-step-line { flex: 1; height: 1px; background: var(--line-strong); }
     .form-layout {
       display: grid;
       grid-template-columns: minmax(0, 1fr) 220px;
@@ -2015,13 +2047,19 @@
           <div>
             <button class="btn text" id="backToCdkeyPoolListBtn">返回货源列表</button>
             <h1 id="cdkeyPoolFormTitle">新建 CDKey 货源</h1>
-            <div class="sub">选择供货方式并配置主链路参数；商品 SKU 可同时引用多个货源。</div>
+            <div class="sub" id="cdkeyPoolFormSub">选择供货方式并配置主链路参数；商品 SKU 可同时引用多个货源。</div>
           </div>
           <div class="btn-row">
             <button class="btn" id="cdkeyPoolSaveBtn">保存</button>
             <button class="btn primary" id="cdkeyPoolSaveEnableBtn">保存并上架</button>
             <button class="btn" id="cdkeyPoolCancelBtn">取消</button>
           </div>
+        </div>
+
+        <div class="create-steps" id="cdkeyPoolCreateSteps">
+          <div class="create-step active" id="cdkeyPoolCreateStepOne"><span class="step-no">1</span><span>创建货源</span></div>
+          <div class="create-step-line"></div>
+          <div class="create-step" id="cdkeyPoolCreateStepTwo"><span class="step-no">2</span><span>首次入库</span></div>
         </div>
 
         <div class="form-layout">
@@ -2046,6 +2084,7 @@
                 </div>
                 <div class="form-grid" id="cdkeyPoolStockFields" style="margin-top:12px">
                   <div class="field"><label><span class="required-star">*</span>安全库存阈值（%）</label><input id="cdkeyPoolFormAlert" type="number" min="0" max="100" placeholder="请输入 0-100"></div>
+                  <div class="field"><label><span class="required-star">*</span>码入库方式</label><select id="cdkeyPoolFormStockMethod"><option value="手工上传">手工上传</option><option value="接口批量获取" disabled>接口批量获取（暂未开放）</option></select><div class="hint-text">创建货源时确定，创建后不可修改；货源创建成功后再上传首批 CDKey。</div></div>
                 </div>
                 <div class="form-grid" id="cdkeyPoolDirectFields" style="margin-top:12px;display:none">
                   <div class="field"><label><span class="required-star">*</span>供货商品</label><select id="cdkeyPoolFormSupplierProduct"></select><div class="hint-text" id="cdkeySupplierProductHint">选择供货商品后自动带出商品编码。</div></div>
@@ -2056,7 +2095,7 @@
             </section>
 
             <section class="form-card" id="cdkeyPoolSectionInitialData">
-              <h2>初始供货配置</h2>
+              <h2 id="cdkeyPoolInitialDataTitle">首次入库</h2>
               <div class="body" id="cdkeyPoolInitialDataBody"></div>
             </section>
 
@@ -2074,11 +2113,11 @@
             </section>
           </div>
           <aside class="side-anchor">
-            <a href="#cdkeyPoolSectionBasic">基础信息</a>
-            <a href="#cdkeyPoolSectionRule">供货配置</a>
+            <a href="#cdkeyPoolSectionBasic" id="cdkeyPoolBasicAnchor">基础信息</a>
+            <a href="#cdkeyPoolSectionRule" id="cdkeyPoolRuleAnchor">供货配置</a>
             <a href="#cdkeyPoolSectionInitialData" id="cdkeyPoolInitialDataAnchor">初始供货</a>
-            <a href="#cdkeyPoolSectionBoundSku">绑定SKU</a>
-            <a href="#cdkeyPoolSectionRemark">备注</a>
+            <a href="#cdkeyPoolSectionBoundSku" id="cdkeyPoolBoundSkuAnchor">绑定SKU</a>
+            <a href="#cdkeyPoolSectionRemark" id="cdkeyPoolRemarkAnchor">备注</a>
           </aside>
         </div>
       </section>
@@ -4200,8 +4239,8 @@
       document.getElementById("cdkeyPoolSearchBtn").addEventListener("click", applyCdkeyPoolFilters);
       document.getElementById("cdkeyPoolResetBtn").addEventListener("click", resetCdkeyPoolFilters);
       document.getElementById("newCdkeyPoolBtn").addEventListener("click", () => openCdkeyPoolForm("new"));
-      document.getElementById("backToCdkeyPoolListBtn").addEventListener("click", showCdkeyPoolPage);
-      document.getElementById("cdkeyPoolCancelBtn").addEventListener("click", showCdkeyPoolPage);
+      document.getElementById("backToCdkeyPoolListBtn").addEventListener("click", cancelCdkeyPoolForm);
+      document.getElementById("cdkeyPoolCancelBtn").addEventListener("click", cancelCdkeyPoolForm);
       document.getElementById("cdkeyPoolSaveBtn").addEventListener("click", saveCdkeyPool);
       document.getElementById("cdkeyPoolSaveEnableBtn").addEventListener("click", saveCdkeyPoolEnable);
       document.getElementById("cdkeyPoolFormProvider").addEventListener("change", () => {
@@ -4214,6 +4253,9 @@
         renderCdkeySupplyProducts();
         updateCdkeyPoolTypeField();
         renderCdkeyPoolInitialData();
+      });
+      document.getElementById("cdkeyPoolFormStockMethod").addEventListener("change", event => {
+        cdkeyStockMethodDraft = event.target.value;
       });
       document.getElementById("cdkeyPoolFormSupplierProduct").addEventListener("change", syncCdkeySupplyProductCode);
       document.getElementById("confirmCdkeyGenerateBtn").addEventListener("click", confirmCdkeyGenerate);
@@ -7988,13 +8030,17 @@
     function cdkeyPoolActions(pool) {
       const actions = [`<button class="btn text" data-cdkey-action="detail" data-pool-id="${pool.id}">查看</button>`];
       actions.push(`<button class="btn text" data-cdkey-action="code" data-pool-id="${pool.id}">CDKey 明细</button>`);
+      const waitingForFirstInbound = cdkeySupplyMode(pool) === "码池供货" && !getCdkeyBatchesByPool(pool.id).length;
       if (cdkeySupplyMode(pool) === "码池供货" && ["上架", "下架"].includes(pool.state) && pool.stockMethod === "手工上传") {
-        actions.push(`<button class="btn text" data-cdkey-action="restock" data-pool-id="${pool.id}">补货</button>`);
+        const inboundLabel = getCdkeyBatchesByPool(pool.id).length ? "补货" : "首次入库";
+        actions.push(`<button class="btn text" data-cdkey-action="restock" data-pool-id="${pool.id}">${inboundLabel}</button>`);
       }
       actions.push(`<button class="btn text" data-cdkey-action="edit" data-pool-id="${pool.id}">编辑</button>`);
-      actions.push(pool.state === "上架"
-        ? `<button class="btn text" data-cdkey-action="disable" data-pool-id="${pool.id}">下架</button>`
-        : `<button class="btn text" data-cdkey-action="enable" data-pool-id="${pool.id}">上架</button>`);
+      if (!waitingForFirstInbound) {
+        actions.push(pool.state === "上架"
+          ? `<button class="btn text" data-cdkey-action="disable" data-pool-id="${pool.id}">下架</button>`
+          : `<button class="btn text" data-cdkey-action="enable" data-pool-id="${pool.id}">上架</button>`);
+      }
       if (pool.state === "下架") {
         actions.push(`<button class="btn text danger" data-cdkey-action="delete" data-pool-id="${pool.id}">删除</button>`);
       }
@@ -8007,7 +8053,8 @@
       if (action === "batch") openCdkeyBatchDrawer(poolId);
       if (action === "restock") {
         const pool = getPoolById(poolId);
-        if (pool?.stockMethod === "手工上传") openCdkeyUploadModal(poolId);
+        if (pool?.stockMethod === "手工上传" && !getCdkeyBatchesByPool(poolId).length) openCdkeyPoolForm("initial", pool);
+        else if (pool?.stockMethod === "手工上传") openCdkeyUploadModal(poolId);
         else toast("接口批量获取暂未开放，当前货源不能补货。");
       }
       if (action === "code") openCdkeyCodeDrawer(poolId);
@@ -8163,7 +8210,7 @@
     }
 
     function currentEditingCdkeyPool() {
-      return pendingCdkeyAction?.mode === "edit" ? getPoolById(pendingCdkeyAction.poolId) : null;
+      return ["edit", "initial"].includes(pendingCdkeyAction?.mode) ? getPoolById(pendingCdkeyAction.poolId) : null;
     }
 
     function cdkeyCoreConfigLocked() {
@@ -8211,16 +8258,65 @@
       productIdInput.value = productSelect.selectedOptions[0]?.dataset.productId || "";
     }
 
+    function cancelCdkeyPoolForm() {
+      if (pendingCdkeyAction?.mode === "initial") {
+        toast("货源已创建并保持下架，可稍后从货源列表继续首次入库。");
+      }
+      showCdkeyPoolPage();
+    }
+
+    function updateCdkeyCreateStepState(mode) {
+      const steps = document.getElementById("cdkeyPoolCreateSteps");
+      const stepOne = document.getElementById("cdkeyPoolCreateStepOne");
+      const stepTwo = document.getElementById("cdkeyPoolCreateStepTwo");
+      const isPoolCreation = mode === "initial" || (mode === "new" && valueOf("cdkeyPoolFormSource") === "码池供货");
+      steps.style.display = isPoolCreation ? "flex" : "none";
+      stepOne.className = `create-step ${mode === "initial" ? "done" : "active"}`;
+      stepTwo.className = `create-step ${mode === "initial" ? "active" : ""}`;
+    }
+
+    function updateCdkeyPoolActionButtons() {
+      const mode = pendingCdkeyAction?.mode || "new";
+      const saveButton = document.getElementById("cdkeyPoolSaveBtn");
+      const enableButton = document.getElementById("cdkeyPoolSaveEnableBtn");
+      const cancelButton = document.getElementById("cdkeyPoolCancelBtn");
+      const currentPool = currentEditingCdkeyPool();
+      if (mode === "initial") {
+        saveButton.textContent = "完成首次入库";
+        enableButton.textContent = "入库并上架";
+        enableButton.style.display = "";
+        cancelButton.textContent = "稍后入库";
+      } else if (mode === "edit") {
+        saveButton.textContent = "保存修改";
+        enableButton.textContent = "保存并上架";
+        enableButton.style.display = currentPool?.state === "上架" ? "none" : "";
+        cancelButton.textContent = "取消";
+      } else if (valueOf("cdkeyPoolFormSource") === "码池供货") {
+        saveButton.textContent = "创建并继续入库";
+        enableButton.style.display = "none";
+        cancelButton.textContent = "取消";
+      } else {
+        saveButton.textContent = "保存";
+        enableButton.textContent = "保存并上架";
+        enableButton.style.display = "";
+        cancelButton.textContent = "取消";
+      }
+      updateCdkeyCreateStepState(mode);
+    }
+
     function openCdkeyPoolForm(mode, pool = null) {
+      const isInitialInbound = mode === "initial";
+      const isEdit = mode === "edit";
       pendingCdkeyAction = { mode, poolId: pool?.id || "" };
       hideAllPages();
       document.getElementById("cdkeyPoolFormPage").style.display = "block";
       setActiveMenu("CDKey 货源列表");
-      document.getElementById("cdkeyPoolFormTitle").textContent = mode === "edit" ? "编辑 CDKey 货源" : "新建 CDKey 货源";
-      document.getElementById("cdkeyPoolSaveBtn").textContent = mode === "edit" ? "保存修改" : "保存";
-      const enableButton = document.getElementById("cdkeyPoolSaveEnableBtn");
-      enableButton.textContent = "保存并上架";
-      enableButton.style.display = mode === "edit" && pool?.state === "上架" ? "none" : "";
+      document.getElementById("cdkeyPoolFormTitle").textContent = isInitialInbound ? "首次入库" : isEdit ? "编辑 CDKey 货源" : "新建 CDKey 货源";
+      document.getElementById("cdkeyPoolFormSub").textContent = isInitialInbound
+        ? `货源 ${pool?.id || ""} 已创建并保持下架，请上传首批 CDKey 完成首次入库。`
+        : isEdit
+          ? "维护货源基础配置；供货方、供货方式及码入库方式创建后不可修改。"
+          : "先创建货源并生成货源 ID；码池供货创建成功后再上传首批 CDKey。";
       document.getElementById("cdkeyPoolFormId").value = pool?.id || "新建后生成";
       document.getElementById("cdkeyPoolFormId").disabled = true;
       document.getElementById("cdkeyPoolFormName").value = pool?.name || "";
@@ -8233,15 +8329,28 @@
       cdkeyStockMethodDraft = pool?.stockMethod === "平台内部生成" || pool?.source === "平台内部生成码"
         ? "接口批量获取"
         : (pool?.stockMethod || "手工上传");
+      document.getElementById("cdkeyPoolFormStockMethod").value = cdkeyStockMethodDraft;
+      document.getElementById("cdkeyPoolFormStockMethod").disabled = isEdit || isInitialInbound;
       document.getElementById("cdkeyPoolFormRemark").value = pool?.remark || "";
       updateCdkeyPoolTypeField();
-      const initialSection = document.getElementById("cdkeyPoolSectionInitialData");
-      const showInitialSection = mode === "new";
-      if (initialSection) initialSection.style.display = showInitialSection ? "" : "none";
-      const initialAnchor = document.getElementById("cdkeyPoolInitialDataAnchor");
-      if (initialAnchor) initialAnchor.style.display = showInitialSection ? "" : "none";
-      renderCdkeyPoolInitialData();
-      renderCdkeyPoolImpact(pool?.id || "");
+
+      const boundRows = pool?.id ? getBoundSkuByPool(pool.id) : [];
+      const showBoundSku = isEdit && boundRows.length > 0;
+      document.getElementById("cdkeyPoolSectionBasic").style.display = isInitialInbound ? "none" : "";
+      document.getElementById("cdkeyPoolSectionRule").style.display = isInitialInbound ? "none" : "";
+      document.getElementById("cdkeyPoolSectionRemark").style.display = isInitialInbound ? "none" : "";
+      document.getElementById("cdkeyPoolSectionInitialData").style.display = isInitialInbound ? "" : "none";
+      document.getElementById("cdkeyPoolSectionBoundSku").style.display = showBoundSku ? "" : "none";
+      document.getElementById("cdkeyPoolBasicAnchor").style.display = isInitialInbound ? "none" : "";
+      document.getElementById("cdkeyPoolRuleAnchor").style.display = isInitialInbound ? "none" : "";
+      document.getElementById("cdkeyPoolRemarkAnchor").style.display = isInitialInbound ? "none" : "";
+      document.getElementById("cdkeyPoolInitialDataAnchor").style.display = isInitialInbound ? "" : "none";
+      document.getElementById("cdkeyPoolInitialDataAnchor").textContent = "首次入库";
+      document.getElementById("cdkeyPoolBoundSkuAnchor").style.display = showBoundSku ? "" : "none";
+      document.getElementById("cdkeyPoolInitialDataTitle").textContent = "首次入库";
+      if (isInitialInbound) renderCdkeyPoolInitialData();
+      if (showBoundSku) renderCdkeyPoolImpact(pool.id);
+      updateCdkeyPoolActionButtons();
       window.scrollTo(0,0);
     }
 
@@ -8259,28 +8368,19 @@
           : isPoolSupply
             ? "码池供货会提前将 CDKey 存入平台，并在支付前结合优先级和可用码确定货源。供货方和供货方式创建后不可变更。"
             : "接口直供不记录库存；支付前按优先级确定并锁定货源，支付后明确无货直接退款，不切换供货方。供货方和供货方式创建后不可变更。";
+      updateCdkeyPoolActionButtons();
     }
 
-    function renderCdkeyPoolInitialData(selectedMethod = "") {
+    function renderCdkeyPoolInitialData() {
       const body = document.getElementById("cdkeyPoolInitialDataBody");
-      if (!body || pendingCdkeyAction?.mode !== "new") return;
-      const supplyMode = valueOf("cdkeyPoolFormSource");
-      if (!supplyMode) {
-        body.innerHTML = `<div class="alert info">请先在供货配置中选择供货方和供货方式。</div>`;
-        return;
-      }
-      if (supplyMode === "接口直供") {
-        body.innerHTML = `<div class="alert info">接口直供无需导入初始 CDKey，也不维护安全库存。保存并上架后，订单履约时使用供货商品编码（product_id）取码；外部订单号（customer_order_no）和购买数量（buy_num）由订单动态传入。</div>`;
-        return;
-      }
-      cdkeyStockMethodDraft = selectedMethod || cdkeyStockMethodDraft || "手工上传";
-      const stockMethod = cdkeyStockMethodDraft;
-      const draftBatch = currentEditingCdkeyPool()?.initialBatchDraft || {};
-      const methodField = `<div class="form-grid" style="margin-bottom:12px"><div class="field"><label><span class="required-star">*</span>码入库方式</label><select id="cdkeyPoolFormStockMethod"><option value="手工上传" ${stockMethod === "手工上传" ? "selected" : ""}>手工上传</option><option value="接口批量获取" ${stockMethod === "接口批量获取" ? "selected" : ""} disabled>接口批量获取（暂未开放）</option></select><div class="hint-text">仅码池供货需要配置，用于说明 CDKey 如何批量进入平台码池；创建后不可变更。</div></div></div>`;
-      if (stockMethod === "手工上传") {
+      if (!body || pendingCdkeyAction?.mode !== "initial") return;
+      const pool = currentEditingCdkeyPool();
+      if (!pool || cdkeySupplyMode(pool) !== "码池供货") return;
+      const draftBatch = pool.initialBatchDraft || {};
+      if (pool.stockMethod === "手工上传") {
         body.innerHTML = `
-          ${methodField}
-          <div class="alert info">首次新建码池时必须创建首个入库批次；导入数量由上传文件解析，不在页面手工填写。后续每次补货都会生成新的入库批次，并分别记录成本。</div>
+          ${infoGrid([["货源 ID", pool.id], ["货源名称", pool.name], ["码入库方式", pool.stockMethod], ["货源状态", pool.state]])}
+          <div class="alert info" style="margin-top:12px">货源已创建并生成货源 ID。请创建首个入库批次并上传 CDKey；导入成功前货源保持下架。后续补充 CDKey 将使用“补货”入口。</div>
           <div class="form-grid">
             <div class="field"><label><span class="required-star">*</span>批次名称</label><input id="cdkeyInitialBatchName" maxlength="50" value="${draftBatch.batchName || ""}" placeholder="请输入首批入库批次名称"></div>
             <div class="field"><label><span class="required-star">*</span>成本币种</label><select id="cdkeyInitialCostCurrency"><option ${draftBatch.costCurrency !== "美元" ? "selected" : ""}>人民币</option><option ${draftBatch.costCurrency === "美元" ? "selected" : ""}>美元</option></select></div>
@@ -8290,9 +8390,8 @@
             <div class="alert info" style="grid-column:1/-1">如上传文件中存在重复 CDKey，本次导入请求全部退回，不做部分入库。</div>
           </div>`;
       } else {
-        body.innerHTML = `${methodField}<div class="alert warning">“接口批量获取”作为码入库方式预留，本期暂未开放，当前不可选择或保存。</div>`;
+        body.innerHTML = `<div class="alert warning">“接口批量获取”作为码入库方式预留，本期暂未开放，当前不可执行首次入库。</div>`;
       }
-      document.getElementById("cdkeyPoolFormStockMethod")?.addEventListener("change", event => renderCdkeyPoolInitialData(event.target.value));
     }
 
     function initialCdkeyDataError(pool) {
@@ -8352,7 +8451,7 @@
       const providerType = providerConfig.providerType;
       const supplyMode = lockCoreConfig ? existing.supplyMode : valueOf("cdkeyPoolFormSource");
       const existingStockMethod = lockCoreConfig ? (existing?.stockMethod === "平台内部生成" ? "接口批量获取" : existing?.stockMethod) : "";
-      const stockMethod = supplyMode === "码池供货" ? (existingStockMethod || cdkeyStockMethodDraft || "手工上传") : "";
+      const stockMethod = supplyMode === "码池供货" ? (existingStockMethod || valueOf("cdkeyPoolFormStockMethod") || cdkeyStockMethodDraft || "手工上传") : "";
       const supplier = providerType === "三方供应商" ? providerName : "";
       const lockSupplyProduct = cdkeySupplyProductLocked(existing);
       const selectedSupplierProductId = supplyMode === "接口直供" ? valueOf("cdkeyPoolFormSupplierProduct") : "";
@@ -8409,6 +8508,7 @@
       if (providerConfig && !providerConfig.supportedModes.includes(pool.supplyMode)) errors.push("当前供货方不支持所选供货方式");
       if (pool.supplyMode === "码池供货" && (!Number.isInteger(pool.alertThreshold) || pool.alertThreshold < 0 || pool.alertThreshold > 100)) errors.push("安全库存阈值必须为 0-100 的整数");
       if (pool.supplyMode === "码池供货" && pool.stockMethod === "接口批量获取") errors.push("接口批量获取暂未开放，当前不可保存");
+      if (enableMode && pool.supplyMode === "码池供货" && !getCdkeyBatchesByPool(pool.id).length) errors.push("请先完成首次入库，再上架货源");
       if (pool.supplyMode === "接口直供" && (!pool.supplierProduct || !String(pool.supplierSku || "").trim() || !pool.interfaceConfig)) errors.push("接口直供需选择供货商品并正确带出 product_id");
       const duplicate = poolMocks.some(item => item.id === pool.id && item.id !== currentPoolId);
       if (duplicate) errors.push("货源 ID 不允许重复");
@@ -8446,6 +8546,7 @@
     }
 
     function saveCdkeyPool() {
+      if (pendingCdkeyAction?.mode === "initial") return completeCdkeyInitialInbound(false);
       clearCdkeyPoolInvalidHighlights();
       const existing = getPoolById(pendingCdkeyAction?.poolId);
       const targetState = pendingCdkeyAction?.mode === "edit" ? (existing?.state || "下架") : "下架";
@@ -8456,30 +8557,23 @@
         focusFirstInvalid("#cdkeyPoolFormPage");
         return toast("信息不完整，无法保存");
       }
-      const initialError = initialCdkeyDataError(pool);
-      if (initialError) {
-        highlightInitialCdkeyInvalidFields(pool);
-        focusFirstInvalid("#cdkeyPoolFormPage");
-        return toast("信息不完整，无法保存");
-      }
       upsertCdkeyPool(pool);
-      createInitialCdkeyDataIfNeeded(pool);
+      if (pendingCdkeyAction?.mode === "new" && cdkeySupplyMode(pool) === "码池供货") {
+        openCdkeyPoolForm("initial", pool);
+        return toast(`货源 ${pool.id} 已创建，当前为下架状态，请继续完成首次入库。`);
+      }
       showCdkeyPoolPage();
       toast(pendingCdkeyAction?.mode === "edit" ? "CDKey 货源修改已保存。" : "CDKey 货源已创建，当前为下架状态。");
     }
 
     function saveCdkeyPoolEnable() {
+      if (pendingCdkeyAction?.mode === "initial") return completeCdkeyInitialInbound(true);
+      if (pendingCdkeyAction?.mode === "new" && valueOf("cdkeyPoolFormSource") === "码池供货") return saveCdkeyPool();
       clearCdkeyPoolInvalidHighlights();
       const pool = buildCdkeyPoolFromForm("上架");
       const errors = validateCdkeyPool(pool, true);
       if (errors.length) {
         highlightCdkeyPoolInvalidFields(pool);
-        focusFirstInvalid("#cdkeyPoolFormPage");
-        return toast("信息不完整，无法上架");
-      }
-      const initialError = initialCdkeyDataError(pool);
-      if (initialError) {
-        highlightInitialCdkeyInvalidFields(pool);
         focusFirstInvalid("#cdkeyPoolFormPage");
         return toast("信息不完整，无法上架");
       }
@@ -8489,10 +8583,38 @@
         confirmText: "确认上架",
         onConfirm: () => {
           upsertCdkeyPool(pool);
-          createInitialCdkeyDataIfNeeded(pool);
           showCdkeyPoolPage();
           toast(cdkeySupplyMode(pool) === "接口直供" ? "接口直供货源已上架。" : pool.available <= 0 ? "码池供货货源已上架，当前无可用码，请补货。" : "码池供货货源已上架。");
         }
+      });
+    }
+
+    function completeCdkeyInitialInbound(enableAfter) {
+      const pool = currentEditingCdkeyPool();
+      if (!pool) return showCdkeyPoolPage();
+      clearCdkeyPoolInvalidHighlights();
+      const initialError = initialCdkeyDataError(pool);
+      if (initialError) {
+        highlightInitialCdkeyInvalidFields(pool);
+        focusFirstInvalid("#cdkeyPoolFormPage");
+        return toast(initialError);
+      }
+      const finishInbound = () => {
+        createInitialCdkeyDataIfNeeded(pool);
+        pool.state = enableAfter ? "上架" : "下架";
+        pool.updatedAt = nowText();
+        syncCdkeyStatusByPool(pool.id);
+        addCdkeyLog(pool.id, enableAfter ? "首次入库并上架" : "首次入库", "未入库", `${pool.available} 个可用码`, "首批 CDKey 入库完成");
+        visibleCdkeyPools = poolMocks.filter(item => !item.deleted);
+        showCdkeyPoolPage();
+        toast(enableAfter ? "首次入库完成，货源已上架。" : "首次入库完成，货源保持下架状态。");
+      };
+      if (!enableAfter) return finishInbound();
+      openEnableConfirm({
+        title: "确认首次入库并上架",
+        message: "首批 CDKey 入库成功后将立即上架该货源，之后可被商品 SKU 选择。是否继续？",
+        confirmText: "确认入库并上架",
+        onConfirm: finishInbound
       });
     }
 
@@ -8531,10 +8653,11 @@
           <div class="cdkey-detail-subsection-title">入库批次</div>
           ${cdkeyBatchTable(getCdkeyBatchesByPool(pool.id), false)}
         </div>`}`;
+      const boundRows = getBoundSkuByPool(pool.id);
       document.getElementById("cdkeyPoolDetailBody").innerHTML = `
         ${detailSection("货源基础信息", infoGrid(basicItems))}
         ${detailSection(isUnconfigured ? "供货配置" : "供货信息", supplyDetail)}
-        ${detailSection("绑定 SKU", boundSkuTable(getBoundSkuByPool(pool.id)))}
+        ${boundRows.length ? detailSection("绑定 SKU", boundSkuTable(boundRows)) : ""}
       `;
       openDrawer("cdkeyPoolDetailDrawer");
     }
