@@ -1085,6 +1085,8 @@
         <button class="nav-item" data-menu="库存列表" id="menuInventory"><b>•</b><span>库存列表</span></button>
         <div class="nav-title">履约记录</div>
         <button class="nav-item" data-menu="履约记录列表" id="menuDeliveryRecord"><b>•</b><span>履约记录列表</span></button>
+        <div class="nav-title">供应商管理</div>
+        <button class="nav-item" data-menu="供应商列表" id="menuSupplierList"><b>•</b><span>供应商列表</span></button>
         <div class="nav-title">CDKey 管理</div>
         <button class="nav-item" data-menu="CDKey 货源列表" id="menuCdkeyPool"><b>•</b><span>CDKey 货源列表</span></button>
       </nav>
@@ -1812,6 +1814,165 @@
         </section>
       </section>
 
+      <section id="supplierPage" class="content" style="display:none">
+        <div class="page-head">
+          <div>
+            <h1>供应商列表</h1>
+            <div class="sub">维护供应商基础资料与收款策略；供应商商品从对应供应商的“商品管理”入口进入。</div>
+          </div>
+          <div class="btn-row">
+            <button class="btn primary" id="newSupplierBtn">新建供应商</button>
+          </div>
+        </div>
+
+        <section class="card" aria-label="供应商筛选区">
+          <div class="card-body">
+            <div class="filter-grid">
+              <div class="field"><label>供应商名称</label><input id="supplierFilterName" placeholder="请输入供应商名称"></div>
+              <div class="field"><label>供应商 ID</label><input id="supplierFilterId" placeholder="请输入供应商 ID"></div>
+              <div class="field"><label>供应商状态</label><select id="supplierFilterState"><option>全部</option><option>启用</option><option>停用</option></select></div>
+              <div class="field"><label>收款策略</label><select id="supplierFilterCollection"><option>全部</option><option>平台收款</option><option>供货方直接收款</option></select></div>
+            </div>
+            <div class="filter-actions">
+              <button class="btn primary" id="supplierSearchBtn">查询</button>
+              <button class="btn" id="supplierResetBtn">重置</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="table-head">
+            <div>
+              <div class="table-title">供应商数据</div>
+              <div class="table-meta">停用供应商后，其商品及关联货源不再参与新订单，历史订单信息继续保留。</div>
+            </div>
+            <div class="table-meta" id="supplierTableCount">共 0 条</div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>供应商 ID</th><th>供应商名称</th><th>供应商状态</th><th>收款策略</th><th>联系人</th><th>联系电话</th><th>商品数</th><th>更新时间</th><th>操作</th></tr></thead>
+              <tbody id="supplierTbody"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <section id="supplierFormPage" class="content form-page" style="display:none">
+        <div class="page-head">
+          <div>
+            <button class="btn text" id="backToSupplierListBtn">返回供应商列表</button>
+            <h1 id="supplierFormTitle">新建供应商</h1>
+            <div class="sub">维护供应商基础资料与收款策略，支付商户及密钥等敏感配置由支付模块单独管理。</div>
+          </div>
+          <div class="btn-row">
+            <button class="btn primary" id="supplierSaveBtn">保存</button>
+            <button class="btn" id="supplierCancelBtn">取消</button>
+          </div>
+        </div>
+        <div class="form-layout">
+          <div>
+            <section class="form-card" id="supplierSectionBasic">
+              <h2>基础信息</h2>
+              <div class="body">
+                <div class="form-grid">
+                  <div class="field"><label>供应商 ID</label><input id="supplierFormId" value="新建后生成" disabled></div>
+                  <div class="field"><label><span class="required-star">*</span>供应商名称</label><input id="supplierFormName" maxlength="50" placeholder="请输入供应商名称"></div>
+                  <div class="field"><label><span class="required-star">*</span>供应商状态</label><select id="supplierFormState"><option>启用</option><option>停用</option></select></div>
+                  <div class="field"><label><span class="required-star">*</span>收款策略</label><select id="supplierFormCollection"><option>平台收款</option><option>供货方直接收款</option></select><div class="hint-text">只确定货款由平台还是供应商收取，不在此处维护支付商户信息。</div></div>
+                  <div class="field"><label>联系人</label><input id="supplierFormContact" maxlength="30" placeholder="请输入联系人"></div>
+                  <div class="field"><label>联系电话</label><input id="supplierFormPhone" maxlength="30" placeholder="请输入联系电话"></div>
+                </div>
+              </div>
+            </section>
+            <section class="form-card" id="supplierSectionRemark">
+              <h2>备注</h2>
+              <div class="body"><div class="field"><label>备注</label><textarea id="supplierFormRemark" rows="4" maxlength="200" placeholder="记录合作范围、结算说明或其他对内信息"></textarea></div></div>
+            </section>
+          </div>
+          <aside class="side-anchor"><a href="#supplierSectionBasic">基础信息</a><a href="#supplierSectionRemark">备注</a></aside>
+        </div>
+      </section>
+
+      <section id="supplierProductPage" class="content" style="display:none">
+        <div class="page-head">
+          <div>
+            <button class="btn text" id="backFromSupplierProductBtn">返回供应商列表</button>
+            <h1 id="supplierProductPageTitle">供应商商品</h1>
+            <div class="sub" id="supplierProductPageSub">维护当前供应商可提供的商品及对应接口配置。</div>
+          </div>
+          <div class="btn-row">
+            <button class="btn" id="syncSupplierProductBtn">同步商品</button>
+            <button class="btn primary" id="newSupplierProductBtn">新建商品</button>
+          </div>
+        </div>
+        <div class="page-note">“同步商品”会立即请求一次当前供应商的商品接口，并按商品编号新增或更新商品；同步不会自动启用新商品。</div>
+        <section class="card" aria-label="供应商商品筛选区">
+          <div class="card-body">
+            <div class="filter-grid">
+              <div class="field"><label>商品名称 / 编号</label><input id="supplierProductFilterKeyword" placeholder="请输入商品名称或商品编号"></div>
+              <div class="field"><label>商品类型</label><select id="supplierProductFilterType"><option>全部</option><option>CDKEY</option><option>游戏货币</option><option>实物商品</option></select></div>
+              <div class="field"><label>商品状态</label><select id="supplierProductFilterState"><option>全部</option><option>启用</option><option>停用</option></select></div>
+            </div>
+            <div class="filter-actions"><button class="btn primary" id="supplierProductSearchBtn">查询</button><button class="btn" id="supplierProductResetBtn">重置</button></div>
+          </div>
+        </section>
+        <section class="card">
+          <div class="table-head">
+            <div><div class="table-title">供应商商品数据</div><div class="table-meta" id="supplierProductSyncMeta">尚未主动同步</div></div>
+            <div class="table-meta" id="supplierProductTableCount">共 0 条</div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>供应商商品 ID</th><th>商品类型</th><th>商品名称</th><th>商品编号</th><th>接口地址</th><th>接口配置标识</th><th>商品状态</th><th>数据来源</th><th>更新时间</th><th>操作</th></tr></thead>
+              <tbody id="supplierProductTbody"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <section id="supplierProductFormPage" class="content form-page" style="display:none">
+        <div class="page-head">
+          <div>
+            <button class="btn text" id="backToSupplierProductBtn">返回供应商商品</button>
+            <h1 id="supplierProductFormTitle">新建供应商商品</h1>
+            <div class="sub" id="supplierProductFormSub">维护供应商商品及履约接口信息。</div>
+          </div>
+          <div class="btn-row"><button class="btn primary" id="supplierProductSaveBtn">保存</button><button class="btn" id="supplierProductCancelBtn">取消</button></div>
+        </div>
+        <div class="form-layout">
+          <div>
+            <section class="form-card" id="supplierProductSectionBasic">
+              <h2>商品信息</h2>
+              <div class="body">
+                <div class="form-grid">
+                  <div class="field"><label>供应商商品 ID</label><input id="supplierProductFormId" value="新建后生成" disabled></div>
+                  <div class="field"><label>所属供应商</label><input id="supplierProductFormSupplier" disabled></div>
+                  <div class="field"><label><span class="required-star">*</span>商品类型</label><select id="supplierProductFormType"><option>CDKEY</option><option>游戏货币</option><option>实物商品</option></select></div>
+                  <div class="field"><label><span class="required-star">*</span>商品名称</label><input id="supplierProductFormName" maxlength="80" placeholder="请输入供应商侧商品名称"></div>
+                  <div class="field"><label><span class="required-star">*</span>商品编号</label><input id="supplierProductFormCode" maxlength="64" placeholder="同一供应商内不可重复"></div>
+                  <div class="field"><label><span class="required-star">*</span>商品状态</label><select id="supplierProductFormState"><option>启用</option><option>停用</option></select></div>
+                </div>
+              </div>
+            </section>
+            <section class="form-card" id="supplierProductSectionInterface">
+              <h2>接口信息</h2>
+              <div class="body">
+                <div class="form-grid">
+                  <div class="field"><label><span class="required-star">*</span>接口地址</label><input id="supplierProductFormEndpoint" maxlength="200" placeholder="请输入履约接口地址"></div>
+                  <div class="field"><label><span class="required-star">*</span>接口配置标识</label><input id="supplierProductFormInterfaceKey" maxlength="64" placeholder="请输入接口配置标识"><div class="hint-text">仅展示配置标识，密钥和凭证不在页面明文维护。</div></div>
+                </div>
+                <div class="alert info" id="supplierProductInterfaceHint" style="margin-top:12px">手工新建商品时由有权限的运营人员填写；密钥和凭证仍由支付或接口服务受控维护。</div>
+              </div>
+            </section>
+            <section class="form-card" id="supplierProductSectionRemark">
+              <h2>备注</h2>
+              <div class="body"><div class="field"><label>备注</label><textarea id="supplierProductFormRemark" rows="4" maxlength="200" placeholder="记录商品范围、面值或特殊履约限制"></textarea></div></div>
+            </section>
+          </div>
+          <aside class="side-anchor"><a href="#supplierProductSectionBasic">商品信息</a><a href="#supplierProductSectionInterface">接口信息</a><a href="#supplierProductSectionRemark">备注</a></aside>
+        </div>
+      </section>
+
       <section id="cdkeyPoolPage" class="content" style="display:none">
         <div class="page-head">
           <div>
@@ -2071,6 +2232,16 @@
   <aside class="drawer" id="displayDetailDrawer">
     <div class="drawer-head"><div class="drawer-title">投放配置详情</div><button class="btn" data-close="displayDetailDrawer">关闭</button></div>
     <div class="drawer-body" id="displayDetailBody"></div>
+  </aside>
+
+  <aside class="drawer" id="supplierDetailDrawer">
+    <div class="drawer-head"><div class="drawer-title">供应商详情</div><button class="btn" data-close="supplierDetailDrawer">关闭</button></div>
+    <div class="drawer-body" id="supplierDetailBody"></div>
+  </aside>
+
+  <aside class="drawer" id="supplierProductDetailDrawer">
+    <div class="drawer-head"><div class="drawer-title">供应商商品详情</div><button class="btn" data-close="supplierProductDetailDrawer">关闭</button></div>
+    <div class="drawer-body" id="supplierProductDetailBody"></div>
   </aside>
 
   <section class="modal wide" id="productPickerModal" role="dialog" aria-modal="true">
@@ -2673,26 +2844,6 @@
       }
     };
     const virtualTypes = ["虚拟装扮"];
-    const cdkeySupplierCatalog = {
-      "星核卡券": {
-        supportedModes: ["码池供货", "接口直供"],
-        interfaceConfig: "星核供应商接口",
-        products: [
-          { name: "PUBG 300 G-COIN", productId: "1153796224" },
-          { name: "PUBG 600 G-COIN", productId: "1153796225" }
-        ]
-      },
-      "极速卡券": {
-        supportedModes: ["码池供货", "接口直供"],
-        interfaceConfig: "极速卡券接口",
-        products: [
-          { name: "加速器 7 天卡", productId: "1153796301" },
-          { name: "加速器 30 天卡", productId: "1153796302" }
-        ]
-      },
-      "测试供应商": { supportedModes: ["码池供货"], interfaceConfig: "测试供应商接口", products: [] },
-      "礼包供应商": { supportedModes: ["码池供货"], interfaceConfig: "礼包供应商接口", products: [] }
-    };
     const cdkeyPlatformProvider = {
       providerType: "平台自营",
       interfaceConfig: "平台内部出码接口",
@@ -2701,6 +2852,19 @@
         { name: "平台加速器 30 天卡", productId: "INTERNAL_ACCELERATOR_30D" }
       ]
     };
+    let supplierMocks = [
+      { id: "SUP_XINGHE", name: "星核卡券", state: "启用", collectionStrategy: "供货方直接收款", contact: "张经理", phone: "138****1024", remark: "G-COIN 与游戏卡券合作供应商", createdAt: "2026-05-10 10:00", updatedAt: "2026-05-23 09:40", lastSyncAt: "2026-05-23 09:35" },
+      { id: "SUP_JISU", name: "极速卡券", state: "启用", collectionStrategy: "平台收款", contact: "李经理", phone: "139****6301", remark: "加速器卡券供应商", createdAt: "2026-05-11 11:20", updatedAt: "2026-05-23 10:15", lastSyncAt: "2026-05-23 10:10" },
+      { id: "SUP_TEST", name: "测试供应商", state: "停用", collectionStrategy: "平台收款", contact: "测试对接人", phone: "-", remark: "联调测试使用", createdAt: "2026-05-12 14:30", updatedAt: "2026-05-20 16:00", lastSyncAt: "-" },
+      { id: "SUP_GIFT", name: "礼包供应商", state: "启用", collectionStrategy: "平台收款", contact: "王经理", phone: "136****8899", remark: "游戏礼包合作供应商", createdAt: "2026-05-13 09:10", updatedAt: "2026-05-22 18:20", lastSyncAt: "2026-05-22 18:15" }
+    ];
+    let supplierProductMocks = [
+      { id: "SP_XH_GCOIN_300", supplierId: "SUP_XINGHE", type: "游戏货币", name: "PUBG 300 G-COIN", productCode: "1153796224", endpoint: "https://supplier-api.example/gcoin/issue", interfaceKey: "XH-GCOIN-V1", state: "启用", source: "接口同步", remark: "300 G-COIN", createdAt: "2026-05-10 10:15", updatedAt: "2026-05-23 09:35" },
+      { id: "SP_XH_GCOIN_600", supplierId: "SUP_XINGHE", type: "游戏货币", name: "PUBG 600 G-COIN", productCode: "1153796225", endpoint: "https://supplier-api.example/gcoin/issue", interfaceKey: "XH-GCOIN-V1", state: "启用", source: "接口同步", remark: "600 G-COIN", createdAt: "2026-05-10 10:16", updatedAt: "2026-05-23 09:35" },
+      { id: "SP_JS_ACCEL_7D", supplierId: "SUP_JISU", type: "CDKEY", name: "加速器 7 天卡", productCode: "1153796301", endpoint: "https://supplier-api.example/card/issue", interfaceKey: "JS-CARD-V2", state: "启用", source: "接口同步", remark: "7 天加速器卡券", createdAt: "2026-05-11 11:35", updatedAt: "2026-05-23 10:10" },
+      { id: "SP_JS_ACCEL_30D", supplierId: "SUP_JISU", type: "CDKEY", name: "加速器 30 天卡", productCode: "1153796302", endpoint: "https://supplier-api.example/card/issue", interfaceKey: "JS-CARD-V2", state: "启用", source: "接口同步", remark: "30 天加速器卡券", createdAt: "2026-05-11 11:36", updatedAt: "2026-05-23 10:10" },
+      { id: "SP_GIFT_STARTER", supplierId: "SUP_GIFT", type: "CDKEY", name: "新手礼包", productCode: "GIFT_STARTER_01", endpoint: "https://supplier-api.example/gift/issue", interfaceKey: "GIFT-V1", state: "停用", source: "手工维护", remark: "待商务确认后启用", createdAt: "2026-05-13 09:20", updatedAt: "2026-05-22 18:20" }
+    ];
     let poolMocks = [
       { id: "PUBG_GCOIN_300_POOL", name: "PUBG 300 G-COIN 自营码池", state: "上架", providerType: "平台自营", supplyMode: "码池供货", supplier: "", stockMethod: "手工上传", source: "手工上传码", total: 500, available: 320, issued: 172, voided: 0, expired: 0, error: 0, alertThreshold: 80, creator: "平台运营", createdAt: "2026-05-18 10:00", updatedAt: "2026-05-22 15:10", remark: "PUBG G-COIN 商品履约码池" },
       { id: "PUBG_VENDOR_API", name: "星核 G-COIN 官方直供", state: "上架", providerType: "三方供应商", supplyMode: "接口直供", supplier: "星核卡券", supplierProduct: "PUBG 300 G-COIN", supplierSku: "1153796224", interfaceConfig: "星核供应商接口", source: "接口直供", total: 0, available: 0, issued: 86, voided: 0, expired: 0, error: 0, alertThreshold: "", creator: "平台运营", createdAt: "2026-05-20 14:20", updatedAt: "2026-05-23 09:40", remark: "订单履约时接口实时取码" },
@@ -2823,6 +2987,11 @@
     let visibleInventoryRecords = [...inventoryRecords];
     let inventorySortConfig = { field: "totalStock", direction: "desc" };
     let visibleDeliveryRecords = [...deliveryRecords];
+    let visibleSuppliers = [...supplierMocks];
+    let visibleSupplierProducts = [];
+    let currentSupplierId = "";
+    let editingSupplierId = "";
+    let editingSupplierProductId = "";
     let visibleCdkeyPools = poolMocks.filter(pool => !pool.deleted);
     let selectedProduct = null;
     let selectedTemplate = null;
@@ -3905,6 +4074,7 @@
       renderInventoryStats();
       renderDeliveryRecordTable();
       renderDeliveryRecordStats();
+      renderSupplierTable();
       renderCdkeyPoolTable();
       renderCdkeyPoolStats();
       renderPointsFlowTable();
@@ -3924,6 +4094,7 @@
       document.getElementById("menuOrderManagement").addEventListener("click", showOrderManagementPage);
       document.getElementById("menuInventory").addEventListener("click", showInventoryPage);
       document.getElementById("menuDeliveryRecord").addEventListener("click", showDeliveryRecordPage);
+      document.getElementById("menuSupplierList").addEventListener("click", showSupplierPage);
       document.getElementById("menuCdkeyPool").addEventListener("click", showCdkeyPoolPage);
       document.querySelectorAll(".js-limited").forEach(btn => btn.addEventListener("click", () => toast("当前模块暂未开放。")));
       document.getElementById("exportBtn").addEventListener("click", () => toast("导出任务已创建，可在下载中心查看。"));
@@ -3967,6 +4138,20 @@
       document.getElementById("deliverySearchBtn").addEventListener("click", applyDeliveryRecordFilters);
       document.getElementById("deliveryResetBtn").addEventListener("click", resetDeliveryRecordFilters);
       document.getElementById("deliveryToggleMoreBtn").addEventListener("click", toggleDeliveryRecordMoreFilters);
+      document.getElementById("supplierSearchBtn").addEventListener("click", applySupplierFilters);
+      document.getElementById("supplierResetBtn").addEventListener("click", resetSupplierFilters);
+      document.getElementById("newSupplierBtn").addEventListener("click", () => openSupplierForm("new"));
+      document.getElementById("backToSupplierListBtn").addEventListener("click", showSupplierPage);
+      document.getElementById("supplierCancelBtn").addEventListener("click", showSupplierPage);
+      document.getElementById("supplierSaveBtn").addEventListener("click", saveSupplier);
+      document.getElementById("backFromSupplierProductBtn").addEventListener("click", showSupplierPage);
+      document.getElementById("supplierProductSearchBtn").addEventListener("click", applySupplierProductFilters);
+      document.getElementById("supplierProductResetBtn").addEventListener("click", resetSupplierProductFilters);
+      document.getElementById("syncSupplierProductBtn").addEventListener("click", syncSupplierProducts);
+      document.getElementById("newSupplierProductBtn").addEventListener("click", () => openSupplierProductForm("new"));
+      document.getElementById("backToSupplierProductBtn").addEventListener("click", () => showSupplierProductPage(currentSupplierId));
+      document.getElementById("supplierProductCancelBtn").addEventListener("click", () => showSupplierProductPage(currentSupplierId));
+      document.getElementById("supplierProductSaveBtn").addEventListener("click", saveSupplierProduct);
       document.getElementById("cdkeyPoolSearchBtn").addEventListener("click", applyCdkeyPoolFilters);
       document.getElementById("cdkeyPoolResetBtn").addEventListener("click", resetCdkeyPoolFilters);
       document.getElementById("newCdkeyPoolBtn").addEventListener("click", () => openCdkeyPoolForm("new"));
@@ -4011,7 +4196,7 @@
           event.target.closest?.(".rich-editor-wrap")?.classList.remove("invalid");
           event.target.closest?.(".form-card")?.classList.remove("invalid");
         });
-        ["templateFormPage", "displayFormPage", "cdkeyPoolFormPage"].forEach(pageId => {
+        ["templateFormPage", "displayFormPage", "supplierFormPage", "supplierProductFormPage", "cdkeyPoolFormPage"].forEach(pageId => {
           const page = document.getElementById(pageId);
           if (!page) return;
           page.addEventListener(eventName, event => {
@@ -4127,13 +4312,14 @@
         "订单列表": "订单管理 / 订单列表",
         "库存列表": "库存管理 / 库存列表",
         "履约记录列表": "履约记录 / 履约记录列表",
+        "供应商列表": "供应商管理 / 供应商列表",
         "CDKey 货源列表": "CDKey 管理 / CDKey 货源列表"
       };
       document.getElementById("breadcrumb").textContent = crumbs[menu] || `商品管理 / ${menu}`;
     }
 
     function hideAllPages() {
-      ["listPage", "pointsFlowPage", "orderManagementPage", "formPage", "templatePage", "templateFormPage", "displayPage", "displayFormPage", "inventoryPage", "deliveryRecordPage", "cdkeyPoolPage", "cdkeyPoolFormPage"].forEach(id => {
+      ["listPage", "pointsFlowPage", "orderManagementPage", "formPage", "templatePage", "templateFormPage", "displayPage", "displayFormPage", "inventoryPage", "deliveryRecordPage", "supplierPage", "supplierFormPage", "supplierProductPage", "supplierProductFormPage", "cdkeyPoolPage", "cdkeyPoolFormPage"].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = "none";
       });
@@ -4197,6 +4383,312 @@
       renderDeliveryRecordTable();
       renderDeliveryRecordStats();
       window.scrollTo(0,0);
+    }
+
+    function showSupplierPage() {
+      hideAllPages();
+      document.getElementById("supplierPage").style.display = "block";
+      setActiveMenu("供应商列表");
+      visibleSuppliers = [...supplierMocks];
+      renderSupplierTable();
+      window.scrollTo(0,0);
+    }
+
+    function supplierById(supplierId) {
+      return supplierMocks.find(item => item.id === supplierId);
+    }
+
+    function supplierProductsBySupplier(supplierId) {
+      return supplierProductMocks.filter(item => item.supplierId === supplierId);
+    }
+
+    function safeText(value) {
+      return String(value ?? "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
+    }
+
+    function supplierStatusTag(state) {
+      return `<span class="tag ${state === "启用" ? "green" : ""}">${state}</span>`;
+    }
+
+    function renderSupplierTable() {
+      const tbody = document.getElementById("supplierTbody");
+      if (!tbody) return;
+      tbody.innerHTML = visibleSuppliers.length ? visibleSuppliers.map(supplier => {
+        const productCount = supplierProductsBySupplier(supplier.id).length;
+        const toggleText = supplier.state === "启用" ? "停用" : "启用";
+        return `<tr>
+          <td><strong>${safeText(supplier.id)}</strong></td>
+          <td>${safeText(supplier.name)}</td>
+          <td>${supplierStatusTag(supplier.state)}</td>
+          <td>${safeText(supplier.collectionStrategy)}</td>
+          <td>${safeText(supplier.contact || "-")}</td>
+          <td>${safeText(supplier.phone || "-")}</td>
+          <td>${productCount}</td>
+          <td>${safeText(supplier.updatedAt || "-")}</td>
+          <td><div class="row-actions"><button class="btn text" type="button" onclick="openSupplierDetail('${supplier.id}')">查看</button><button class="btn text" type="button" onclick="openSupplierForm('edit','${supplier.id}')">编辑</button><button class="btn text" type="button" onclick="showSupplierProductPage('${supplier.id}')">商品管理</button><button class="btn text ${supplier.state === "启用" ? "danger" : ""}" type="button" onclick="toggleSupplierState('${supplier.id}')">${toggleText}</button></div></td>
+        </tr>`;
+      }).join("") : `<tr><td colspan="9"><div class="empty">暂无符合条件的供应商。</div></td></tr>`;
+      document.getElementById("supplierTableCount").textContent = `共 ${visibleSuppliers.length} 条`;
+    }
+
+    function applySupplierFilters() {
+      const name = valueOf("supplierFilterName");
+      const id = valueOf("supplierFilterId").toUpperCase();
+      const state = valueOf("supplierFilterState");
+      const collection = valueOf("supplierFilterCollection");
+      visibleSuppliers = supplierMocks.filter(item => (!name || item.name.includes(name)) && (!id || item.id.includes(id)) && (state === "全部" || item.state === state) && (collection === "全部" || item.collectionStrategy === collection));
+      renderSupplierTable();
+      toast("查询完成，供应商列表已刷新。");
+    }
+
+    function resetSupplierFilters() {
+      ["supplierFilterName", "supplierFilterId"].forEach(id => document.getElementById(id).value = "");
+      ["supplierFilterState", "supplierFilterCollection"].forEach(id => document.getElementById(id).value = "全部");
+      visibleSuppliers = [...supplierMocks];
+      renderSupplierTable();
+      toast("供应商筛选项已重置。");
+    }
+
+    function openSupplierForm(mode, supplierId = "") {
+      editingSupplierId = mode === "edit" ? supplierId : "";
+      const supplier = editingSupplierId ? supplierById(editingSupplierId) : null;
+      if (mode === "edit" && !supplier) return;
+      hideAllPages();
+      document.getElementById("supplierFormPage").style.display = "block";
+      setActiveMenu("供应商列表");
+      document.getElementById("breadcrumb").textContent = `供应商管理 / 供应商列表 / ${supplier ? "编辑供应商" : "新建供应商"}`;
+      document.getElementById("supplierFormTitle").textContent = supplier ? "编辑供应商" : "新建供应商";
+      document.getElementById("supplierFormId").value = supplier?.id || "新建后生成";
+      document.getElementById("supplierFormName").value = supplier?.name || "";
+      document.getElementById("supplierFormState").value = supplier?.state || "启用";
+      document.getElementById("supplierFormCollection").value = supplier?.collectionStrategy || "平台收款";
+      document.getElementById("supplierFormContact").value = supplier?.contact || "";
+      document.getElementById("supplierFormPhone").value = supplier?.phone || "";
+      document.getElementById("supplierFormRemark").value = supplier?.remark || "";
+      document.querySelectorAll("#supplierFormPage .invalid").forEach(el => el.classList.remove("invalid"));
+      window.scrollTo(0,0);
+    }
+
+    function generateSupplierId() {
+      const next = supplierMocks.length + 1;
+      return `SUP_${String(next).padStart(3, "0")}`;
+    }
+
+    function saveSupplier() {
+      const name = valueOf("supplierFormName");
+      if (!name) {
+        document.getElementById("supplierFormName").classList.add("invalid");
+        return toast("请填写供应商名称。");
+      }
+      const duplicate = supplierMocks.some(item => item.name === name && item.id !== editingSupplierId);
+      if (duplicate) {
+        document.getElementById("supplierFormName").classList.add("invalid");
+        return toast("供应商名称已存在。");
+      }
+      const existing = supplierById(editingSupplierId);
+      const supplier = {
+        ...(existing || {}),
+        id: existing?.id || generateSupplierId(),
+        name,
+        state: valueOf("supplierFormState"),
+        collectionStrategy: valueOf("supplierFormCollection"),
+        contact: valueOf("supplierFormContact"),
+        phone: valueOf("supplierFormPhone"),
+        remark: valueOf("supplierFormRemark"),
+        createdAt: existing?.createdAt || nowText(),
+        updatedAt: nowText(),
+        lastSyncAt: existing?.lastSyncAt || "-"
+      };
+      if (existing) supplierMocks[supplierMocks.findIndex(item => item.id === existing.id)] = supplier;
+      else supplierMocks.unshift(supplier);
+      showSupplierPage();
+      toast(existing ? "供应商信息已保存。" : "供应商已创建。");
+    }
+
+    function toggleSupplierState(supplierId) {
+      const supplier = supplierById(supplierId);
+      if (!supplier) return;
+      const nextState = supplier.state === "启用" ? "停用" : "启用";
+      const impact = nextState === "停用" ? "停用后，该供应商商品及关联货源不再参与新订单，历史订单不受影响。" : "启用后，该供应商的已启用商品可继续用于新建货源。";
+      if (!window.confirm(`${impact}\n是否确认${nextState}“${supplier.name}”？`)) return;
+      supplier.state = nextState;
+      supplier.updatedAt = nowText();
+      visibleSuppliers = [...supplierMocks];
+      renderSupplierTable();
+      toast(`供应商已${nextState}。`);
+    }
+
+    function openSupplierDetail(supplierId) {
+      const supplier = supplierById(supplierId);
+      if (!supplier) return;
+      const products = supplierProductsBySupplier(supplierId);
+      const summary = products.length ? `<div class="table-wrap"><table><thead><tr><th>商品名称</th><th>商品编号</th><th>商品类型</th><th>状态</th></tr></thead><tbody>${products.map(item => `<tr><td>${safeText(item.name)}</td><td>${safeText(item.productCode)}</td><td>${safeText(item.type)}</td><td>${supplierStatusTag(item.state)}</td></tr>`).join("")}</tbody></table></div>` : `<div class="empty">该供应商暂无商品。</div>`;
+      document.getElementById("supplierDetailBody").innerHTML = `${detailSection("基础信息", infoGrid([["供应商 ID", safeText(supplier.id)], ["供应商名称", safeText(supplier.name)], ["供应商状态", supplierStatusTag(supplier.state)], ["收款策略", safeText(supplier.collectionStrategy)], ["联系人", safeText(supplier.contact || "-")], ["联系电话", safeText(supplier.phone || "-")], ["创建时间", safeText(supplier.createdAt)], ["更新时间", safeText(supplier.updatedAt)], ["备注", safeText(supplier.remark || "-")]]))}${detailSection(`供应商商品（${products.length}）`, summary)}`;
+      openDrawer("supplierDetailDrawer");
+    }
+
+    function showSupplierProductPage(supplierId) {
+      const supplier = supplierById(supplierId);
+      if (!supplier) return;
+      currentSupplierId = supplierId;
+      editingSupplierProductId = "";
+      visibleSupplierProducts = supplierProductsBySupplier(supplierId);
+      hideAllPages();
+      document.getElementById("supplierProductPage").style.display = "block";
+      setActiveMenu("供应商列表");
+      document.getElementById("breadcrumb").textContent = `供应商管理 / 供应商列表 / ${supplier.name} / 商品管理`;
+      document.getElementById("supplierProductPageTitle").textContent = `${supplier.name} · 商品管理`;
+      document.getElementById("supplierProductPageSub").textContent = `供应商 ID：${supplier.id}；维护该供应商可提供的商品及履约接口信息。`;
+      document.getElementById("supplierProductSyncMeta").textContent = supplier.lastSyncAt && supplier.lastSyncAt !== "-" ? `最近同步：${supplier.lastSyncAt}` : "尚未主动同步";
+      document.getElementById("syncSupplierProductBtn").disabled = supplier.state !== "启用";
+      document.getElementById("newSupplierProductBtn").disabled = supplier.state !== "启用";
+      renderSupplierProductTable();
+      window.scrollTo(0,0);
+    }
+
+    function renderSupplierProductTable() {
+      const tbody = document.getElementById("supplierProductTbody");
+      if (!tbody) return;
+      tbody.innerHTML = visibleSupplierProducts.length ? visibleSupplierProducts.map(item => `<tr>
+        <td><strong>${safeText(item.id)}</strong></td><td>${safeText(item.type)}</td><td>${safeText(item.name)}</td><td>${safeText(item.productCode)}</td>
+        <td><span title="${safeText(item.endpoint)}">${safeText(item.endpoint.replace(/^https?:\/\/[^/]+/, "…"))}</span></td><td>${safeText(item.interfaceKey)}</td><td>${supplierStatusTag(item.state)}</td><td>${safeText(item.source)}</td><td>${safeText(item.updatedAt)}</td>
+        <td><div class="row-actions"><button class="btn text" type="button" onclick="openSupplierProductDetail('${item.id}')">查看</button><button class="btn text" type="button" onclick="openSupplierProductForm('edit','${item.id}')">编辑</button><button class="btn text ${item.state === "启用" ? "danger" : ""}" type="button" onclick="toggleSupplierProductState('${item.id}')">${item.state === "启用" ? "停用" : "启用"}</button></div></td>
+      </tr>`).join("") : `<tr><td colspan="10"><div class="empty">当前供应商暂无符合条件的商品。</div></td></tr>`;
+      document.getElementById("supplierProductTableCount").textContent = `共 ${visibleSupplierProducts.length} 条`;
+    }
+
+    function applySupplierProductFilters() {
+      const keyword = valueOf("supplierProductFilterKeyword");
+      const type = valueOf("supplierProductFilterType");
+      const state = valueOf("supplierProductFilterState");
+      visibleSupplierProducts = supplierProductsBySupplier(currentSupplierId).filter(item => (!keyword || item.name.includes(keyword) || item.productCode.includes(keyword)) && (type === "全部" || item.type === type) && (state === "全部" || item.state === state));
+      renderSupplierProductTable();
+      toast("查询完成，供应商商品列表已刷新。");
+    }
+
+    function resetSupplierProductFilters() {
+      document.getElementById("supplierProductFilterKeyword").value = "";
+      ["supplierProductFilterType", "supplierProductFilterState"].forEach(id => document.getElementById(id).value = "全部");
+      visibleSupplierProducts = supplierProductsBySupplier(currentSupplierId);
+      renderSupplierProductTable();
+      toast("商品筛选项已重置。");
+    }
+
+    function syncSupplierProducts() {
+      const supplier = supplierById(currentSupplierId);
+      if (!supplier || supplier.state !== "启用") return toast("停用状态的供应商不能同步商品。");
+      const button = document.getElementById("syncSupplierProductBtn");
+      button.disabled = true;
+      button.textContent = "同步中...";
+      toast("正在请求供应商商品接口，请稍候。");
+      window.setTimeout(() => {
+        const syncedAt = nowText();
+        const existingProducts = supplierProductsBySupplier(supplier.id);
+        existingProducts.forEach(item => {
+          item.updatedAt = syncedAt;
+          item.source = "接口同步";
+        });
+        let added = 0;
+        if (supplier.id === "SUP_XINGHE" && !supplierProductMocks.some(item => item.supplierId === supplier.id && item.productCode === "1153796226")) {
+          supplierProductMocks.push({ id: "SP_XH_GCOIN_1200", supplierId: supplier.id, type: "游戏货币", name: "PUBG 1200 G-COIN", productCode: "1153796226", endpoint: "https://supplier-api.example/gcoin/issue", interfaceKey: "XH-GCOIN-V1", state: "停用", source: "接口同步", remark: "同步新增，确认后手工启用", createdAt: syncedAt, updatedAt: syncedAt });
+          added = 1;
+        }
+        supplier.lastSyncAt = syncedAt;
+        supplier.updatedAt = syncedAt;
+        visibleSupplierProducts = supplierProductsBySupplier(supplier.id);
+        document.getElementById("supplierProductSyncMeta").textContent = `最近同步：${syncedAt}；新增 ${added}，更新 ${existingProducts.length}，失败 0`;
+        renderSupplierProductTable();
+        button.disabled = false;
+        button.textContent = "同步商品";
+        toast(`商品同步完成：新增 ${added}，更新 ${existingProducts.length}，失败 0。`);
+      }, 800);
+    }
+
+    function openSupplierProductForm(mode, productId = "") {
+      const supplier = supplierById(currentSupplierId);
+      if (!supplier) return;
+      if (supplier.state !== "启用") return toast("请先启用供应商，再维护商品。");
+      editingSupplierProductId = mode === "edit" ? productId : "";
+      const product = editingSupplierProductId ? supplierProductMocks.find(item => item.id === editingSupplierProductId) : null;
+      if (mode === "edit" && (!product || product.supplierId !== currentSupplierId)) return;
+      hideAllPages();
+      document.getElementById("supplierProductFormPage").style.display = "block";
+      setActiveMenu("供应商列表");
+      document.getElementById("breadcrumb").textContent = `供应商管理 / 供应商列表 / ${supplier.name} / ${product ? "编辑商品" : "新建商品"}`;
+      document.getElementById("supplierProductFormTitle").textContent = product ? "编辑供应商商品" : "新建供应商商品";
+      document.getElementById("supplierProductFormSub").textContent = `所属供应商：${supplier.name}（${supplier.id}）`;
+      document.getElementById("supplierProductFormId").value = product?.id || "新建后生成";
+      document.getElementById("supplierProductFormSupplier").value = supplier.name;
+      document.getElementById("supplierProductFormType").value = product?.type || "CDKEY";
+      document.getElementById("supplierProductFormName").value = product?.name || "";
+      document.getElementById("supplierProductFormCode").value = product?.productCode || "";
+      document.getElementById("supplierProductFormState").value = product?.state || "停用";
+      document.getElementById("supplierProductFormEndpoint").value = product?.endpoint || "";
+      document.getElementById("supplierProductFormInterfaceKey").value = product?.interfaceKey || "";
+      document.getElementById("supplierProductFormRemark").value = product?.remark || "";
+      const synced = product?.source === "接口同步";
+      document.getElementById("supplierProductFormEndpoint").disabled = synced;
+      document.getElementById("supplierProductFormInterfaceKey").disabled = synced;
+      document.getElementById("supplierProductInterfaceHint").textContent = synced ? "该商品来自接口同步，接口地址和配置标识随同步结果更新，不允许手工修改。" : "手工新建商品时由有权限的运营人员填写；密钥和凭证仍由接口服务受控维护。";
+      document.querySelectorAll("#supplierProductFormPage .invalid").forEach(el => el.classList.remove("invalid"));
+      window.scrollTo(0,0);
+    }
+
+    function generateSupplierProductId() {
+      return `SP_${String(supplierProductMocks.length + 1).padStart(3, "0")}`;
+    }
+
+    function saveSupplierProduct() {
+      const supplier = supplierById(currentSupplierId);
+      if (!supplier) return;
+      const existing = supplierProductMocks.find(item => item.id === editingSupplierProductId);
+      const required = ["supplierProductFormName", "supplierProductFormCode", "supplierProductFormEndpoint", "supplierProductFormInterfaceKey"];
+      const emptyField = required.find(id => !valueOf(id));
+      if (emptyField) {
+        document.getElementById(emptyField).classList.add("invalid");
+        return toast("请填写完整的商品和接口信息。");
+      }
+      const productCode = valueOf("supplierProductFormCode");
+      const duplicate = supplierProductMocks.some(item => item.supplierId === supplier.id && item.productCode === productCode && item.id !== editingSupplierProductId);
+      if (duplicate) {
+        document.getElementById("supplierProductFormCode").classList.add("invalid");
+        return toast("同一供应商下的商品编号不能重复。");
+      }
+      const product = {
+        ...(existing || {}), id: existing?.id || generateSupplierProductId(), supplierId: supplier.id,
+        type: valueOf("supplierProductFormType"), name: valueOf("supplierProductFormName"), productCode,
+        endpoint: valueOf("supplierProductFormEndpoint"), interfaceKey: valueOf("supplierProductFormInterfaceKey"), state: valueOf("supplierProductFormState"),
+        source: existing?.source || "手工维护", remark: valueOf("supplierProductFormRemark"), createdAt: existing?.createdAt || nowText(), updatedAt: nowText()
+      };
+      if (existing) supplierProductMocks[supplierProductMocks.findIndex(item => item.id === existing.id)] = product;
+      else supplierProductMocks.unshift(product);
+      supplier.updatedAt = nowText();
+      showSupplierProductPage(supplier.id);
+      toast(existing ? "供应商商品已保存。" : "供应商商品已创建。");
+    }
+
+    function toggleSupplierProductState(productId) {
+      const product = supplierProductMocks.find(item => item.id === productId);
+      const supplier = product ? supplierById(product.supplierId) : null;
+      if (!product || !supplier) return;
+      if (supplier.state !== "启用" && product.state !== "启用") return toast("请先启用供应商，再启用商品。");
+      const nextState = product.state === "启用" ? "停用" : "启用";
+      const impact = nextState === "停用" ? "停用后，关联货源不再参与新订单，历史订单不受影响。" : "启用后，该商品可用于新建接口直供货源。";
+      if (!window.confirm(`${impact}\n是否确认${nextState}“${product.name}”？`)) return;
+      product.state = nextState;
+      product.updatedAt = nowText();
+      supplier.updatedAt = nowText();
+      visibleSupplierProducts = supplierProductsBySupplier(supplier.id);
+      renderSupplierProductTable();
+      toast(`供应商商品已${nextState}。`);
+    }
+
+    function openSupplierProductDetail(productId) {
+      const product = supplierProductMocks.find(item => item.id === productId);
+      const supplier = product ? supplierById(product.supplierId) : null;
+      if (!product || !supplier) return;
+      document.getElementById("supplierProductDetailBody").innerHTML = `${detailSection("商品信息", infoGrid([["供应商商品 ID", safeText(product.id)], ["所属供应商", `${safeText(supplier.name)}（${safeText(supplier.id)}）`], ["商品类型", safeText(product.type)], ["商品名称", safeText(product.name)], ["商品编号", safeText(product.productCode)], ["商品状态", supplierStatusTag(product.state)], ["数据来源", safeText(product.source)]]))}${detailSection("接口信息", infoGrid([["接口地址", safeText(product.endpoint)], ["接口配置标识", safeText(product.interfaceKey)], ["创建时间", safeText(product.createdAt)], ["更新时间", safeText(product.updatedAt)], ["备注", safeText(product.remark || "-")]]))}`;
+      openDrawer("supplierProductDetailDrawer");
     }
 
     function showCdkeyPoolPage() {
@@ -7252,26 +7744,29 @@
     }
 
     function cdkeySupplierNamesForMode(mode) {
-      const suppliers = Object.entries(cdkeySupplierCatalog);
-      return mode === "接口直供"
-        ? suppliers.filter(([, config]) => config.products.length > 0).map(([name]) => name)
-        : suppliers.map(([name]) => name);
+      return supplierMocks.filter(supplier => {
+        if (supplier.state !== "启用") return false;
+        if (mode !== "接口直供") return true;
+        return supplierProductsBySupplier(supplier.id).some(product => product.state === "启用");
+      }).map(supplier => supplier.name);
     }
 
     function cdkeyProviderNames() {
-      return ["平台自营", ...Object.keys(cdkeySupplierCatalog)];
+      return ["平台自营", ...supplierMocks.map(supplier => supplier.name)];
     }
 
     function cdkeyProviderConfig(providerName) {
       if (providerName === "平台自营") {
         return { ...cdkeyPlatformProvider, supportedModes: ["码池供货", "接口直供"] };
       }
-      const supplier = cdkeySupplierCatalog[providerName];
+      const supplier = supplierMocks.find(item => item.name === providerName);
       if (!supplier) return null;
+      const products = supplierProductsBySupplier(supplier.id).filter(product => product.state === "启用");
       return {
-        ...supplier,
         providerType: "三方供应商",
-        supportedModes: supplier.supportedModes || (supplier.products.length ? ["码池供货", "接口直供"] : ["码池供货"])
+        interfaceConfig: products[0]?.interfaceKey || "",
+        products: products.map(product => ({ name: product.name, productId: product.productCode })),
+        supportedModes: supplier.state !== "启用" ? [] : products.length ? ["码池供货", "接口直供"] : ["码池供货"]
       };
     }
 
@@ -7286,7 +7781,11 @@
       const select = document.getElementById("cdkeyPoolFormProvider");
       if (!select) return;
       const providerNames = cdkeyProviderNames();
-      select.innerHTML = `<option value="">请选择供货方</option>${providerNames.map(name => `<option value="${name}">${name}</option>`).join("")}`;
+      select.innerHTML = `<option value="">请选择供货方</option>${providerNames.map(name => {
+        const supplier = supplierMocks.find(item => item.name === name);
+        const disabled = supplier?.state === "停用" && name !== selectedProvider ? " disabled" : "";
+        return `<option value="${name}"${disabled}>${name}${supplier?.state === "停用" ? "（已停用）" : ""}</option>`;
+      }).join("")}`;
       select.value = providerNames.includes(selectedProvider) ? selectedProvider : "";
     }
 
