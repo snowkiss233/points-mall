@@ -186,6 +186,15 @@
     }
     .btn.primary { background: var(--primary); border-color: var(--primary); color: #fff; }
     .btn.primary:hover { background: var(--primary-dark); }
+    .btn.supplier-sync {
+      min-width: 128px;
+      padding-inline: 24px;
+      background: var(--primary-dark);
+      border-color: var(--primary-dark);
+      color: #fff;
+      font-weight: 600;
+    }
+    .btn.supplier-sync:hover { background: #0b3f91; border-color: #0b3f91; }
     .btn.text { border-color: transparent; background: transparent; color: var(--primary); padding: 4px 6px; min-height: 28px; }
     .btn.danger { color: var(--red); border-color: #fac5c5; background: #fff; }
     .btn.warning { color: #b45309; border-color: #fed7aa; background: #fffaf5; }
@@ -1911,7 +1920,7 @@
             <div class="sub" id="supplierProductPageSub">维护当前供应商可提供的商品及对应接口配置。</div>
           </div>
           <div class="btn-row">
-            <button class="btn" id="syncSupplierProductBtn">同步商品</button>
+            <button class="btn supplier-sync" id="syncSupplierProductBtn">同步商品</button>
           </div>
         </div>
         <div class="page-note">本期供应商商品只通过接口同步产生，不支持手工新增或启停。点击同步后，系统请求该供应商全部商品同步接口，新商品默认启用。</div>
@@ -1919,8 +1928,6 @@
           <div class="card-body">
             <div class="filter-grid">
               <div class="field"><label>商品名称 / 编号</label><input id="supplierProductFilterKeyword" placeholder="请输入商品名称或商品编号"></div>
-              <div class="field"><label>商品类型</label><select id="supplierProductFilterType"><option>全部</option><option>CDKEY</option><option>游戏货币</option><option>实物商品</option></select></div>
-              <div class="field"><label>商品状态</label><select id="supplierProductFilterState"><option>全部</option><option>启用</option><option>停用</option></select></div>
             </div>
             <div class="filter-actions"><button class="btn primary" id="supplierProductSearchBtn">查询</button><button class="btn" id="supplierProductResetBtn">重置</button></div>
           </div>
@@ -4619,16 +4626,13 @@
 
     function applySupplierProductFilters() {
       const keyword = valueOf("supplierProductFilterKeyword");
-      const type = valueOf("supplierProductFilterType");
-      const state = valueOf("supplierProductFilterState");
-      visibleSupplierProducts = supplierProductsBySupplier(currentSupplierId).filter(item => (!keyword || item.name.includes(keyword) || item.productCode.includes(keyword)) && (type === "全部" || item.type === type) && (state === "全部" || item.state === state));
+      visibleSupplierProducts = supplierProductsBySupplier(currentSupplierId).filter(item => !keyword || item.name.includes(keyword) || item.productCode.includes(keyword));
       renderSupplierProductTable();
       toast("查询完成，供应商商品列表已刷新。");
     }
 
     function resetSupplierProductFilters() {
       document.getElementById("supplierProductFilterKeyword").value = "";
-      ["supplierProductFilterType", "supplierProductFilterState"].forEach(id => document.getElementById(id).value = "全部");
       visibleSupplierProducts = supplierProductsBySupplier(currentSupplierId);
       renderSupplierProductTable();
       toast("商品筛选项已重置。");
