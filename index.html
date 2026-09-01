@@ -2062,7 +2062,7 @@
           <div class="create-step" id="cdkeyPoolCreateStepTwo"><span class="step-no">2</span><span>首次入库</span></div>
         </div>
 
-        <div class="form-layout">
+        <div class="form-layout" id="cdkeyPoolFormLayout">
           <div>
             <section class="form-card" id="cdkeyPoolSectionBasic">
               <h2>基础信息</h2>
@@ -2112,10 +2112,9 @@
               </div>
             </section>
           </div>
-          <aside class="side-anchor">
+          <aside class="side-anchor" id="cdkeyPoolSideAnchor">
             <a href="#cdkeyPoolSectionBasic" id="cdkeyPoolBasicAnchor">基础信息</a>
             <a href="#cdkeyPoolSectionRule" id="cdkeyPoolRuleAnchor">供货配置</a>
-            <a href="#cdkeyPoolSectionInitialData" id="cdkeyPoolInitialDataAnchor">初始供货</a>
             <a href="#cdkeyPoolSectionBoundSku" id="cdkeyPoolBoundSkuAnchor">绑定SKU</a>
             <a href="#cdkeyPoolSectionRemark" id="cdkeyPoolRemarkAnchor">备注</a>
           </aside>
@@ -8344,11 +8343,11 @@
       document.getElementById("cdkeyPoolSectionRemark").style.display = isInitialInbound ? "none" : "";
       document.getElementById("cdkeyPoolSectionInitialData").style.display = isInitialInbound ? "" : "none";
       document.getElementById("cdkeyPoolSectionBoundSku").style.display = showBoundSku ? "" : "none";
+      document.getElementById("cdkeyPoolFormLayout").style.gridTemplateColumns = isInitialInbound ? "minmax(0, 1fr)" : "";
+      document.getElementById("cdkeyPoolSideAnchor").style.display = isInitialInbound ? "none" : "";
       document.getElementById("cdkeyPoolBasicAnchor").style.display = isInitialInbound ? "none" : "";
       document.getElementById("cdkeyPoolRuleAnchor").style.display = isInitialInbound ? "none" : "";
       document.getElementById("cdkeyPoolRemarkAnchor").style.display = isInitialInbound ? "none" : "";
-      document.getElementById("cdkeyPoolInitialDataAnchor").style.display = isInitialInbound ? "" : "none";
-      document.getElementById("cdkeyPoolInitialDataAnchor").textContent = "首次入库";
       document.getElementById("cdkeyPoolBoundSkuAnchor").style.display = showBoundSku ? "" : "none";
       document.getElementById("cdkeyPoolInitialDataTitle").textContent = "首次入库";
       if (isInitialInbound) renderCdkeyPoolInitialData();
