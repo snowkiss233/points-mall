@@ -7537,7 +7537,7 @@
       };
     }
 
-    function validateCdkeyPool(pool, enableMode) {
+    function validateCdkeyPool(pool, enableMode, currentPoolId = pendingCdkeyAction?.poolId || "") {
       const errors = [];
       if (!pool.id) errors.push("货源 ID 必填");
       if (!pool.name) errors.push("货源名称必填");
@@ -7548,7 +7548,7 @@
       if (pool.supplyMode === "码池供货" && (!Number.isInteger(pool.alertThreshold) || pool.alertThreshold < 0 || pool.alertThreshold > 100)) errors.push("安全库存阈值必须为 0-100 的整数");
       if (pool.supplyMode === "码池供货" && pool.stockMethod === "接口批量获取") errors.push("接口批量获取暂未开放，当前不可保存");
       if (pool.supplyMode === "接口直供" && (!pool.supplierProduct || !String(pool.supplierSku || "").trim() || !pool.interfaceConfig)) errors.push("接口直供需选择供货商品并正确带出 product_id");
-      const duplicate = poolMocks.some(item => item.id === pool.id && item.id !== pendingCdkeyAction?.poolId);
+      const duplicate = poolMocks.some(item => item.id === pool.id && item.id !== currentPoolId);
       if (duplicate) errors.push("货源 ID 不允许重复");
       return errors;
     }
@@ -8073,7 +8073,7 @@
       const pool = getPoolById(poolId);
       if (!pool) return;
       if (pool.state === "上架") return toast("货源已是上架状态。");
-      const errors = validateCdkeyPool(pool, true);
+      const errors = validateCdkeyPool(pool, true, pool.id);
       if (errors.length) return toast(errors[0]);
       openEnableConfirm({
         title: "确认上架 CDKey 货源",
