@@ -1830,7 +1830,6 @@
             <div class="filter-grid">
               <div class="field"><label>供应商名称</label><input id="supplierFilterName" placeholder="请输入供应商名称"></div>
               <div class="field"><label>供应商 ID</label><input id="supplierFilterId" placeholder="请输入供应商 ID"></div>
-              <div class="field"><label>供应商状态</label><select id="supplierFilterState"><option>全部</option><option>启用</option><option>停用</option></select></div>
               <div class="field"><label>收款策略</label><select id="supplierFilterCollection"><option>全部</option><option>平台收款</option><option>供货方直接收款</option></select></div>
             </div>
             <div class="filter-actions">
@@ -1844,13 +1843,13 @@
           <div class="table-head">
             <div>
               <div class="table-title">供应商数据</div>
-              <div class="table-meta">停用供应商后，其商品及关联货源不再参与新订单，历史订单信息继续保留。</div>
+              <div class="table-meta">本期供应商创建后默认启用，不提供启停操作；商品与接口数据从对应供应商入口查看。</div>
             </div>
             <div class="table-meta" id="supplierTableCount">共 0 条</div>
           </div>
           <div class="table-wrap">
             <table>
-              <thead><tr><th>供应商 ID</th><th>供应商名称</th><th>供应商状态</th><th>收款策略</th><th>联系人</th><th>联系电话</th><th>接口数</th><th>商品数</th><th>创建时间</th><th>创建人</th><th>更新时间</th><th>更新人</th><th>操作</th></tr></thead>
+              <thead><tr><th>供应商 ID</th><th>供应商名称</th><th>供应商状态</th><th>收款策略</th><th>接口数</th><th>商品数</th><th>创建时间</th><th>创建人</th><th>更新时间</th><th>更新人</th><th>操作</th></tr></thead>
               <tbody id="supplierTbody"></tbody>
             </table>
           </div>
@@ -1877,7 +1876,7 @@
                 <div class="form-grid">
                   <div class="field"><label>供应商 ID</label><input id="supplierFormId" value="新建后生成" disabled></div>
                   <div class="field"><label><span class="required-star">*</span>供应商名称</label><input id="supplierFormName" maxlength="50" placeholder="请输入供应商名称"></div>
-                  <div class="field"><label><span class="required-star">*</span>供应商状态</label><select id="supplierFormState"><option>启用</option><option>停用</option></select></div>
+                  <div class="field"><label>供应商状态</label><input id="supplierFormState" value="启用" disabled><div class="hint-text">本期新建供应商默认启用，不提供启停操作。</div></div>
                   <div class="field"><label><span class="required-star">*</span>收款策略</label><select id="supplierFormCollection"><option>平台收款</option><option>供货方直接收款</option></select><div class="hint-text">只确定货款由平台还是供应商收取，不在此处维护支付商户信息。</div></div>
                   <div class="field"><label>联系人</label><input id="supplierFormContact" maxlength="30" placeholder="请输入联系人"></div>
                   <div class="field"><label>联系电话</label><input id="supplierFormPhone" maxlength="30" placeholder="请输入联系电话"></div>
@@ -1893,62 +1892,6 @@
         </div>
       </section>
 
-      <section id="supplierInterfacePage" class="content" style="display:none">
-        <div class="page-head">
-          <div>
-            <button class="btn text" id="backFromSupplierInterfaceBtn">返回供应商列表</button>
-            <h1 id="supplierInterfacePageTitle">供应商接口管理</h1>
-            <div class="sub" id="supplierInterfacePageSub">维护当前供应商的商品同步、下单取码和结果查询接口。</div>
-          </div>
-          <div class="btn-row"><button class="btn primary" id="newSupplierInterfaceBtn">新建接口</button></div>
-        </div>
-        <div class="page-note">一条接口配置可以包含多种用途；供应商商品同步时只使用已启用且包含“商品同步”的接口。</div>
-        <section class="card" aria-label="供应商接口筛选区">
-          <div class="card-body">
-            <div class="filter-grid">
-              <div class="field"><label>接口名称 / ID</label><input id="supplierInterfaceFilterKeyword" placeholder="请输入接口名称或接口 ID"></div>
-              <div class="field"><label>接口用途</label><select id="supplierInterfaceFilterPurpose"><option>全部</option><option>商品同步</option><option>下单取码</option><option>结果查询</option><option>取消/退款</option></select></div>
-              <div class="field"><label>接口状态</label><select id="supplierInterfaceFilterState"><option>全部</option><option>启用</option><option>停用</option></select></div>
-            </div>
-            <div class="filter-actions"><button class="btn primary" id="supplierInterfaceSearchBtn">查询</button><button class="btn" id="supplierInterfaceResetBtn">重置</button></div>
-          </div>
-        </section>
-        <section class="card">
-          <div class="table-head"><div><div class="table-title">供应商接口数据</div><div class="table-meta">接口停用后不再用于新的商品同步或履约请求，历史记录继续保留。</div></div><div class="table-meta" id="supplierInterfaceTableCount">共 0 条</div></div>
-          <div class="table-wrap"><table><thead><tr><th>接口配置 ID</th><th>接口名称</th><th>接口用途</th><th>接口版本</th><th>默认同步接口</th><th>接口状态</th><th>创建时间</th><th>创建人</th><th>更新时间</th><th>更新人</th><th>操作</th></tr></thead><tbody id="supplierInterfaceTbody"></tbody></table></div>
-        </section>
-      </section>
-
-      <section id="supplierInterfaceFormPage" class="content form-page" style="display:none">
-        <div class="page-head">
-          <div><button class="btn text" id="backToSupplierInterfaceBtn">返回接口管理</button><h1 id="supplierInterfaceFormTitle">新建供应商接口</h1><div class="sub" id="supplierInterfaceFormSub">维护接口用途、地址和受控配置标识。</div></div>
-          <div class="btn-row"><button class="btn primary" id="supplierInterfaceSaveBtn">保存</button><button class="btn" id="supplierInterfaceCancelBtn">取消</button></div>
-        </div>
-        <div class="form-layout">
-          <div>
-            <section class="form-card" id="supplierInterfaceSectionBasic"><h2>基础信息</h2><div class="body"><div class="form-grid">
-              <div class="field"><label>接口配置 ID</label><input id="supplierInterfaceFormId" value="新建后生成" disabled></div>
-              <div class="field"><label>所属供应商</label><input id="supplierInterfaceFormSupplier" disabled></div>
-              <div class="field"><label><span class="required-star">*</span>接口名称</label><input id="supplierInterfaceFormName" maxlength="50" placeholder="请输入接口名称"></div>
-              <div class="field"><label><span class="required-star">*</span>接口版本</label><input id="supplierInterfaceFormVersion" maxlength="20" placeholder="例如 V1"></div>
-              <div class="field"><label><span class="required-star">*</span>接口状态</label><select id="supplierInterfaceFormState"><option>启用</option><option>停用</option></select></div>
-              <div class="field"><label>默认商品同步接口</label><select id="supplierInterfaceFormDefault"><option value="否">否</option><option value="是">是</option></select><div class="hint-text">同一供应商最多设置一个默认商品同步接口。</div></div>
-            </div></div></section>
-            <section class="form-card" id="supplierInterfaceSectionPurpose"><h2><span class="required-star">*</span>接口用途</h2><div class="body"><div class="checkbox-grid">
-              <label class="checkline"><input type="checkbox" data-supplier-interface-purpose="商品同步">商品同步</label>
-              <label class="checkline"><input type="checkbox" data-supplier-interface-purpose="下单取码">下单取码</label>
-              <label class="checkline"><input type="checkbox" data-supplier-interface-purpose="结果查询">结果查询</label>
-              <label class="checkline"><input type="checkbox" data-supplier-interface-purpose="取消/退款">取消/退款</label>
-            </div></div></section>
-            <section class="form-card" id="supplierInterfaceSectionConfig"><h2>接口配置</h2><div class="body"><div class="form-grid">
-              <div class="field"><label><span class="required-star">*</span>接口地址</label><input id="supplierInterfaceFormEndpoint" maxlength="200" placeholder="请输入接口基础地址"></div>
-              <div class="field"><label><span class="required-star">*</span>凭证配置标识</label><input id="supplierInterfaceFormCredential" maxlength="64" placeholder="请输入凭证配置标识"><div class="hint-text">只展示配置标识，不在页面明文保存密钥或证书。</div></div>
-            </div></div></section>
-          </div>
-          <aside class="side-anchor"><a href="#supplierInterfaceSectionBasic">基础信息</a><a href="#supplierInterfaceSectionPurpose">接口用途</a><a href="#supplierInterfaceSectionConfig">接口配置</a></aside>
-        </div>
-      </section>
-
       <section id="supplierProductPage" class="content" style="display:none">
         <div class="page-head">
           <div>
@@ -1960,7 +1903,7 @@
             <button class="btn" id="syncSupplierProductBtn">同步商品</button>
           </div>
         </div>
-        <div class="page-note">本期供应商商品只通过接口同步产生，不支持手工新建。同步时按接口和商品编号新增或更新商品，新同步商品默认停用。</div>
+        <div class="page-note">本期供应商商品只通过接口同步产生，不支持手工新增或启停。点击同步后，系统请求该供应商全部商品同步接口，新商品默认启用。</div>
         <section class="card" aria-label="供应商商品筛选区">
           <div class="card-body">
             <div class="filter-grid">
@@ -1978,7 +1921,7 @@
           </div>
           <div class="table-wrap">
             <table>
-              <thead><tr><th>供应商商品 ID</th><th>商品类型</th><th>商品名称</th><th>商品编号</th><th>同步接口</th><th>商品状态</th><th>创建时间</th><th>创建人</th><th>更新时间</th><th>更新人</th><th>操作</th></tr></thead>
+              <thead><tr><th>商品编码</th><th>商品名称</th><th>商品状态</th><th>创建时间</th><th>接口信息</th></tr></thead>
               <tbody id="supplierProductTbody"></tbody>
             </table>
           </div>
@@ -2256,18 +2199,13 @@
     <div class="drawer-body" id="supplierProductDetailBody"></div>
   </aside>
 
-  <aside class="drawer" id="supplierInterfaceDetailDrawer">
-    <div class="drawer-head"><div class="drawer-title">供应商接口详情</div><button class="btn" data-close="supplierInterfaceDetailDrawer">关闭</button></div>
-    <div class="drawer-body" id="supplierInterfaceDetailBody"></div>
-  </aside>
-
-  <section class="modal" id="supplierProductSyncModal" role="dialog" aria-modal="true">
-    <div class="modal-head"><span>同步供应商商品</span><button class="btn text" data-close-modal="supplierProductSyncModal">关闭</button></div>
+  <section class="modal wide" id="supplierInterfaceModal" role="dialog" aria-modal="true">
+    <div class="modal-head"><span id="supplierInterfaceModalTitle">供应商接口</span><button class="btn text" data-close-modal="supplierInterfaceModal">关闭</button></div>
     <div class="modal-body">
-      <div class="alert info" id="supplierProductSyncInfo">请选择本次同步使用的商品接口。</div>
-      <div class="field" style="margin-top:14px"><label><span class="required-star">*</span>同步接口</label><select id="supplierProductSyncInterface"></select></div>
+      <div class="alert info" id="supplierInterfaceModalInfo">本期仅展示存量接口，不提供新增、编辑或启停操作。</div>
+      <div class="table-wrap" style="margin-top:14px"><table><thead><tr><th>接口名称</th><th>接口地址</th><th>接口状态</th><th>创建时间</th></tr></thead><tbody id="supplierInterfaceModalTbody"></tbody></table></div>
     </div>
-    <div class="modal-foot"><button class="btn" data-close-modal="supplierProductSyncModal">取消</button><button class="btn primary" id="confirmSupplierProductSyncBtn">开始同步</button></div>
+    <div class="modal-foot"><button class="btn" data-close-modal="supplierInterfaceModal">关闭</button></div>
   </section>
 
   <section class="modal wide" id="productPickerModal" role="dialog" aria-modal="true">
@@ -2881,7 +2819,7 @@
     let supplierMocks = [
       { id: "SUP_XINGHE", name: "星核卡券", state: "启用", collectionStrategy: "供货方直接收款", contact: "张经理", phone: "138****1024", remark: "G-COIN 与游戏卡券合作供应商", createdAt: "2026-05-10 10:00", createdBy: "平台运营", updatedAt: "2026-05-23 09:40", updatedBy: "平台运营", lastSyncAt: "2026-05-23 09:35" },
       { id: "SUP_JISU", name: "极速卡券", state: "启用", collectionStrategy: "平台收款", contact: "李经理", phone: "139****6301", remark: "加速器卡券供应商", createdAt: "2026-05-11 11:20", createdBy: "平台运营", updatedAt: "2026-05-23 10:15", updatedBy: "平台运营", lastSyncAt: "2026-05-23 10:10" },
-      { id: "SUP_TEST", name: "测试供应商", state: "停用", collectionStrategy: "平台收款", contact: "测试对接人", phone: "-", remark: "联调测试使用", createdAt: "2026-05-12 14:30", createdBy: "平台运营", updatedAt: "2026-05-20 16:00", updatedBy: "平台运营", lastSyncAt: "-" },
+      { id: "SUP_TEST", name: "测试供应商", state: "启用", collectionStrategy: "平台收款", contact: "测试对接人", phone: "-", remark: "联调测试使用", createdAt: "2026-05-12 14:30", createdBy: "平台运营", updatedAt: "2026-05-20 16:00", updatedBy: "平台运营", lastSyncAt: "-" },
       { id: "SUP_GIFT", name: "礼包供应商", state: "启用", collectionStrategy: "平台收款", contact: "王经理", phone: "136****8899", remark: "游戏礼包合作供应商", createdAt: "2026-05-13 09:10", createdBy: "平台运营", updatedAt: "2026-05-22 18:20", updatedBy: "平台运营", lastSyncAt: "2026-05-22 18:15" }
     ];
     let supplierInterfaceMocks = [
@@ -2895,7 +2833,7 @@
       { id: "SP_XH_GCOIN_600", supplierId: "SUP_XINGHE", interfaceId: "IF_XH_OFFICIAL", type: "游戏货币", name: "PUBG 600 G-COIN", productCode: "1153796225", state: "启用", remark: "600 G-COIN", createdAt: "2026-05-10 10:16", createdBy: "系统同步", updatedAt: "2026-05-23 09:35", updatedBy: "系统同步" },
       { id: "SP_JS_ACCEL_7D", supplierId: "SUP_JISU", interfaceId: "IF_JS_CARD", type: "CDKEY", name: "加速器 7 天卡", productCode: "1153796301", state: "启用", remark: "7 天加速器卡券", createdAt: "2026-05-11 11:35", createdBy: "系统同步", updatedAt: "2026-05-23 10:10", updatedBy: "系统同步" },
       { id: "SP_JS_ACCEL_30D", supplierId: "SUP_JISU", interfaceId: "IF_JS_CARD", type: "CDKEY", name: "加速器 30 天卡", productCode: "1153796302", state: "启用", remark: "30 天加速器卡券", createdAt: "2026-05-11 11:36", createdBy: "系统同步", updatedAt: "2026-05-23 10:10", updatedBy: "系统同步" },
-      { id: "SP_GIFT_STARTER", supplierId: "SUP_GIFT", interfaceId: "IF_GIFT", type: "CDKEY", name: "新手礼包", productCode: "GIFT_STARTER_01", state: "停用", remark: "待商务确认后启用", createdAt: "2026-05-13 09:20", createdBy: "系统同步", updatedAt: "2026-05-22 18:20", updatedBy: "平台运营" }
+      { id: "SP_GIFT_STARTER", supplierId: "SUP_GIFT", interfaceId: "IF_GIFT", type: "CDKEY", name: "新手礼包", productCode: "GIFT_STARTER_01", state: "启用", remark: "接口同步商品", createdAt: "2026-05-13 09:20", createdBy: "系统同步", updatedAt: "2026-05-22 18:20", updatedBy: "系统同步" }
     ];
     let poolMocks = [
       { id: "PUBG_GCOIN_300_POOL", name: "PUBG 300 G-COIN 自营码池", state: "上架", providerType: "平台自营", supplyMode: "码池供货", supplier: "", stockMethod: "手工上传", source: "手工上传码", total: 500, available: 320, issued: 172, voided: 0, expired: 0, error: 0, alertThreshold: 80, creator: "平台运营", createdAt: "2026-05-18 10:00", updatedAt: "2026-05-22 15:10", remark: "PUBG G-COIN 商品履约码池" },
@@ -3020,11 +2958,9 @@
     let inventorySortConfig = { field: "totalStock", direction: "desc" };
     let visibleDeliveryRecords = [...deliveryRecords];
     let visibleSuppliers = [...supplierMocks];
-    let visibleSupplierInterfaces = [];
     let visibleSupplierProducts = [];
     let currentSupplierId = "";
     let editingSupplierId = "";
-    let editingSupplierInterfaceId = "";
     let visibleCdkeyPools = poolMocks.filter(pool => !pool.deleted);
     let selectedProduct = null;
     let selectedTemplate = null;
@@ -4177,18 +4113,10 @@
       document.getElementById("backToSupplierListBtn").addEventListener("click", showSupplierPage);
       document.getElementById("supplierCancelBtn").addEventListener("click", showSupplierPage);
       document.getElementById("supplierSaveBtn").addEventListener("click", saveSupplier);
-      document.getElementById("backFromSupplierInterfaceBtn").addEventListener("click", showSupplierPage);
-      document.getElementById("newSupplierInterfaceBtn").addEventListener("click", () => openSupplierInterfaceForm("new"));
-      document.getElementById("supplierInterfaceSearchBtn").addEventListener("click", applySupplierInterfaceFilters);
-      document.getElementById("supplierInterfaceResetBtn").addEventListener("click", resetSupplierInterfaceFilters);
-      document.getElementById("backToSupplierInterfaceBtn").addEventListener("click", () => showSupplierInterfacePage(currentSupplierId));
-      document.getElementById("supplierInterfaceCancelBtn").addEventListener("click", () => showSupplierInterfacePage(currentSupplierId));
-      document.getElementById("supplierInterfaceSaveBtn").addEventListener("click", saveSupplierInterface);
       document.getElementById("backFromSupplierProductBtn").addEventListener("click", showSupplierPage);
       document.getElementById("supplierProductSearchBtn").addEventListener("click", applySupplierProductFilters);
       document.getElementById("supplierProductResetBtn").addEventListener("click", resetSupplierProductFilters);
       document.getElementById("syncSupplierProductBtn").addEventListener("click", syncSupplierProducts);
-      document.getElementById("confirmSupplierProductSyncBtn").addEventListener("click", confirmSupplierProductSync);
       document.getElementById("cdkeyPoolSearchBtn").addEventListener("click", applyCdkeyPoolFilters);
       document.getElementById("cdkeyPoolResetBtn").addEventListener("click", resetCdkeyPoolFilters);
       document.getElementById("newCdkeyPoolBtn").addEventListener("click", () => openCdkeyPoolForm("new"));
@@ -4233,7 +4161,7 @@
           event.target.closest?.(".rich-editor-wrap")?.classList.remove("invalid");
           event.target.closest?.(".form-card")?.classList.remove("invalid");
         });
-        ["templateFormPage", "displayFormPage", "supplierFormPage", "supplierInterfaceFormPage", "cdkeyPoolFormPage"].forEach(pageId => {
+        ["templateFormPage", "displayFormPage", "supplierFormPage", "cdkeyPoolFormPage"].forEach(pageId => {
           const page = document.getElementById(pageId);
           if (!page) return;
           page.addEventListener(eventName, event => {
@@ -4356,7 +4284,7 @@
     }
 
     function hideAllPages() {
-      ["listPage", "pointsFlowPage", "orderManagementPage", "formPage", "templatePage", "templateFormPage", "displayPage", "displayFormPage", "inventoryPage", "deliveryRecordPage", "supplierPage", "supplierFormPage", "supplierInterfacePage", "supplierInterfaceFormPage", "supplierProductPage", "cdkeyPoolPage", "cdkeyPoolFormPage"].forEach(id => {
+      ["listPage", "pointsFlowPage", "orderManagementPage", "formPage", "templatePage", "templateFormPage", "displayPage", "displayFormPage", "inventoryPage", "deliveryRecordPage", "supplierPage", "supplierFormPage", "supplierProductPage", "cdkeyPoolPage", "cdkeyPoolFormPage"].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = "none";
       });
@@ -4461,39 +4389,35 @@
       tbody.innerHTML = visibleSuppliers.length ? visibleSuppliers.map(supplier => {
         const interfaceCount = supplierInterfacesBySupplier(supplier.id).length;
         const productCount = supplierProductsBySupplier(supplier.id).length;
-        const toggleText = supplier.state === "启用" ? "停用" : "启用";
         return `<tr>
           <td><strong>${safeText(supplier.id)}</strong></td>
           <td>${safeText(supplier.name)}</td>
           <td>${supplierStatusTag(supplier.state)}</td>
           <td>${safeText(supplier.collectionStrategy)}</td>
-          <td>${safeText(supplier.contact || "-")}</td>
-          <td>${safeText(supplier.phone || "-")}</td>
           <td>${interfaceCount}</td>
           <td>${productCount}</td>
           <td>${safeText(supplier.createdAt || "-")}</td>
           <td>${safeText(supplier.createdBy || "-")}</td>
           <td>${safeText(supplier.updatedAt || "-")}</td>
           <td>${safeText(supplier.updatedBy || "-")}</td>
-          <td><div class="row-actions"><button class="btn text" type="button" onclick="openSupplierDetail('${supplier.id}')">查看</button><button class="btn text" type="button" onclick="openSupplierForm('edit','${supplier.id}')">编辑</button><button class="btn text" type="button" onclick="showSupplierInterfacePage('${supplier.id}')">接口管理</button><button class="btn text" type="button" onclick="showSupplierProductPage('${supplier.id}')">商品管理</button><button class="btn text ${supplier.state === "启用" ? "danger" : ""}" type="button" onclick="toggleSupplierState('${supplier.id}')">${toggleText}</button></div></td>
+          <td><div class="row-actions"><button class="btn text" type="button" onclick="openSupplierDetail('${supplier.id}')">查看</button><button class="btn text" type="button" onclick="openSupplierForm('edit','${supplier.id}')">编辑</button><button class="btn text" type="button" onclick="openSupplierInterfaceModal('${supplier.id}')">接口管理</button><button class="btn text" type="button" onclick="showSupplierProductPage('${supplier.id}')">商品管理</button></div></td>
         </tr>`;
-      }).join("") : `<tr><td colspan="13"><div class="empty">暂无符合条件的供应商。</div></td></tr>`;
+      }).join("") : `<tr><td colspan="11"><div class="empty">暂无符合条件的供应商。</div></td></tr>`;
       document.getElementById("supplierTableCount").textContent = `共 ${visibleSuppliers.length} 条`;
     }
 
     function applySupplierFilters() {
       const name = valueOf("supplierFilterName");
       const id = valueOf("supplierFilterId").toUpperCase();
-      const state = valueOf("supplierFilterState");
       const collection = valueOf("supplierFilterCollection");
-      visibleSuppliers = supplierMocks.filter(item => (!name || item.name.includes(name)) && (!id || item.id.includes(id)) && (state === "全部" || item.state === state) && (collection === "全部" || item.collectionStrategy === collection));
+      visibleSuppliers = supplierMocks.filter(item => (!name || item.name.includes(name)) && (!id || item.id.includes(id)) && (collection === "全部" || item.collectionStrategy === collection));
       renderSupplierTable();
       toast("查询完成，供应商列表已刷新。");
     }
 
     function resetSupplierFilters() {
       ["supplierFilterName", "supplierFilterId"].forEach(id => document.getElementById(id).value = "");
-      ["supplierFilterState", "supplierFilterCollection"].forEach(id => document.getElementById(id).value = "全部");
+      document.getElementById("supplierFilterCollection").value = "全部";
       visibleSuppliers = [...supplierMocks];
       renderSupplierTable();
       toast("供应商筛选项已重置。");
@@ -4540,7 +4464,7 @@
         ...(existing || {}),
         id: existing?.id || generateSupplierId(),
         name,
-        state: valueOf("supplierFormState"),
+        state: "启用",
         collectionStrategy: valueOf("supplierFormCollection"),
         contact: valueOf("supplierFormContact"),
         phone: valueOf("supplierFormPhone"),
@@ -4557,20 +4481,6 @@
       toast(existing ? "供应商信息已保存。" : "供应商已创建。");
     }
 
-    function toggleSupplierState(supplierId) {
-      const supplier = supplierById(supplierId);
-      if (!supplier) return;
-      const nextState = supplier.state === "启用" ? "停用" : "启用";
-      const impact = nextState === "停用" ? "停用后，该供应商商品及关联货源不再参与新订单，历史订单不受影响。" : "启用后，该供应商的已启用商品可继续用于新建货源。";
-      if (!window.confirm(`${impact}\n是否确认${nextState}“${supplier.name}”？`)) return;
-      supplier.state = nextState;
-      supplier.updatedAt = nowText();
-      supplier.updatedBy = "平台运营";
-      visibleSuppliers = [...supplierMocks];
-      renderSupplierTable();
-      toast(`供应商已${nextState}。`);
-    }
-
     function openSupplierDetail(supplierId) {
       const supplier = supplierById(supplierId);
       if (!supplier) return;
@@ -4580,140 +4490,19 @@
       openDrawer("supplierDetailDrawer");
     }
 
-    function showSupplierInterfacePage(supplierId) {
+    function openSupplierInterfaceModal(supplierId) {
       const supplier = supplierById(supplierId);
       if (!supplier) return;
-      currentSupplierId = supplierId;
-      editingSupplierInterfaceId = "";
-      visibleSupplierInterfaces = supplierInterfacesBySupplier(supplierId);
-      hideAllPages();
-      document.getElementById("supplierInterfacePage").style.display = "block";
-      setActiveMenu("供应商列表");
-      document.getElementById("breadcrumb").textContent = `供应商管理 / 供应商列表 / ${supplier.name} / 接口管理`;
-      document.getElementById("supplierInterfacePageTitle").textContent = `${supplier.name} · 接口管理`;
-      document.getElementById("supplierInterfacePageSub").textContent = `供应商 ID：${supplier.id}；维护商品同步、下单取码和结果查询等接口配置。`;
-      document.getElementById("newSupplierInterfaceBtn").disabled = supplier.state !== "启用";
-      renderSupplierInterfaceTable();
-      window.scrollTo(0,0);
-    }
-
-    function renderSupplierInterfaceTable() {
-      const tbody = document.getElementById("supplierInterfaceTbody");
-      if (!tbody) return;
-      tbody.innerHTML = visibleSupplierInterfaces.length ? visibleSupplierInterfaces.map(item => `<tr>
-        <td><strong>${safeText(item.id)}</strong></td><td>${safeText(item.name)}</td><td>${item.purposes.map(purpose => `<span class="tag blue">${safeText(purpose)}</span>`).join(" ")}</td><td>${safeText(item.version)}</td><td>${item.defaultSync ? '<span class="tag green">是</span>' : '否'}</td><td>${supplierStatusTag(item.state)}</td>
-        <td>${safeText(item.createdAt)}</td><td>${safeText(item.createdBy)}</td><td>${safeText(item.updatedAt)}</td><td>${safeText(item.updatedBy)}</td>
-        <td><div class="row-actions"><button class="btn text" type="button" onclick="openSupplierInterfaceDetail('${item.id}')">查看</button><button class="btn text" type="button" onclick="openSupplierInterfaceForm('edit','${item.id}')">编辑</button><button class="btn text ${item.state === "启用" ? "danger" : ""}" type="button" onclick="toggleSupplierInterfaceState('${item.id}')">${item.state === "启用" ? "停用" : "启用"}</button></div></td>
-      </tr>`).join("") : `<tr><td colspan="11"><div class="empty">当前供应商暂无符合条件的接口配置。</div></td></tr>`;
-      document.getElementById("supplierInterfaceTableCount").textContent = `共 ${visibleSupplierInterfaces.length} 条`;
-    }
-
-    function applySupplierInterfaceFilters() {
-      const keyword = valueOf("supplierInterfaceFilterKeyword");
-      const purpose = valueOf("supplierInterfaceFilterPurpose");
-      const state = valueOf("supplierInterfaceFilterState");
-      visibleSupplierInterfaces = supplierInterfacesBySupplier(currentSupplierId).filter(item => (!keyword || item.name.includes(keyword) || item.id.includes(keyword.toUpperCase())) && (purpose === "全部" || item.purposes.includes(purpose)) && (state === "全部" || item.state === state));
-      renderSupplierInterfaceTable();
-      toast("查询完成，供应商接口列表已刷新。");
-    }
-
-    function resetSupplierInterfaceFilters() {
-      document.getElementById("supplierInterfaceFilterKeyword").value = "";
-      ["supplierInterfaceFilterPurpose", "supplierInterfaceFilterState"].forEach(id => document.getElementById(id).value = "全部");
-      visibleSupplierInterfaces = supplierInterfacesBySupplier(currentSupplierId);
-      renderSupplierInterfaceTable();
-      toast("接口筛选项已重置。");
-    }
-
-    function openSupplierInterfaceForm(mode, interfaceId = "") {
-      const supplier = supplierById(currentSupplierId);
-      if (!supplier) return;
-      if (supplier.state !== "启用") return toast("请先启用供应商，再维护接口。");
-      editingSupplierInterfaceId = mode === "edit" ? interfaceId : "";
-      const config = editingSupplierInterfaceId ? supplierInterfaceById(editingSupplierInterfaceId) : null;
-      if (mode === "edit" && (!config || config.supplierId !== supplier.id)) return;
-      hideAllPages();
-      document.getElementById("supplierInterfaceFormPage").style.display = "block";
-      setActiveMenu("供应商列表");
-      document.getElementById("breadcrumb").textContent = `供应商管理 / 供应商列表 / ${supplier.name} / ${config ? "编辑接口" : "新建接口"}`;
-      document.getElementById("supplierInterfaceFormTitle").textContent = config ? "编辑供应商接口" : "新建供应商接口";
-      document.getElementById("supplierInterfaceFormSub").textContent = `所属供应商：${supplier.name}（${supplier.id}）`;
-      document.getElementById("supplierInterfaceFormId").value = config?.id || "新建后生成";
-      document.getElementById("supplierInterfaceFormSupplier").value = supplier.name;
-      document.getElementById("supplierInterfaceFormName").value = config?.name || "";
-      document.getElementById("supplierInterfaceFormVersion").value = config?.version || "";
-      document.getElementById("supplierInterfaceFormState").value = config?.state || "停用";
-      document.getElementById("supplierInterfaceFormDefault").value = config?.defaultSync ? "是" : "否";
-      document.getElementById("supplierInterfaceFormEndpoint").value = config?.endpoint || "";
-      document.getElementById("supplierInterfaceFormCredential").value = config?.credentialKey || "";
-      document.querySelectorAll("[data-supplier-interface-purpose]").forEach(input => input.checked = Boolean(config?.purposes.includes(input.dataset.supplierInterfacePurpose)));
-      document.querySelectorAll("#supplierInterfaceFormPage .invalid").forEach(el => el.classList.remove("invalid"));
-      window.scrollTo(0,0);
-    }
-
-    function selectedSupplierInterfacePurposes() {
-      return Array.from(document.querySelectorAll("[data-supplier-interface-purpose]:checked")).map(input => input.dataset.supplierInterfacePurpose);
-    }
-
-    function generateSupplierInterfaceId() {
-      return `IF_${String(supplierInterfaceMocks.length + 1).padStart(3, "0")}`;
-    }
-
-    function saveSupplierInterface() {
-      const supplier = supplierById(currentSupplierId);
-      if (!supplier) return;
-      const existing = supplierInterfaceById(editingSupplierInterfaceId);
-      const name = valueOf("supplierInterfaceFormName");
-      const version = valueOf("supplierInterfaceFormVersion");
-      const endpoint = valueOf("supplierInterfaceFormEndpoint");
-      const credentialKey = valueOf("supplierInterfaceFormCredential");
-      const purposes = selectedSupplierInterfacePurposes();
-      const required = [["supplierInterfaceFormName", name], ["supplierInterfaceFormVersion", version], ["supplierInterfaceFormEndpoint", endpoint], ["supplierInterfaceFormCredential", credentialKey]];
-      const emptyField = required.find(([, value]) => !value);
-      if (emptyField) {
-        document.getElementById(emptyField[0]).classList.add("invalid");
-        return toast("请填写完整的接口配置。");
-      }
-      if (!purposes.length) return toast("请至少选择一种接口用途。");
-      const defaultSync = valueOf("supplierInterfaceFormDefault") === "是";
-      if (defaultSync && !purposes.includes("商品同步")) return toast("默认商品同步接口必须包含“商品同步”用途。");
-      if (defaultSync) supplierInterfacesBySupplier(supplier.id).forEach(item => item.defaultSync = false);
-      const config = {
-        ...(existing || {}), id: existing?.id || generateSupplierInterfaceId(), supplierId: supplier.id, name, purposes, endpoint, version, credentialKey,
-        defaultSync, state: valueOf("supplierInterfaceFormState"), createdAt: existing?.createdAt || nowText(), createdBy: existing?.createdBy || "平台运营", updatedAt: nowText(), updatedBy: "平台运营"
-      };
-      if (existing) supplierInterfaceMocks[supplierInterfaceMocks.findIndex(item => item.id === existing.id)] = config;
-      else supplierInterfaceMocks.unshift(config);
-      supplier.updatedAt = nowText();
-      supplier.updatedBy = "平台运营";
-      showSupplierInterfacePage(supplier.id);
-      toast(existing ? "供应商接口已保存。" : "供应商接口已创建。");
-    }
-
-    function toggleSupplierInterfaceState(interfaceId) {
-      const config = supplierInterfaceById(interfaceId);
-      const supplier = config ? supplierById(config.supplierId) : null;
-      if (!config || !supplier) return;
-      if (supplier.state !== "启用" && config.state !== "启用") return toast("请先启用供应商，再启用接口。");
-      const nextState = config.state === "启用" ? "停用" : "启用";
-      const impact = nextState === "停用" ? "停用后，该接口不再用于新的商品同步或履约请求，历史记录不受影响。" : "启用后，该接口可以按配置用途参与商品同步或履约。";
-      if (!window.confirm(`${impact}\n是否确认${nextState}“${config.name}”？`)) return;
-      config.state = nextState;
-      config.updatedAt = nowText();
-      config.updatedBy = "平台运营";
-      supplier.updatedAt = nowText();
-      supplier.updatedBy = "平台运营";
-      visibleSupplierInterfaces = supplierInterfacesBySupplier(supplier.id);
-      renderSupplierInterfaceTable();
-      toast(`供应商接口已${nextState}。`);
-    }
-
-    function openSupplierInterfaceDetail(interfaceId) {
-      const config = supplierInterfaceById(interfaceId);
-      const supplier = config ? supplierById(config.supplierId) : null;
-      if (!config || !supplier) return;
-      document.getElementById("supplierInterfaceDetailBody").innerHTML = `${detailSection("基础信息", infoGrid([["接口配置 ID", safeText(config.id)], ["所属供应商", `${safeText(supplier.name)}（${safeText(supplier.id)}）`], ["接口名称", safeText(config.name)], ["接口用途", safeText(config.purposes.join("、"))], ["接口版本", safeText(config.version)], ["默认商品同步接口", config.defaultSync ? "是" : "否"], ["接口状态", supplierStatusTag(config.state)]]))}${detailSection("接口配置", infoGrid([["接口地址", safeText(config.endpoint)], ["凭证配置标识", safeText(config.credentialKey)], ["创建时间", safeText(config.createdAt)], ["创建人", safeText(config.createdBy)], ["更新时间", safeText(config.updatedAt)], ["更新人", safeText(config.updatedBy)]]))}`;
-      openDrawer("supplierInterfaceDetailDrawer");
+      const interfaces = supplierInterfacesBySupplier(supplierId);
+      document.getElementById("supplierInterfaceModalTitle").textContent = `${supplier.name} · 接口管理`;
+      document.getElementById("supplierInterfaceModalInfo").textContent = `共 ${interfaces.length} 个存量接口。本期仅展示接口信息，不提供查询、新增、编辑或启停操作。`;
+      document.getElementById("supplierInterfaceModalTbody").innerHTML = interfaces.length ? interfaces.map(item => `<tr>
+        <td>${safeText(item.name)}</td>
+        <td>${safeText(item.endpoint)}</td>
+        <td>${supplierStatusTag(item.state)}</td>
+        <td>${safeText(item.createdAt || "-")}</td>
+      </tr>`).join("") : `<tr><td colspan="4"><div class="empty">当前供应商暂无接口数据。</div></td></tr>`;
+      openModal("supplierInterfaceModal");
     }
 
     function showSupplierProductPage(supplierId) {
@@ -4726,7 +4515,7 @@
       setActiveMenu("供应商列表");
       document.getElementById("breadcrumb").textContent = `供应商管理 / 供应商列表 / ${supplier.name} / 商品管理`;
       document.getElementById("supplierProductPageTitle").textContent = `${supplier.name} · 商品管理`;
-      document.getElementById("supplierProductPageSub").textContent = `供应商 ID：${supplier.id}；查看接口同步商品并管理启停状态。`;
+      document.getElementById("supplierProductPageSub").textContent = `供应商 ID：${supplier.id}；商品由供应商接口同步，本期不支持手工新增或启停。`;
       document.getElementById("supplierProductSyncMeta").textContent = supplier.lastSyncAt && supplier.lastSyncAt !== "-" ? `最近同步：${supplier.lastSyncAt}` : "尚未主动同步";
       document.getElementById("syncSupplierProductBtn").disabled = supplier.state !== "启用";
       renderSupplierProductTable();
@@ -4739,11 +4528,13 @@
       tbody.innerHTML = visibleSupplierProducts.length ? visibleSupplierProducts.map(item => {
         const syncInterface = supplierInterfaceById(item.interfaceId);
         return `<tr>
-        <td><strong>${safeText(item.id)}</strong></td><td>${safeText(item.type)}</td><td>${safeText(item.name)}</td><td>${safeText(item.productCode)}</td>
-        <td>${safeText(syncInterface?.name || "-")}</td><td>${supplierStatusTag(item.state)}</td><td>${safeText(item.createdAt)}</td><td>${safeText(item.createdBy || "-")}</td><td>${safeText(item.updatedAt)}</td><td>${safeText(item.updatedBy || "-")}</td>
-        <td><div class="row-actions"><button class="btn text" type="button" onclick="openSupplierProductDetail('${item.id}')">查看</button><button class="btn text ${item.state === "启用" ? "danger" : ""}" type="button" onclick="toggleSupplierProductState('${item.id}')">${item.state === "启用" ? "停用" : "启用"}</button></div></td>
+        <td><strong>${safeText(item.productCode)}</strong></td>
+        <td>${safeText(item.name)}</td>
+        <td>${supplierStatusTag(item.state)}</td>
+        <td>${safeText(item.createdAt)}</td>
+        <td>${safeText(syncInterface?.name || "-")}<div class="minor">${safeText(syncInterface?.endpoint || "-")}</div></td>
       </tr>`;
-      }).join("") : `<tr><td colspan="11"><div class="empty">当前供应商暂无符合条件的商品。</div></td></tr>`;
+      }).join("") : `<tr><td colspan="5"><div class="empty">当前供应商暂无符合条件的商品。</div></td></tr>`;
       document.getElementById("supplierProductTableCount").textContent = `共 ${visibleSupplierProducts.length} 条`;
     }
 
@@ -4769,19 +4560,7 @@
       if (!supplier || supplier.state !== "启用") return toast("停用状态的供应商不能同步商品。");
       const interfaces = supplierInterfacesBySupplier(supplier.id).filter(item => item.state === "启用" && item.purposes.includes("商品同步"));
       if (!interfaces.length) return toast("当前供应商没有已启用的商品同步接口，请先前往接口管理配置。");
-      if (interfaces.length === 1) return startSupplierProductSync([interfaces[0].id]);
-      const defaultInterface = interfaces.find(item => item.defaultSync) || interfaces[0];
-      document.getElementById("supplierProductSyncInfo").textContent = `当前供应商有 ${interfaces.length} 个可用商品同步接口，请选择本次同步范围。`;
-      document.getElementById("supplierProductSyncInterface").innerHTML = `${interfaces.map(item => `<option value="${item.id}" ${item.id === defaultInterface.id ? "selected" : ""}>${safeText(item.name)}${item.defaultSync ? "（默认）" : ""}</option>`).join("")}<option value="ALL">全部启用接口</option>`;
-      openModal("supplierProductSyncModal");
-    }
-
-    function confirmSupplierProductSync() {
-      const selected = valueOf("supplierProductSyncInterface");
-      const interfaces = supplierInterfacesBySupplier(currentSupplierId).filter(item => item.state === "启用" && item.purposes.includes("商品同步"));
-      const interfaceIds = selected === "ALL" ? interfaces.map(item => item.id) : [selected];
-      closeModal("supplierProductSyncModal");
-      startSupplierProductSync(interfaceIds);
+      startSupplierProductSync(interfaces.map(item => item.id));
     }
 
     function startSupplierProductSync(interfaceIds) {
@@ -4800,11 +4579,11 @@
         });
         let added = 0;
         if (supplier.id === "SUP_XINGHE" && interfaceIds.includes("IF_XH_OFFICIAL") && !supplierProductMocks.some(item => item.interfaceId === "IF_XH_OFFICIAL" && item.productCode === "1153796226")) {
-          supplierProductMocks.push({ id: "SP_XH_GCOIN_1200", supplierId: supplier.id, interfaceId: "IF_XH_OFFICIAL", type: "游戏货币", name: "PUBG 1200 G-COIN", productCode: "1153796226", state: "停用", remark: "同步新增，确认后手工启用", createdAt: syncedAt, createdBy: "系统同步", updatedAt: syncedAt, updatedBy: "系统同步" });
+          supplierProductMocks.push({ id: "SP_XH_GCOIN_1200", supplierId: supplier.id, interfaceId: "IF_XH_OFFICIAL", type: "游戏货币", name: "PUBG 1200 G-COIN", productCode: "1153796226", state: "启用", remark: "接口同步新增", createdAt: syncedAt, createdBy: "系统同步", updatedAt: syncedAt, updatedBy: "系统同步" });
           added = 1;
         }
         if (supplier.id === "SUP_XINGHE" && interfaceIds.includes("IF_XH_OVERSEAS") && !supplierProductMocks.some(item => item.interfaceId === "IF_XH_OVERSEAS" && item.productCode === "GC300-SEA")) {
-          supplierProductMocks.push({ id: "SP_XH_GCOIN_300_SEA", supplierId: supplier.id, interfaceId: "IF_XH_OVERSEAS", type: "游戏货币", name: "PUBG 300 G-COIN 海外渠道", productCode: "GC300-SEA", state: "停用", remark: "海外接口同步新增，确认后手工启用", createdAt: syncedAt, createdBy: "系统同步", updatedAt: syncedAt, updatedBy: "系统同步" });
+          supplierProductMocks.push({ id: "SP_XH_GCOIN_300_SEA", supplierId: supplier.id, interfaceId: "IF_XH_OVERSEAS", type: "游戏货币", name: "PUBG 300 G-COIN 海外渠道", productCode: "GC300-SEA", state: "启用", remark: "接口同步新增", createdAt: syncedAt, createdBy: "系统同步", updatedAt: syncedAt, updatedBy: "系统同步" });
           added += 1;
         }
         supplier.lastSyncAt = syncedAt;
@@ -4817,33 +4596,6 @@
         button.textContent = "同步商品";
         toast(`商品同步完成：接口 ${interfaceIds.length}，新增 ${added}，更新 ${existingProducts.length}，失败 0。`);
       }, 800);
-    }
-
-    function toggleSupplierProductState(productId) {
-      const product = supplierProductMocks.find(item => item.id === productId);
-      const supplier = product ? supplierById(product.supplierId) : null;
-      if (!product || !supplier) return;
-      if (supplier.state !== "启用" && product.state !== "启用") return toast("请先启用供应商，再启用商品。");
-      const nextState = product.state === "启用" ? "停用" : "启用";
-      const impact = nextState === "停用" ? "停用后，关联货源不再参与新订单，历史订单不受影响。" : "启用后，该商品可用于新建接口直供货源。";
-      if (!window.confirm(`${impact}\n是否确认${nextState}“${product.name}”？`)) return;
-      product.state = nextState;
-      product.updatedAt = nowText();
-      product.updatedBy = "平台运营";
-      supplier.updatedAt = nowText();
-      supplier.updatedBy = "平台运营";
-      visibleSupplierProducts = supplierProductsBySupplier(supplier.id);
-      renderSupplierProductTable();
-      toast(`供应商商品已${nextState}。`);
-    }
-
-    function openSupplierProductDetail(productId) {
-      const product = supplierProductMocks.find(item => item.id === productId);
-      const supplier = product ? supplierById(product.supplierId) : null;
-      if (!product || !supplier) return;
-      const syncInterface = supplierInterfaceById(product.interfaceId);
-      document.getElementById("supplierProductDetailBody").innerHTML = `${detailSection("商品信息", infoGrid([["供应商商品 ID", safeText(product.id)], ["所属供应商", `${safeText(supplier.name)}（${safeText(supplier.id)}）`], ["商品类型", safeText(product.type)], ["商品名称", safeText(product.name)], ["商品编号", safeText(product.productCode)], ["同步接口", safeText(syncInterface?.name || "-")], ["商品状态", supplierStatusTag(product.state)], ["创建时间", safeText(product.createdAt)], ["创建人", safeText(product.createdBy || "-")], ["更新时间", safeText(product.updatedAt)], ["更新人", safeText(product.updatedBy || "-")], ["备注", safeText(product.remark || "-")]]))}`;
-      openDrawer("supplierProductDetailDrawer");
     }
 
     function showCdkeyPoolPage() {
