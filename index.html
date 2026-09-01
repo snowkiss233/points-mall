@@ -8282,20 +8282,23 @@
       const cancelButton = document.getElementById("cdkeyPoolCancelBtn");
       const currentPool = currentEditingCdkeyPool();
       if (mode === "initial") {
-        saveButton.textContent = "完成首次入库";
+        saveButton.style.display = "none";
         enableButton.textContent = "入库并上架";
         enableButton.style.display = "";
         cancelButton.textContent = "稍后入库";
       } else if (mode === "edit") {
+        saveButton.style.display = "";
         saveButton.textContent = "保存修改";
         enableButton.textContent = "保存并上架";
         enableButton.style.display = currentPool?.state === "上架" ? "none" : "";
         cancelButton.textContent = "取消";
       } else if (valueOf("cdkeyPoolFormSource") === "码池供货") {
+        saveButton.style.display = "";
         saveButton.textContent = "创建并继续入库";
         enableButton.style.display = "none";
         cancelButton.textContent = "取消";
       } else {
+        saveButton.style.display = "";
         saveButton.textContent = "保存";
         enableButton.textContent = "保存并上架";
         enableButton.style.display = "";
