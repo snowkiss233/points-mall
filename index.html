@@ -1895,13 +1895,13 @@
           <div class="table-head">
             <div>
               <div class="table-title">供应商数据</div>
-              <div class="table-meta">本期供应商创建后默认启用，不提供启停操作；商品与接口数据从对应供应商入口查看。</div>
+              <div class="table-meta">本期供应商创建后默认启用，不提供启停操作；供应商商品从对应供应商的“商品管理”入口查看。</div>
             </div>
             <div class="table-meta" id="supplierTableCount">共 0 条</div>
           </div>
           <div class="table-wrap">
             <table>
-              <thead><tr><th>供应商 ID</th><th>供应商名称</th><th>供应商状态</th><th>收款策略</th><th>接口数</th><th>商品数</th><th>创建时间</th><th>创建人</th><th>更新时间</th><th>更新人</th><th>操作</th></tr></thead>
+              <thead><tr><th>供应商 ID</th><th>供应商名称</th><th>供应商状态</th><th>收款策略</th><th>商品数</th><th>创建时间</th><th>创建人</th><th>更新时间</th><th>更新人</th><th>操作</th></tr></thead>
               <tbody id="supplierTbody"></tbody>
             </table>
           </div>
@@ -2254,15 +2254,6 @@
     <div class="drawer-head"><div class="drawer-title">供应商商品详情</div><button class="btn" data-close="supplierProductDetailDrawer">关闭</button></div>
     <div class="drawer-body" id="supplierProductDetailBody"></div>
   </aside>
-
-  <section class="modal wide" id="supplierInterfaceModal" role="dialog" aria-modal="true">
-    <div class="modal-head"><span id="supplierInterfaceModalTitle">供应商接口</span><button class="btn text" data-close-modal="supplierInterfaceModal">关闭</button></div>
-    <div class="modal-body">
-      <div class="alert info" id="supplierInterfaceModalInfo">本期仅展示存量接口，不提供新增、编辑或启停操作。</div>
-      <div class="table-wrap" style="margin-top:14px"><table><thead><tr><th>接口名称</th><th>接口地址</th><th>接口状态</th><th>创建时间</th></tr></thead><tbody id="supplierInterfaceModalTbody"></tbody></table></div>
-    </div>
-    <div class="modal-foot"><button class="btn" data-close-modal="supplierInterfaceModal">关闭</button></div>
-  </section>
 
   <section class="modal wide" id="productPickerModal" role="dialog" aria-modal="true">
     <div class="modal-head"><span>选择投放商品</span><button class="btn text" data-close-modal="productPickerModal">关闭</button></div>
@@ -4509,22 +4500,20 @@
       const tbody = document.getElementById("supplierTbody");
       if (!tbody) return;
       tbody.innerHTML = visibleSuppliers.length ? visibleSuppliers.map(supplier => {
-        const interfaceCount = supplierInterfacesBySupplier(supplier.id).length;
         const productCount = supplierProductsBySupplier(supplier.id).length;
         return `<tr>
           <td><strong>${safeText(supplier.id)}</strong></td>
           <td>${safeText(supplier.name)}</td>
           <td>${supplierStatusTag(supplier.state)}</td>
           <td>${safeText(supplier.collectionStrategy)}</td>
-          <td>${interfaceCount}</td>
           <td>${productCount}</td>
           <td>${safeText(supplier.createdAt || "-")}</td>
           <td>${safeText(supplier.createdBy || "-")}</td>
           <td>${safeText(supplier.updatedAt || "-")}</td>
           <td>${safeText(supplier.updatedBy || "-")}</td>
-          <td><div class="row-actions"><button class="btn text" type="button" onclick="openSupplierDetail('${supplier.id}')">查看</button><button class="btn text" type="button" onclick="openSupplierForm('edit','${supplier.id}')">编辑</button><button class="btn text" type="button" onclick="openSupplierInterfaceModal('${supplier.id}')">接口管理</button><button class="btn text" type="button" onclick="showSupplierProductPage('${supplier.id}')">商品管理</button></div></td>
+          <td><div class="row-actions"><button class="btn text" type="button" onclick="openSupplierDetail('${supplier.id}')">查看</button><button class="btn text" type="button" onclick="openSupplierForm('edit','${supplier.id}')">编辑</button><button class="btn text" type="button" onclick="showSupplierProductPage('${supplier.id}')">商品管理</button></div></td>
         </tr>`;
-      }).join("") : `<tr><td colspan="11"><div class="empty">暂无符合条件的供应商。</div></td></tr>`;
+      }).join("") : `<tr><td colspan="10"><div class="empty">暂无符合条件的供应商。</div></td></tr>`;
       document.getElementById("supplierTableCount").textContent = `共 ${visibleSuppliers.length} 条`;
     }
 
@@ -4617,21 +4606,6 @@
       openDrawer("supplierDetailDrawer");
     }
 
-    function openSupplierInterfaceModal(supplierId) {
-      const supplier = supplierById(supplierId);
-      if (!supplier) return;
-      const interfaces = supplierInterfacesBySupplier(supplierId);
-      document.getElementById("supplierInterfaceModalTitle").textContent = `${supplier.name} · 接口管理`;
-      document.getElementById("supplierInterfaceModalInfo").textContent = `共 ${interfaces.length} 个存量接口。本期仅展示接口信息，不提供查询、新增、编辑或启停操作。`;
-      document.getElementById("supplierInterfaceModalTbody").innerHTML = interfaces.length ? interfaces.map(item => `<tr>
-        <td>${safeText(item.name)}</td>
-        <td>${safeText(item.endpoint)}</td>
-        <td>${supplierStatusTag(item.state)}</td>
-        <td>${safeText(item.createdAt || "-")}</td>
-      </tr>`).join("") : `<tr><td colspan="4"><div class="empty">当前供应商暂无接口数据。</div></td></tr>`;
-      openModal("supplierInterfaceModal");
-    }
-
     function showSupplierProductPage(supplierId) {
       const supplier = supplierById(supplierId);
       if (!supplier) return;
@@ -4683,7 +4657,7 @@
       const supplier = supplierById(currentSupplierId);
       if (!supplier || supplier.state !== "启用") return toast("停用状态的供应商不能同步商品。");
       const interfaces = supplierInterfacesBySupplier(supplier.id).filter(item => item.state === "启用" && item.purposes.includes("商品同步"));
-      if (!interfaces.length) return toast("当前供应商没有已启用的商品同步接口，请先前往接口管理配置。");
+      if (!interfaces.length) return toast("当前供应商未配置可用的商品同步接口，请联系开发处理。");
       startSupplierProductSync(interfaces.map(item => item.id));
     }
 
