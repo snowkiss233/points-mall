@@ -1199,7 +1199,7 @@
           <div class="table-head">
             <div>
               <div class="table-title">商品数据</div>
-              <div class="table-meta">SKU 是兑换最小单位；库存和 CDKey 货源状态按 SKU 维度在库存列表、SKU 详情或货源列表查看。</div>
+              <div class="table-meta">SKU 是兑换与赠送的最小单位；赠品配置按 SPU 关联一个或多个赠品 SKU，库存和履约能力继续复用原 SKU。</div>
             </div>
             <div class="table-meta" id="tableCount">共 0 条</div>
           </div>
@@ -1326,7 +1326,7 @@
           <div>
             <button class="btn text" id="backToListBtn">返回商品列表</button>
             <h1 id="formTitle">新建商品</h1>
-            <div class="sub">配置商品类型、基础信息、商品素材、SKU 多币种价格、履约方式，以及 SKU 的供货与库存。商品创建后如需增加或调整 CDKey 货源，必须先下架商品再进入编辑；库存数量和下单策略的后续调整统一前往库存列表维护。</div>
+            <div class="sub">配置商品类型、基础信息、商品素材、SKU 多币种价格、赠品规则、履约方式，以及 SKU 的供货与库存。赠品配置独立于商品上下架，可在商品列表中单独调整。</div>
           </div>
           <div class="btn-row">
             <button class="btn" id="saveDraftBtn">保存草稿</button>
@@ -1486,6 +1486,14 @@
               </div>
             </section>
 
+            <section class="form-card" id="sectionGift">
+              <h2>赠品配置（选填）</h2>
+              <div class="body">
+                <div class="alert info">赠品规则与商品主数据独立保存。本期按整个 SPU 生效，每笔订单固定赠送；主商品购买多件不倍增赠品，且只有订单内全部主商品履约成功后才发放。</div>
+                <div id="formGiftConfigBody"></div>
+              </div>
+            </section>
+
             <section class="form-card" id="sectionInitialInventory">
               <h2><span class="required-star">*</span>供货与库存配置</h2>
               <div class="body">
@@ -1511,6 +1519,7 @@
             <a href="#sectionMaterial">商品素材</a>
             <a href="#sectionScopeTags">适用范围与标签</a>
             <a href="#sectionSku">SKU 配置</a>
+            <a href="#sectionGift">赠品配置</a>
             <a href="#sectionInitialInventory">供货与库存配置</a>
             <a href="#sectionRemark">备注</a>
           </aside>
@@ -2391,6 +2400,36 @@
     </div>
   </section>
 
+  <section class="modal wide" id="giftConfigModal" role="dialog" aria-modal="true">
+    <div class="modal-head"><span id="giftConfigModalTitle">赠品配置</span><button class="btn text" data-close-modal="giftConfigModal">关闭</button></div>
+    <div class="modal-body">
+      <div class="alert info">赠品以 0 支付金额写入订单商品明细，复用所选 SKU 的库存与履约能力。配置调整只影响新订单，历史订单继续按下单快照履约。</div>
+      <div id="giftConfigModalBody"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn warning" id="giftConfigDisableBtn">停用配置</button>
+      <button class="btn" data-close-modal="giftConfigModal">取消</button>
+      <button class="btn" id="giftConfigSaveDraftBtn">保存草稿</button>
+      <button class="btn primary" id="giftConfigSaveEnableBtn">保存并启用</button>
+    </div>
+  </section>
+
+  <section class="modal wide" id="giftPickerModal" role="dialog" aria-modal="true">
+    <div class="modal-head"><span>选择赠品 SKU</span><button class="btn text" data-close-modal="giftPickerModal">关闭</button></div>
+    <div class="modal-body">
+      <div class="alert info">可复用已上架或已下架、但履约配置有效的商城 SKU。本期不支持当前主商品自身、草稿商品、实物商品、接口直供 CDKey 及会形成循环赠送的 SKU。</div>
+      <div class="filter-grid" style="margin-top:14px">
+        <div class="field"><label>商品名称 / ID</label><input id="giftPickerProductFilter" placeholder="输入商品名称或 SPU ID"></div>
+        <div class="field"><label>SKU ID</label><input id="giftPickerSkuFilter" placeholder="输入 SKU ID"></div>
+        <div class="field"><label>履约方式</label><select id="giftPickerDeliveryFilter"><option value="">全部</option><option>自动履约（虚拟道具）</option><option>自动履约（CDKey）</option><option>手动履约（实物）</option></select></div>
+      </div>
+      <div class="table-wrap" style="margin-top:14px">
+        <table><thead><tr><th>商品信息</th><th>SKU 信息</th><th>商品状态</th><th>履约方式</th><th>库存情况</th><th>可选校验</th><th>操作</th></tr></thead><tbody id="giftPickerTbody"></tbody></table>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn" data-close-modal="giftPickerModal">完成</button></div>
+  </section>
+
   <section class="modal wide" id="skuPriceModal" role="dialog" aria-modal="true">
     <div class="modal-head"><span id="skuPriceModalTitle">配置多币种价格</span><button class="btn text" data-close-modal="skuPriceModal">关闭</button></div>
     <div class="modal-body">
@@ -2753,6 +2792,20 @@
       { no: "ORD20260702008", userId: "U100868", nnNo: "NN100868", phone: "13388888888", nick: "郑十", product: "NN定制马克杯", productSnapshot: "NN定制马克杯 / 类型：实物商品 / 规格：标准款", productType: "实物商品", quantity: 1, currencyType: "人民币", paymentMethod: "微信支付", unitAmount: 39.9, paymentAmount: 39.9, inventoryType: "有限库存", acquireForm: "用户填写收货地址后发货", fulfillmentChannel: "实物履约 / 物流发货", addressStatus: "已填写", recipient: "郑十", recipientPhone: "13388888888", address: "湖北省武汉市洪山区关山街道 66 号 1203", addressSubmittedAt: "2026-07-02 18:50:12", logisticsCompany: "京东物流", trackingNo: "JD202607020166", shippedAt: "2026-07-02 19:10:20", receivedAt: "-", fulfill: DELIVERY_MANUAL_PHYSICAL, status: "已支付", fulfillmentStatus: "履约中", reason: "待用户确认收货", paymentResult: "微信支付成功：¥39.90", stockResult: "库存已扣减：1", fulfillResult: "1 件商品已发货，待用户确认收货", retrySummary: "实物履约-待确认收货", created: "2026-07-02 18:45:00", updated: "2026-07-02 19:10:20", completed: "-" },
       { no: "ORD20260702007", userId: "U100862", nnNo: "NN100862", phone: "13888888888", nick: "李四", product: "NN定制手办", productSnapshot: "NN定制手办 / 类型：实物商品 / 规格：标准款", productType: "实物商品", quantity: 3, currencyType: "积分", paymentMethod: "积分支付", unitAmount: 1000, paymentAmount: 3000, inventoryType: "有限库存", acquireForm: "用户填写收货地址后发货", fulfillmentChannel: "实物履约 / 物流发货", addressStatus: "已填写", recipient: "李四", recipientPhone: "13888888888", address: "湖北省武汉市江夏区藏龙岛产业园 B2-1508", addressSubmittedAt: "2026-07-02 14:26:18", logisticsCompany: "顺丰速运", trackingNo: "SF202607020088", shippedAt: "2026-07-02 18:05:10", receivedAt: "2026-07-05 18:05:10", fulfill: DELIVERY_MANUAL_PHYSICAL, status: "已完成", fulfillmentStatus: "履约完成", reason: "-", paymentResult: "积分扣减成功：-3000 积分", stockResult: "库存已扣减：3", fulfillResult: "3 件商品已确认收货，履约完成", retrySummary: "订单服务已回写确认收货结果", created: "2026-07-02 14:20:00", updated: "2026-07-05 18:05:10", completed: "2026-07-05 18:05:10" }
     ];
+    Object.assign(mallOrders.find(order => order.no === "ORD20260706004"), {
+      spu: "SPU10002",
+      skuId: "SPU10002-SKU01",
+      giftConfigId: "GIFT-SPU10002-001",
+      giftConfigVersion: 3,
+      giftItems: [{ lineId: "ORD20260706004-G01", parentLineId: "ORD20260706004-01", spu: "SPU10001", skuId: "SPU10001-SKU01", product: "赛季限定头像框", skuName: "7 天", quantity: 1, paymentAmount: 0, delivery: DELIVERY_AUTO_VIRTUAL, fulfillmentStatus: "履约完成", description: "主商品全部履约成功后自动发放", result: "赛季限定头像框 7 天 ×1" }]
+    });
+    Object.assign(mallOrders.find(order => order.no === "ORD20260706005"), {
+      spu: "SPU10002",
+      skuId: "SPU10002-SKU01",
+      giftConfigId: "GIFT-SPU10002-001",
+      giftConfigVersion: 3,
+      giftItems: [{ lineId: "ORD20260706005-G01", parentLineId: "ORD20260706005-01", spu: "SPU10001", skuId: "SPU10001-SKU01", product: "赛季限定头像框", skuName: "7 天", quantity: 1, paymentAmount: 0, delivery: DELIVERY_AUTO_VIRTUAL, fulfillmentStatus: "已取消", description: "主商品履约失败，赠品不发放；已释放库存", result: "-" }]
+    });
     mallOrders.forEach(order => {
       order.refundStatus = order.refundStatus || "未退款";
       order.refundedAmount = Number(order.refundedAmount || 0);
@@ -2765,6 +2818,7 @@
       order.refundedAt = order.refundedAt || "-";
       order.refundFailureReason = order.refundFailureReason || "-";
       order.refundHistory = Array.isArray(order.refundHistory) ? order.refundHistory : [];
+      order.giftItems = Array.isArray(order.giftItems) ? order.giftItems : [];
     });
     const cdkeyTypeOptions = ["加速器时长", "加速器时长（不可暂停）"];
     const skuCurrencyOptions = ["新积分", "N币", "RMB"];
@@ -2982,6 +3036,19 @@
       makeProduct("SPU10007", "入场特效-雷霆", "entrance_effect_thunder", "进入房间展示专属特效", "虚拟装扮", "2 个 SKU：7天 / 30天", DELIVERY_AUTO_VIRTUAL, "上架", "已投放 1 个模板", { total: 150, available: 88, locked: 6, abnormal: 0, today: 32 }, "-", "2026-05-19 22:03", [], "blue"),
       makeProduct("SPU10008", "游戏道具礼包", "game_item_pack", "游戏内道具礼包", "CDKEY", "1 个 SKU：默认规格", DELIVERY_AUTO_CDKEY, "草稿", "未投放", { total: 100, available: 100, locked: 0, abnormal: 0, today: 30 }, "码池未配置", "2026-05-19 19:48", ["CDKey 码池未配置"], "purple")
     ];
+    products.forEach(product => {
+      product.giftConfig = { id: "", status: "未启用", version: 0, gifts: [], remark: "", updatedAt: "-", updatedBy: "-" };
+    });
+    products[1].giftConfig = {
+      id: "GIFT-SPU10002-001",
+      status: "启用",
+      version: 3,
+      gifts: [{ skuId: "SPU10001-SKU01", quantity: 1, sort: 1 }],
+      remark: "购买 300 G-COIN，每笔订单固定赠送赛季限定头像框 7 天。",
+      updatedAt: "2026-09-09 10:30",
+      updatedBy: "平台运营"
+    };
+    products[1].logs.unshift({ time: "2026-09-09 10:30", user: "平台运营", type: "启用赠品配置", object: "SPU10002 / GIFT-SPU10002-001", before: "未启用", after: "赛季限定头像框 7 天 ×1", remark: "版本 3，仅影响新订单" });
 
     const displayPartitions = [
       { id: "TPL_HOME_RECOMMEND", name: "全局商城", templateType: "全局模板", sortWeight: 100, placementScope: "全部社区", targetType: "GLOBAL", targetId: "", state: "上架" },
@@ -3100,6 +3167,10 @@
     let currentEditingPriceSkuIndex = null;
     let skuPriceDraft = [];
     let descriptionTags = [];
+    let formGiftConfigDraft = null;
+    let giftManagerProduct = null;
+    let giftManagerDraft = null;
+    let giftPickerContext = "form";
 
     function createEmptyMaterialAssets() {
       return { main: [], detail: [] };
@@ -4294,6 +4365,11 @@
       document.getElementById("addSkuBtn").addEventListener("click", addSkuRow);
       document.getElementById("clearSkuBtn").addEventListener("click", clearSkuRows);
       document.getElementById("confirmSkuPriceBtn").addEventListener("click", confirmSkuPriceConfig);
+      document.getElementById("giftConfigSaveDraftBtn").addEventListener("click", () => saveGiftManagerConfig("草稿"));
+      document.getElementById("giftConfigSaveEnableBtn").addEventListener("click", () => saveGiftManagerConfig("启用"));
+      document.getElementById("giftConfigDisableBtn").addEventListener("click", () => saveGiftManagerConfig("停用", true));
+      ["giftPickerProductFilter", "giftPickerSkuFilter"].forEach(id => document.getElementById(id).addEventListener("input", renderGiftPickerTable));
+      document.getElementById("giftPickerDeliveryFilter").addEventListener("change", renderGiftPickerTable);
       document.querySelectorAll(".uploadBtn").forEach(btn => btn.addEventListener("click", () => uploadAsset(btn.dataset.assetType)));
       document.querySelectorAll("[data-rich-cmd]").forEach(btn => btn.addEventListener("click", () => handleRichCommand(btn.dataset.richTarget, btn.dataset.richCmd)));
       document.getElementById("confirmDeleteBtn").addEventListener("click", confirmDelete);
@@ -9164,6 +9240,7 @@
                 <div class="main-name">${p.name}</div>
                 <div class="minor">${p.internalName}</div>
                 <div class="minor">${p.subtitle}</div>
+                <div class="minor">赠品：${giftConfigSummary(p)}</div>
               </div>
             </div>
           </td>
@@ -9184,7 +9261,8 @@
 
     function actionButtons(p) {
       const base = [
-        `<button class="btn text" data-action="view" data-spu="${p.spu}">查看</button>`
+        `<button class="btn text" data-action="view" data-spu="${p.spu}">查看</button>`,
+        `<button class="btn text" data-action="gift" data-spu="${p.spu}">配置赠品</button>`
       ];
       if (p.state === "草稿") {
         base.push(`<button class="btn text" data-action="edit" data-spu="${p.spu}">编辑</button>`);
@@ -9203,6 +9281,7 @@
       const product = products.find(p => p.spu === spu);
       selectedProduct = product;
       if (action === "view") openDetail(product);
+      if (action === "gift") openGiftConfigManager(product);
       if (action === "edit") openForm("edit", product);
       if (action === "enable") handleListEnable(product);
       if (action === "disable") openDisableModal(product);
@@ -9221,8 +9300,11 @@
         ${detailSection("适用范围与标签", scopeTagsDetail(product))}
         ${detailSection("商品素材", materialHtml(product))}
         ${detailSection("SKU 列表", skuTable(product.skuList, product.type, product.skuAttrCodes))}
+        ${giftConfigDetailSection(product)}
         ${detailSection("投放状态摘要", exposureDetail(product))}
+        ${productOperationLogSection(product)}
       `;
+      document.getElementById("detailBody").querySelector("[data-detail-gift-config]")?.addEventListener("click", () => openGiftConfigManager(product));
       openDrawer("detailDrawer");
     }
 
@@ -9273,6 +9355,14 @@
           ])}
         </div>`;
     }
+
+    function orderProductLineSection(order) {
+      const mainLine = `<tr><td><span class="tag blue">正常商品</span></td><td>${order.no}-01</td><td><div class="main-name">${safeText(order.product)}</div><div class="minor">${safeText(order.productSnapshot || "-")}</div></td><td>${order.quantity}</td><td>${formatOrderAmount(order, order.unitAmount)}</td><td>${formatOrderAmount(order)}</td><td>${fulfillmentStatusTag(order.fulfillmentStatus)}</td></tr>`;
+      const giftLines = orderGiftItems(order).map((item, index) => `<tr><td><span class="tag orange">赠品</span></td><td>${item.lineId || `${order.no}-G${String(index + 1).padStart(2, "0")}`}</td><td><div class="main-name">${safeText(item.product || "-")}</div><div class="minor">${safeText(item.skuName || item.skuId || "-")}</div></td><td>${item.quantity || 1}</td><td>${formatOrderAmount(order, 0)}</td><td>${formatOrderAmount(order, 0)}</td><td>${childFulfillmentStatusTag(item.fulfillmentStatus)}</td></tr>`).join("");
+      const source = order.giftConfigId ? `<div class="hint-text">赠品来源：${order.giftConfigId} / V${order.giftConfigVersion || 1}。赠品支付金额固定为 0，不计入主商品实付、销量、限购和 GMV。</div>` : "";
+      return `<section class="drawer-section"><div class="drawer-section-heading"><h3>商品明细</h3><span class="drawer-section-summary">主商品 ${order.quantity} 件${orderGiftItems(order).length ? ` · 赠品 ${orderGiftSummaryText(order)}` : ""}</span></div><div class="section-content"><div class="table-wrap"><table><thead><tr><th>明细类型</th><th>订单明细号</th><th>商品信息</th><th>数量</th><th>单价</th><th>支付金额</th><th>履约状态</th></tr></thead><tbody>${mainLine}${giftLines}</tbody></table></div>${source}</div></section>`;
+    }
+
     function richTextDisplay(value) {
       return value ? `<div class="rich-display">${value}</div>` : `<div class="hint-text">未配置</div>`;
     }
@@ -9323,6 +9413,238 @@
         ["未投放原因", product.exposure === "未投放" ? "未在商品投放管理中配置投放关系" : product.state !== "上架" ? "商品状态不是上架" : "-"]
       ]) + `<div class="hint-text">商品上架不等于前台投放，投放关系由商品投放管理维护。</div>`;
     }
+
+    function createEmptyGiftConfig() {
+      return { id: "", status: "未启用", version: 0, gifts: [], remark: "", updatedAt: "-", updatedBy: "-" };
+    }
+
+    function cloneGiftConfig(config) {
+      const source = config || createEmptyGiftConfig();
+      return {
+        id: source.id || "",
+        status: source.status || "未启用",
+        version: Number(source.version || 0),
+        gifts: Array.isArray(source.gifts) ? source.gifts.map((item, index) => ({ skuId: item.skuId, quantity: Math.max(1, Number(item.quantity || 1)), sort: Number(item.sort || index + 1) })) : [],
+        remark: source.remark || "",
+        updatedAt: source.updatedAt || "-",
+        updatedBy: source.updatedBy || "-"
+      };
+    }
+
+    function giftStatusTag(status) {
+      const normalized = status || "未启用";
+      const cls = normalized === "启用" ? "green" : normalized === "草稿" ? "orange" : normalized === "停用" ? "red" : "";
+      return `<span class="tag ${cls}">${normalized}</span>`;
+    }
+
+    function findGiftSku(skuId) {
+      for (const product of products) {
+        const sku = (product.skuList || []).find(item => item.skuId === skuId);
+        if (sku) return { product, sku };
+      }
+      return null;
+    }
+
+    function giftSkuStockText(skuId) {
+      const record = inventoryRecords.find(item => item.skuId === skuId);
+      if (!record) return "未配置库存";
+      if (record.stockMode === "不限量" || record.availableStock === "不限量") return "不限量";
+      return `可用 ${Number(record.availableStock || 0)}`;
+    }
+
+    function giftSkuIssue(ref, targetProduct) {
+      if (!ref?.product || !ref?.sku) return "SKU 不存在";
+      if (targetProduct?.spu && ref.product.spu === targetProduct.spu) return "不能选择当前主商品自身";
+      if (ref.product.state === "草稿") return "草稿商品不可作为赠品";
+      const delivery = normalizeDelivery(ref.sku.delivery || ref.product.delivery);
+      if (!delivery || delivery === "未配置") return "履约方式未配置";
+      if (isPhysicalDelivery(delivery) || ref.product.type === "实物") return "本期不支持实物赠品";
+      if (requiresCdkeySourceConfig(ref.sku, ref.product.type)) {
+        const sourceIds = skuCdkeySourceIds(ref.sku);
+        if (!sourceIds.length) return "CDKey 货源未配置";
+        if (sourceIds.some(id => getPoolById(id)?.supplyMode === "接口直供")) return "本期不支持接口直供 CDKey";
+      }
+      const targetSkuIds = new Set((targetProduct?.skuList || []).map(item => item.skuId));
+      if (ref.product.giftConfig?.gifts?.some(item => targetSkuIds.has(item.skuId))) return "会形成循环赠送";
+      return "";
+    }
+
+    function validateGiftConfig(config, targetProduct) {
+      if (!config || config.status !== "启用") return [];
+      const issues = [];
+      const seen = new Set();
+      if (!config.gifts?.length) issues.push("至少选择 1 个赠品 SKU");
+      (config.gifts || []).forEach(item => {
+        if (seen.has(item.skuId)) issues.push(`赠品 SKU ${item.skuId} 重复`);
+        seen.add(item.skuId);
+        if (!/^[1-9]\d*$/.test(String(item.quantity || ""))) issues.push(`赠品 SKU ${item.skuId} 的数量必须为正整数`);
+        const issue = giftSkuIssue(findGiftSku(item.skuId), targetProduct);
+        if (issue) issues.push(`${item.skuId}：${issue}`);
+      });
+      return issues;
+    }
+
+    function giftConfigSummary(product) {
+      const config = product?.giftConfig || createEmptyGiftConfig();
+      const count = config.gifts?.length || 0;
+      const quantity = (config.gifts || []).reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+      if (config.status === "启用" && count) return `已启用 ${count} 种 / ${quantity} 件`;
+      if (count) return `${config.status || "未启用"} ${count} 种 / ${quantity} 件`;
+      return "未配置";
+    }
+
+    function giftConfigEditorHtml(config, context) {
+      const statusControl = context === "form"
+        ? `<select data-gift-status><option value="未启用"${config.status === "未启用" ? " selected" : ""}>未启用</option><option value="草稿"${config.status === "草稿" ? " selected" : ""}>草稿</option><option value="启用"${config.status === "启用" ? " selected" : ""}>启用</option><option value="停用"${config.status === "停用" ? " selected" : ""}>停用</option></select><div class="hint-text">同一 SPU 仅保留一条配置并通过状态控制；启用后仅对新订单生效。</div>`
+        : `${giftStatusTag(config.status)}<div class="hint-text">保存草稿、启用或停用均会保留版本与操作日志。</div>`;
+      const rows = (config.gifts || []).map((item, index) => {
+        const ref = findGiftSku(item.skuId);
+        const productName = ref?.product?.name || "SKU 已失效";
+        const skuName = ref?.sku ? `${ref.sku.skuName || "未命名规格"} / ${item.skuId}` : item.skuId;
+        const delivery = ref ? deliveryTag(ref.sku.delivery || ref.product.delivery) : `<span class="tag red">不可用</span>`;
+        return `<tr><td><div class="main-name">${safeText(productName)}</div><div class="minor">${safeText(ref?.product?.spu || "-")}</div></td><td>${safeText(skuName)}</td><td><input type="number" min="1" step="1" value="${item.quantity}" data-gift-quantity="${index}" style="width:90px"></td><td>${delivery}</td><td>${giftSkuStockText(item.skuId)}</td><td><button class="btn text danger" type="button" data-remove-gift="${index}">删除</button></td></tr>`;
+      }).join("");
+      return `
+        <div class="form-grid three" style="margin-top:14px">
+          <div class="field"><label>配置状态</label>${statusControl}</div>
+          <div class="field"><label>适用范围</label><input value="当前 SPU 下全部 SKU" disabled></div>
+          <div class="field"><label>赠送计算方式</label><input value="每笔订单固定赠送" disabled><div class="hint-text">主商品购买多件，赠品数量仍按配置值计算。</div></div>
+        </div>
+        <div class="alert warning" style="margin-top:14px">发放前置条件：订单内全部主商品明细履约成功。主商品履约失败、部分履约或订单关闭时，赠品不发放并释放已锁定库存；赠品明细不会再次触发赠品。</div>
+        <div class="btn-row" style="margin:14px 0 10px"><button class="btn primary" type="button" data-add-gift>添加赠品</button></div>
+        <div class="table-wrap"><table><thead><tr><th>赠品商品</th><th>SKU 规格</th><th>固定数量</th><th>履约方式</th><th>库存情况</th><th>操作</th></tr></thead><tbody>${rows || `<tr><td colspan="6"><div class="empty">暂未添加赠品。启用配置前至少添加 1 个赠品 SKU。</div></td></tr>`}</tbody></table></div>
+        <div class="field" style="margin-top:14px"><label>备注</label><textarea rows="3" data-gift-remark placeholder="运营内部说明，用户不可见">${safeText(config.remark || "")}</textarea></div>`;
+    }
+
+    function bindGiftConfigEditor(container, config, context) {
+      container.querySelector("[data-gift-status]")?.addEventListener("change", event => config.status = event.target.value);
+      container.querySelector("[data-gift-remark]")?.addEventListener("input", event => config.remark = event.target.value);
+      container.querySelectorAll("[data-gift-quantity]").forEach(input => input.addEventListener("input", () => {
+        config.gifts[Number(input.dataset.giftQuantity)].quantity = input.value;
+      }));
+      container.querySelector("[data-add-gift]")?.addEventListener("click", () => openGiftPicker(context));
+      container.querySelectorAll("[data-remove-gift]").forEach(button => button.addEventListener("click", () => {
+        config.gifts.splice(Number(button.dataset.removeGift), 1);
+        config.gifts.forEach((item, index) => item.sort = index + 1);
+        context === "form" ? renderFormGiftConfig() : renderGiftManagerConfig();
+      }));
+    }
+
+    function renderFormGiftConfig() {
+      formGiftConfigDraft = formGiftConfigDraft || createEmptyGiftConfig();
+      const container = document.getElementById("formGiftConfigBody");
+      container.innerHTML = giftConfigEditorHtml(formGiftConfigDraft, "form");
+      bindGiftConfigEditor(container, formGiftConfigDraft, "form");
+    }
+
+    function renderGiftManagerConfig() {
+      if (!giftManagerProduct || !giftManagerDraft) return;
+      const container = document.getElementById("giftConfigModalBody");
+      container.innerHTML = giftConfigEditorHtml(giftManagerDraft, "manager");
+      bindGiftConfigEditor(container, giftManagerDraft, "manager");
+      document.getElementById("giftConfigDisableBtn").style.display = giftManagerProduct.giftConfig?.status === "启用" ? "" : "none";
+    }
+
+    function openGiftConfigManager(product) {
+      giftManagerProduct = product;
+      giftManagerDraft = cloneGiftConfig(product?.giftConfig);
+      document.getElementById("giftConfigModalTitle").textContent = `赠品配置 · ${product.name}`;
+      renderGiftManagerConfig();
+      closeAllLayers();
+      openModal("giftConfigModal");
+    }
+
+    function activeGiftDraft() {
+      return giftPickerContext === "manager" ? giftManagerDraft : formGiftConfigDraft;
+    }
+
+    function activeGiftTargetProduct() {
+      return giftPickerContext === "manager" ? giftManagerProduct : (editingProduct || { spu: "NEW-SPU", skuList: skuRows });
+    }
+
+    function openGiftPicker(context) {
+      giftPickerContext = context;
+      document.getElementById("giftPickerProductFilter").value = "";
+      document.getElementById("giftPickerSkuFilter").value = "";
+      document.getElementById("giftPickerDeliveryFilter").value = "";
+      renderGiftPickerTable();
+      openModal("giftPickerModal");
+    }
+
+    function renderGiftPickerTable() {
+      const draft = activeGiftDraft() || createEmptyGiftConfig();
+      const target = activeGiftTargetProduct();
+      const productFilter = valueOf("giftPickerProductFilter").toLowerCase();
+      const skuFilter = valueOf("giftPickerSkuFilter").toLowerCase();
+      const deliveryFilter = valueOf("giftPickerDeliveryFilter");
+      const selectedIds = new Set((draft.gifts || []).map(item => item.skuId));
+      const rows = products.flatMap(product => (product.skuList || []).map(sku => ({ product, sku }))).filter(ref => {
+        const productText = `${ref.product.name} ${ref.product.spu}`.toLowerCase();
+        const delivery = normalizeDelivery(ref.sku.delivery || ref.product.delivery);
+        return (!productFilter || productText.includes(productFilter)) && (!skuFilter || ref.sku.skuId.toLowerCase().includes(skuFilter)) && (!deliveryFilter || delivery === deliveryFilter);
+      });
+      const body = document.getElementById("giftPickerTbody");
+      body.innerHTML = rows.length ? rows.map(ref => {
+        const issue = selectedIds.has(ref.sku.skuId) ? "已添加" : giftSkuIssue(ref, target);
+        const selectable = !issue;
+        return `<tr><td><div class="main-name">${safeText(ref.product.name)}</div><div class="minor">${ref.product.spu}</div></td><td><div>${safeText(ref.sku.skuName || "未命名规格")}</div><div class="minor">${ref.sku.skuId}</div></td><td>${stateTag(ref.product.state)}</td><td>${deliveryTag(ref.sku.delivery || ref.product.delivery)}</td><td>${giftSkuStockText(ref.sku.skuId)}</td><td>${issue ? `<span class="tag ${issue === "已添加" ? "blue" : "red"}">${issue}</span>` : `<span class="tag green">可选择</span>`}</td><td><button class="btn text" type="button" data-pick-gift="${ref.sku.skuId}"${selectable ? "" : " disabled"}>${issue === "已添加" ? "已添加" : "选择"}</button></td></tr>`;
+      }).join("") : `<tr><td colspan="7"><div class="empty">当前条件下暂无可展示的 SKU</div></td></tr>`;
+      body.querySelectorAll("[data-pick-gift]:not([disabled])").forEach(button => button.addEventListener("click", () => {
+        const current = activeGiftDraft();
+        current.gifts.push({ skuId: button.dataset.pickGift, quantity: 1, sort: current.gifts.length + 1 });
+        giftPickerContext === "manager" ? renderGiftManagerConfig() : renderFormGiftConfig();
+        renderGiftPickerTable();
+        toast("赠品 SKU 已添加，可继续选择其他赠品。");
+      }));
+    }
+
+    function finalizeGiftConfig(spu, draft, existing) {
+      const clean = cloneGiftConfig(draft);
+      clean.gifts = clean.gifts.map((item, index) => ({ skuId: item.skuId, quantity: Math.max(1, Number(item.quantity || 1)), sort: index + 1 }));
+      const before = existing ? JSON.stringify({ status: existing.status, gifts: existing.gifts || [], remark: existing.remark || "" }) : "";
+      const after = JSON.stringify({ status: clean.status, gifts: clean.gifts, remark: clean.remark });
+      const hasConfig = clean.gifts.length || clean.status === "启用" || clean.remark;
+      clean.id = existing?.id || (hasConfig ? `GIFT-${spu}-001` : "");
+      clean.version = existing?.id ? Number(existing.version || 1) + (before === after ? 0 : 1) : (hasConfig ? 1 : 0);
+      clean.updatedAt = before === after ? (existing?.updatedAt || "-") : nowText();
+      clean.updatedBy = before === after ? (existing?.updatedBy || "-") : "平台运营";
+      return clean;
+    }
+
+    function saveGiftManagerConfig(status, isDisable = false) {
+      if (!giftManagerProduct || !giftManagerDraft) return;
+      giftManagerDraft.status = status;
+      const issues = validateGiftConfig(giftManagerDraft, giftManagerProduct);
+      if (issues.length) return toast(`赠品配置无法启用：${issues[0]}`);
+      const before = giftConfigSummary(giftManagerProduct);
+      const saved = finalizeGiftConfig(giftManagerProduct.spu, giftManagerDraft, giftManagerProduct.giftConfig);
+      giftManagerProduct.giftConfig = saved;
+      giftManagerProduct.updatedAt = nowText();
+      giftManagerProduct.logs = giftManagerProduct.logs || [];
+      giftManagerProduct.logs.unshift({ time: nowText(), user: "平台运营", type: isDisable ? "停用赠品配置" : status === "启用" ? "启用赠品配置" : "保存赠品草稿", object: `${giftManagerProduct.spu} / ${saved.id || "未生成配置ID"}`, before, after: giftConfigSummary(giftManagerProduct), remark: `配置版本 ${saved.version || "-"}，仅影响新订单` });
+      renderTable();
+      closeModal("giftConfigModal");
+      toast(isDisable ? "赠品配置已停用，仅影响新订单。" : status === "启用" ? "赠品配置已保存并启用。" : "赠品配置草稿已保存。");
+    }
+
+    function giftConfigDetailSection(product) {
+      const config = product.giftConfig || createEmptyGiftConfig();
+      const rows = (config.gifts || []).map(item => {
+        const ref = findGiftSku(item.skuId);
+        return `<tr><td>${safeText(ref?.product?.name || "SKU 已失效")}</td><td>${safeText(ref?.sku?.skuName || item.skuId)}</td><td>${item.quantity}</td><td>${ref ? deliveryTag(ref.sku.delivery || ref.product.delivery) : "-"}</td><td>${giftSkuStockText(item.skuId)}</td></tr>`;
+      }).join("");
+      return detailSection("赠品配置", `${infoGrid([
+        ["配置状态", giftStatusTag(config.status)], ["配置ID / 版本", config.id ? `${config.id} / V${config.version}` : "-"],
+        ["适用范围", "当前 SPU 下全部 SKU"], ["赠送方式", "每笔订单固定赠送，不随购买数量倍增"],
+        ["发放条件", "订单内全部主商品履约成功"], ["最后修改", config.updatedAt === "-" ? "-" : `${config.updatedAt} / ${config.updatedBy}`]
+      ])}<div class="table-wrap" style="margin-top:14px"><table><thead><tr><th>赠品商品</th><th>SKU 规格</th><th>固定数量</th><th>履约方式</th><th>库存情况</th></tr></thead><tbody>${rows || `<tr><td colspan="5"><div class="empty">未配置赠品</div></td></tr>`}</tbody></table></div><div class="btn-row" style="margin-top:12px"><button class="btn primary" type="button" data-detail-gift-config>配置赠品</button></div><div class="hint-text">配置修改只影响新订单；历史订单保留赠品配置 ID、版本和商品快照。</div>`);
+    }
+
+    function productOperationLogSection(product) {
+      const rows = (product.logs || []).map(log => `<tr><td>${log.time || "-"}</td><td>${safeText(log.user || "-")}</td><td>${safeText(log.type || "-")}</td><td>${safeText(log.object || "-")}</td><td>${safeText(log.before || "-")}</td><td>${safeText(log.after || "-")}</td><td>${safeText(log.remark || "-")}</td></tr>`).join("");
+      return detailSection("操作日志", `<div class="table-wrap"><table><thead><tr><th>操作时间</th><th>操作人</th><th>操作类型</th><th>操作对象</th><th>修改前</th><th>修改后</th><th>备注</th></tr></thead><tbody>${rows || `<tr><td colspan="7"><div class="empty">暂无操作日志</div></td></tr>`}</tbody></table></div>`);
+    }
+
     function openForm(mode, product) {
       if (mode === "edit" && product?.state === "上架") {
         toast("上架商品不能编辑，请先下架后再修改。");
@@ -9360,6 +9682,7 @@
       spuAttrValues = product ? normalizeSpuAttributeValues(type, product.spuAttributeValues || {}) : defaultSpuAttributeValues(type);
       selectedSkuAttrCodes = product ? deriveSkuAttrCodes(product, type) : defaultSkuAttrCodes(type);
       skuRows = product ? JSON.parse(JSON.stringify(product.skuList)).map((row, index) => normalizeSkuRow(row, type, index, selectedSkuAttrCodes)) : buildDefaultSkuRows(type);
+      formGiftConfigDraft = cloneGiftConfig(product?.giftConfig);
       inventoryRows = product ? buildReadonlyInventoryRows(product) : [];
       syncInventoryRows(false);
       const hasCdkeySku = skuRows.some(row => requiresCdkeySourceConfig(row, type));
@@ -9369,6 +9692,7 @@
       renderSpuAttrPanel();
       renderAssets();
       renderSkuEdit();
+      renderFormGiftConfig();
       renderInventoryConfig();
       window.scrollTo(0,0);
     }
@@ -10596,6 +10920,7 @@
         type: valueOf("formType"),
         delivery: resolveFormDelivery(),
         state: valueOf("formState"),
+        giftConfig: cloneGiftConfig(formGiftConfigDraft),
         issues: []
       };
     }
@@ -10707,6 +11032,7 @@
       });
       const cdkeyState = resolveCdkeyState(skuRows, savedInventoryRows, type);
       const spuTemplate = getSpuTemplate(type);
+      const savedGiftConfig = finalizeGiftConfig(spu, formGiftConfigDraft || createEmptyGiftConfig(), editingProduct?.giftConfig);
       const product = {
         spu,
         name: valueOf("formName"),
@@ -10733,12 +11059,14 @@
         spuAttributeValues: normalizeSpuAttributeValues(type, spuAttrValues),
         remark: valueOf("formRemark"),
         exchangeDesc: richTextValue("formExchangeDesc"),
+        giftConfig: savedGiftConfig,
         skuAttrCodes: [...selectedSkuAttrCodes],
         skuList: skuRows.map((row, index) => normalizeSkuRow({ ...row, delivery, skuId: `${spu}-SKU${String(index + 1).padStart(2, "0")}`, sort: row.sort ?? index + 1, skuAttrCodes: [...selectedSkuAttrCodes] }, type, index, selectedSkuAttrCodes)),
         inventoryRows: savedInventoryRows,
         logs: [
           { time: nowText(), user: "平台运营", type: editingProduct ? "编辑基础信息" : "新建商品", object: spu, before: editingProduct ? editingProduct.name : "-", after: valueOf("formName"), remark: state === "上架" ? "保存并上架" : "保存草稿" },
           { time: nowText(), user: "平台运营", type: "SKU 配置变更", object: `${spu} / SKU`, before: "-", after: skuSummaryText(), remark: "新建 / 编辑页保存" },
+          { time: nowText(), user: "平台运营", type: savedGiftConfig.status === "启用" ? "启用赠品配置" : "保存赠品配置", object: `${spu} / ${savedGiftConfig.id || "未生成配置ID"}`, before: editingProduct ? giftConfigSummary(editingProduct) : "未配置", after: savedGiftConfig.gifts.length ? `${savedGiftConfig.status} ${savedGiftConfig.gifts.length} 种赠品` : "未配置", remark: "赠品配置与商品主数据独立保存，仅影响新订单" },
           { time: nowText(), user: "平台运营", type: "履约方式变更", object: spu, before: "-", after: normalizeDelivery(delivery), remark: requiresCdkeySourceConfig({ delivery }, type) ? "CDKEY 商品或自动履约（CDKey）的 SKU 需要配置货源" : "自动履约（虚拟道具）和手动履约（实物）无需在商品中心配置履约参数" }
         ]
       };
@@ -10754,6 +11082,7 @@
       if (!getFormDelivery()) issues.push("履约方式缺失");
       if (skuRows.some(s => requiresCdkeySourceConfig(s, valueOf("formType")) && !skuCdkeySourceIds(s).length)) issues.push("CDKey 货源未配置");
       if (!buildStockFromInventoryRows()) issues.push("供货与库存配置缺失");
+      if (validateGiftConfig(formGiftConfigDraft, editingProduct || { spu: "NEW-SPU", skuList: skuRows }).length) issues.push("赠品配置待完善");
       return issues;
     }
 
@@ -10902,6 +11231,7 @@
         if (isBackorderAllowed(row) && !/^[1-9]\d*$/.test(String(row.pendingFulfillmentLimit))) markInvalidElement(`[data-inv="${index}"][data-inv-field="pendingFulfillmentLimit"]`);
       });
       if (!inventoryRows.length || validateInventoryRows().length) document.getElementById("sectionInitialInventory")?.classList.add("invalid");
+      if (validateGiftConfig(formGiftConfigDraft, editingProduct || { spu: "NEW-SPU", skuList: skuRows }).length) document.getElementById("sectionGift")?.classList.add("invalid");
     }
     function getValidationFailures(product, fromForm) {
       const list = [];
@@ -10923,6 +11253,7 @@
         });
         validateSkuCdkeyPools().forEach(err => list.push([err.item, err.problem, err.suggestion]));
         validateInventoryRows().forEach(err => list.push([err.item, err.problem, err.suggestion]));
+        validateGiftConfig(formGiftConfigDraft, editingProduct || { spu: "NEW-SPU", skuList: skuRows }).forEach(message => list.push(["赠品配置", message, "请调整赠品 SKU、固定数量或配置状态"]));
       } else {
         if (product.issues.includes("供货与库存配置缺失") || product.issues.includes("初始库存配置缺失")) list.push(["供货与库存配置", "供货与库存配置缺失或不完整", "请配置 SKU 货源与初始库存，后续库存调整前往库存列表维护"]);
         if (product.issues.includes("商品头图缺失")) list.push(["商品素材", "商品头图缺失", "请上传商品头图"]);
@@ -10935,6 +11266,7 @@
         if (product.cdkey === "码池不存在") list.push(["CDKey 码池", "CDKey SKU 配置的码池 ID 不存在", "请检查码池 ID 是否正确"]);
         if (product.cdkey === "码池不可用") list.push(["CDKey 码池", "CDKey SKU 配置的码池不是上架状态", "请更换上架状态的码池"]);
         if (product.cdkey === "CDKey 不足" && !product.skuList.some(isBackorderAllowed)) list.push(["CDKey 码池", "CDKey SKU 码池可用数量不足", "请补充码池、配置缺货可下单或更换码池"]);
+        validateGiftConfig(product.giftConfig, product).forEach(message => list.push(["赠品配置", message, "请调整赠品 SKU、固定数量或停用配置"]));
       }
       return list.map(([item, problem, suggestion]) => ({ item, problem, suggestion }));
     }
@@ -11178,6 +11510,30 @@
       return isPointsOrder(order) ? `${formatPointsNumber(numericAmount)} 积分` : `¥${numericAmount.toFixed(2)}`;
     }
 
+    function orderGiftItems(order) {
+      return Array.isArray(order?.giftItems) ? order.giftItems : [];
+    }
+
+    function orderGiftSummaryText(order) {
+      const gifts = orderGiftItems(order);
+      if (!gifts.length) return "无赠品";
+      const quantity = gifts.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+      return `${gifts.length} 种 / ${quantity} 件`;
+    }
+
+    function orderProductSummaryHtml(order) {
+      const giftSummary = orderGiftItems(order).length ? `<div class="minor">附赠 ${orderGiftSummaryText(order)}</div>` : "";
+      return `<div class="main-name">${safeText(order.product)}</div>${giftSummary}`;
+    }
+
+    function giftRefundHandlingText(order) {
+      const gifts = orderGiftItems(order);
+      if (!gifts.length) return "无赠品";
+      if (gifts.some(item => item.fulfillmentStatus === "履约完成")) return "已发放赠品不回收、不折价；运营人工核验";
+      if (gifts.every(item => ["已取消", "履约失败"].includes(item.fulfillmentStatus))) return "赠品未发放，已取消履约并释放库存";
+      return "退款前停止赠品发放并释放库存";
+    }
+
     function paymentMethodTag(method) {
       const cls = method === "微信支付" ? "green" : method === "支付宝" ? "purple" : "blue";
       return `<span class="tag ${cls}">${method || "-"}</span>`;
@@ -11363,7 +11719,7 @@
       return mallOrders.filter(order => (!no || order.no.includes(no))
         && (!user || [order.userId, order.nnNo, order.phone].some(field => field.includes(user)))
         && (!status || operationalOrderStatus(order) === status)
-        && (!product || order.product.includes(product))
+        && (!product || order.product.includes(product) || orderGiftItems(order).some(item => String(item.product || "").includes(product)))
         && (!currencyType || order.currencyType === currencyType)
         && (!paymentMethod || order.paymentMethod === paymentMethod)
         && (!delivery || order.fulfill === delivery)
@@ -11374,7 +11730,7 @@
       const rows = getFilteredMallOrders();
       document.getElementById("orderManagementTbody").innerHTML = rows.length ? rows.map(order => `
         <tr>
-          <td>${order.no}</td><td>${orderBusinessSource(order)}</td><td>${order.userId}</td><td>${order.nnNo}</td><td>${order.phone}</td><td>${order.product}</td>
+          <td>${order.no}</td><td>${orderBusinessSource(order)}</td><td>${order.userId}</td><td>${order.nnNo}</td><td>${order.phone}</td><td>${orderProductSummaryHtml(order)}</td>
           <td>${order.quantity}</td><td>${order.orderScene || "现货下单"}</td><td>${formatOrderAmount(order)}</td><td>${paymentMethodTag(order.paymentMethod)}</td>
           <td>${deliveryTag(order.fulfill)}</td><td>${orderStatusTag(operationalOrderStatus(order), order.status)}</td>
           <td>${order.created}</td><td>${order.updated}</td><td>${orderActionHtml(order)}</td>
@@ -11450,7 +11806,19 @@
         if (isAwaitingReceiptOrder(order)) return { childNo, sequence: index + 1, status: "履约中", description: "已统一发货，待用户确认收货", result: "-" };
         if (order.fulfillmentStatus === "履约中") return { childNo, sequence: index + 1, status: "履约中", description: order.reason && order.reason !== "-" ? order.reason : "履约处理中", result: "-" };
         return { childNo, sequence: index + 1, status: "待履约", description: pendingChildDescription(order), result: "-" };
-      });
+      }).map(row => ({ ...row, itemType: "正常商品", product: order.product }));
+    }
+
+    function orderGiftFulfillmentRows(order) {
+      return orderGiftItems(order).map((item, index) => ({
+        childNo: item.lineId || `${order.no}-G${String(index + 1).padStart(2, "0")}`,
+        sequence: index + 1,
+        itemType: "赠品",
+        product: `${item.product || "-"}${item.skuName ? ` / ${item.skuName}` : ""}`,
+        status: item.fulfillmentStatus || "待履约",
+        description: item.description || "等待订单内全部主商品履约成功",
+        result: item.result || "-"
+      }));
     }
 
     function orderPhysicalShippingItems(order) {
@@ -11464,15 +11832,15 @@
     }
 
     function orderFulfillmentDetailTable(order) {
-      const rows = orderChildFulfillmentRows(order);
-      return `<div class="hint-text" style="margin-bottom:10px">父订单按单数量 SKU 拆分；履约说明展示当前过程、异常原因或处理中信息；履约结果仅展示实际交付内容，CDKey 展示脱敏码，实物及虚拟商品展示商品名称，未交付时展示“-”。</div>
-        <div class="table-wrap"><table class="order-fulfillment-detail-table"><thead><tr><th>子订单号</th><th>履约说明</th><th>履约结果</th><th>履约状态</th></tr></thead><tbody>
-        ${rows.map(row => `<tr><td>${row.childNo}</td><td>${row.description || "-"}</td><td>${row.result || "-"}</td><td>${childFulfillmentStatusTag(row.status)}</td></tr>`).join("")}
+      const rows = [...orderChildFulfillmentRows(order), ...orderGiftFulfillmentRows(order)];
+      return `<div class="hint-text" style="margin-bottom:10px">正常商品按购买数量拆分履约；赠品单独生成 0 支付金额明细。只有全部正常商品履约成功后才发放赠品；正常商品履约失败或部分履约时，赠品不发放。</div>
+        <div class="table-wrap"><table class="order-fulfillment-detail-table"><thead><tr><th>明细类型</th><th>商品信息</th><th>子订单号</th><th>履约说明</th><th>履约结果</th><th>履约状态</th></tr></thead><tbody>
+        ${rows.map(row => `<tr><td>${row.itemType === "赠品" ? `<span class="tag orange">赠品</span>` : `<span class="tag blue">正常商品</span>`}</td><td>${safeText(row.product || "-")}</td><td>${row.childNo}</td><td>${row.description || "-"}</td><td>${row.result || "-"}</td><td>${childFulfillmentStatusTag(row.status)}</td></tr>`).join("")}
         </tbody></table></div>`;
     }
 
     function orderFulfillmentDetailSection(order) {
-      const rows = orderChildFulfillmentRows(order);
+      const rows = [...orderChildFulfillmentRows(order), ...orderGiftFulfillmentRows(order)];
       const fulfilledCount = rows.filter(row => row.status === "履约完成").length;
       return `<section class="drawer-section">
         <div class="drawer-section-heading">
@@ -11526,6 +11894,7 @@
             ["发起方式", order.refundType], ["原支付渠道", order.paymentMethod],
             ["退款货币", order.currencyType],
             ["订单支付金额", formatOrderAmount(order)], ["已退金额", formatOrderAmount(order, order.refundedAmount)],
+            ["赠品处理", giftRefundHandlingText(order)],
             ["退款单号", order.refundNo],
             ["发起人", order.refundOperator], ["发起时间", order.refundAppliedAt],
             ["完成时间", order.refundedAt], ["失败原因", order.refundFailureReason],
@@ -11549,6 +11918,7 @@
       document.getElementById("orderDetailTitle").textContent = `订单详情 · ${order.no}`;
       document.getElementById("orderDetailBody").innerHTML = `
         ${detailSection("订单概览", orderOverviewHtml(order))}
+        ${orderProductLineSection(order)}
         ${hasOrderRefundRecord(order) ? orderRefundDetailSection(order) : ""}
         ${orderFulfillmentDetailSection(order)}
         ${cdkeyExtractionInfoSection(order)}
@@ -11709,7 +12079,7 @@
       document.getElementById("orderRefundInfo").innerHTML = [
         ["父订单号", order.no], ["商品", order.product], ["用户", `${order.userId} / ${order.nnNo} / ${order.phone}`],
         ["退款货币", order.currencyType], ["原支付渠道", order.paymentMethod], ["原支付金额", formatOrderAmount(order)], ["已退金额", formatOrderAmount(order, order.refundedAmount)],
-        ["退款状态", refundStatusTag(order.refundStatus)], ["退款金额", formatOrderAmount(order, remainingAmount)]
+        ["退款状态", refundStatusTag(order.refundStatus)], ["退款金额", formatOrderAmount(order, remainingAmount)], ["赠品处理", giftRefundHandlingText(order)]
       ].map(([label, value]) => `<div class="info-item"><div class="info-label">${label}</div><div class="info-value">${value}</div></div>`).join("");
       const amountInput = document.getElementById("orderRefundAmount");
       amountInput.value = isPointsOrder(order) ? String(Math.floor(remainingAmount)) : remainingAmount.toFixed(2);
@@ -11719,9 +12089,12 @@
       document.getElementById("orderRefundAmountHint").textContent = `本期仅支持全额退款，退款金额固定为 ${formatOrderAmount(order, remainingAmount)}。`;
       document.getElementById("orderRefundRemark").value = order.refundRemark !== "-" ? order.refundRemark : "";
       const cdkeyRiskText = isExtractedCdkeyOrder(order) ? " 该 CDKey 已被用户提取，本次退款属于特殊纠纷处理，操作将完整记录。" : "";
-      document.getElementById("orderRefundImpact").textContent = (isPointsOrder(order)
-        ? "本期按父订单整单退款；确认后积分退回用户原积分账户并生成积分流水。退款成功后关闭父订单，子订单仅保留原履约记录。"
-        : `本期按父订单整单退款；确认后通过${order.paymentMethod}原支付订单和原收款商户退款。退款成功后关闭父订单，子订单仅保留原履约记录。`) + cdkeyRiskText;
+      const giftImpactText = orderGiftItems(order).some(item => item.fulfillmentStatus === "履约完成")
+        ? " 已发放赠品不回收、不折价抵扣，退款前须由运营结合用户申诉完成人工核验。"
+        : orderGiftItems(order).length ? " 未发放赠品将停止发放并释放库存。" : "";
+      document.getElementById("orderRefundImpact").textContent = "本期客户端不提供退款入口；用户申诉后由运营人工核验并发起父订单整单退款。" + (isPointsOrder(order)
+        ? "确认后积分退回用户原积分账户并生成积分流水。"
+        : `确认后通过${order.paymentMethod}原支付订单和原收款商户退款。`) + giftImpactText + cdkeyRiskText;
       document.getElementById("confirmOrderRefundBtn").textContent = "确认退款";
       closeAllLayers();
       openModal("orderRefundModal");
@@ -11733,6 +12106,22 @@
         record.waitingReason = "";
         record.updatedAt = time;
         record.remark = "订单已全额退款，待履约任务已取消";
+      });
+    }
+
+    function handleGiftItemsAfterRefund(order, time) {
+      order.giftAudit = Array.isArray(order.giftAudit) ? order.giftAudit : [];
+      orderGiftItems(order).forEach(item => {
+        if (item.fulfillmentStatus === "履约完成") {
+          item.refundHandling = "已发放赠品不回收";
+          order.giftAudit.push({ time, operator: "运营-当前账号", action: "退款人工核验", result: `${item.product}已发放，本期不回收、不折价` });
+          return;
+        }
+        item.fulfillmentStatus = "已取消";
+        item.description = "主商品已退款，赠品停止发放并释放库存";
+        item.result = "-";
+        item.refundHandling = "已取消发放";
+        order.giftAudit.push({ time, operator: "系统", action: "取消赠品履约", result: `${item.product}未发放，库存已释放` });
       });
     }
 
@@ -11778,6 +12167,7 @@
       order.waitingReason = "";
       order.completed = time;
       cancelPendingDeliveryAfterRefund(order, time);
+      handleGiftItemsAfterRefund(order, time);
       closeModal("orderRefundModal");
       renderOrderManagementTable();
       renderDeliveryRecordTable();
@@ -11895,11 +12285,11 @@
 
     function exportOrderManagementRecords() {
       const rows = getFilteredMallOrders().map(order => [
-        order.no, orderBusinessSource(order), order.userId, order.nnNo, order.phone, order.product, order.quantity, order.orderScene || "现货下单", formatOrderAmount(order), order.paymentMethod, order.fulfill, operationalOrderStatus(order), order.status,
+        order.no, orderBusinessSource(order), order.userId, order.nnNo, order.phone, order.product, orderGiftSummaryText(order), order.quantity, order.orderScene || "现货下单", formatOrderAmount(order), order.paymentMethod, order.fulfill, operationalOrderStatus(order), order.status,
         order.refundStatus, formatOrderAmount(order, order.refundedAmount), order.refundType, order.refundRemark,
         fulfilledOrderQuantity(order), pendingOrderQuantity(order), order.quotaReservationId || "-", order.created, order.updated
       ]);
-      downloadPrototypeCsv("订单列表", ["订单号", "业务来源", "用户ID", "用户NN号", "用户手机号", "商品名称", "数量", "下单场景", "支付金额", "支付方式", "履约方式", "订单状态", "技术订单状态", "退款状态", "已退金额", "发起方式", "退款说明", "已履约数量", "待履约数量", "待履约额度占用记录ID", "创建时间", "更新时间"], rows);
+      downloadPrototypeCsv("订单列表", ["订单号", "业务来源", "用户ID", "用户NN号", "用户手机号", "商品名称", "赠品信息", "数量", "下单场景", "支付金额", "支付方式", "履约方式", "订单状态", "技术订单状态", "退款状态", "已退金额", "发起方式", "退款说明", "已履约数量", "待履约数量", "待履约额度占用记录ID", "创建时间", "更新时间"], rows);
     }
     function stateTag(state) {
       const cls = state === "上架" ? "green" : state === "草稿" ? "orange" : state === "下架" ? "" : "";
