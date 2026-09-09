@@ -274,6 +274,15 @@
       gap: 10px;
       margin-top: 14px;
     }
+    .gift-picker-filters {
+      grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
+      align-items: end;
+    }
+    .gift-picker-filter-action {
+      display: flex;
+      align-items: flex-end;
+    }
+    .gift-picker-filter-action .btn { min-width: 72px; }
     .more-filters { display: none; margin-top: 12px; }
     .more-filters.show { display: grid; }
     .stats {
@@ -1103,6 +1112,8 @@
 
     @media (max-width: 1180px) {
       .filter-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .gift-picker-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .gift-picker-filter-action { grid-column: 1 / -1; justify-content: flex-end; }
       .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .form-layout { grid-template-columns: 1fr; }
       .side-anchor { position: static; }
@@ -1112,6 +1123,8 @@
       .brand span, .nav-title, .nav-item span, .role { display: none; }
       .main { margin-left: 76px; width: calc(100% - 76px); }
       .filter-grid, .form-grid, .form-grid.three, .form-grid.four, .supply-cascade-grid, .info-grid, .order-overview-status .info-grid, .material-grid, .upload-row { grid-template-columns: 1fr; }
+      .gift-picker-filter-action { grid-column: auto; }
+      .gift-picker-filter-action .btn { width: 100%; }
       .topbar { align-items: flex-start; height: auto; gap: 10px; padding: 12px; flex-direction: column; }
       .points-account-layout { grid-template-columns: 1fr; }
       .global-search { width: 100%; }
@@ -1489,7 +1502,6 @@
             <section class="form-card" id="sectionGift">
               <h2>赠品配置</h2>
               <div class="body">
-                <div class="alert info">赠品规则与商品主数据独立保存。本期按整个 SPU 生效，每笔订单固定赠送；主商品购买多件不倍增赠品，且只有订单内全部主商品履约成功后才发放。</div>
                 <div id="formGiftConfigBody"></div>
               </div>
             </section>
@@ -2415,16 +2427,16 @@
   </section>
 
   <section class="modal wide" id="giftPickerModal" role="dialog" aria-modal="true">
-    <div class="modal-head"><span>选择赠品 SKU</span><button class="btn text" data-close-modal="giftPickerModal">关闭</button></div>
+    <div class="modal-head"><span>选择赠品</span><button class="btn text" data-close-modal="giftPickerModal">关闭</button></div>
     <div class="modal-body">
       <div class="alert info">可复用已上架或已下架、但履约配置有效的商城 SKU。本期不支持当前主商品自身、草稿商品、实物商品、接口直供 CDKey 及会形成循环赠送的 SKU。</div>
-      <div class="filter-grid" style="margin-top:14px">
+      <div class="filter-grid gift-picker-filters" style="margin-top:14px">
         <div class="field"><label>商品名称</label><input id="giftPickerProductFilter" placeholder="输入商品名称"></div>
         <div class="field"><label>SPU ID / SKU ID</label><input id="giftPickerIdFilter" placeholder="输入 SPU ID 或 SKU ID"></div>
         <div class="field"><label>商品类型</label><select id="giftPickerTypeFilter"><option value="">全部</option><option>虚拟装扮</option><option>CDKEY</option><option>实物</option></select></div>
         <div class="field"><label>履约方式</label><select id="giftPickerDeliveryFilter"><option value="">全部</option><option>自动履约（虚拟道具）</option><option>自动履约（CDKey）</option><option>手动履约（实物）</option></select></div>
+        <div class="gift-picker-filter-action"><button class="btn primary" type="button" id="giftPickerSearchBtn">查询</button></div>
       </div>
-      <div class="filter-actions"><button class="btn primary" type="button" id="giftPickerSearchBtn">查询</button></div>
       <div class="table-wrap" style="margin-top:14px">
         <table><thead><tr><th>商品信息</th><th>SKU 信息</th><th>商品状态</th><th>履约方式</th><th>库存情况</th><th>可选校验</th><th>操作</th></tr></thead><tbody id="giftPickerTbody"></tbody></table>
       </div>
@@ -9496,9 +9508,12 @@
     }
 
     function giftConfigEditorHtml(config, context) {
-      const statusControl = context === "form"
-        ? `<select data-gift-status><option value="未启用"${config.status === "未启用" ? " selected" : ""}>未启用</option><option value="草稿"${config.status === "草稿" ? " selected" : ""}>草稿</option><option value="启用"${config.status === "启用" ? " selected" : ""}>启用</option><option value="停用"${config.status === "停用" ? " selected" : ""}>停用</option></select><div class="hint-text">同一 SPU 仅保留一条配置并通过状态控制；启用后仅对新订单生效。</div>`
-        : `${giftStatusTag(config.status)}<div class="hint-text">保存草稿、启用或停用均会保留版本与操作日志。</div>`;
+      const managerMeta = context === "manager" ? `
+        <div class="form-grid three" style="margin-top:14px">
+          <div class="field"><label>配置状态</label>${giftStatusTag(config.status)}<div class="hint-text">保存草稿、启用或停用均会保留版本与操作日志。</div></div>
+          <div class="field"><label>适用范围</label><input value="当前 SPU 下全部 SKU" disabled></div>
+          <div class="field"><label>赠送计算方式</label><input value="每笔订单固定赠送" disabled><div class="hint-text">主商品购买多件，赠品数量仍按配置值计算。</div></div>
+        </div>` : "";
       const rows = (config.gifts || []).map((item, index) => {
         const ref = findGiftSku(item.skuId);
         const productName = ref?.product?.name || "SKU 已失效";
@@ -9507,18 +9522,13 @@
         return `<tr><td><div class="main-name">${safeText(productName)}</div><div class="minor">${safeText(ref?.product?.spu || "-")}</div></td><td>${safeText(skuName)}</td><td><input type="number" min="1" step="1" value="${item.quantity}" data-gift-quantity="${index}" style="width:90px"></td><td>${delivery}</td><td>${giftSkuStockText(item.skuId)}</td><td><button class="btn text danger" type="button" data-remove-gift="${index}">删除</button></td></tr>`;
       }).join("");
       return `
-        <div class="form-grid three" style="margin-top:14px">
-          <div class="field"><label>配置状态</label>${statusControl}</div>
-          <div class="field"><label>适用范围</label><input value="当前 SPU 下全部 SKU" disabled></div>
-          <div class="field"><label>赠送计算方式</label><input value="每笔订单固定赠送" disabled><div class="hint-text">主商品购买多件，赠品数量仍按配置值计算。</div></div>
-        </div>
-        <div class="alert warning" style="margin-top:14px">发放前置条件：订单内全部主商品明细履约成功。主商品履约失败、部分履约或订单关闭时，赠品不发放并释放已锁定库存；赠品明细不会再次触发赠品。</div>
+        ${managerMeta}
+        <div class="alert warning"${context === "manager" ? ' style="margin-top:14px"' : ""}>发放前置条件：订单内全部主商品明细履约成功。主商品履约失败、部分履约或订单关闭时，赠品不发放并释放已锁定库存；赠品明细不会再次触发赠品。</div>
         <div class="btn-row" style="margin:14px 0 10px"><button class="btn primary" type="button" data-add-gift>添加赠品</button></div>
-        <div class="table-wrap"><table><thead><tr><th>赠品商品</th><th>SKU 规格</th><th>固定数量</th><th>履约方式</th><th>库存情况</th><th>操作</th></tr></thead><tbody>${rows || `<tr><td colspan="6"><div class="empty">暂未添加赠品。启用配置前至少添加 1 个赠品 SKU。</div></td></tr>`}</tbody></table></div>`;
+        <div class="table-wrap"><table><thead><tr><th>赠品商品</th><th>SKU 规格</th><th>固定数量</th><th>履约方式</th><th>库存情况</th><th>操作</th></tr></thead><tbody>${rows || `<tr><td colspan="6"><div class="empty">暂未添加赠品，请至少添加 1 个赠品 SKU。</div></td></tr>`}</tbody></table></div>`;
     }
 
     function bindGiftConfigEditor(container, config, context) {
-      container.querySelector("[data-gift-status]")?.addEventListener("change", event => config.status = event.target.value);
       container.querySelectorAll("[data-gift-quantity]").forEach(input => input.addEventListener("input", () => {
         config.gifts[Number(input.dataset.giftQuantity)].quantity = input.value;
       }));
@@ -11047,7 +11057,9 @@
       });
       const cdkeyState = resolveCdkeyState(skuRows, savedInventoryRows, type);
       const spuTemplate = getSpuTemplate(type);
-      const savedGiftConfig = finalizeGiftConfig(spu, formGiftConfigDraft || createEmptyGiftConfig(), editingProduct?.giftConfig);
+      const giftDraft = cloneGiftConfig(formGiftConfigDraft || createEmptyGiftConfig());
+      if (!giftDraft.id) giftDraft.status = giftDraft.gifts.length ? (state === "上架" ? "启用" : "草稿") : "未启用";
+      const savedGiftConfig = finalizeGiftConfig(spu, giftDraft, editingProduct?.giftConfig);
       const product = {
         spu,
         name: valueOf("formName"),
