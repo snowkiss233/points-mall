@@ -1199,7 +1199,7 @@
           <div class="table-head">
             <div>
               <div class="table-title">商品数据</div>
-              <div class="table-meta">SKU 是兑换与赠送的最小单位；赠品配置按 SPU 关联一个或多个赠品 SKU，库存和履约能力继续复用原 SKU。</div>
+              <div class="table-meta">SKU 是兑换与履约的最小单位，库存和履约能力均按 SKU 维护。</div>
             </div>
             <div class="table-meta" id="tableCount">共 0 条</div>
           </div>
@@ -1487,7 +1487,7 @@
             </section>
 
             <section class="form-card" id="sectionGift">
-              <h2>赠品配置（选填）</h2>
+              <h2>赠品配置</h2>
               <div class="body">
                 <div class="alert info">赠品规则与商品主数据独立保存。本期按整个 SPU 生效，每笔订单固定赠送；主商品购买多件不倍增赠品，且只有订单内全部主商品履约成功后才发放。</div>
                 <div id="formGiftConfigBody"></div>
@@ -2419,10 +2419,12 @@
     <div class="modal-body">
       <div class="alert info">可复用已上架或已下架、但履约配置有效的商城 SKU。本期不支持当前主商品自身、草稿商品、实物商品、接口直供 CDKey 及会形成循环赠送的 SKU。</div>
       <div class="filter-grid" style="margin-top:14px">
-        <div class="field"><label>商品名称 / ID</label><input id="giftPickerProductFilter" placeholder="输入商品名称或 SPU ID"></div>
-        <div class="field"><label>SKU ID</label><input id="giftPickerSkuFilter" placeholder="输入 SKU ID"></div>
+        <div class="field"><label>商品名称</label><input id="giftPickerProductFilter" placeholder="输入商品名称"></div>
+        <div class="field"><label>SPU ID / SKU ID</label><input id="giftPickerIdFilter" placeholder="输入 SPU ID 或 SKU ID"></div>
+        <div class="field"><label>商品类型</label><select id="giftPickerTypeFilter"><option value="">全部</option><option>虚拟装扮</option><option>CDKEY</option><option>实物</option></select></div>
         <div class="field"><label>履约方式</label><select id="giftPickerDeliveryFilter"><option value="">全部</option><option>自动履约（虚拟道具）</option><option>自动履约（CDKey）</option><option>手动履约（实物）</option></select></div>
       </div>
+      <div class="filter-actions"><button class="btn primary" type="button" id="giftPickerSearchBtn">查询</button></div>
       <div class="table-wrap" style="margin-top:14px">
         <table><thead><tr><th>商品信息</th><th>SKU 信息</th><th>商品状态</th><th>履约方式</th><th>库存情况</th><th>可选校验</th><th>操作</th></tr></thead><tbody id="giftPickerTbody"></tbody></table>
       </div>
@@ -3037,14 +3039,13 @@
       makeProduct("SPU10008", "游戏道具礼包", "game_item_pack", "游戏内道具礼包", "CDKEY", "1 个 SKU：默认规格", DELIVERY_AUTO_CDKEY, "草稿", "未投放", { total: 100, available: 100, locked: 0, abnormal: 0, today: 30 }, "码池未配置", "2026-05-19 19:48", ["CDKey 码池未配置"], "purple")
     ];
     products.forEach(product => {
-      product.giftConfig = { id: "", status: "未启用", version: 0, gifts: [], remark: "", updatedAt: "-", updatedBy: "-" };
+      product.giftConfig = { id: "", status: "未启用", version: 0, gifts: [], updatedAt: "-", updatedBy: "-" };
     });
     products[1].giftConfig = {
       id: "GIFT-SPU10002-001",
       status: "启用",
       version: 3,
       gifts: [{ skuId: "SPU10001-SKU01", quantity: 1, sort: 1 }],
-      remark: "购买 300 G-COIN，每笔订单固定赠送赛季限定头像框 7 天。",
       updatedAt: "2026-09-09 10:30",
       updatedBy: "平台运营"
     };
@@ -3171,6 +3172,7 @@
     let giftManagerProduct = null;
     let giftManagerDraft = null;
     let giftPickerContext = "form";
+    let giftPickerQuery = { productName: "", id: "", type: "", delivery: "" };
 
     function createEmptyMaterialAssets() {
       return { main: [], detail: [] };
@@ -4368,8 +4370,10 @@
       document.getElementById("giftConfigSaveDraftBtn").addEventListener("click", () => saveGiftManagerConfig("草稿"));
       document.getElementById("giftConfigSaveEnableBtn").addEventListener("click", () => saveGiftManagerConfig("启用"));
       document.getElementById("giftConfigDisableBtn").addEventListener("click", () => saveGiftManagerConfig("停用", true));
-      ["giftPickerProductFilter", "giftPickerSkuFilter"].forEach(id => document.getElementById(id).addEventListener("input", renderGiftPickerTable));
-      document.getElementById("giftPickerDeliveryFilter").addEventListener("change", renderGiftPickerTable);
+      document.getElementById("giftPickerSearchBtn").addEventListener("click", applyGiftPickerQuery);
+      ["giftPickerProductFilter", "giftPickerIdFilter"].forEach(id => document.getElementById(id).addEventListener("keydown", event => {
+        if (event.key === "Enter") applyGiftPickerQuery();
+      }));
       document.querySelectorAll(".uploadBtn").forEach(btn => btn.addEventListener("click", () => uploadAsset(btn.dataset.assetType)));
       document.querySelectorAll("[data-rich-cmd]").forEach(btn => btn.addEventListener("click", () => handleRichCommand(btn.dataset.richTarget, btn.dataset.richCmd)));
       document.getElementById("confirmDeleteBtn").addEventListener("click", confirmDelete);
@@ -9240,7 +9244,6 @@
                 <div class="main-name">${p.name}</div>
                 <div class="minor">${p.internalName}</div>
                 <div class="minor">${p.subtitle}</div>
-                <div class="minor">赠品：${giftConfigSummary(p)}</div>
               </div>
             </div>
           </td>
@@ -9415,7 +9418,7 @@
     }
 
     function createEmptyGiftConfig() {
-      return { id: "", status: "未启用", version: 0, gifts: [], remark: "", updatedAt: "-", updatedBy: "-" };
+      return { id: "", status: "未启用", version: 0, gifts: [], updatedAt: "-", updatedBy: "-" };
     }
 
     function cloneGiftConfig(config) {
@@ -9425,7 +9428,6 @@
         status: source.status || "未启用",
         version: Number(source.version || 0),
         gifts: Array.isArray(source.gifts) ? source.gifts.map((item, index) => ({ skuId: item.skuId, quantity: Math.max(1, Number(item.quantity || 1)), sort: Number(item.sort || index + 1) })) : [],
-        remark: source.remark || "",
         updatedAt: source.updatedAt || "-",
         updatedBy: source.updatedBy || "-"
       };
@@ -9512,13 +9514,11 @@
         </div>
         <div class="alert warning" style="margin-top:14px">发放前置条件：订单内全部主商品明细履约成功。主商品履约失败、部分履约或订单关闭时，赠品不发放并释放已锁定库存；赠品明细不会再次触发赠品。</div>
         <div class="btn-row" style="margin:14px 0 10px"><button class="btn primary" type="button" data-add-gift>添加赠品</button></div>
-        <div class="table-wrap"><table><thead><tr><th>赠品商品</th><th>SKU 规格</th><th>固定数量</th><th>履约方式</th><th>库存情况</th><th>操作</th></tr></thead><tbody>${rows || `<tr><td colspan="6"><div class="empty">暂未添加赠品。启用配置前至少添加 1 个赠品 SKU。</div></td></tr>`}</tbody></table></div>
-        <div class="field" style="margin-top:14px"><label>备注</label><textarea rows="3" data-gift-remark placeholder="运营内部说明，用户不可见">${safeText(config.remark || "")}</textarea></div>`;
+        <div class="table-wrap"><table><thead><tr><th>赠品商品</th><th>SKU 规格</th><th>固定数量</th><th>履约方式</th><th>库存情况</th><th>操作</th></tr></thead><tbody>${rows || `<tr><td colspan="6"><div class="empty">暂未添加赠品。启用配置前至少添加 1 个赠品 SKU。</div></td></tr>`}</tbody></table></div>`;
     }
 
     function bindGiftConfigEditor(container, config, context) {
       container.querySelector("[data-gift-status]")?.addEventListener("change", event => config.status = event.target.value);
-      container.querySelector("[data-gift-remark]")?.addEventListener("input", event => config.remark = event.target.value);
       container.querySelectorAll("[data-gift-quantity]").forEach(input => input.addEventListener("input", () => {
         config.gifts[Number(input.dataset.giftQuantity)].quantity = input.value;
       }));
@@ -9565,23 +9565,38 @@
     function openGiftPicker(context) {
       giftPickerContext = context;
       document.getElementById("giftPickerProductFilter").value = "";
-      document.getElementById("giftPickerSkuFilter").value = "";
+      document.getElementById("giftPickerIdFilter").value = "";
+      document.getElementById("giftPickerTypeFilter").value = "";
       document.getElementById("giftPickerDeliveryFilter").value = "";
+      giftPickerQuery = { productName: "", id: "", type: "", delivery: "" };
       renderGiftPickerTable();
       openModal("giftPickerModal");
+    }
+
+    function applyGiftPickerQuery() {
+      giftPickerQuery = {
+        productName: valueOf("giftPickerProductFilter").toLowerCase(),
+        id: valueOf("giftPickerIdFilter").toLowerCase(),
+        type: valueOf("giftPickerTypeFilter"),
+        delivery: valueOf("giftPickerDeliveryFilter")
+      };
+      renderGiftPickerTable();
     }
 
     function renderGiftPickerTable() {
       const draft = activeGiftDraft() || createEmptyGiftConfig();
       const target = activeGiftTargetProduct();
-      const productFilter = valueOf("giftPickerProductFilter").toLowerCase();
-      const skuFilter = valueOf("giftPickerSkuFilter").toLowerCase();
-      const deliveryFilter = valueOf("giftPickerDeliveryFilter");
+      const { productName, id, type, delivery } = giftPickerQuery;
       const selectedIds = new Set((draft.gifts || []).map(item => item.skuId));
       const rows = products.flatMap(product => (product.skuList || []).map(sku => ({ product, sku }))).filter(ref => {
-        const productText = `${ref.product.name} ${ref.product.spu}`.toLowerCase();
-        const delivery = normalizeDelivery(ref.sku.delivery || ref.product.delivery);
-        return (!productFilter || productText.includes(productFilter)) && (!skuFilter || ref.sku.skuId.toLowerCase().includes(skuFilter)) && (!deliveryFilter || delivery === deliveryFilter);
+        const idText = `${ref.product.spu} ${ref.sku.skuId}`.toLowerCase();
+        const skuDelivery = normalizeDelivery(ref.sku.delivery || ref.product.delivery);
+        const isVisibleState = ref.product.state === "上架" || ref.product.state === "下架";
+        return isVisibleState
+          && (!productName || ref.product.name.toLowerCase().includes(productName))
+          && (!id || idText.includes(id))
+          && (!type || ref.product.type === type)
+          && (!delivery || skuDelivery === delivery);
       });
       const body = document.getElementById("giftPickerTbody");
       body.innerHTML = rows.length ? rows.map(ref => {
@@ -9601,9 +9616,9 @@
     function finalizeGiftConfig(spu, draft, existing) {
       const clean = cloneGiftConfig(draft);
       clean.gifts = clean.gifts.map((item, index) => ({ skuId: item.skuId, quantity: Math.max(1, Number(item.quantity || 1)), sort: index + 1 }));
-      const before = existing ? JSON.stringify({ status: existing.status, gifts: existing.gifts || [], remark: existing.remark || "" }) : "";
-      const after = JSON.stringify({ status: clean.status, gifts: clean.gifts, remark: clean.remark });
-      const hasConfig = clean.gifts.length || clean.status === "启用" || clean.remark;
+      const before = existing ? JSON.stringify({ status: existing.status, gifts: existing.gifts || [] }) : "";
+      const after = JSON.stringify({ status: clean.status, gifts: clean.gifts });
+      const hasConfig = clean.gifts.length || clean.status === "启用";
       clean.id = existing?.id || (hasConfig ? `GIFT-${spu}-001` : "");
       clean.version = existing?.id ? Number(existing.version || 1) + (before === after ? 0 : 1) : (hasConfig ? 1 : 0);
       clean.updatedAt = before === after ? (existing?.updatedAt || "-") : nowText();
