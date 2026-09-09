@@ -2413,9 +2413,8 @@
   </section>
 
   <section class="modal wide" id="giftConfigModal" role="dialog" aria-modal="true">
-    <div class="modal-head"><span id="giftConfigModalTitle">赠品配置</span><button class="btn text" data-close-modal="giftConfigModal">关闭</button></div>
+    <div class="modal-head"><span>赠品配置</span><button class="btn text" data-close-modal="giftConfigModal">关闭</button></div>
     <div class="modal-body">
-      <div class="alert info">赠品以 0 支付金额写入订单商品明细，复用所选 SKU 的库存与履约能力。配置调整只影响新订单，历史订单继续按下单快照履约。</div>
       <div id="giftConfigModalBody"></div>
     </div>
     <div class="modal-foot">
@@ -9277,7 +9276,7 @@
     function actionButtons(p) {
       const base = [
         `<button class="btn text" data-action="view" data-spu="${p.spu}">查看</button>`,
-        `<button class="btn text" data-action="gift" data-spu="${p.spu}">配置赠品</button>`
+        `<button class="btn text" data-action="gift" data-spu="${p.spu}">赠品配置</button>`
       ];
       if (p.state === "草稿") {
         base.push(`<button class="btn text" data-action="edit" data-spu="${p.spu}">编辑</button>`);
@@ -9507,13 +9506,7 @@
       return "未配置";
     }
 
-    function giftConfigEditorHtml(config, context) {
-      const managerMeta = context === "manager" ? `
-        <div class="form-grid three" style="margin-top:14px">
-          <div class="field"><label>配置状态</label>${giftStatusTag(config.status)}<div class="hint-text">保存草稿、启用或停用均会保留版本与操作日志。</div></div>
-          <div class="field"><label>适用范围</label><input value="当前 SPU 下全部 SKU" disabled></div>
-          <div class="field"><label>赠送计算方式</label><input value="每笔订单固定赠送" disabled><div class="hint-text">主商品购买多件，赠品数量仍按配置值计算。</div></div>
-        </div>` : "";
+    function giftConfigEditorHtml(config) {
       const rows = (config.gifts || []).map((item, index) => {
         const ref = findGiftSku(item.skuId);
         const productName = ref?.product?.name || "SKU 已失效";
@@ -9522,8 +9515,7 @@
         return `<tr><td><div class="main-name">${safeText(productName)}</div><div class="minor">${safeText(ref?.product?.spu || "-")}</div></td><td>${safeText(skuName)}</td><td><input type="number" min="1" step="1" value="${item.quantity}" data-gift-quantity="${index}" style="width:90px"></td><td>${delivery}</td><td>${giftSkuStockText(item.skuId)}</td><td><button class="btn text danger" type="button" data-remove-gift="${index}">删除</button></td></tr>`;
       }).join("");
       return `
-        ${managerMeta}
-        <div class="alert warning"${context === "manager" ? ' style="margin-top:14px"' : ""}>发放前置条件：订单内全部主商品明细履约成功。主商品履约失败、部分履约或订单关闭时，赠品不发放并释放已锁定库存；赠品明细不会再次触发赠品。</div>
+        <div class="alert warning">发放前置条件：订单内全部主商品明细履约成功。主商品履约失败、部分履约或订单关闭时，赠品不发放并释放已锁定库存；赠品明细不会再次触发赠品。</div>
         <div class="btn-row" style="margin:14px 0 10px"><button class="btn primary" type="button" data-add-gift>添加赠品</button></div>
         <div class="table-wrap"><table><thead><tr><th>赠品商品</th><th>SKU 规格</th><th>固定数量</th><th>履约方式</th><th>库存情况</th><th>操作</th></tr></thead><tbody>${rows || `<tr><td colspan="6"><div class="empty">暂未添加赠品，请至少添加 1 个赠品 SKU。</div></td></tr>`}</tbody></table></div>`;
     }
@@ -9543,14 +9535,14 @@
     function renderFormGiftConfig() {
       formGiftConfigDraft = formGiftConfigDraft || createEmptyGiftConfig();
       const container = document.getElementById("formGiftConfigBody");
-      container.innerHTML = giftConfigEditorHtml(formGiftConfigDraft, "form");
+      container.innerHTML = giftConfigEditorHtml(formGiftConfigDraft);
       bindGiftConfigEditor(container, formGiftConfigDraft, "form");
     }
 
     function renderGiftManagerConfig() {
       if (!giftManagerProduct || !giftManagerDraft) return;
       const container = document.getElementById("giftConfigModalBody");
-      container.innerHTML = giftConfigEditorHtml(giftManagerDraft, "manager");
+      container.innerHTML = giftConfigEditorHtml(giftManagerDraft);
       bindGiftConfigEditor(container, giftManagerDraft, "manager");
       document.getElementById("giftConfigDisableBtn").style.display = giftManagerProduct.giftConfig?.status === "启用" ? "" : "none";
     }
@@ -9558,7 +9550,6 @@
     function openGiftConfigManager(product) {
       giftManagerProduct = product;
       giftManagerDraft = cloneGiftConfig(product?.giftConfig);
-      document.getElementById("giftConfigModalTitle").textContent = `赠品配置 · ${product.name}`;
       renderGiftManagerConfig();
       closeAllLayers();
       openModal("giftConfigModal");
@@ -9662,7 +9653,7 @@
         ["配置状态", giftStatusTag(config.status)], ["配置ID / 版本", config.id ? `${config.id} / V${config.version}` : "-"],
         ["适用范围", "当前 SPU 下全部 SKU"], ["赠送方式", "每笔订单固定赠送，不随购买数量倍增"],
         ["发放条件", "订单内全部主商品履约成功"], ["最后修改", config.updatedAt === "-" ? "-" : `${config.updatedAt} / ${config.updatedBy}`]
-      ])}<div class="table-wrap" style="margin-top:14px"><table><thead><tr><th>赠品商品</th><th>SKU 规格</th><th>固定数量</th><th>履约方式</th><th>库存情况</th></tr></thead><tbody>${rows || `<tr><td colspan="5"><div class="empty">未配置赠品</div></td></tr>`}</tbody></table></div><div class="btn-row" style="margin-top:12px"><button class="btn primary" type="button" data-detail-gift-config>配置赠品</button></div><div class="hint-text">配置修改只影响新订单；历史订单保留赠品配置 ID、版本和商品快照。</div>`);
+      ])}<div class="table-wrap" style="margin-top:14px"><table><thead><tr><th>赠品商品</th><th>SKU 规格</th><th>固定数量</th><th>履约方式</th><th>库存情况</th></tr></thead><tbody>${rows || `<tr><td colspan="5"><div class="empty">未配置赠品</div></td></tr>`}</tbody></table></div><div class="btn-row" style="margin-top:12px"><button class="btn primary" type="button" data-detail-gift-config>赠品配置</button></div><div class="hint-text">配置修改只影响新订单；历史订单保留赠品配置 ID、版本和商品快照。</div>`);
     }
 
     function productOperationLogSection(product) {
