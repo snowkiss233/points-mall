@@ -9337,18 +9337,14 @@
     }
     function orderCdkeySourceOverview(order) {
       const legacySnapshot = {
-        "NN加速器3天卡": { id: "ACCELERATOR_3D_POOL", name: "NN 加速器 3 天码池", supplier: "平台自营", supplyMode: "码池供货" },
-        "NN加速器30天卡": { id: "ACCELERATOR_30D_POOL", name: "NN 加速器 30 天码池", supplier: "平台自营", supplyMode: "码池供货" }
+        "NN加速器3天卡": { id: "ACCELERATOR_3D_POOL", name: "NN 加速器 3 天码池", supplier: "平台自营" },
+        "NN加速器30天卡": { id: "ACCELERATOR_30D_POOL", name: "NN 加速器 30 天码池", supplier: "平台自营" }
       }[order.product];
       const sourceId = order.cdkeyPoolId || order.supplySourceId || legacySnapshot?.id || "";
       const source = sourceId ? getPoolById(sourceId) : null;
       const sourceName = order.supplySourceName || source?.name || legacySnapshot?.name || "-";
-      const supplyMode = order.supplyMode || source?.supplyMode || legacySnapshot?.supplyMode || "-";
       const supplierName = order.supplier || source?.supplier || legacySnapshot?.supplier || "-";
-      if (supplyMode === "接口直供") {
-        return `<div>货源名称：${safeText(sourceName)}</div><div class="minor">货源 ID：${safeText(sourceId || "-")}</div><div class="minor">供货商名称：${safeText(supplierName)}</div>`;
-      }
-      return `<div>码池名称：${safeText(sourceName)}</div><div class="minor">码池 ID：${safeText(sourceId || "-")}</div><div class="minor">供货商名称：${safeText(supplierName)}</div>`;
+      return `<div>货源名称：${safeText(sourceName)}</div><div class="minor">货源 ID：${safeText(sourceId || "-")}</div><div class="minor">供货商名称：${safeText(supplierName)}</div>`;
     }
     function orderOverviewHtml(order) {
       return `
