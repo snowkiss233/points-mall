@@ -9344,7 +9344,7 @@
       const source = sourceId ? getPoolById(sourceId) : null;
       const sourceName = order.supplySourceName || source?.name || legacySnapshot?.name || "-";
       const supplierName = order.supplier || source?.supplier || legacySnapshot?.supplier || "-";
-      return `<div>货源名称：${safeText(sourceName)}</div><div class="minor">货源 ID：${safeText(sourceId || "-")}</div><div class="minor">供货商名称：${safeText(supplierName)}</div>`;
+      return `${safeText(sourceName)} / ${safeText(sourceId || "-")} / ${safeText(supplierName)}`;
     }
     function orderOverviewHtml(order) {
       return `
