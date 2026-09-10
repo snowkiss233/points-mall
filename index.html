@@ -283,6 +283,13 @@
       align-items: flex-end;
     }
     .gift-picker-filter-action .btn { min-width: 72px; }
+    .gift-picker-table { min-width: 1180px; }
+    .gift-source-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 180px;
+    }
     .more-filters { display: none; margin-top: 12px; }
     .more-filters.show { display: grid; }
     .stats {
@@ -2428,7 +2435,7 @@
   <section class="modal wide" id="giftPickerModal" role="dialog" aria-modal="true">
     <div class="modal-head"><span>选择赠品</span><button class="btn text" data-close-modal="giftPickerModal">关闭</button></div>
     <div class="modal-body">
-      <div class="alert info">可复用已上架或已下架、但履约配置有效的商城 SKU。本期不支持当前主商品自身、草稿商品、实物商品、接口直供 CDKey 及会形成循环赠送的 SKU。</div>
+      <div class="alert info">可复用已上架或已下架、且履约配置有效的商城 SKU。本期不支持当前主商品自身、草稿商品、实物商品、第三方接口直供 CDKey 及会形成循环赠送的 SKU；接口直供需支付后取码，不适合作为赠品。</div>
       <div class="filter-grid gift-picker-filters" style="margin-top:14px">
         <div class="field"><label>商品名称</label><input id="giftPickerProductFilter" placeholder="输入商品名称"></div>
         <div class="field"><label>SPU ID / SKU ID</label><input id="giftPickerIdFilter" placeholder="输入 SPU ID 或 SKU ID"></div>
@@ -2437,7 +2444,7 @@
         <div class="gift-picker-filter-action"><button class="btn primary" type="button" id="giftPickerSearchBtn">查询</button></div>
       </div>
       <div class="table-wrap" style="margin-top:14px">
-        <table><thead><tr><th>商品信息</th><th>SKU 信息</th><th>商品状态</th><th>履约方式</th><th>库存情况</th><th>可选校验</th><th>操作</th></tr></thead><tbody id="giftPickerTbody"></tbody></table>
+        <table class="gift-picker-table"><thead><tr><th>商品信息</th><th>SKU 信息</th><th>商品状态</th><th>履约方式</th><th>CDKey 货源配置</th><th>库存情况</th><th>可选校验</th><th>操作</th></tr></thead><tbody id="giftPickerTbody"></tbody></table>
       </div>
     </div>
     <div class="modal-foot"><button class="btn" data-close-modal="giftPickerModal">完成</button></div>
@@ -9465,6 +9472,22 @@
       return `可用 ${Number(record.availableStock || 0)}`;
     }
 
+    function giftCdkeySourceText(ref) {
+      if (!ref?.product || !ref?.sku || !requiresCdkeySourceConfig(ref.sku, ref.product.type)) return `<span class="muted">-</span>`;
+      const sourceIds = skuCdkeySourceIds(ref.sku);
+      if (!sourceIds.length) return `<span class="tag red">未配置货源</span>`;
+      return `<div class="gift-source-stack">${sourceIds.map(sourceId => {
+        const source = getPoolById(sourceId);
+        if (!source) return `<div><span class="tag red">货源不存在</span><div class="minor">${safeText(sourceId)}</div></div>`;
+        const mode = cdkeySupplyMode(source);
+        const provider = cdkeyProviderName(source) || "未配置供货方";
+        if (mode === "接口直供") {
+          return `<div><span class="tag red">接口直供</span><div class="minor">${safeText(provider)} · ${safeText(source.name)}</div><div class="minor">${safeText(source.id)} · 支付后取码，不可赠送</div></div>`;
+        }
+        return `<div><span class="tag blue">码池供货</span><div class="minor">${safeText(provider)} · ${safeText(source.name)}</div><div class="minor">${safeText(source.id)} · ${safeText(source.state)} · 可用 ${Number(source.available || 0)}</div></div>`;
+      }).join("")}</div>`;
+    }
+
     function giftSkuIssue(ref, targetProduct) {
       if (!ref?.product || !ref?.sku) return "SKU 不存在";
       if (targetProduct?.spu && ref.product.spu === targetProduct.spu) return "不能选择当前主商品自身";
@@ -9475,7 +9498,10 @@
       if (requiresCdkeySourceConfig(ref.sku, ref.product.type)) {
         const sourceIds = skuCdkeySourceIds(ref.sku);
         if (!sourceIds.length) return "CDKey 货源未配置";
-        if (sourceIds.some(id => getPoolById(id)?.supplyMode === "接口直供")) return "本期不支持接口直供 CDKey";
+        const route = evaluateCdkeySourceRoute(sourceIds);
+        if (route.missingSourceIds.length) return "CDKey 货源不存在";
+        if (!route.activeSources.length) return "CDKey 货源不可用";
+        if (route.sources.some(source => cdkeySupplyMode(source) === "接口直供")) return "第三方接口货源需支付后履约，不可作为赠品";
       }
       const targetSkuIds = new Set((targetProduct?.skuList || []).map(item => item.skuId));
       if (ref.product.giftConfig?.gifts?.some(item => targetSkuIds.has(item.skuId))) return "会形成循环赠送";
@@ -9603,8 +9629,8 @@
       body.innerHTML = rows.length ? rows.map(ref => {
         const issue = selectedIds.has(ref.sku.skuId) ? "已添加" : giftSkuIssue(ref, target);
         const selectable = !issue;
-        return `<tr><td><div class="main-name">${safeText(ref.product.name)}</div><div class="minor">${ref.product.spu}</div></td><td><div>${safeText(ref.sku.skuName || "未命名规格")}</div><div class="minor">${ref.sku.skuId}</div></td><td>${stateTag(ref.product.state)}</td><td>${deliveryTag(ref.sku.delivery || ref.product.delivery)}</td><td>${giftSkuStockText(ref.sku.skuId)}</td><td>${issue ? `<span class="tag ${issue === "已添加" ? "blue" : "red"}">${issue}</span>` : `<span class="tag green">可选择</span>`}</td><td><button class="btn text" type="button" data-pick-gift="${ref.sku.skuId}"${selectable ? "" : " disabled"}>${issue === "已添加" ? "已添加" : "选择"}</button></td></tr>`;
-      }).join("") : `<tr><td colspan="7"><div class="empty">当前条件下暂无可展示的 SKU</div></td></tr>`;
+        return `<tr><td><div class="main-name">${safeText(ref.product.name)}</div><div class="minor">${ref.product.spu}</div></td><td><div>${safeText(ref.sku.skuName || "未命名规格")}</div><div class="minor">${ref.sku.skuId}</div></td><td>${stateTag(ref.product.state)}</td><td>${deliveryTag(ref.sku.delivery || ref.product.delivery)}</td><td>${giftCdkeySourceText(ref)}</td><td>${giftSkuStockText(ref.sku.skuId)}</td><td>${issue ? `<span class="tag ${issue === "已添加" ? "blue" : "red"}">${issue}</span>` : `<span class="tag green">可选择</span>`}</td><td><button class="btn text" type="button" data-pick-gift="${ref.sku.skuId}"${selectable ? "" : " disabled"}>${issue === "已添加" ? "已添加" : "选择"}</button></td></tr>`;
+      }).join("") : `<tr><td colspan="8"><div class="empty">当前条件下暂无可展示的 SKU</div></td></tr>`;
       body.querySelectorAll("[data-pick-gift]:not([disabled])").forEach(button => button.addEventListener("click", () => {
         const current = activeGiftDraft();
         current.gifts.push({ skuId: button.dataset.pickGift, quantity: 1, sort: current.gifts.length + 1 });
