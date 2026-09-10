@@ -287,8 +287,8 @@
     .gift-source-stack {
       display: flex;
       flex-direction: column;
-      gap: 6px;
-      min-width: 180px;
+      gap: 4px;
+      min-width: 160px;
     }
     .more-filters { display: none; margin-top: 12px; }
     .more-filters.show { display: grid; }
@@ -9472,16 +9472,13 @@
     function giftCdkeySourceText(ref) {
       if (!ref?.product || !ref?.sku || !requiresCdkeySourceConfig(ref.sku, ref.product.type)) return `<span class="muted">-</span>`;
       const sourceIds = skuCdkeySourceIds(ref.sku);
-      if (!sourceIds.length) return `<span class="tag red">未配置货源</span>`;
+      if (!sourceIds.length) return `<div class="gift-source-stack"><div><span class="tag red">未配置</span></div><div>货源名称：-</div><div class="minor">货源 ID：-</div><div class="minor">供货商名称：-</div></div>`;
       return `<div class="gift-source-stack">${sourceIds.map(sourceId => {
         const source = getPoolById(sourceId);
-        if (!source) return `<div><span class="tag red">货源不存在</span><div class="minor">${safeText(sourceId)}</div></div>`;
+        if (!source) return `<div><span class="tag red">未知</span><div>货源名称：-</div><div class="minor">货源 ID：${safeText(sourceId)}</div><div class="minor">供货商名称：-</div></div>`;
         const mode = cdkeySupplyMode(source);
         const provider = cdkeyProviderName(source) || "未配置供货方";
-        if (mode === "接口直供") {
-          return `<div><span class="tag red">接口直供</span><div class="minor">${safeText(provider)} · ${safeText(source.name)}</div><div class="minor">${safeText(source.id)} · 支付后取码，不可赠送</div></div>`;
-        }
-        return `<div><span class="tag blue">码池供货</span><div class="minor">${safeText(provider)} · ${safeText(source.name)}</div><div class="minor">${safeText(source.id)} · ${safeText(source.state)} · 可用 ${Number(source.available || 0)}</div></div>`;
+        return `<div><span class="tag ${mode === "接口直供" ? "red" : "blue"}">${safeText(mode)}</span><div>货源名称：${safeText(source.name)}</div><div class="minor">货源 ID：${safeText(source.id)}</div><div class="minor">供货商名称：${safeText(provider)}</div></div>`;
       }).join("")}</div>`;
     }
 
