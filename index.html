@@ -9472,13 +9472,13 @@
     function giftCdkeySourceText(ref) {
       if (!ref?.product || !ref?.sku || !requiresCdkeySourceConfig(ref.sku, ref.product.type)) return `<span class="muted">-</span>`;
       const sourceIds = skuCdkeySourceIds(ref.sku);
-      if (!sourceIds.length) return `<div class="gift-source-stack"><div><span class="tag red">未配置</span></div><div>货源名称：-</div><div class="minor">货源 ID：-</div><div class="minor">供货商名称：-</div></div>`;
+      if (!sourceIds.length) return `<div class="gift-source-stack"><div><span class="tag red">未配置</span></div><div>-</div><div class="minor">-</div><div class="minor">-</div></div>`;
       return `<div class="gift-source-stack">${sourceIds.map(sourceId => {
         const source = getPoolById(sourceId);
-        if (!source) return `<div><span class="tag red">未知</span><div>货源名称：-</div><div class="minor">货源 ID：${safeText(sourceId)}</div><div class="minor">供货商名称：-</div></div>`;
+        if (!source) return `<div><span class="tag red">未知</span><div>-</div><div class="minor">${safeText(sourceId)}</div><div class="minor">-</div></div>`;
         const mode = cdkeySupplyMode(source);
         const provider = cdkeyProviderName(source) || "未配置供货方";
-        return `<div><span class="tag ${mode === "接口直供" ? "red" : "blue"}">${safeText(mode)}</span><div>货源名称：${safeText(source.name)}</div><div class="minor">货源 ID：${safeText(source.id)}</div><div class="minor">供货商名称：${safeText(provider)}</div></div>`;
+        return `<div><span class="tag ${mode === "接口直供" ? "red" : "blue"}">${safeText(mode)}</span><div>${safeText(source.name)}</div><div class="minor">${safeText(source.id)}</div><div class="minor">${safeText(provider)}</div></div>`;
       }).join("")}</div>`;
     }
 
