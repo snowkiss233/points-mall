@@ -919,12 +919,11 @@
     .picker-table th:nth-child(1) { width: 44px; }
     .picker-table th:nth-child(2) { width: 9%; }
     .picker-table th:nth-child(3) { width: 8%; }
-    .picker-table th:nth-child(4) { width: 22%; }
+    .picker-table th:nth-child(4) { width: 29%; }
     .picker-table th:nth-child(5) { width: 7%; }
     .picker-table th:nth-child(6) { width: 11%; }
     .picker-table th:nth-child(7) { width: 13%; }
     .picker-table th:nth-child(8) { width: 6%; }
-    .picker-table th:nth-child(9) { width: 9%; }
     .picker-table td { overflow-wrap: anywhere; }
     .picker-table input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; }
     .picker-table input:disabled { cursor: not-allowed; }
@@ -938,16 +937,11 @@
     .picker-table .is-selected { background: #f4f8ff; }
     .picker-table .is-added { color: var(--muted); background: #fafbfc; }
     .picker-table .is-added .main-name { color: var(--muted); }
-    .picker-status { color: #64748b; }
-    .picker-status.unavailable { color: #a65c00; }
-    .picker-table .picker-reason { max-width: none; margin-top: 3px; }
     .picker-context { margin-bottom: 16px; color: #53647d; font-size: 13px; }
     .picker-tools, .picker-sync, .picker-selected-toolbar { display: flex; align-items: center; gap: 12px; }
     .picker-tools { margin: 6px 0 12px; flex-wrap: wrap; }
     .picker-sync { margin-left: auto; gap: 8px; font-size: 12px; color: var(--muted); }
     .picker-tools .btn.text { padding: 4px 0; min-height: 28px; }
-    .picker-more { display: flex; align-items: center; gap: 10px; padding-bottom: 12px; font-size: 13px; }
-    .picker-more select { width: 180px; }
     .picker-selected-toolbar { margin-bottom: 12px; }
     .picker-selected-toolbar .hint-text { margin-left: auto; }
     .picker-alert { padding: 10px 12px; margin-bottom: 12px; background: #fff7ed; color: #9a5100; border-radius: 6px; font-size: 13px; }
@@ -2304,18 +2298,16 @@
           <div class="field"><label for="pickerFilterSpu">SPU ID</label><input id="pickerFilterSpu" placeholder="多个 ID 可用逗号分隔"></div>
         </div>
         <div class="picker-tools">
-          <button class="btn text" id="pickerMoreFiltersBtn" type="button" aria-expanded="false" aria-controls="pickerMoreFilters">更多筛选</button>
           <button class="btn text" id="pickerResetFilters" type="button">重置</button>
-          <div class="picker-sync" id="pickerSyncBar"><span id="pickerSyncStatus" role="status" aria-live="polite"></span><button class="btn text" id="pickerRefreshBtn" type="button">刷新独立站商品</button></div>
+          <div class="picker-sync" id="pickerSyncBar"><span id="pickerSyncStatus" role="status" aria-live="polite"></span><button class="btn text" id="pickerRefreshBtn" type="button">同步独立站商品</button></div>
         </div>
-        <div class="picker-more" id="pickerMoreFilters" style="display:none"><label for="pickerFilterAvailability">添加状态</label><select id="pickerFilterAvailability"><option>全部</option><option>可添加</option><option>已添加</option><option>不可添加</option></select></div>
         <div class="picker-alert" id="pickerSyncError" role="status" style="display:none"></div>
       </div>
       <div class="picker-selected-toolbar" id="pickerSelectedToolbar" style="display:none"><button class="btn text" id="pickerBackToBrowse" type="button">← 返回商品列表</button><strong id="pickerSelectedTitle">本次已选</strong><span class="hint-text">取消勾选即可移出已选清单</span></div>
       <div class="picker-alert" id="pickerSelectionError" role="alert" style="display:none"></div>
       <div class="table-wrap">
         <table class="picker-table" id="pickerTable">
-          <thead><tr><th><input type="checkbox" id="pickerSelectAll" aria-label="全选本页可添加商品"></th><th>商品来源</th><th>商品 ID</th><th>商品信息</th><th>商品类型</th><th>SKU 摘要</th><th>履约方式</th><th>商品状态</th><th>投放情况</th><th>添加状态</th></tr></thead>
+          <thead><tr><th><input type="checkbox" id="pickerSelectAll" aria-label="全选本页可添加商品"></th><th>商品来源</th><th>商品 ID</th><th>商品信息</th><th>商品类型</th><th>SKU 摘要</th><th>履约方式</th><th>商品状态</th><th>投放情况</th></tr></thead>
           <tbody id="productPickerTbody"></tbody>
         </table>
       </div>
@@ -4412,7 +4404,7 @@
       document.getElementById("confirmDisplayDisableBtn").addEventListener("click", confirmDisplayDisable);
       document.getElementById("confirmDisplayDeleteBtn").addEventListener("click", confirmDisplayDelete);
       document.getElementById("pickerAddSelectedBtn").addEventListener("click", addSelectedProductsToDisplay);
-      ["pickerFilterSource", "pickerFilterKeyword", "pickerFilterSpu", "pickerFilterAvailability"].forEach(id => {
+      ["pickerFilterSource", "pickerFilterKeyword", "pickerFilterSpu"].forEach(id => {
         document.getElementById(id).addEventListener(["pickerFilterKeyword", "pickerFilterSpu"].includes(id) ? "input" : "change", () => {
           pickerPage = 1;
           renderProductPickerTable();
@@ -4426,13 +4418,6 @@
       document.getElementById("pickerReviewSelection").addEventListener("click", () => { pickerReviewMode = true; pickerSelectedPage = 1; renderProductPickerTable(); document.getElementById("pickerBackToBrowse").focus(); });
       document.getElementById("pickerBackToBrowse").addEventListener("click", () => { pickerReviewMode = false; renderProductPickerTable(); document.getElementById(pickerSelection.size ? "pickerReviewSelection" : "pickerFilterKeyword").focus(); });
       document.getElementById("pickerResetFilters").addEventListener("click", () => { resetPickerFilters(); renderProductPickerTable(); });
-      document.getElementById("pickerMoreFiltersBtn").addEventListener("click", () => {
-        const panel = document.getElementById("pickerMoreFilters");
-        const expanded = panel.style.display === "none";
-        panel.style.display = expanded ? "flex" : "none";
-        document.getElementById("pickerMoreFiltersBtn").setAttribute("aria-expanded", String(expanded));
-        renderProductPickerTable();
-      });
       document.getElementById("productPickerModal").addEventListener("keydown", event => {
         if (event.key === "Escape") { event.preventDefault(); closeModal("productPickerModal"); }
         if (event.key !== "Tab") return;
@@ -6071,9 +6056,6 @@
       document.getElementById("pickerFilterSource").value = "all";
       document.getElementById("pickerFilterKeyword").value = "";
       document.getElementById("pickerFilterSpu").value = "";
-      document.getElementById("pickerFilterAvailability").value = "全部";
-      document.getElementById("pickerMoreFilters").style.display = "none";
-      document.getElementById("pickerMoreFiltersBtn").setAttribute("aria-expanded", "false");
       pickerPage = 1;
     }
 
@@ -6107,24 +6089,20 @@
       document.getElementById("pickerSyncBar").style.display = source === "nn" ? "none" : "flex";
       document.getElementById("pickerDemoNote").style.display = source === "nn" && !pickerReviewMode ? "none" : "block";
       document.getElementById("pickerRefreshBtn").disabled = externalSyncBusy;
-      document.getElementById("pickerRefreshBtn").textContent = externalSyncBusy ? "刷新中…" : "刷新独立站商品";
+      document.getElementById("pickerRefreshBtn").textContent = externalSyncBusy ? "同步中…" : "同步独立站商品";
       document.getElementById("pickerSyncStatus").textContent = `最近同步 ${externalSyncConfirmedAt}`;
       const syncError = document.getElementById("pickerSyncError");
       syncError.style.display = source !== "nn" && externalSyncMessage.startsWith("同步失败") ? "block" : "none";
       syncError.textContent = externalSyncMessage;
       const keyword = valueOf("pickerFilterKeyword").toLowerCase();
       const spuIds = splitTagValues(valueOf("pickerFilterSpu")).map(v => v.toLowerCase());
-      const availability = valueOf("pickerFilterAvailability") || "全部";
-      const expanded = document.getElementById("pickerMoreFilters").style.display !== "none";
-      document.getElementById("pickerMoreFiltersBtn").textContent = `${expanded ? "收起筛选" : "更多筛选"}${availability !== "全部" ? ` · ${availability}` : ""}`;
       const rows = pickerReviewMode
         ? [...pickerSelection].map(key => placementProduct(key) || { ...placementRef(key), name: "商品资料暂不可用", state: "未知" })
         : [...products, ...externalCatalog].filter(product => {
           const productSource = product.source === "external" ? "external" : "nn";
           return product.state === "上架" && (source === "all" || productSource === source)
             && (!keyword || (product.name || "").toLowerCase().includes(keyword))
-            && (!spuIds.length || spuIds.some(id => product.spu.toLowerCase().includes(id)))
-            && (availability === "全部" || availability === pickerAvailability(product).label);
+            && (!spuIds.length || spuIds.some(id => product.spu.toLowerCase().includes(id)));
         });
       const pages = Math.max(1, Math.ceil(rows.length / pickerPageSize));
       const page = Math.min(Math.max(1, pickerReviewMode ? pickerSelectedPage : pickerPage), pages);
@@ -6133,18 +6111,16 @@
       document.getElementById("pickerPageMeta").textContent = `共 ${rows.length} 个商品 · 第 ${page} / ${pages} 页`;
       document.getElementById("pickerPrevPage").disabled = page <= 1;
       document.getElementById("pickerNextPage").disabled = page >= pages;
-      document.getElementById("productPickerTbody").innerHTML = pickerVisibleProducts.length ? pickerVisibleProducts.map((product, index) => {
+      document.getElementById("productPickerTbody").innerHTML = pickerVisibleProducts.length ? pickerVisibleProducts.map(product => {
         const key = placementKey(product), selected = pickerSelection.has(key);
         const state = pickerAvailability(placementProduct(key));
-        const unavailable = state.label === "不可添加";
         const external = product.source === "external";
         const count = displayConfigs.filter(config => config.products.some(row => placementKey(row) === key)).length;
-        return `<tr class="${selected ? "is-selected" : state.label === "已添加" ? "is-added" : ""}"><td><input type="checkbox" data-picker-select="${safeText(key)}" ${!state.selectable && !selected ? "disabled" : ""} ${selected ? "checked" : ""} aria-label="选择 ${safeText(product.name || product.spu)}" aria-describedby="picker-state-${index}"></td>
+        return `<tr class="${selected ? "is-selected" : state.label === "已添加" ? "is-added" : ""}" title="${state.selectable ? "" : safeText(state.reason)}"><td><input type="checkbox" data-picker-select="${safeText(key)}" ${!state.selectable && !selected ? "disabled" : ""} ${selected ? "checked" : ""} aria-label="选择 ${safeText(product.name || product.spu)}${state.selectable ? "" : `，${safeText(state.reason)}`}"></td>
           <td>${placementSourceTag(product)}</td><td><b>${safeText(product.spu)}</b></td><td>${pickerProductInfo(product)}</td>
           <td>${external ? "—" : safeText(product.type || "—")}</td><td>${external ? "—" : safeText(product.skuSummary || "—")}</td><td>${external ? "—" : product.delivery ? deliveryTag(product.delivery) : "—"}</td>
-          <td>${stateTag(safeText(product.state))}</td><td>${count ? `已投放 ${count} 个模板` : "未投放"}</td>
-          <td id="picker-state-${index}"><span class="picker-status ${unavailable ? "unavailable" : ""}">${state.label}</span>${unavailable ? `<div class="picker-reason">${safeText(state.reason)}</div>` : ""}</td></tr>`;
-      }).join("") : `<tr><td colspan="10"><div class="empty">${pickerReviewMode ? "暂无已选商品，返回商品列表继续选择。" : "没有符合条件的商品，请调整筛选或重置。"}</div></td></tr>`;
+          <td>${stateTag(safeText(product.state))}</td><td>${count ? `已投放 ${count} 个模板` : "未投放"}</td></tr>`;
+      }).join("") : `<tr><td colspan="9"><div class="empty">${pickerReviewMode ? "暂无已选商品，返回商品列表继续选择。" : "没有符合条件的商品，请调整筛选或重置。"}</div></td></tr>`;
       document.querySelectorAll("[data-picker-select]").forEach((input, index) => input.addEventListener("change", () => {
         if (input.checked) pickerSelection.add(input.dataset.pickerSelect); else pickerSelection.delete(input.dataset.pickerSelect);
         if (pickerReviewMode) {

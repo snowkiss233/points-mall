@@ -136,21 +136,24 @@ test('Cross-page review ignores browse filters and restores the browse page with
   assert.equal(JSON.stringify(displayProductRows), formBeforeBrowse);
   externalCatalog.splice(catalogSizeBeforePagination);
 `);
-test('One status filter matches added, available and invalid items; reset preserves pending choices', `
-  document.getElementById('pickerFilterAvailability').value = '已添加';
+test('Visible source, name and ID filters work; reset preserves pending choices', `
+  document.getElementById('pickerFilterSource').value = 'external';
+  document.getElementById('pickerFilterKeyword').value = '星际';
+  document.getElementById('pickerFilterSpu').value = 'SPU10001';
   actualRenderPicker();
   assert.equal(pickerVisibleProducts.length, 1);
   assert.equal(pickerVisibleProducts[0].source, 'external');
-  document.getElementById('pickerFilterAvailability').value = '不可添加';
+  document.getElementById('pickerFilterSpu').value = 'NON_EXISTENT';
   actualRenderPicker();
-  assert.ok(pickerVisibleProducts.length > 0);
-  assert.ok(pickerVisibleProducts.every(p => !pickerAvailability(p).selectable));
+  assert.equal(pickerVisibleProducts.length, 0);
   resetPickerFilters();
   actualRenderPicker();
   assert.equal(pickerSelection.size, 1);
   assert.equal(pickerVisibleProducts.length, 9);
   assert.ok(pickerVisibleProducts.every(p => p.state === '上架'));
-  assert.equal(document.getElementById('pickerFilterAvailability').value, '全部');
+  assert.equal(document.getElementById('pickerFilterSource').value, 'all');
+  assert.equal(document.getElementById('pickerFilterKeyword').value, '');
+  assert.equal(document.getElementById('pickerFilterSpu').value, '');
   assert.equal(document.getElementById('productPickerTbody').innerHTML.includes('查看资料'), false);
   discardPickerSelection();
 `);
@@ -207,7 +210,8 @@ test('Unknown external reference cannot resolve to a same-ID NN product', `
     assert.equal(pickerSelection.size, 1);
     assert.equal(pickerReviewMode, true);
     actualRenderPicker();
-    assert.ok(document.getElementById('productPickerTbody').innerHTML.includes('不可添加'));
+    assert.ok(document.getElementById('pickerSelectionError').textContent.includes('不可添加'));
+    assert.ok(document.getElementById('productPickerTbody').innerHTML.includes('商品不存在'));
     discardPickerSelection();
     sourceChanging.state = '上架';
   `);
