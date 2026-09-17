@@ -73,7 +73,6 @@ test('Existing paused reference can save; newly added invalid reference cannot',
   editingDisplayConfig = { products:[pausedRow] };
   assert.equal(newPlacementErrors({products:[pausedRow]}).length, 0);
   assert.equal(newPlacementErrors({products:[pausedRow, {...pausedRow, subTemplateId:'other'}]}).length, 1);
-  assert.equal(displayProductRowHtml(pausedRow, {}, true, 0).includes('暂停展示'), true);
   assert.equal(displayProductRowHtml({...pausedRow, spu:'MISSING'}, {}, true, 0).includes('引用保留'), true);
 `);
 test('Changed selection blocks the entire confirmation; removing it allows one atomic addition', `

@@ -951,10 +951,8 @@
     .picker-footer-summary { margin-right: auto; }
     #pickerSelectedCount { font-size: 13px; }
     #pickerDemoNote { color: #8994a6; font-size: 11px; margin-top: 4px; }
-    .picker-reason { max-width: 175px; color: #8b5b19; font-size: 12px; margin-top: 5px; line-height: 1.5; }
     .external-price { color: #2458ac; font-weight: 600; margin-top: 5px; }
     .external-cover { width: 44px; height: 54px; flex-shrink: 0; object-fit: cover; border-radius: 5px; }
-    .display-product-table .placement-status { min-width: 210px; max-width: 290px; }
     #displayProductSummary { margin: 0 0 12px; }
     .mini-input {
       width: 100%;
@@ -2229,7 +2227,6 @@
                         <th>商品状态</th>
                         <th><span class="required-star">*</span>投放排序</th>
                         <th>是否置顶</th>
-                        <th>展示资格</th>
                         <th>操作</th>
                       </tr>
                     </thead>
@@ -5801,16 +5798,13 @@
     function displayProductTable(rows, config, editable, options = {}) {
       if (!rows.length) return `<div class="empty">当前暂无投放商品</div>`;
       const showSubTemplate = options.showSubTemplate !== false;
-      return `<div class="table-wrap"><table class="display-product-table"><thead><tr><th>商品来源</th><th>商品 ID</th><th>商品信息</th><th>商品类型</th><th>SKU 摘要</th><th>履约方式</th><th>商品状态</th>${showSubTemplate ? "<th>所属二级模板</th>" : ""}<th>投放排序</th><th>是否置顶</th><th>展示资格</th>${editable ? "<th>操作</th>" : ""}</tr></thead><tbody>${rows.map((row, index) => displayProductRowHtml(row, config, editable, index, { showSubTemplate })).join("")}</tbody></table></div>`;
+      return `<div class="table-wrap"><table class="display-product-table"><thead><tr><th>商品来源</th><th>商品 ID</th><th>商品信息</th><th>商品类型</th><th>SKU 摘要</th><th>履约方式</th><th>商品状态</th>${showSubTemplate ? "<th>所属二级模板</th>" : ""}<th>投放排序</th><th>是否置顶</th>${editable ? "<th>操作</th>" : ""}</tr></thead><tbody>${rows.map((row, index) => displayProductRowHtml(row, config, editable, index, { showSubTemplate })).join("")}</tbody></table></div>`;
     }
 
     function displayProductRowHtml(row, config, editable, index, options = {}) {
       const product = placementProduct(row);
       const external = placementRef(row).source === "external";
-      const eligible = placementEligibility(product);
       const showSubTemplate = options.showSubTemplate !== false;
-      const valid = eligible.status === "可投放";
-      const status = valid ? "商品资料有效" : "暂停展示";
       return `<tr>
         <td>${placementSourceTag(row)}</td><td><b>${safeText(row.spu)}</b></td><td>${product ? placementProductInfo(product) : "商品资料暂不可用（引用保留）"}</td>
         <td>${external ? "—" : safeText(product?.type || "—")}</td><td>${external ? "—" : safeText(product?.skuSummary || "—")}</td>
@@ -5818,7 +5812,6 @@
         ${showSubTemplate ? `<td>${safeText(displaySubTemplateName(row.subTemplateId || "", config))}</td>` : ""}
         <td>${editable ? `<input class="mini-input" type="number" data-display-row="${index}" data-display-field="sort" value="${safeText(row.sort)}">` : safeText(row.sort)}</td>
         <td>${editable ? `<select class="mini-input" data-display-row="${index}" data-display-field="pinned"><option ${row.pinned === "否" ? "selected" : ""}>否</option><option ${row.pinned === "是" ? "selected" : ""}>是</option></select>` : row.pinned}</td>
-        <td class="placement-status"><span class="tag ${valid ? "green" : "orange"}">${status}</span><div class="picker-reason">${valid ? "模板生效且命中范围后展示" : safeText(eligible.reason)}</div>${external && !valid ? '<div class="picker-reason">同一商品重新上架且资料有效、符合投放条件后自动恢复；移除后不再自动恢复。</div>' : ""}</td>
         ${editable ? `<td><button class="btn text danger" data-remove-display-row="${index}">移除</button></td>` : ""}
       </tr>`;
     }
@@ -6029,7 +6022,7 @@
       const entries = displayActiveProductEntries();
       document.getElementById("displayProductTbody").innerHTML = entries.length
         ? entries.map(({ row, index }) => displayProductRowHtml(row, config, true, index, { showSubTemplate: false })).join("")
-        : `<tr><td colspan="11"><div class="empty">当前模板暂无投放商品，可点击添加商品维护当前模板的投放关系。</div></td></tr>`;
+        : `<tr><td colspan="10"><div class="empty">当前模板暂无投放商品，可点击添加商品维护当前模板的投放关系。</div></td></tr>`;
       const activeRows = entries.map(entry => entry.row);
       document.getElementById("displayProductSummary").textContent = `已配置 ${uniqueDisplayProductCount(activeRows)} 个 · 商品资料有效 ${displayEligibleCount(activeRows)} 个 · 暂停展示 ${uniqueDisplayProductCount(activeRows) - displayEligibleCount(activeRows)} 个。实际展示还需满足模板状态、时间及投放范围。`;
       document.querySelectorAll("[data-display-row]").forEach(el => el.addEventListener("input", updateDisplayProductRow));
