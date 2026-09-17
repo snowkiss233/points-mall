@@ -868,7 +868,7 @@
     .display-table { min-width: 1680px; }
     .display-product-table { min-width: 1400px; }
     #productPickerModal {
-      width: min(1120px, calc(100vw - 40px));
+      width: min(1600px, calc(100vw - 40px));
       height: min(880px, calc(100vh - 48px));
       max-height: calc(100vh - 48px);
     }
@@ -885,7 +885,7 @@
     }
     #productPickerModal .modal-body > :not(.table-wrap) { flex-shrink: 0; }
     #productPickerModal .table-wrap { overflow: auto; flex: 1; min-height: 90px; }
-    .picker-table { min-width: 600px; table-layout: fixed; }
+    .picker-table { min-width: 1120px; table-layout: fixed; }
     .inventory-table { min-width: 2340px; }
     .inventory-flow-table { min-width: 1350px; }
     .delivery-table { min-width: 2400px; }
@@ -914,20 +914,27 @@
       cursor: pointer;
     }
     .sort-head.active { color: var(--primary); }
-    .picker-table th, .picker-table td { padding: 12px; vertical-align: middle; }
+    .picker-table th, .picker-table td { padding: 10px 8px; vertical-align: top; }
     .picker-table th { white-space: nowrap; position: sticky; top: 0; z-index: 1; background: #f7f9fc; }
     .picker-table th:nth-child(1) { width: 44px; }
-    .picker-table th:nth-child(2) { width: 52%; }
-    .picker-table th:nth-child(3) { width: 16%; }
+    .picker-table th:nth-child(2) { width: 9%; }
+    .picker-table th:nth-child(3) { width: 8%; }
+    .picker-table th:nth-child(4) { width: 22%; }
+    .picker-table th:nth-child(5) { width: 7%; }
+    .picker-table th:nth-child(6) { width: 11%; }
+    .picker-table th:nth-child(7) { width: 13%; }
+    .picker-table th:nth-child(8) { width: 6%; }
+    .picker-table th:nth-child(9) { width: 9%; }
     .picker-table td { overflow-wrap: anywhere; }
     .picker-table input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; }
     .picker-table input:disabled { cursor: not-allowed; }
     .picker-table .product-cell { min-width: 0; align-items: center; }
     .picker-table .product-cell > div:last-child { min-width: 0; }
-    .picker-table .main-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .picker-table .main-name { overflow-wrap: anywhere; }
     .picker-table .thumb, .picker-table .external-cover { width: 40px; height: 44px; border-radius: 5px; }
     .picker-table .minor { margin-top: 4px; }
-    .picker-table .picker-price { margin-left: 12px; color: #53647d; }
+    .picker-table .tag { white-space: normal; }
+    .picker-table td:nth-child(2) .tag { white-space: nowrap; }
     .picker-table .is-selected { background: #f4f8ff; }
     .picker-table .is-added { color: var(--muted); background: #fafbfc; }
     .picker-table .is-added .main-name { color: var(--muted); }
@@ -1703,7 +1710,7 @@
           <div class="table-head">
             <div>
               <div class="table-title">投放配置数据</div>
-              <div class="table-meta">全局模板覆盖全部社区；活动模板按活动 ID 路由；已配置数量按来源、站点及 SPU ID 去重统计；可展示数量还需满足商品、模板和时间条件；模板排序值越大越靠左。</div>
+              <div class="table-meta">全局模板覆盖全部社区；活动模板按活动 ID 路由；商品数量按来源、站点及 SPU ID 去重统计；模板排序值越大越靠左。</div>
             </div>
             <div class="table-meta" id="displayTableCount">共 0 条</div>
           </div>
@@ -2308,7 +2315,7 @@
       <div class="picker-alert" id="pickerSelectionError" role="alert" style="display:none"></div>
       <div class="table-wrap">
         <table class="picker-table" id="pickerTable">
-          <thead><tr><th><input type="checkbox" id="pickerSelectAll" aria-label="全选本页可添加商品"></th><th>商品信息</th><th>商品来源</th><th>添加状态</th></tr></thead>
+          <thead><tr><th><input type="checkbox" id="pickerSelectAll" aria-label="全选本页可添加商品"></th><th>商品来源</th><th>商品 ID</th><th>商品信息</th><th>商品类型</th><th>SKU 摘要</th><th>履约方式</th><th>商品状态</th><th>投放情况</th><th>添加状态</th></tr></thead>
           <tbody id="productPickerTbody"></tbody>
         </table>
       </div>
@@ -3145,7 +3152,9 @@
     let externalSyncMessage = "同步成功";
     let externalSyncConfirmedAt = nowText();
     const externalSyncLogs = [];
-    const externalCatalog = createExternalCatalogDemo();
+    // Mock upstream data is separate from NN's synchronized on-sale catalog.
+    const externalSourceCatalog = createExternalCatalogDemo();
+    const externalCatalog = externalSourceCatalog.filter(p => p.state === "上架").map(p => ({ ...p }));
     // Only demo fixtures use this duration; production expiry comes from the agreed sync contract.
     const externalDemoValidityMs = 60 * 60 * 1000;
     displayConfigs[0].products.push(
@@ -5600,8 +5609,11 @@
         externalCatalog.forEach(p => p.syncResult = "同步失败");
       } else {
         externalSyncConfirmedAt = nowText();
-        externalCatalog.forEach(p => { p.confirmedAt = externalSyncConfirmedAt; p.expiresAt = Date.now() + externalDemoValidityMs; p.syncResult = "同步成功"; });
-        externalSyncMessage = `同步成功，共 ${externalCatalog.length} 个商品`;
+        // A successful complete on-sale response replaces the candidate catalog.
+        // Missing items leave the catalog; existing placement references are retained.
+        const onSaleProducts = externalSourceCatalog.filter(p => p.state === "上架").map(p => ({ ...p, confirmedAt: externalSyncConfirmedAt, expiresAt: Date.now() + externalDemoValidityMs, syncResult: "同步成功" }));
+        externalCatalog.splice(0, externalCatalog.length, ...onSaleProducts);
+        externalSyncMessage = `同步成功，共 ${externalCatalog.length} 个上架商品`;
       }
       externalSyncLogs.push({ time: nowText(), operator: "平台运营", action: "手动同步独立站商品", result: externalSyncMessage });
       externalSyncBusy = false;
@@ -5689,7 +5701,7 @@
           <td>${displayTemplateScopeText(config)}</td>
           <td>${config.sortWeight || "-"}</td>
           <td>${stateTag(config.state)}</td>
-          <td>已配置 ${uniqueDisplayProductCount(config.products)}<div class="minor">当前可展示 ${displayVisibleCount(config)}</div><div class="minor">商品资料有效 ${displayEligibleCount(config.products)}</div></td>
+          <td>${uniqueDisplayProductCount(config.products)}</td>
           <td>${displayTimeText(config)}</td>
           <td>${config.createdAt || config.updatedAt}</td>
           <td>${lastOperatorFromLogs(config.logs, config.operator)}</td>
@@ -6085,7 +6097,7 @@
     function pickerProductInfo(product) {
       const external = product.source === "external";
       const cover = external && product.image ? `<img class="external-cover" src="${safeText(product.image)}" alt="">` : `<div class="thumb ${safeText(product.color || "")}">${safeText((product.name || "商品").slice(0, 2))}</div>`;
-      return `<div class="product-cell">${cover}<div><div class="main-name" title="${safeText(product.name || "商品标题缺失")}">${safeText(product.name || "商品标题缺失")}</div><div class="minor">SPU ID：${safeText(product.spu)}${external ? `<span class="picker-price">${safeText(externalPriceText(product))}</span>` : ""}</div></div></div>`;
+      return `<div class="product-cell">${cover}<div><div class="main-name">${safeText(product.name || "商品标题缺失")}</div>${!external && product.internalName ? `<div class="minor">${safeText(product.internalName)}</div>` : ""}${product.subtitle ? `<div class="minor">${safeText(product.subtitle)}</div>` : ""}${external ? `<div class="external-price">${safeText(externalPriceText(product))}</div>` : ""}</div></div>`;
     }
 
     function renderProductPickerTable() {
@@ -6107,9 +6119,9 @@
       document.getElementById("pickerMoreFiltersBtn").textContent = `${expanded ? "收起筛选" : "更多筛选"}${availability !== "全部" ? ` · ${availability}` : ""}`;
       const rows = pickerReviewMode
         ? [...pickerSelection].map(key => placementProduct(key) || { ...placementRef(key), name: "商品资料暂不可用", state: "未知" })
-        : [...products.filter(p => p.state === "上架"), ...externalCatalog].filter(product => {
+        : [...products, ...externalCatalog].filter(product => {
           const productSource = product.source === "external" ? "external" : "nn";
-          return (source === "all" || productSource === source)
+          return product.state === "上架" && (source === "all" || productSource === source)
             && (!keyword || (product.name || "").toLowerCase().includes(keyword))
             && (!spuIds.length || spuIds.some(id => product.spu.toLowerCase().includes(id)))
             && (availability === "全部" || availability === pickerAvailability(product).label);
@@ -6125,10 +6137,14 @@
         const key = placementKey(product), selected = pickerSelection.has(key);
         const state = pickerAvailability(placementProduct(key));
         const unavailable = state.label === "不可添加";
+        const external = product.source === "external";
+        const count = displayConfigs.filter(config => config.products.some(row => placementKey(row) === key)).length;
         return `<tr class="${selected ? "is-selected" : state.label === "已添加" ? "is-added" : ""}"><td><input type="checkbox" data-picker-select="${safeText(key)}" ${!state.selectable && !selected ? "disabled" : ""} ${selected ? "checked" : ""} aria-label="选择 ${safeText(product.name || product.spu)}" aria-describedby="picker-state-${index}"></td>
-          <td>${pickerProductInfo(product)}</td><td>${product.source === "external" ? "独立站商品" : "NN 商品"}</td>
+          <td>${placementSourceTag(product)}</td><td><b>${safeText(product.spu)}</b></td><td>${pickerProductInfo(product)}</td>
+          <td>${external ? "—" : safeText(product.type || "—")}</td><td>${external ? "—" : safeText(product.skuSummary || "—")}</td><td>${external ? "—" : product.delivery ? deliveryTag(product.delivery) : "—"}</td>
+          <td>${stateTag(safeText(product.state))}</td><td>${count ? `已投放 ${count} 个模板` : "未投放"}</td>
           <td id="picker-state-${index}"><span class="picker-status ${unavailable ? "unavailable" : ""}">${state.label}</span>${unavailable ? `<div class="picker-reason">${safeText(state.reason)}</div>` : ""}</td></tr>`;
-      }).join("") : `<tr><td colspan="4"><div class="empty">${pickerReviewMode ? "暂无已选商品，返回商品列表继续选择。" : "没有符合条件的商品，请调整筛选或重置。"}</div></td></tr>`;
+      }).join("") : `<tr><td colspan="10"><div class="empty">${pickerReviewMode ? "暂无已选商品，返回商品列表继续选择。" : "没有符合条件的商品，请调整筛选或重置。"}</div></td></tr>`;
       document.querySelectorAll("[data-picker-select]").forEach((input, index) => input.addEventListener("change", () => {
         if (input.checked) pickerSelection.add(input.dataset.pickerSelect); else pickerSelection.delete(input.dataset.pickerSelect);
         if (pickerReviewMode) {

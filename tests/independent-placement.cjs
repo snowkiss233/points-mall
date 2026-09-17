@@ -22,6 +22,15 @@ let passed = 0;
 function test(name, source) { run(source); passed++; console.log('PASS', name); }
 
 run(`const actualRenderPicker = renderProductPickerTable; renderDisplayProductRows = () => {}; renderProductPickerTable = () => {}; renderDisplayTable = () => {}; toast = () => {};`);
+test('Initial synchronized catalog contains on-sale products only', `
+  assert.equal(externalCatalog.length, 5);
+  assert.ok(externalCatalog.every(p => p.state === '上架'));
+  for (const state of ['下架', '已删除', '未知']) {
+    const excluded = externalSourceCatalog.find(p => p.state === state);
+    assert.ok(excluded);
+    assert.equal(placementProduct(excluded), undefined);
+  }
+`);
 test('Source and site isolation, plus placement-level deduplication', `
   const nnRef = { spu: 'SPU10001' };
   const extRef = externalCatalog[0];
@@ -44,7 +53,8 @@ test('External eligibility does not require NN SKU, inventory, or fulfillment', 
   assert.equal(placementEligibility({...externalCatalog[0], subtitle:''}).status, '可投放');
 `);
 test('Down/up retains references, sort and pin; template windows still gate visibility', `
-  const restoring = externalCatalog[2];
+  const restoring = externalCatalog[1];
+  restoring.state = '下架';
   const savedRow = {...placementRef(restoring), subTemplateId:'hot', sort:8, pinned:'是'};
   const config = {state:'上架', startTime:nowText(new Date(Date.now()-86400000)), endTime:nowText(new Date(Date.now()+86400000)), products:[savedRow]};
   const savedSnapshot = JSON.stringify(savedRow);
@@ -56,10 +66,10 @@ test('Down/up retains references, sort and pin; template windows still gate visi
   assert.equal(displayVisibleCount({...config, endTime:'2020-01-01 00:00'}), 0);
   assert.equal(displayVisibleCount({...config, products:[]}), 0);
   assert.equal(displayEligibleCount([{...savedRow, spu:'NEW_ID'}]), 0);
-  restoring.state = '下架';
+  restoring.state = '上架';
 `);
 test('Existing paused reference can save; newly added invalid reference cannot', `
-  const pausedRow = {...placementRef(externalCatalog[2]), subTemplateId:'hot', sort:8, pinned:'是'};
+  const pausedRow = {...placementRef(externalSourceCatalog.find(p => p.state === '下架')), subTemplateId:'hot', sort:8, pinned:'是'};
   editingDisplayConfig = { products:[pausedRow] };
   assert.equal(newPlacementErrors({products:[pausedRow]}).length, 0);
   assert.equal(newPlacementErrors({products:[pausedRow, {...pausedRow, subTemplateId:'other'}]}).length, 1);
@@ -102,6 +112,8 @@ test('Cancel and overlay dismissal discard only pending choices, not previously 
 `);
 test('Cross-page review ignores browse filters and restores the browse page without mutating the form', `
   const formBeforeBrowse = JSON.stringify(displayProductRows);
+  const catalogSizeBeforePagination = externalCatalog.length;
+  externalCatalog.push(...[1,2,3].map(i => ({...externalCatalog[1], spu:'PAGE_TEST_' + i, landingUrl:'https://shop.example.com/products/PAGE_TEST_' + i})));
   resetPickerFilters();
   pickerPage = 2;
   pickerSelection = new Set([placementKey(products[0]), placementKey(externalCatalog[1])]);
@@ -122,6 +134,7 @@ test('Cross-page review ignores browse filters and restores the browse page with
   assert.equal(pickerPage, 2);
   assert.equal(pickerSelection.size, 1);
   assert.equal(JSON.stringify(displayProductRows), formBeforeBrowse);
+  externalCatalog.splice(catalogSizeBeforePagination);
 `);
 test('One status filter matches added, available and invalid items; reset preserves pending choices', `
   document.getElementById('pickerFilterAvailability').value = '已添加';
@@ -135,7 +148,8 @@ test('One status filter matches added, available and invalid items; reset preser
   resetPickerFilters();
   actualRenderPicker();
   assert.equal(pickerSelection.size, 1);
-  assert.equal(pickerVisibleProducts.length, 10);
+  assert.equal(pickerVisibleProducts.length, 9);
+  assert.ok(pickerVisibleProducts.every(p => p.state === '上架'));
   assert.equal(document.getElementById('pickerFilterAvailability').value, '全部');
   assert.equal(document.getElementById('productPickerTbody').innerHTML.includes('查看资料'), false);
   discardPickerSelection();
@@ -157,13 +171,59 @@ test('Unknown external reference cannot resolve to a same-ID NN product', `
     assert.equal(externalSyncBusy, false);
   `);
   await run('refreshExternalCatalog()');
-  test('Successful refresh recovers expired data, preserves real invalid states, never rebuilds removed relations', `
-    assert.equal(placementEligibility(externalCatalog[4]).status, '可投放');
-    assert.equal(placementEligibility(externalCatalog[2]).status, '不可投放');
-    assert.equal(placementEligibility(externalCatalog[3]).status, '不可投放');
+  test('Refresh imports only on-sale products, recovers expiry, and retains data validation', `
+    assert.equal(externalCatalog.length, 5);
+    assert.ok(externalCatalog.every(p => p.state === '上架'));
+    assert.equal(placementEligibility(externalCatalog.find(p => p.spu === 'EXT20005')).status, '可投放');
+    assert.equal(placementEligibility(externalCatalog.find(p => p.spu === 'EXT20004')).status, '不可投放');
+    assert.equal(externalCatalog.some(p => ['EXT20003','EXT20007','EXT20008'].includes(p.spu)), false);
     assert.equal(JSON.stringify(displayProductRows), relationsBeforeSync);
     assert.equal(externalSyncLogs.length, 2);
     assert.equal(externalSyncBusy, false);
+  `);
+  run(`
+    const sourceChanging = externalSourceCatalog.find(p => p.spu === 'EXT20002');
+    const retainedRow = {...placementRef(sourceChanging), subTemplateId:'saved', sort:9, pinned:'是'};
+    displayProductRows.push(retainedRow);
+    const beforeRemoval = JSON.stringify(displayProductRows);
+    pickerSelection = new Set([placementKey(sourceChanging)]);
+    sourceChanging.state = '下架';
+  `);
+  await run('refreshExternalCatalog(true)');
+  test('Failed refresh does not remove cached products or references', `
+    assert.ok(placementProduct(sourceChanging));
+    assert.equal(JSON.stringify(displayProductRows), beforeRemoval);
+  `);
+  await run('refreshExternalCatalog()');
+  test('Confirmed disappearance removes the candidate and blocks pending additions while retaining saved references', `
+    assert.equal(placementProduct(sourceChanging), undefined);
+    assert.equal(JSON.stringify(displayProductRows), beforeRemoval);
+    assert.equal(displayEligibleCount([retainedRow]), 0);
+    pickerReviewMode = false;
+    actualRenderPicker();
+    assert.equal(pickerVisibleProducts.some(p => p.spu === sourceChanging.spu), false);
+    addSelectedProductsToDisplay();
+    assert.equal(JSON.stringify(displayProductRows), beforeRemoval);
+    assert.equal(pickerSelection.size, 1);
+    assert.equal(pickerReviewMode, true);
+    actualRenderPicker();
+    assert.ok(document.getElementById('productPickerTbody').innerHTML.includes('不可添加'));
+    discardPickerSelection();
+    sourceChanging.state = '上架';
+  `);
+  await run('refreshExternalCatalog()');
+  test('Same-ID republication restores existing eligibility with original sort and pin', `
+    assert.ok(placementProduct(sourceChanging));
+    assert.equal(JSON.stringify(displayProductRows), beforeRemoval);
+    assert.equal(displayEligibleCount([retainedRow]), 1);
+    assert.equal(retainedRow.sort, 9);
+    assert.equal(retainedRow.pinned, '是');
+    displayProductRows = displayProductRows.filter(row => row !== retainedRow);
+    const afterManualRemoval = JSON.stringify(displayProductRows);
+  `);
+  await run('refreshExternalCatalog()');
+  test('Refresh never recreates manually removed placement links', `
+    assert.equal(JSON.stringify(displayProductRows), afterManualRemoval);
   `);
   console.log(passed + ' scenario groups passed.');
 })().catch(error => { console.error(error); process.exitCode = 1; });
