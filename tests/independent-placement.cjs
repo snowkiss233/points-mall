@@ -8,7 +8,7 @@ const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
 const script = html.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/\n    init\(\);/, '');
 const elements = new Map();
 const element = id => {
-  if (!elements.has(id)) elements.set(id, { value: '', textContent: '', innerHTML: '', style: {}, classList: { add() {}, remove() {}, toggle() {} }, querySelectorAll: () => [], addEventListener() {} });
+  if (!elements.has(id)) elements.set(id, { value: '', textContent: '', innerHTML: '', style: {}, classList: { add() {}, remove() {}, toggle() {} }, querySelectorAll: () => [], addEventListener() {}, setAttribute() {}, focus() {} });
   return elements.get(id);
 };
 const context = vm.createContext({
@@ -21,7 +21,7 @@ const run = source => vm.runInContext(source, context);
 let passed = 0;
 function test(name, source) { run(source); passed++; console.log('PASS', name); }
 
-run(`renderDisplayProductRows = () => {}; renderProductPickerTable = () => {}; renderDisplayTable = () => {}; updatePickerSelectedCount = () => {}; toast = () => {};`);
+run(`const actualRenderPicker = renderProductPickerTable; renderDisplayProductRows = () => {}; renderProductPickerTable = () => {}; renderDisplayTable = () => {}; toast = () => {};`);
 test('Source and site isolation, plus placement-level deduplication', `
   const nnRef = { spu: 'SPU10001' };
   const extRef = externalCatalog[0];
@@ -66,7 +66,7 @@ test('Existing paused reference can save; newly added invalid reference cannot',
   assert.equal(displayProductRowHtml(pausedRow, {}, true, 0).includes('暂停展示'), true);
   assert.equal(displayProductRowHtml({...pausedRow, spu:'MISSING'}, {}, true, 0).includes('引用保留'), true);
 `);
-test('Bulk submit handles a source-state change and adds valid off-page selection only once', `
+test('Changed selection blocks the entire confirmation; removing it allows one atomic addition', `
   activeDisplaySubTemplateId = 'hot';
   displaySubTemplateRows = [{id:'hot',name:'热门',sort:1}];
   displayProductRows = [];
@@ -75,12 +75,70 @@ test('Bulk submit handles a source-state change and adds valid off-page selectio
   selectedChanged.state = '下架';
   pickerSelection = new Set([placementKey(selectedGood),placementKey(selectedChanged)]);
   addSelectedProductsToDisplay();
+  assert.equal(displayProductRows.length, 0);
+  assert.equal(pickerSelection.size, 2);
+  assert.equal(pickerReviewMode, true);
+  pickerSelection.delete(placementKey(selectedChanged));
+  addSelectedProductsToDisplay();
   assert.equal(displayProductRows.length, 1);
   assert.equal(displayProductRows[0].spu, selectedGood.spu);
   assert.equal(pickerSelection.size, 0);
   addProductsToDisplay([placementKey(selectedGood)]);
   assert.equal(displayProductRows.length, 1);
   selectedChanged.state = '上架';
+`);
+test('Cancel and overlay dismissal discard only pending choices, not previously added rows', `
+  const committedSnapshot = JSON.stringify(displayProductRows);
+  pickerSelection.add(placementKey(externalCatalog[1]));
+  pickerReviewMode = true;
+  closeModal('productPickerModal');
+  assert.equal(pickerSelection.size, 0);
+  assert.equal(pickerReviewMode, false);
+  assert.equal(JSON.stringify(displayProductRows), committedSnapshot);
+  pickerSelection.add(placementKey(externalCatalog[1]));
+  closeAllLayers();
+  assert.equal(pickerSelection.size, 0);
+  assert.equal(JSON.stringify(displayProductRows), committedSnapshot);
+`);
+test('Cross-page review ignores browse filters and restores the browse page without mutating the form', `
+  const formBeforeBrowse = JSON.stringify(displayProductRows);
+  resetPickerFilters();
+  pickerPage = 2;
+  pickerSelection = new Set([placementKey(products[0]), placementKey(externalCatalog[1])]);
+  actualRenderPicker();
+  assert.equal(pickerPage, 2);
+  assert.equal(pickerVisibleProducts.length, 2);
+  document.getElementById('pickerFilterKeyword').value = 'no-match';
+  pickerReviewMode = true;
+  actualRenderPicker();
+  assert.equal(pickerVisibleProducts.length, 2);
+  assert.equal(pickerPage, 2);
+  pickerSelection.delete(placementKey(externalCatalog[1]));
+  actualRenderPicker();
+  assert.equal(pickerVisibleProducts.length, 1);
+  document.getElementById('pickerFilterKeyword').value = '';
+  pickerReviewMode = false;
+  actualRenderPicker();
+  assert.equal(pickerPage, 2);
+  assert.equal(pickerSelection.size, 1);
+  assert.equal(JSON.stringify(displayProductRows), formBeforeBrowse);
+`);
+test('One status filter matches added, available and invalid items; reset preserves pending choices', `
+  document.getElementById('pickerFilterAvailability').value = '已添加';
+  actualRenderPicker();
+  assert.equal(pickerVisibleProducts.length, 1);
+  assert.equal(pickerVisibleProducts[0].source, 'external');
+  document.getElementById('pickerFilterAvailability').value = '不可添加';
+  actualRenderPicker();
+  assert.ok(pickerVisibleProducts.length > 0);
+  assert.ok(pickerVisibleProducts.every(p => !pickerAvailability(p).selectable));
+  resetPickerFilters();
+  actualRenderPicker();
+  assert.equal(pickerSelection.size, 1);
+  assert.equal(pickerVisibleProducts.length, 10);
+  assert.equal(document.getElementById('pickerFilterAvailability').value, '全部');
+  assert.equal(document.getElementById('productPickerTbody').innerHTML.includes('查看资料'), false);
+  discardPickerSelection();
 `);
 test('Unknown external reference cannot resolve to a same-ID NN product', `
   assert.equal(placementProduct({source:'external',siteId:'unknown-site',spu:'SPU10001'}), undefined);

@@ -868,18 +868,24 @@
     .display-table { min-width: 1680px; }
     .display-product-table { min-width: 1400px; }
     #productPickerModal {
-      width: min(1600px, calc(100vw - 16px));
-      max-height: calc(100vh - 16px);
+      width: min(1120px, calc(100vw - 40px));
+      height: min(880px, calc(100vh - 48px));
+      max-height: calc(100vh - 48px);
     }
+    #productPickerModal.show { display: flex; flex-direction: column; }
+    #productPickerModal .modal-head, #productPickerModal .modal-foot { flex-shrink: 0; }
     #productPickerModal .modal-body {
-      max-height: calc(100vh - 158px);
-      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      max-height: none;
+      flex: 1;
+      overflow: hidden;
+      padding: 16px 20px;
     }
-    #productPickerModal .table-wrap { overflow-x: auto; }
-    .picker-table {
-      min-width: 1120px;
-      table-layout: fixed;
-    }
+    #productPickerModal .modal-body > :not(.table-wrap) { flex-shrink: 0; }
+    #productPickerModal .table-wrap { overflow: auto; flex: 1; min-height: 90px; }
+    .picker-table { min-width: 600px; table-layout: fixed; }
     .inventory-table { min-width: 2340px; }
     .inventory-flow-table { min-width: 1350px; }
     .delivery-table { min-width: 2400px; }
@@ -908,45 +914,47 @@
       cursor: pointer;
     }
     .sort-head.active { color: var(--primary); }
-    .picker-table th, .picker-table td { padding: 10px 8px; vertical-align: top; }
-    .picker-table th { white-space: nowrap; }
-    .picker-table .product-cell { min-width: 0; }
-    .picker-table th:nth-child(1) { width: 3%; }
-    .picker-table th:nth-child(2) { width: 8%; }
-    .picker-table th:nth-child(3) { width: 8%; }
-    .picker-table th:nth-child(4) { width: 22%; }
-    .picker-table th:nth-child(5) { width: 6%; }
-    .picker-table th:nth-child(6) { width: 9%; }
-    .picker-table th:nth-child(7) { width: 12%; }
-    .picker-table th:nth-child(8) { width: 6%; }
-    .picker-table th:nth-child(9) { width: 8%; }
-    .picker-table th:nth-child(10) { width: 10%; }
-    .picker-table th:nth-child(11) { width: 8%; }
+    .picker-table th, .picker-table td { padding: 12px; vertical-align: middle; }
+    .picker-table th { white-space: nowrap; position: sticky; top: 0; z-index: 1; background: #f7f9fc; }
+    .picker-table th:nth-child(1) { width: 44px; }
+    .picker-table th:nth-child(2) { width: 52%; }
+    .picker-table th:nth-child(3) { width: 16%; }
     .picker-table td { overflow-wrap: anywhere; }
-    .picker-table td .tag { white-space: normal; }
-    .picker-table.external-only th:nth-child(1) { width: 4%; }
-    .picker-table.external-only th:nth-child(2) { width: 10%; }
-    .picker-table.external-only th:nth-child(3) { width: 12%; }
-    .picker-table.external-only th:nth-child(4) { width: 30%; }
-    .picker-table.external-only th:nth-child(8) { width: 8%; }
-    .picker-table.external-only th:nth-child(9) { width: 10%; }
-    .picker-table.external-only th:nth-child(10) { width: 14%; }
-    .picker-table.external-only th:nth-child(11) { width: 12%; }
+    .picker-table input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; }
+    .picker-table input:disabled { cursor: not-allowed; }
+    .picker-table .product-cell { min-width: 0; align-items: center; }
     .picker-table .product-cell > div:last-child { min-width: 0; }
-    .picker-table .main-name { overflow-wrap: anywhere; }
-    .picker-table.external-only { min-width: 1000px; }
-    .picker-table.external-only .picker-nn-column { display: none; }
-    .picker-context { margin-bottom: 12px; color: var(--text); font-weight: 600; }
-    .picker-sync { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; background: #f5f8ff; padding: 10px 12px; border-radius: 6px; margin-bottom: 12px; }
-    .picker-pagination { display: flex; justify-content: flex-end; align-items: center; gap: 12px; padding-top: 12px; }
+    .picker-table .main-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .picker-table .thumb, .picker-table .external-cover { width: 40px; height: 44px; border-radius: 5px; }
+    .picker-table .minor { margin-top: 4px; }
+    .picker-table .picker-price { margin-left: 12px; color: #53647d; }
+    .picker-table .is-selected { background: #f4f8ff; }
+    .picker-table .is-added { color: var(--muted); background: #fafbfc; }
+    .picker-table .is-added .main-name { color: var(--muted); }
+    .picker-status { color: #64748b; }
+    .picker-status.unavailable { color: #a65c00; }
+    .picker-table .picker-reason { max-width: none; margin-top: 3px; }
+    .picker-context { margin-bottom: 16px; color: #53647d; font-size: 13px; }
+    .picker-tools, .picker-sync, .picker-selected-toolbar { display: flex; align-items: center; gap: 12px; }
+    .picker-tools { margin: 6px 0 12px; flex-wrap: wrap; }
+    .picker-sync { margin-left: auto; gap: 8px; font-size: 12px; color: var(--muted); }
+    .picker-tools .btn.text { padding: 4px 0; min-height: 28px; }
+    .picker-more { display: flex; align-items: center; gap: 10px; padding-bottom: 12px; font-size: 13px; }
+    .picker-more select { width: 180px; }
+    .picker-selected-toolbar { margin-bottom: 12px; }
+    .picker-selected-toolbar .hint-text { margin-left: auto; }
+    .picker-alert { padding: 10px 12px; margin-bottom: 12px; background: #fff7ed; color: #9a5100; border-radius: 6px; font-size: 13px; }
+    .picker-pagination { display: flex; justify-content: flex-end; align-items: center; gap: 10px; padding-top: 12px; }
+    .picker-pagination select { width: 108px; height: 34px; padding: 0 8px; border: 1px solid var(--line-strong); border-radius: 6px; color: var(--text); background: #fff; }
+    #productPickerModal .modal-foot { align-items: center; }
+    .picker-footer-summary { margin-right: auto; }
+    #pickerSelectedCount { font-size: 13px; }
+    #pickerDemoNote { color: #8994a6; font-size: 11px; margin-top: 4px; }
     .picker-reason { max-width: 175px; color: #8b5b19; font-size: 12px; margin-top: 5px; line-height: 1.5; }
     .external-price { color: #2458ac; font-weight: 600; margin-top: 5px; }
     .external-cover { width: 44px; height: 54px; flex-shrink: 0; object-fit: cover; border-radius: 5px; }
     .display-product-table .placement-status { min-width: 210px; max-width: 290px; }
     #displayProductSummary { margin: 0 0 12px; }
-    #placementProductModal { z-index: 80; }
-    #placementProductModal .info-item { overflow-wrap: anywhere; }
-    #pickerSelectedCount { margin-right: auto; }
     .mini-input {
       width: 100%;
       border: 1px solid var(--line-strong);
@@ -2279,33 +2287,34 @@
   </aside>
 
   <section class="modal wide" id="productPickerModal" role="dialog" aria-modal="true" aria-labelledby="productPickerTitle">
-    <div class="modal-head"><span id="productPickerTitle">选择投放商品</span><button class="btn text" data-close-modal="productPickerModal">关闭</button></div>
+    <div class="modal-head"><span id="productPickerTitle">选择投放商品</span><button class="btn text" data-close-modal="productPickerModal" aria-label="取消选择并关闭">✕</button></div>
     <div class="modal-body">
       <div class="picker-context" id="pickerTargetContext"></div>
-      <div class="form-grid three" id="productPickerFilters" style="margin-bottom:12px">
-        <div class="field"><label>商品来源</label><select id="pickerFilterSource"><option value="all">全部</option><option value="nn">NN 商品</option><option value="external">独立站商品</option></select></div>
-        <div class="field"><label>商品名称</label><input id="pickerFilterKeyword" placeholder="请输入商品名称"></div>
-        <div class="field"><label>SPU ID</label><input id="pickerFilterSpu" placeholder="请输入 SPU ID，多个可用逗号分隔"></div>
-        <div class="field" id="pickerFilterTypeField" style="display:none"><label>商品类型</label><select id="pickerFilterType"></select></div>
-        <div class="field" id="pickerFilterDeliveryField" style="display:none"><label>履约方式</label><select id="pickerFilterDelivery"></select></div>
-        <div class="field"><label>是否已在当前模板</label><select id="pickerFilterInCurrent"><option>全部</option><option>是</option><option>否</option></select></div>
-        <div class="field"><label>可选状态</label><select id="pickerFilterAvailability"><option>全部</option><option>可添加</option><option>不可添加</option><option>已在当前模板</option></select></div>
+      <div id="productPickerBrowse">
+        <div class="form-grid three" id="productPickerFilters">
+          <div class="field"><label for="pickerFilterSource">商品来源</label><select id="pickerFilterSource"><option value="all">全部来源</option><option value="nn">NN 商品</option><option value="external">独立站商品</option></select></div>
+          <div class="field"><label for="pickerFilterKeyword">商品名称</label><input id="pickerFilterKeyword" placeholder="搜索商品名称"></div>
+          <div class="field"><label for="pickerFilterSpu">SPU ID</label><input id="pickerFilterSpu" placeholder="多个 ID 可用逗号分隔"></div>
+        </div>
+        <div class="picker-tools">
+          <button class="btn text" id="pickerMoreFiltersBtn" type="button" aria-expanded="false" aria-controls="pickerMoreFilters">更多筛选</button>
+          <button class="btn text" id="pickerResetFilters" type="button">重置</button>
+          <div class="picker-sync" id="pickerSyncBar"><span id="pickerSyncStatus" role="status" aria-live="polite"></span><button class="btn text" id="pickerRefreshBtn" type="button">刷新独立站商品</button></div>
+        </div>
+        <div class="picker-more" id="pickerMoreFilters" style="display:none"><label for="pickerFilterAvailability">添加状态</label><select id="pickerFilterAvailability"><option>全部</option><option>可添加</option><option>已添加</option><option>不可添加</option></select></div>
+        <div class="picker-alert" id="pickerSyncError" role="status" style="display:none"></div>
       </div>
-      <div class="picker-sync" id="pickerSyncBar"><button class="btn" id="pickerRefreshBtn" type="button">刷新独立站商品</button><span class="table-meta" id="pickerSyncStatus" role="status" aria-live="polite"></span><span class="hint-text">当前为交互演示数据，尚未连接独立站接口。</span></div>
+      <div class="picker-selected-toolbar" id="pickerSelectedToolbar" style="display:none"><button class="btn text" id="pickerBackToBrowse" type="button">← 返回商品列表</button><strong id="pickerSelectedTitle">本次已选</strong><span class="hint-text">取消勾选即可移出已选清单</span></div>
+      <div class="picker-alert" id="pickerSelectionError" role="alert" style="display:none"></div>
       <div class="table-wrap">
         <table class="picker-table" id="pickerTable">
-          <thead><tr><th><input type="checkbox" id="pickerSelectAll" aria-label="全选本页可添加商品"></th><th>商品来源</th><th>商品 ID</th><th>商品信息</th><th class="picker-nn-column">商品类型</th><th class="picker-nn-column">SKU 摘要</th><th class="picker-nn-column">履约方式</th><th>商品状态</th><th>投放情况</th><th>可选状态</th><th>操作</th></tr></thead>
+          <thead><tr><th><input type="checkbox" id="pickerSelectAll" aria-label="全选本页可添加商品"></th><th>商品信息</th><th>商品来源</th><th>添加状态</th></tr></thead>
           <tbody id="productPickerTbody"></tbody>
         </table>
       </div>
-      <div class="picker-pagination"><span class="table-meta" id="pickerPageMeta"></span><button class="btn" id="pickerPrevPage" type="button">上一页</button><button class="btn" id="pickerNextPage" type="button">下一页</button></div>
+      <div class="picker-pagination"><span class="table-meta" id="pickerPageMeta"></span><select id="pickerPageSize" aria-label="每页商品数"><option value="10">10 条 / 页</option><option value="20">20 条 / 页</option></select><button class="btn" id="pickerPrevPage" type="button">上一页</button><button class="btn" id="pickerNextPage" type="button">下一页</button></div>
     </div>
-    <div class="modal-foot"><div class="table-meta" id="pickerSelectedCount" aria-live="polite">已选 0 个</div><button class="btn text" id="pickerClearSelection" type="button">清除勾选</button><button class="btn primary" id="pickerAddSelectedBtn" type="button">添加选中商品</button><button class="btn" data-close-modal="productPickerModal">关闭</button></div>
-  </section>
-  <section class="modal wide" id="placementProductModal" role="dialog" aria-modal="true" aria-labelledby="placementProductTitle">
-    <div class="modal-head"><span id="placementProductTitle">商品资料（只读）</span><button class="btn text" data-close-modal="placementProductModal">关闭</button></div>
-    <div class="modal-body" id="placementProductBody"></div>
-    <div class="modal-foot"><button class="btn" data-close-modal="placementProductModal">关闭</button></div>
+    <div class="modal-foot"><div class="picker-footer-summary"><div><span id="pickerSelectedCount" aria-live="polite">本次已选 0 个</span><button class="btn text" id="pickerReviewSelection" type="button">查看已选</button></div><div id="pickerDemoNote">独立站商品为演示数据，尚未连接接口。</div></div><button class="btn text" id="pickerClearSelection" type="button">清空已选</button><button class="btn" data-close-modal="productPickerModal">取消</button><button class="btn primary" id="pickerAddSelectedBtn" type="button">确认添加（0）</button></div>
   </section>
 
   <section class="modal" id="displayDisableModal" role="dialog" aria-modal="true">
@@ -3128,7 +3137,9 @@
     let displayProductRows = [];
     let pickerSelection = new Set();
     let pickerPage = 1;
-    const pickerPageSize = 6;
+    let pickerPageSize = 10;
+    let pickerSelectedPage = 1;
+    let pickerReviewMode = false;
     let pickerVisibleProducts = [];
     let externalSyncBusy = false;
     let externalSyncMessage = "同步成功";
@@ -4175,8 +4186,6 @@
       fillSelect("tmplScope", templateScopes.filter(x => x !== "全部"));
       fillSelect("displayFilterTemplateType", ["全部", "全局模板", "游戏专区模板", "活动模板"]);
       fillSelect("displayFilterState", configStates);
-      fillSelect("pickerFilterType", types);
-      fillSelect("pickerFilterDelivery", deliveries);
       fillSelect("inventoryFilterType", types);
       fillSelect("inventoryFilterDelivery", deliveries);
       fillSelect("inventoryFilterState", ["全部", "正常", "低库存", "售罄", "时段售罄", "不限量"]);
@@ -4394,23 +4403,34 @@
       document.getElementById("confirmDisplayDisableBtn").addEventListener("click", confirmDisplayDisable);
       document.getElementById("confirmDisplayDeleteBtn").addEventListener("click", confirmDisplayDelete);
       document.getElementById("pickerAddSelectedBtn").addEventListener("click", addSelectedProductsToDisplay);
-      ["pickerFilterSource", "pickerFilterKeyword", "pickerFilterSpu", "pickerFilterType", "pickerFilterDelivery", "pickerFilterInCurrent", "pickerFilterAvailability"].forEach(id => {
+      ["pickerFilterSource", "pickerFilterKeyword", "pickerFilterSpu", "pickerFilterAvailability"].forEach(id => {
         document.getElementById(id).addEventListener(["pickerFilterKeyword", "pickerFilterSpu"].includes(id) ? "input" : "change", () => {
           pickerPage = 1;
-          if (id === "pickerFilterSource" && valueOf(id) !== "nn") {
-            document.getElementById("pickerFilterType").value = "全部";
-            document.getElementById("pickerFilterDelivery").value = "全部";
-          }
           renderProductPickerTable();
         });
       });
       document.getElementById("pickerRefreshBtn").addEventListener("click", () => refreshExternalCatalog());
-      document.getElementById("pickerPrevPage").addEventListener("click", () => { pickerPage -= 1; renderProductPickerTable(); });
-      document.getElementById("pickerNextPage").addEventListener("click", () => { pickerPage += 1; renderProductPickerTable(); });
+      document.getElementById("pickerPrevPage").addEventListener("click", () => { if (pickerReviewMode) pickerSelectedPage--; else pickerPage--; renderProductPickerTable(); });
+      document.getElementById("pickerNextPage").addEventListener("click", () => { if (pickerReviewMode) pickerSelectedPage++; else pickerPage++; renderProductPickerTable(); });
+      document.getElementById("pickerPageSize").addEventListener("change", event => { pickerPageSize = Number(event.target.value); pickerPage = 1; pickerSelectedPage = 1; renderProductPickerTable(); });
       document.getElementById("pickerClearSelection").addEventListener("click", () => { pickerSelection.clear(); renderProductPickerTable(); });
-      document.addEventListener("click", event => {
-        const detail = event.target.closest("[data-placement-detail]");
-        if (detail) openPlacementProductDetail(detail.dataset.placementDetail);
+      document.getElementById("pickerReviewSelection").addEventListener("click", () => { pickerReviewMode = true; pickerSelectedPage = 1; renderProductPickerTable(); document.getElementById("pickerBackToBrowse").focus(); });
+      document.getElementById("pickerBackToBrowse").addEventListener("click", () => { pickerReviewMode = false; renderProductPickerTable(); document.getElementById(pickerSelection.size ? "pickerReviewSelection" : "pickerFilterKeyword").focus(); });
+      document.getElementById("pickerResetFilters").addEventListener("click", () => { resetPickerFilters(); renderProductPickerTable(); });
+      document.getElementById("pickerMoreFiltersBtn").addEventListener("click", () => {
+        const panel = document.getElementById("pickerMoreFilters");
+        const expanded = panel.style.display === "none";
+        panel.style.display = expanded ? "flex" : "none";
+        document.getElementById("pickerMoreFiltersBtn").setAttribute("aria-expanded", String(expanded));
+        renderProductPickerTable();
+      });
+      document.getElementById("productPickerModal").addEventListener("keydown", event => {
+        if (event.key === "Escape") { event.preventDefault(); closeModal("productPickerModal"); }
+        if (event.key !== "Tab") return;
+        const focusable = [...event.currentTarget.querySelectorAll('button:not(:disabled), input:not(:disabled), select:not(:disabled)')].filter(el => el.getClientRects().length);
+        const first = focusable[0], last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
       });
       document.querySelectorAll("[data-close]").forEach(btn => btn.addEventListener("click", () => closeDrawer(btn.dataset.close)));
       document.querySelectorAll("[data-close-modal]").forEach(btn => btn.addEventListener("click", () => closeModal(btn.dataset.closeModal)));
@@ -5528,7 +5548,7 @@
     }
 
     function pickerAvailability(product) {
-      if (displayPlacementExists(product, activeDisplaySubTemplateId)) return { label: "已在当前模板", reason: product?.source === "external" ? externalDataIssue(product) || "当前投放位置已添加" : "当前投放位置已添加", selectable: false };
+      if (product && displayPlacementExists(product, activeDisplaySubTemplateId)) return { label: "已添加", reason: "当前投放位置已添加", selectable: false };
       const reason = !product ? "商品不存在" : product.source === "external" ? externalDataIssue(product) : product.state !== "上架" ? "NN 商品未上架" : "";
       return { label: reason ? "不可添加" : "可添加", reason, selectable: !reason };
     }
@@ -5567,18 +5587,6 @@
         const reason = !p ? "商品不存在" : p.source === "external" ? externalDataIssue(p) : p.state !== "上架" ? "商品未上架" : "";
         return reason ? [{ item: "新增商品", problem: `${p?.name || row.spu}：${reason}`, suggestion: "请移除该新增项，刷新后重新选择" }] : [];
       });
-    }
-
-    function openPlacementProductDetail(key) {
-      const product = placementProduct(key);
-      if (!product) return toast("商品资料暂不可用，投放引用仍保留。");
-      const external = product.source === "external";
-      const rows = [["商品来源", external ? "独立站商品" : "NN 商品"], ["SPU ID", product.spu], ["商品名称", product.name], ["商品副标题", product.subtitle || "—"], ["商品状态", product.state]];
-      if (external) rows.push(["展示价格", externalPriceText(product)], ["最近成功确认时间", product.confirmedAt || "—"], ["最近同步结果", product.syncResult], ["资料校验", externalDataIssue(product) || "有效"], ["商品落地页（示例）", product.landingUrl]);
-      else rows.push(["商品类型", product.type], ["SKU 摘要", product.skuSummary], ["履约方式", product.delivery], ["创建时间", product.createdAt || product.updatedAt], ["最后操作人", lastOperatorFromLogs(product.logs)]);
-      document.getElementById("placementProductBody").innerHTML = infoGrid(rows.map(([label, value]) => [label, safeText(value)])) + (external ? '<div class="alert info">商品资料由独立站维护，NN 仅同步。当前商品及链接为演示样例，正式落地页待接口对接。</div><button class="btn" id="placementOpenExternal" type="button">打开独立站</button>' : "");
-      document.getElementById("placementOpenExternal")?.addEventListener("click", () => toast("当前为示例落地页；正式对接后打开独立站对应 SPU 商品页。"));
-      openModal("placementProductModal");
     }
 
     async function refreshExternalCatalog(simulateFailure = false) {
@@ -5813,7 +5821,7 @@
         ${showSubTemplate ? `<td>${safeText(displaySubTemplateName(row.subTemplateId || "", config))}</td>` : ""}
         <td>${editable ? `<input class="mini-input" type="number" data-display-row="${index}" data-display-field="sort" value="${safeText(row.sort)}">` : safeText(row.sort)}</td>
         <td>${editable ? `<select class="mini-input" data-display-row="${index}" data-display-field="pinned"><option ${row.pinned === "否" ? "selected" : ""}>否</option><option ${row.pinned === "是" ? "selected" : ""}>是</option></select>` : row.pinned}</td>
-        <td class="placement-status"><span class="tag ${valid ? "green" : "orange"}">${status}</span><div class="picker-reason">${valid ? "模板生效且命中范围后展示" : safeText(eligible.reason)}</div>${external && !valid ? '<div class="picker-reason">同一商品重新上架且资料有效、符合投放条件后自动恢复；移除后不再自动恢复。</div>' : ""}<button class="btn text" data-placement-detail="${safeText(placementKey(row))}">查看资料</button></td>
+        <td class="placement-status"><span class="tag ${valid ? "green" : "orange"}">${status}</span><div class="picker-reason">${valid ? "模板生效且命中范围后展示" : safeText(eligible.reason)}</div>${external && !valid ? '<div class="picker-reason">同一商品重新上架且资料有效、符合投放条件后自动恢复；移除后不再自动恢复。</div>' : ""}</td>
         ${editable ? `<td><button class="btn text danger" data-remove-display-row="${index}">移除</button></td>` : ""}
       </tr>`;
     }
@@ -6047,63 +6055,93 @@
       return max + 1;
     }
 
+    function resetPickerFilters() {
+      document.getElementById("pickerFilterSource").value = "all";
+      document.getElementById("pickerFilterKeyword").value = "";
+      document.getElementById("pickerFilterSpu").value = "";
+      document.getElementById("pickerFilterAvailability").value = "全部";
+      document.getElementById("pickerMoreFilters").style.display = "none";
+      document.getElementById("pickerMoreFiltersBtn").setAttribute("aria-expanded", "false");
+      pickerPage = 1;
+    }
+
+    function discardPickerSelection() {
+      pickerSelection.clear();
+      pickerReviewMode = false;
+      pickerSelectedPage = 1;
+    }
+
     function openProductPicker() {
       ensureActiveDisplaySubTemplate();
-      document.getElementById("pickerTargetContext").textContent = `添加至：${valueOf("displayTemplateName") || "未命名一级模板"} › ${displaySubTemplateName(activeDisplaySubTemplateId)}`;
+      discardPickerSelection();
+      resetPickerFilters();
+      const parent = valueOf("displayTemplateName") || "未命名模板";
+      document.getElementById("pickerTargetContext").textContent = `添加至：${parent}${activeDisplaySubTemplateId ? ` / ${displaySubTemplateName(activeDisplaySubTemplateId)}` : ""} · 确认后加入表单，保存模板后生效`;
       renderProductPickerTable();
       openModal("productPickerModal");
+      document.getElementById("pickerFilterKeyword").focus();
+    }
+
+    function pickerProductInfo(product) {
+      const external = product.source === "external";
+      const cover = external && product.image ? `<img class="external-cover" src="${safeText(product.image)}" alt="">` : `<div class="thumb ${safeText(product.color || "")}">${safeText((product.name || "商品").slice(0, 2))}</div>`;
+      return `<div class="product-cell">${cover}<div><div class="main-name" title="${safeText(product.name || "商品标题缺失")}">${safeText(product.name || "商品标题缺失")}</div><div class="minor">SPU ID：${safeText(product.spu)}${external ? `<span class="picker-price">${safeText(externalPriceText(product))}</span>` : ""}</div></div></div>`;
     }
 
     function renderProductPickerTable() {
       const source = valueOf("pickerFilterSource") || "all";
-      const nnOnly = source === "nn";
-      document.getElementById("pickerFilterTypeField").style.display = nnOnly ? "" : "none";
-      document.getElementById("pickerFilterDeliveryField").style.display = nnOnly ? "" : "none";
-      document.getElementById("pickerSyncBar").style.display = nnOnly ? "none" : "flex";
-      document.getElementById("pickerTable").classList.toggle("external-only", source === "external");
+      document.getElementById("productPickerBrowse").style.display = pickerReviewMode ? "none" : "block";
+      document.getElementById("pickerSelectedToolbar").style.display = pickerReviewMode ? "flex" : "none";
+      document.getElementById("pickerSyncBar").style.display = source === "nn" ? "none" : "flex";
+      document.getElementById("pickerDemoNote").style.display = source === "nn" && !pickerReviewMode ? "none" : "block";
       document.getElementById("pickerRefreshBtn").disabled = externalSyncBusy;
-      document.getElementById("pickerRefreshBtn").textContent = externalSyncBusy ? "同步中…" : "刷新独立站商品";
-      document.getElementById("pickerSyncStatus").textContent = `${externalSyncMessage} · 最近成功同步：${externalSyncConfirmedAt}`;
+      document.getElementById("pickerRefreshBtn").textContent = externalSyncBusy ? "刷新中…" : "刷新独立站商品";
+      document.getElementById("pickerSyncStatus").textContent = `最近同步 ${externalSyncConfirmedAt}`;
+      const syncError = document.getElementById("pickerSyncError");
+      syncError.style.display = source !== "nn" && externalSyncMessage.startsWith("同步失败") ? "block" : "none";
+      syncError.textContent = externalSyncMessage;
       const keyword = valueOf("pickerFilterKeyword").toLowerCase();
       const spuIds = splitTagValues(valueOf("pickerFilterSpu")).map(v => v.toLowerCase());
-      const inCurrent = valueOf("pickerFilterInCurrent");
-      const availability = valueOf("pickerFilterAvailability");
-      const rows = [...products.filter(p => p.state === "上架"), ...externalCatalog].filter(product => {
-        const external = product.source === "external";
-        const state = pickerAvailability(product);
-        return (source === "all" || (external ? source === "external" : nnOnly))
-          && (!keyword || product.name.toLowerCase().includes(keyword))
-          && (!spuIds.length || spuIds.some(id => product.spu.toLowerCase().includes(id)))
-          && (!nnOnly || valueOf("pickerFilterType") === "全部" || product.type === valueOf("pickerFilterType"))
-          && (!nnOnly || valueOf("pickerFilterDelivery") === "全部" || normalizeDelivery(product.delivery) === valueOf("pickerFilterDelivery"))
-          && (inCurrent === "全部" || (inCurrent === "是") === (state.label === "已在当前模板"))
-          && (availability === "全部" || availability === state.label);
-      });
+      const availability = valueOf("pickerFilterAvailability") || "全部";
+      const expanded = document.getElementById("pickerMoreFilters").style.display !== "none";
+      document.getElementById("pickerMoreFiltersBtn").textContent = `${expanded ? "收起筛选" : "更多筛选"}${availability !== "全部" ? ` · ${availability}` : ""}`;
+      const rows = pickerReviewMode
+        ? [...pickerSelection].map(key => placementProduct(key) || { ...placementRef(key), name: "商品资料暂不可用", state: "未知" })
+        : [...products.filter(p => p.state === "上架"), ...externalCatalog].filter(product => {
+          const productSource = product.source === "external" ? "external" : "nn";
+          return (source === "all" || productSource === source)
+            && (!keyword || (product.name || "").toLowerCase().includes(keyword))
+            && (!spuIds.length || spuIds.some(id => product.spu.toLowerCase().includes(id)))
+            && (availability === "全部" || availability === pickerAvailability(product).label);
+        });
       const pages = Math.max(1, Math.ceil(rows.length / pickerPageSize));
-      pickerPage = Math.min(Math.max(1, pickerPage), pages);
-      pickerVisibleProducts = rows.slice((pickerPage - 1) * pickerPageSize, pickerPage * pickerPageSize);
-      document.getElementById("pickerPageMeta").textContent = `共 ${rows.length} 个商品 · 第 ${pickerPage} / ${pages} 页`;
-      document.getElementById("pickerPrevPage").disabled = pickerPage <= 1;
-      document.getElementById("pickerNextPage").disabled = pickerPage >= pages;
-      document.getElementById("productPickerTbody").innerHTML = pickerVisibleProducts.length ? pickerVisibleProducts.map(product => {
-        const key = placementKey(product), attrKey = safeText(key), external = product.source === "external";
-        const state = pickerAvailability(product);
-        const count = displayConfigs.filter(config => config.products.some(row => placementKey(row) === key)).length;
-        return `<tr><td><input type="checkbox" data-picker-select="${attrKey}" ${!state.selectable ? "disabled" : ""} ${pickerSelection.has(key) ? "checked" : ""} aria-label="选择 ${safeText(product.name)}"></td>
-          <td>${placementSourceTag(product)}</td><td><b>${safeText(product.spu)}</b></td><td>${placementProductInfo(product)}</td>
-          <td class="picker-nn-column">${external ? "—" : safeText(product.type)}</td><td class="picker-nn-column">${external ? "—" : safeText(product.skuSummary)}</td><td class="picker-nn-column">${external ? "—" : deliveryTag(product.delivery)}</td>
-          <td>${stateTag(safeText(product.state))}</td><td>${count ? `已投放 ${count} 个模板` : "未投放"}</td>
-          <td><span class="tag ${state.selectable ? "green" : state.label === "已在当前模板" ? "blue" : "orange"}">${state.label}</span>${state.reason ? `<div class="picker-reason">${safeText(state.reason)}</div>` : ""}</td>
-          <td><button class="btn text" data-pick-key="${attrKey}" ${state.selectable ? "" : "disabled"}>${state.label === "已在当前模板" ? "已添加" : "添加"}</button><button class="btn text" data-placement-detail="${attrKey}">查看资料</button></td></tr>`;
-      }).join("") : '<tr><td colspan="11"><div class="empty">当前筛选条件下暂无商品，请调整筛选条件。</div></td></tr>';
-      document.querySelectorAll("[data-picker-select]").forEach(input => input.addEventListener("change", () => {
+      const page = Math.min(Math.max(1, pickerReviewMode ? pickerSelectedPage : pickerPage), pages);
+      if (pickerReviewMode) pickerSelectedPage = page; else pickerPage = page;
+      pickerVisibleProducts = rows.slice((page - 1) * pickerPageSize, page * pickerPageSize);
+      document.getElementById("pickerPageMeta").textContent = `共 ${rows.length} 个商品 · 第 ${page} / ${pages} 页`;
+      document.getElementById("pickerPrevPage").disabled = page <= 1;
+      document.getElementById("pickerNextPage").disabled = page >= pages;
+      document.getElementById("productPickerTbody").innerHTML = pickerVisibleProducts.length ? pickerVisibleProducts.map((product, index) => {
+        const key = placementKey(product), selected = pickerSelection.has(key);
+        const state = pickerAvailability(placementProduct(key));
+        const unavailable = state.label === "不可添加";
+        return `<tr class="${selected ? "is-selected" : state.label === "已添加" ? "is-added" : ""}"><td><input type="checkbox" data-picker-select="${safeText(key)}" ${!state.selectable && !selected ? "disabled" : ""} ${selected ? "checked" : ""} aria-label="选择 ${safeText(product.name || product.spu)}" aria-describedby="picker-state-${index}"></td>
+          <td>${pickerProductInfo(product)}</td><td>${product.source === "external" ? "独立站商品" : "NN 商品"}</td>
+          <td id="picker-state-${index}"><span class="picker-status ${unavailable ? "unavailable" : ""}">${state.label}</span>${unavailable ? `<div class="picker-reason">${safeText(state.reason)}</div>` : ""}</td></tr>`;
+      }).join("") : `<tr><td colspan="4"><div class="empty">${pickerReviewMode ? "暂无已选商品，返回商品列表继续选择。" : "没有符合条件的商品，请调整筛选或重置。"}</div></td></tr>`;
+      document.querySelectorAll("[data-picker-select]").forEach((input, index) => input.addEventListener("change", () => {
         if (input.checked) pickerSelection.add(input.dataset.pickerSelect); else pickerSelection.delete(input.dataset.pickerSelect);
-        updatePickerSelectedCount();
+        if (pickerReviewMode) {
+          renderProductPickerTable();
+          const remaining = document.querySelectorAll("[data-picker-select]");
+          (remaining[Math.min(index, remaining.length - 1)] || document.getElementById("pickerBackToBrowse")).focus();
+        }
+        else { input.closest("tr").classList.toggle("is-selected", input.checked); updatePickerSelectedCount(); }
       }));
-      document.querySelectorAll("[data-pick-key]").forEach(btn => btn.addEventListener("click", () => addProductsToDisplay([btn.dataset.pickKey])));
       document.getElementById("pickerSelectAll").onchange = event => {
-        pickerVisibleProducts.filter(p => pickerAvailability(p).selectable).forEach(p => {
-          if (event.target.checked) pickerSelection.add(placementKey(p)); else pickerSelection.delete(placementKey(p));
+        pickerVisibleProducts.forEach(p => {
+          if (event.target.checked && pickerAvailability(placementProduct(p)).selectable) pickerSelection.add(placementKey(p));
+          else if (!event.target.checked) pickerSelection.delete(placementKey(p));
         });
         renderProductPickerTable();
       };
@@ -6111,16 +6149,22 @@
     }
 
     function updatePickerSelectedCount() {
-      // Retain invalidated selections so submission can report exactly which items changed.
       const selected = [...pickerSelection];
-      const external = selected.filter(key => placementRef(key).source === "external").length;
       const invalid = selected.filter(key => !pickerAvailability(placementProduct(key)).selectable).length;
-      document.getElementById("pickerSelectedCount").textContent = `已选 ${selected.length} 个：NN 商品 ${selected.length - external} 个，独立站商品 ${external} 个${invalid ? `（${invalid} 个状态已变化，请重新确认）` : ""}`;
+      document.getElementById("pickerSelectedCount").textContent = `本次已选 ${selected.length} 个`;
+      document.getElementById("pickerSelectedTitle").textContent = `本次已选（${selected.length}）`;
+      document.getElementById("pickerAddSelectedBtn").textContent = `确认添加（${selected.length}）`;
       document.getElementById("pickerAddSelectedBtn").disabled = !selected.length;
       document.getElementById("pickerClearSelection").disabled = !selected.length;
-      const selectable = pickerVisibleProducts.filter(p => pickerAvailability(p).selectable);
+      document.getElementById("pickerReviewSelection").disabled = !selected.length;
+      document.getElementById("pickerReviewSelection").style.display = pickerReviewMode ? "none" : "inline-flex";
+      const error = document.getElementById("pickerSelectionError");
+      error.style.display = invalid ? "block" : "none";
+      error.textContent = invalid ? `已选商品中有 ${invalid} 个已不可添加。请在已选清单中取消勾选后再确认，本次选择尚未加入表单。` : "";
+      const selectable = pickerVisibleProducts.filter(p => pickerAvailability(placementProduct(p)).selectable || pickerSelection.has(placementKey(p)));
       const checked = selectable.filter(p => pickerSelection.has(placementKey(p)));
       const selectAll = document.getElementById("pickerSelectAll");
+      selectAll.setAttribute("aria-label", pickerReviewMode ? "切换本页已选商品" : "全选本页可添加商品");
       selectAll.disabled = !selectable.length;
       selectAll.checked = selectable.length > 0 && checked.length === selectable.length;
       selectAll.indeterminate = checked.length > 0 && checked.length < selectable.length;
@@ -6130,44 +6174,28 @@
       addProductsToDisplay([...pickerSelection]);
     }
 
-    function addProductToDisplay(ref) {
-      addProductsToDisplay([placementKey(ref)]);
-    }
-
     function addProductsToDisplay(keys) {
-      if (!keys.length) return toast("请选择需要添加的商品。");
-      const failures = [];
-      let added = 0;
-      keys.forEach(key => {
-        const product = placementProduct(key);
-        const state = pickerAvailability(product);
-        if (!state.selectable) {
-          failures.push(`${product?.name || placementRef(key).spu}：${state.reason}`);
-          pickerSelection.delete(key);
-          return;
-        }
-        const subTemplateId = activeDisplaySubTemplateId;
-        displayProductRows.push({ ...placementRef(product), subTemplateId, sort: nextDisplayProductSort(subTemplateId), pinned: "否" });
-        pickerSelection.delete(placementKey(product));
-        added++;
-      });
+      const uniqueKeys = [...new Set(keys)];
+      if (!uniqueKeys.length) return toast("请选择需要添加的商品。");
+      // Validate the entire selection before mutating the parent form.
+      if (uniqueKeys.some(key => !pickerAvailability(placementProduct(key)).selectable)) {
+        pickerReviewMode = true;
+        pickerSelectedPage = 1;
+        renderProductPickerTable();
+        document.getElementById("pickerBackToBrowse").focus();
+        return;
+      }
+      const subTemplateId = activeDisplaySubTemplateId;
+      uniqueKeys.forEach(key => displayProductRows.push({ ...placementRef(placementProduct(key)), subTemplateId, sort: nextDisplayProductSort(subTemplateId), pinned: "否" }));
       renderDisplayProductRows();
-      renderProductPickerTable();
-      const result = `已添加 ${added} 个商品至当前表单，保存模板后生效。${failures.length ? `未添加 ${failures.length} 个：${failures.join("；")}` : ""}`;
-      document.getElementById("pickerTargetContext").textContent = `添加至：${valueOf("displayTemplateName") || "未命名一级模板"} › ${displaySubTemplateName(activeDisplaySubTemplateId)}。${result}`;
-      toast(result);
+      closeModal("productPickerModal");
+      toast(`已添加 ${uniqueKeys.length} 个商品，保存模板后生效。`);
     }
 
     function removeProductFromDisplay(index) {
       if (!displayProductRows[index]) return;
       displayProductRows.splice(index, 1);
       renderDisplayProductRows();
-    }
-
-    function removeProductFromPicker(ref) {
-      const index = displayProductRows.findIndex(row => placementKey(row) === placementKey(ref) && (row.subTemplateId || "") === (activeDisplaySubTemplateId || ""));
-      if (index >= 0) removeProductFromDisplay(index);
-      renderProductPickerTable();
     }
 
     function moveDisplayProduct(index, direction) {
@@ -12188,10 +12216,12 @@
       document.getElementById(id).classList.add("show");
     }
     function closeModal(id) {
+      if (id === "productPickerModal") { discardPickerSelection(); document.getElementById("displayAddProductBtn").focus(); }
       document.getElementById(id).classList.remove("show");
       if (!document.querySelector(".drawer.show") && !document.querySelector(".modal.show")) document.getElementById("overlay").classList.remove("show");
     }
     function closeAllLayers() {
+      discardPickerSelection();
       document.querySelectorAll(".drawer.show").forEach(el => el.classList.remove("show"));
       document.querySelectorAll(".modal.show").forEach(el => el.classList.remove("show"));
       document.getElementById("overlay").classList.remove("show");
