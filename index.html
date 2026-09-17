@@ -875,9 +875,9 @@
       max-height: calc(100vh - 158px);
       padding: 16px;
     }
-    #productPickerModal .table-wrap { overflow: visible; }
+    #productPickerModal .table-wrap { overflow-x: auto; }
     .picker-table {
-      min-width: 0;
+      min-width: 1120px;
       table-layout: fixed;
     }
     .inventory-table { min-width: 2340px; }
@@ -908,23 +908,45 @@
       cursor: pointer;
     }
     .sort-head.active { color: var(--primary); }
-    .picker-table th,
-    .picker-table td {
-      padding: 10px 8px;
-      word-break: break-word;
-    }
+    .picker-table th, .picker-table td { padding: 10px 8px; vertical-align: top; }
+    .picker-table th { white-space: nowrap; }
     .picker-table .product-cell { min-width: 0; }
-    .picker-table th:nth-child(1), .picker-table td:nth-child(1) { width: 4%; }
-    .picker-table th:nth-child(2), .picker-table td:nth-child(2) { width: 9%; }
-    .picker-table th:nth-child(3), .picker-table td:nth-child(3) { width: 19%; }
-    .picker-table th:nth-child(4), .picker-table td:nth-child(4) { width: 7%; }
-    .picker-table th:nth-child(5), .picker-table td:nth-child(5) { width: 9%; }
-    .picker-table th:nth-child(6), .picker-table td:nth-child(6) { width: 13%; }
-    .picker-table th:nth-child(7), .picker-table td:nth-child(7) { width: 6%; }
-    .picker-table th:nth-child(8), .picker-table td:nth-child(8) { width: 8%; }
-    .picker-table th:nth-child(9), .picker-table td:nth-child(9) { width: 10%; }
-    .picker-table th:nth-child(10), .picker-table td:nth-child(10) { width: 6%; }
-    .picker-table th:nth-child(11), .picker-table td:nth-child(11) { width: 9%; }
+    .picker-table th:nth-child(1) { width: 3%; }
+    .picker-table th:nth-child(2) { width: 8%; }
+    .picker-table th:nth-child(3) { width: 8%; }
+    .picker-table th:nth-child(4) { width: 22%; }
+    .picker-table th:nth-child(5) { width: 6%; }
+    .picker-table th:nth-child(6) { width: 9%; }
+    .picker-table th:nth-child(7) { width: 12%; }
+    .picker-table th:nth-child(8) { width: 6%; }
+    .picker-table th:nth-child(9) { width: 8%; }
+    .picker-table th:nth-child(10) { width: 10%; }
+    .picker-table th:nth-child(11) { width: 8%; }
+    .picker-table td { overflow-wrap: anywhere; }
+    .picker-table td .tag { white-space: normal; }
+    .picker-table.external-only th:nth-child(1) { width: 4%; }
+    .picker-table.external-only th:nth-child(2) { width: 10%; }
+    .picker-table.external-only th:nth-child(3) { width: 12%; }
+    .picker-table.external-only th:nth-child(4) { width: 30%; }
+    .picker-table.external-only th:nth-child(8) { width: 8%; }
+    .picker-table.external-only th:nth-child(9) { width: 10%; }
+    .picker-table.external-only th:nth-child(10) { width: 14%; }
+    .picker-table.external-only th:nth-child(11) { width: 12%; }
+    .picker-table .product-cell > div:last-child { min-width: 0; }
+    .picker-table .main-name { overflow-wrap: anywhere; }
+    .picker-table.external-only { min-width: 1000px; }
+    .picker-table.external-only .picker-nn-column { display: none; }
+    .picker-context { margin-bottom: 12px; color: var(--text); font-weight: 600; }
+    .picker-sync { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; background: #f5f8ff; padding: 10px 12px; border-radius: 6px; margin-bottom: 12px; }
+    .picker-pagination { display: flex; justify-content: flex-end; align-items: center; gap: 12px; padding-top: 12px; }
+    .picker-reason { max-width: 175px; color: #8b5b19; font-size: 12px; margin-top: 5px; line-height: 1.5; }
+    .external-price { color: #2458ac; font-weight: 600; margin-top: 5px; }
+    .external-cover { width: 44px; height: 54px; flex-shrink: 0; object-fit: cover; border-radius: 5px; }
+    .display-product-table .placement-status { min-width: 210px; max-width: 290px; }
+    #displayProductSummary { margin: 0 0 12px; }
+    #placementProductModal { z-index: 80; }
+    #placementProductModal .info-item { overflow-wrap: anywhere; }
+    #pickerSelectedCount { margin-right: auto; }
     .mini-input {
       width: 100%;
       border: 1px solid var(--line-strong);
@@ -1673,7 +1695,7 @@
           <div class="table-head">
             <div>
               <div class="table-title">投放配置数据</div>
-              <div class="table-meta">全局模板覆盖全部社区；活动模板按活动 ID 路由；投放商品数按一级模板下的 SPU ID 去重统计；模板排序值越大越靠左。</div>
+              <div class="table-meta">全局模板覆盖全部社区；活动模板按活动 ID 路由；已配置数量按来源、站点及 SPU ID 去重统计；可展示数量还需满足商品、模板和时间条件；模板排序值越大越靠左。</div>
             </div>
             <div class="table-meta" id="displayTableCount">共 0 条</div>
           </div>
@@ -1687,7 +1709,7 @@
                   <th>投放范围</th>
                   <th>排序值（越大越靠左）</th>
                   <th>配置状态</th>
-                  <th>投放商品数</th>
+                  <th>商品数量</th>
                   <th>生效时间</th>
                   <th>创建时间</th>
                   <th>最后操作人</th>
@@ -2181,6 +2203,7 @@
               <h2><span class="required-star">*</span>商品配置</h2>
                 <div class="body">
                 <div id="displayProductTabs" class="tab-strip"></div>
+                <div id="displayProductSummary" class="table-meta" aria-live="polite"></div>
                 <div class="btn-row" style="margin-bottom:10px">
                   <button class="btn primary" id="displayAddProductBtn" type="button">添加商品</button>
                   <button class="btn danger" id="displayClearProductsBtn" type="button">清空当前模板商品</button>
@@ -2189,7 +2212,7 @@
                   <table class="display-product-table">
                     <thead>
                       <tr>
-                        <th>商品ID</th>
+                        <th>商品来源</th><th>商品 ID</th>
                         <th>商品信息</th>
                         <th>商品类型</th>
                         <th>SKU 摘要</th>
@@ -2197,14 +2220,14 @@
                         <th>商品状态</th>
                         <th><span class="required-star">*</span>投放排序</th>
                         <th>是否置顶</th>
-                        <th>最后操作人</th>
+                        <th>展示资格</th>
                         <th>操作</th>
                       </tr>
                     </thead>
                     <tbody id="displayProductTbody"></tbody>
                   </table>
                 </div>
-                <div class="hint-text">商品配置按二级模板分页管理。当前 Tab 只展示该二级模板下的投放商品，同一个商品可以分别添加到多个二级模板；排序和置顶只在当前二级模板内生效。</div>
+                <div class="hint-text">商品配置按二级模板分页管理。当前 Tab 只展示该二级模板下的投放商品，同一个商品可以分别添加到多个二级模板；排序和置顶只在当前二级模板内生效。独立站商品暂停展示时保留配置，恢复有效后自动恢复；移除后不再自动恢复。添加仅修改当前表单，保存后生效。</div>
               </div>
             </section>
 
@@ -2255,24 +2278,34 @@
     <div class="drawer-body" id="supplierProductDetailBody"></div>
   </aside>
 
-  <section class="modal wide" id="productPickerModal" role="dialog" aria-modal="true">
-    <div class="modal-head"><span>选择投放商品</span><button class="btn text" data-close-modal="productPickerModal">关闭</button></div>
+  <section class="modal wide" id="productPickerModal" role="dialog" aria-modal="true" aria-labelledby="productPickerTitle">
+    <div class="modal-head"><span id="productPickerTitle">选择投放商品</span><button class="btn text" data-close-modal="productPickerModal">关闭</button></div>
     <div class="modal-body">
-      <div class="form-grid" id="productPickerFilters" style="margin-bottom:12px">
-        <div class="field"><label>商品对外名称</label><input id="pickerFilterKeyword" placeholder="请输入商品对外名称"></div>
+      <div class="picker-context" id="pickerTargetContext"></div>
+      <div class="form-grid three" id="productPickerFilters" style="margin-bottom:12px">
+        <div class="field"><label>商品来源</label><select id="pickerFilterSource"><option value="all">全部</option><option value="nn">NN 商品</option><option value="external">独立站商品</option></select></div>
+        <div class="field"><label>商品名称</label><input id="pickerFilterKeyword" placeholder="请输入商品名称"></div>
         <div class="field"><label>SPU ID</label><input id="pickerFilterSpu" placeholder="请输入 SPU ID，多个可用逗号分隔"></div>
-        <div class="field"><label>商品类型</label><select id="pickerFilterType"></select></div>
-        <div class="field"><label>履约方式</label><select id="pickerFilterDelivery"></select></div>
-        <div class="field" id="pickerFilterInCurrentField"><label>是否已在当前模板</label><select id="pickerFilterInCurrent"><option>全部</option><option>是</option><option>否</option></select></div>
+        <div class="field" id="pickerFilterTypeField" style="display:none"><label>商品类型</label><select id="pickerFilterType"></select></div>
+        <div class="field" id="pickerFilterDeliveryField" style="display:none"><label>履约方式</label><select id="pickerFilterDelivery"></select></div>
+        <div class="field"><label>是否已在当前模板</label><select id="pickerFilterInCurrent"><option>全部</option><option>是</option><option>否</option></select></div>
+        <div class="field"><label>可选状态</label><select id="pickerFilterAvailability"><option>全部</option><option>可添加</option><option>不可添加</option><option>已在当前模板</option></select></div>
       </div>
+      <div class="picker-sync" id="pickerSyncBar"><button class="btn" id="pickerRefreshBtn" type="button">刷新独立站商品</button><span class="table-meta" id="pickerSyncStatus" role="status" aria-live="polite"></span><span class="hint-text">当前为交互演示数据，尚未连接独立站接口。</span></div>
       <div class="table-wrap">
-        <table class="picker-table">
-          <thead><tr><th><input type="checkbox" id="pickerSelectAll" aria-label="全选当前可添加商品"></th><th>商品ID</th><th>商品信息</th><th>商品类型</th><th>SKU 摘要</th><th>履约方式</th><th>商品状态</th><th>投放状态</th><th>创建时间</th><th>最后操作人</th><th>操作</th></tr></thead>
+        <table class="picker-table" id="pickerTable">
+          <thead><tr><th><input type="checkbox" id="pickerSelectAll" aria-label="全选本页可添加商品"></th><th>商品来源</th><th>商品 ID</th><th>商品信息</th><th class="picker-nn-column">商品类型</th><th class="picker-nn-column">SKU 摘要</th><th class="picker-nn-column">履约方式</th><th>商品状态</th><th>投放情况</th><th>可选状态</th><th>操作</th></tr></thead>
           <tbody id="productPickerTbody"></tbody>
         </table>
       </div>
+      <div class="picker-pagination"><span class="table-meta" id="pickerPageMeta"></span><button class="btn" id="pickerPrevPage" type="button">上一页</button><button class="btn" id="pickerNextPage" type="button">下一页</button></div>
     </div>
-    <div class="modal-foot"><div class="table-meta" id="pickerSelectedCount">已选 0 个</div><button class="btn primary" id="pickerAddSelectedBtn" type="button">添加选中商品</button><button class="btn" data-close-modal="productPickerModal">关闭</button></div>
+    <div class="modal-foot"><div class="table-meta" id="pickerSelectedCount" aria-live="polite">已选 0 个</div><button class="btn text" id="pickerClearSelection" type="button">清除勾选</button><button class="btn primary" id="pickerAddSelectedBtn" type="button">添加选中商品</button><button class="btn" data-close-modal="productPickerModal">关闭</button></div>
+  </section>
+  <section class="modal wide" id="placementProductModal" role="dialog" aria-modal="true" aria-labelledby="placementProductTitle">
+    <div class="modal-head"><span id="placementProductTitle">商品资料（只读）</span><button class="btn text" data-close-modal="placementProductModal">关闭</button></div>
+    <div class="modal-body" id="placementProductBody"></div>
+    <div class="modal-foot"><button class="btn" data-close-modal="placementProductModal">关闭</button></div>
   </section>
 
   <section class="modal" id="displayDisableModal" role="dialog" aria-modal="true">
@@ -3005,6 +3038,8 @@
       makeDisplayConfig("TPL_GAME_ITEM_ZONE", "草稿", "", "", ["SPU10008"], "配置草稿、CDKey 码池未配置"),
       makeDisplayConfig("TPL_SUMMER_EVENT", "草稿", "2026-07-20 10:00", "2026-08-20 23:59", ["SPU10001", "SPU10002"], "活动模板通过活动 ID 路由")
     ];
+    displayConfigs[0].startTime = nowText(new Date(Date.now() - 86400000));
+    displayConfigs[0].endTime = nowText(new Date(Date.now() + 30 * 86400000));
     let inventoryRecords = [
       makeInventoryRecord({ inventoryId: "INV-SPU10001-SKU01", spu: "SPU10001", skuId: "SPU10001-SKU01", stockMode: "限量", totalStock: 500, availableStock: 420, lockedStock: 8, deductedStock: 72, abnormalLockedStock: 0, todayLimit: 180, todayRemaining: 120, dailyRefreshTimes: "10:00,17:00", warningThreshold: 50, lastSyncTime: "2026-05-22 16:20", updatedAt: "2026-05-22 16:20", remark: "头像框 7 天初始化库存" }),
       makeInventoryRecord({ inventoryId: "INV-SPU10001-SKU02", spu: "SPU10001", skuId: "SPU10001-SKU02", stockMode: "限量", totalStock: 500, availableStock: 430, lockedStock: 4, deductedStock: 66, abnormalLockedStock: 0, todayLimit: 180, todayRemaining: 128, dailyRefreshTimes: "10:00,17:00", warningThreshold: 50, lastSyncTime: "2026-05-22 16:20", updatedAt: "2026-05-22 16:20", remark: "头像框 30 天初始化库存" }),
@@ -3091,6 +3126,21 @@
     let inventorySupplySafetyPercentDraft = "";
     let inventorySupplyReadonly = false;
     let displayProductRows = [];
+    let pickerSelection = new Set();
+    let pickerPage = 1;
+    const pickerPageSize = 6;
+    let pickerVisibleProducts = [];
+    let externalSyncBusy = false;
+    let externalSyncMessage = "同步成功";
+    let externalSyncConfirmedAt = nowText();
+    const externalSyncLogs = [];
+    const externalCatalog = createExternalCatalogDemo();
+    // Only demo fixtures use this duration; production expiry comes from the agreed sync contract.
+    const externalDemoValidityMs = 60 * 60 * 1000;
+    displayConfigs[0].products.push(
+      { source: "external", siteId: "independent-demo", spu: "EXT20002", subTemplateId: "SUB_HOME_HOT", sort: 4, pinned: "是" },
+      { source: "external", siteId: "independent-demo", spu: "EXT20003", subTemplateId: "SUB_HOME_HOT", sort: 5, pinned: "否" }
+    );
     let displaySubTemplateRows = [];
     let activeDisplaySubTemplateId = "";
     let formMode = "new";
@@ -4344,8 +4394,23 @@
       document.getElementById("confirmDisplayDisableBtn").addEventListener("click", confirmDisplayDisable);
       document.getElementById("confirmDisplayDeleteBtn").addEventListener("click", confirmDisplayDelete);
       document.getElementById("pickerAddSelectedBtn").addEventListener("click", addSelectedProductsToDisplay);
-      ["pickerFilterKeyword", "pickerFilterSpu", "pickerFilterType", "pickerFilterDelivery", "pickerFilterInCurrent"].forEach(id => {
-        document.getElementById(id).addEventListener(["pickerFilterKeyword", "pickerFilterSpu"].includes(id) ? "input" : "change", renderProductPickerTable);
+      ["pickerFilterSource", "pickerFilterKeyword", "pickerFilterSpu", "pickerFilterType", "pickerFilterDelivery", "pickerFilterInCurrent", "pickerFilterAvailability"].forEach(id => {
+        document.getElementById(id).addEventListener(["pickerFilterKeyword", "pickerFilterSpu"].includes(id) ? "input" : "change", () => {
+          pickerPage = 1;
+          if (id === "pickerFilterSource" && valueOf(id) !== "nn") {
+            document.getElementById("pickerFilterType").value = "全部";
+            document.getElementById("pickerFilterDelivery").value = "全部";
+          }
+          renderProductPickerTable();
+        });
+      });
+      document.getElementById("pickerRefreshBtn").addEventListener("click", () => refreshExternalCatalog());
+      document.getElementById("pickerPrevPage").addEventListener("click", () => { pickerPage -= 1; renderProductPickerTable(); });
+      document.getElementById("pickerNextPage").addEventListener("click", () => { pickerPage += 1; renderProductPickerTable(); });
+      document.getElementById("pickerClearSelection").addEventListener("click", () => { pickerSelection.clear(); renderProductPickerTable(); });
+      document.addEventListener("click", event => {
+        const detail = event.target.closest("[data-placement-detail]");
+        if (detail) openPlacementProductDetail(detail.dataset.placementDetail);
       });
       document.querySelectorAll("[data-close]").forEach(btn => btn.addEventListener("click", () => closeDrawer(btn.dataset.close)));
       document.querySelectorAll("[data-close-modal]").forEach(btn => btn.addEventListener("click", () => closeModal(btn.dataset.closeModal)));
@@ -5397,13 +5462,154 @@
       return uniqueDisplayTemplateId(prefix);
     }
 
+    function createExternalCatalogDemo() {
+      const rows = [
+        ["SPU10001", "星际远航", "在独立站选择标准版或豪华版", "HKD", 258, "起价", "上架"],
+        ["EXT20002", "山海纪行", "开放世界冒险 · PC 版", "HKD", 198, "单一价格", "上架"],
+        ["EXT20003", "极速地平线", "多版本可选", "USD", 39.99, "起价", "下架"],
+        ["EXT20004", "幻境工坊", "展示价格待修正", "HKD", null, "单一价格", "上架"],
+        ["EXT20005", "深海探索", "海底冒险 · 单人游戏", "USD", 19.99, "单一价格", "上架"],
+        ["EXT20006", "云端农场", "", "HKD", 88, "单一价格", "上架"],
+        ["EXT20007", "遗迹守望", "源商品已删除", "HKD", 128, "单一价格", "已删除"],
+        ["EXT20008", "极夜行动", "源状态尚未确认", "USD", 29.99, "单一价格", "未知"]
+      ];
+      return rows.map(([spu, name, subtitle, currency, amount, priceType, state], index) => ({
+        source: "external", siteId: "independent-demo", spu, name, subtitle, currency, amount, priceType, state,
+        image: "data:image/svg+xml;charset=utf-8," + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="88" height="108"><rect width="88" height="108" fill="${["#27466b", "#62745a", "#675b83", "#547981"][index % 4]}"/><circle cx="68" cy="24" r="30" fill="#fff" opacity=".1"/><text x="44" y="63" text-anchor="middle" fill="white" font-size="20">${name.slice(0, 2)}</text></svg>`),
+        landingUrl: `https://shop.example.com/products/${spu}`,
+        confirmedAt: index === 4 ? "2026-09-01 09:00" : nowText(),
+        expiresAt: Date.now() + (index === 4 ? -1 : 3600000),
+        syncResult: index === 4 ? "同步失败" : "同步成功"
+      }));
+    }
+
+    function placementRef(value) {
+      if (typeof value === "string") {
+        if (value.startsWith("[")) { try { const [source, siteId, spu] = JSON.parse(value); return { source, siteId, spu }; } catch {} }
+        return { source: "nn", siteId: "", spu: value };
+      }
+      return { source: value?.source || "nn", siteId: value?.source === "external" ? value.siteId : "", spu: value?.spu || "" };
+    }
+
+    function placementKey(value) {
+      const ref = placementRef(value);
+      return JSON.stringify([ref.source, ref.siteId, ref.spu]);
+    }
+
+    function placementProduct(value) {
+      const ref = placementRef(value);
+      return ref.source === "external" ? externalCatalog.find(p => placementKey(p) === placementKey(ref)) : productBySpu(ref.spu);
+    }
+
+    function placementSourceTag(value) {
+      const external = placementRef(value).source === "external";
+      return `<span class="tag ${external ? "purple" : "blue"}">${external ? "独立站商品" : "NN 商品"}</span>`;
+    }
+
+    function externalDataIssue(product) {
+      if (!product) return "商品资料暂不可用";
+      if (product.state !== "上架") return product.state === "下架" ? "独立站商品已下架" : product.state === "已删除" ? "独立站商品已删除" : "商品状态未确认";
+      if (!product.name?.trim()) return "商品标题缺失";
+      if (!product.image) return "商品图片缺失";
+      if (typeof product.amount !== "number" || !Number.isFinite(product.amount) || product.amount < 0) return "展示价格缺失或无效";
+      if (!["HKD", "USD", "CNY"].includes(product.currency)) return "展示币种缺失或不支持";
+      if (!["单一价格", "起价"].includes(product.priceType)) return "价格类型未确认";
+      try { const url = new URL(product.landingUrl); if (url.origin !== "https://shop.example.com" || url.username || url.password || url.pathname !== `/products/${encodeURIComponent(product.spu)}`) return "商品落地页无效"; } catch { return "商品落地页无效"; }
+      if (!product.confirmedAt || !Number.isFinite(product.expiresAt) || product.expiresAt <= Date.now()) return "同步数据已过期";
+      return "";
+    }
+
+    function placementEligibility(product) {
+      if (product?.source === "external") {
+        const reason = externalDataIssue(product);
+        return { status: reason ? "不可投放" : "可投放", reason: reason || "无" };
+      }
+      return getDisplayProductStatus(product, { state: "上架" });
+    }
+
+    function pickerAvailability(product) {
+      if (displayPlacementExists(product, activeDisplaySubTemplateId)) return { label: "已在当前模板", reason: product?.source === "external" ? externalDataIssue(product) || "当前投放位置已添加" : "当前投放位置已添加", selectable: false };
+      const reason = !product ? "商品不存在" : product.source === "external" ? externalDataIssue(product) : product.state !== "上架" ? "NN 商品未上架" : "";
+      return { label: reason ? "不可添加" : "可添加", reason, selectable: !reason };
+    }
+
+    function externalPriceText(product) {
+      if (typeof product.amount !== "number" || !Number.isFinite(product.amount) || product.amount < 0 || !product.currency) return "价格资料异常";
+      return `${product.currency} ${product.amount.toFixed(2)}${product.priceType === "起价" ? " 起" : ""}`;
+    }
+
+    function placementProductInfo(product) {
+      if (product.source !== "external") return productInfoHtml(product);
+      return `<div class="product-cell"><img class="external-cover" src="${safeText(product.image)}" alt="${safeText(product.name)}"><div><div class="main-name">${safeText(product.name)}</div>${product.subtitle ? `<div class="minor">${safeText(product.subtitle)}</div>` : ""}<div class="external-price">${safeText(externalPriceText(product))}</div></div></div>`;
+    }
+
+    function displayEligibleCount(rows) {
+      return uniqueDisplayProductCount(rows.filter(row => placementEligibility(placementProduct(row)).status === "可投放"));
+    }
+
+    function displayWindowActive(config, now = new Date()) {
+      const start = parseDisplayTime(config.startTime), end = parseDisplayTime(config.endTime);
+      return config.state === "上架" && start && end && start <= now && now <= end;
+    }
+
+    function displayVisibleCount(config) {
+      return displayWindowActive(config) ? displayEligibleCount(config.products) : 0;
+    }
+
+    function displayPlacementKey(row) {
+      return JSON.stringify([placementKey(row), row.subTemplateId || ""]);
+    }
+
+    function newPlacementErrors(config) {
+      const oldKeys = new Set((editingDisplayConfig?.products || []).map(displayPlacementKey));
+      return config.products.filter(row => !oldKeys.has(displayPlacementKey(row))).flatMap(row => {
+        const p = placementProduct(row);
+        const reason = !p ? "商品不存在" : p.source === "external" ? externalDataIssue(p) : p.state !== "上架" ? "商品未上架" : "";
+        return reason ? [{ item: "新增商品", problem: `${p?.name || row.spu}：${reason}`, suggestion: "请移除该新增项，刷新后重新选择" }] : [];
+      });
+    }
+
+    function openPlacementProductDetail(key) {
+      const product = placementProduct(key);
+      if (!product) return toast("商品资料暂不可用，投放引用仍保留。");
+      const external = product.source === "external";
+      const rows = [["商品来源", external ? "独立站商品" : "NN 商品"], ["SPU ID", product.spu], ["商品名称", product.name], ["商品副标题", product.subtitle || "—"], ["商品状态", product.state]];
+      if (external) rows.push(["展示价格", externalPriceText(product)], ["最近成功确认时间", product.confirmedAt || "—"], ["最近同步结果", product.syncResult], ["资料校验", externalDataIssue(product) || "有效"], ["商品落地页（示例）", product.landingUrl]);
+      else rows.push(["商品类型", product.type], ["SKU 摘要", product.skuSummary], ["履约方式", product.delivery], ["创建时间", product.createdAt || product.updatedAt], ["最后操作人", lastOperatorFromLogs(product.logs)]);
+      document.getElementById("placementProductBody").innerHTML = infoGrid(rows.map(([label, value]) => [label, safeText(value)])) + (external ? '<div class="alert info">商品资料由独立站维护，NN 仅同步。当前商品及链接为演示样例，正式落地页待接口对接。</div><button class="btn" id="placementOpenExternal" type="button">打开独立站</button>' : "");
+      document.getElementById("placementOpenExternal")?.addEventListener("click", () => toast("当前为示例落地页；正式对接后打开独立站对应 SPU 商品页。"));
+      openModal("placementProductModal");
+    }
+
+    async function refreshExternalCatalog(simulateFailure = false) {
+      if (externalSyncBusy) return;
+      externalSyncBusy = true;
+      externalSyncMessage = "正在同步…";
+      renderProductPickerTable();
+      await new Promise(resolve => setTimeout(resolve, 600));
+      if (simulateFailure) {
+        externalSyncMessage = "同步失败，请稍后重试；仍在有效期内的资料继续使用";
+        externalCatalog.forEach(p => p.syncResult = "同步失败");
+      } else {
+        externalSyncConfirmedAt = nowText();
+        externalCatalog.forEach(p => { p.confirmedAt = externalSyncConfirmedAt; p.expiresAt = Date.now() + externalDemoValidityMs; p.syncResult = "同步成功"; });
+        externalSyncMessage = `同步成功，共 ${externalCatalog.length} 个商品`;
+      }
+      externalSyncLogs.push({ time: nowText(), operator: "平台运营", action: "手动同步独立站商品", result: externalSyncMessage });
+      externalSyncBusy = false;
+      renderProductPickerTable();
+      renderDisplayProductRows();
+      renderDisplayTable();
+      toast(externalSyncMessage);
+    }
+
     function productBySpu(spu) {
       return products.find(item => item.spu === spu);
     }
 
     function parseDisplayTime(text) {
       if (!text) return null;
-      return new Date(String(text).replace(/-/g, "/"));
+      return new Date(String(text).includes("T") ? text : String(text).replace(/-/g, "/"));
     }
 
     function displayTimeText(config) {
@@ -5411,16 +5617,17 @@
     }
 
     function displayProductNames(config) {
-      return config.products.map(item => productBySpu(item.spu)?.name).filter(Boolean);
+      return config.products.map(item => placementProduct(item)?.name).filter(Boolean);
     }
 
     function uniqueDisplayProductCount(rows = []) {
-      return new Set(rows.map(row => String(row.spu || "").trim()).filter(Boolean)).size;
+      return new Set(rows.filter(row => row.spu).map(placementKey)).size;
     }
 
     function getDisplayProductStatus(product, config) {
       if (!product) return { status: "不可投放", reason: "商品不存在" };
       if (config.state !== "上架") return { status: "不可投放", reason: "配置未上架" };
+      if (product.source === "external") return placementEligibility(product);
       if (product.state === "草稿") return { status: "不可投放", reason: "商品未上架" };
       if (product.state === "下架") return { status: "不可投放", reason: "商品已下架" };
       if (!product.stock) return { status: "不可投放", reason: "库存未配置" };
@@ -5432,13 +5639,12 @@
     function calculateDisplayStatus(config) {
       if (config.state !== "上架") return "未生效";
       if (!config.startTime || !config.endTime) return "未生效";
-      const now = new Date("2026/05/24 12:00");
+      const now = new Date();
       const start = parseDisplayTime(config.startTime);
       const end = parseDisplayTime(config.endTime);
       if (start && now < start) return "待生效";
       if (end && now > end) return "已过期";
-      const hasInvalidProduct = config.products.some(row => getDisplayProductStatus(productBySpu(row.spu), config).status !== "可投放");
-      return hasInvalidProduct ? "异常" : "生效中";
+      return displayEligibleCount(config.products) ? "生效中" : "暂无可展示商品";
     }
 
     function displayStatusTag(status) {
@@ -5451,7 +5657,7 @@
     }
 
     function displayIssueSummary(config) {
-      const reasons = config.products.map(row => getDisplayProductStatus(productBySpu(row.spu), { ...config, state: "上架" }).reason).filter(reason => reason && reason !== "无" && reason !== "配置未上架");
+      const reasons = config.products.map(row => placementEligibility(placementProduct(row)).reason).filter(reason => reason && reason !== "无" && reason !== "配置未上架");
       return reasons.length ? [...new Set(reasons)].join("、") : "无";
     }
 
@@ -5475,7 +5681,7 @@
           <td>${displayTemplateScopeText(config)}</td>
           <td>${config.sortWeight || "-"}</td>
           <td>${stateTag(config.state)}</td>
-          <td>${uniqueDisplayProductCount(config.products)}</td>
+          <td>已配置 ${uniqueDisplayProductCount(config.products)}<div class="minor">当前可展示 ${displayVisibleCount(config)}</div><div class="minor">商品资料有效 ${displayEligibleCount(config.products)}</div></td>
           <td>${displayTimeText(config)}</td>
           <td>${config.createdAt || config.updatedAt}</td>
           <td>${lastOperatorFromLogs(config.logs, config.operator)}</td>
@@ -5541,9 +5747,9 @@
         ${detailSection("模板基础信息", infoGrid(basicRows) + `<div class="hint-text">模板名称用于对应投放页面的商品分区；全局模板覆盖全部社区，游戏专区模板按社区范围投放，活动模板通过活动 ID 路由。</div>`)}
         ${detailSection("投放配置", infoGrid([
           ["配置状态", config.state], ["生效开始时间", config.startTime || "-"],
-          ["生效结束时间", config.endTime || "-"], ["投放商品数", uniqueDisplayProductCount(config.products)],
+          ["生效结束时间", config.endTime || "-"], ["已配置商品数", uniqueDisplayProductCount(config.products)], ["当前可展示商品数", displayVisibleCount(config)], ["商品资料有效数", displayEligibleCount(config.products)],
           ["创建时间", config.createdAt || config.updatedAt], ["备注", config.remark || "-"]
-        ]) + `<div class="hint-text">投放商品数按当前一级模板下的 SPU ID 去重统计；同一商品投放到多个二级模板时只计 1 个。</div>`)}
+        ]) + `<div class="hint-text">已配置数量包含暂停展示商品，按来源、站点和 SPU ID 去重；当前可展示数量按模板状态、时间及商品资格计算，具体用户还需命中投放范围。</div>`)}
         ${detailSection("二级模板", displaySubTemplateReadonlyTable(config.subTemplates || []))}
         ${detailSection("投放商品列表", displayDetailProductContent(config))}
       `;
@@ -5574,7 +5780,7 @@
         const count = uniqueDisplayProductCount(displayDetailProductRows(config, slot.id));
         return `<button class="tab-button${index === 0 ? " active" : ""}" type="button" data-display-detail-tab="${slot.id}">${slot.name || "未命名二级模板"}<span class="tab-count">${count}</span></button>`;
       }).join("")}</div>` : "";
-      return `${tabs}<div id="displayDetailProductTable">${displayProductTable(displayDetailProductRows(config, activeId), config, false, { showSubTemplate: false })}</div>${hasSubTemplates ? `<div class="hint-text">按二级模板切换查看投放商品；Tab 数字为当前二级模板内按 SPU ID 去重后的商品数。</div>` : ""}`;
+      return `${tabs}<div id="displayDetailProductTable">${displayProductTable(displayDetailProductRows(config, activeId), config, false, { showSubTemplate: false })}</div>${hasSubTemplates ? `<div class="hint-text">按二级模板切换查看投放商品；Tab 数字为当前二级模板内按来源、站点和 SPU ID 去重后的已配置商品数。</div>` : ""}`;
     }
 
     function bindDisplayDetailProductTabs(config) {
@@ -5590,20 +5796,24 @@
     function displayProductTable(rows, config, editable, options = {}) {
       if (!rows.length) return `<div class="empty">当前暂无投放商品</div>`;
       const showSubTemplate = options.showSubTemplate !== false;
-      return `<div class="table-wrap"><table class="display-product-table"><thead><tr><th>商品ID</th><th>商品信息</th><th>商品类型</th><th>SKU 摘要</th><th>履约方式</th><th>商品状态</th>${showSubTemplate ? "<th>所属二级模板</th>" : ""}<th>投放排序</th><th>是否置顶</th>${editable ? "<th>最后操作人</th><th>操作</th>" : ""}</tr></thead><tbody>${rows.map((row, index) => displayProductRowHtml(row, config, editable, index, { showSubTemplate })).join("")}</tbody></table></div>`;
+      return `<div class="table-wrap"><table class="display-product-table"><thead><tr><th>商品来源</th><th>商品 ID</th><th>商品信息</th><th>商品类型</th><th>SKU 摘要</th><th>履约方式</th><th>商品状态</th>${showSubTemplate ? "<th>所属二级模板</th>" : ""}<th>投放排序</th><th>是否置顶</th><th>展示资格</th>${editable ? "<th>操作</th>" : ""}</tr></thead><tbody>${rows.map((row, index) => displayProductRowHtml(row, config, editable, index, { showSubTemplate })).join("")}</tbody></table></div>`;
     }
 
     function displayProductRowHtml(row, config, editable, index, options = {}) {
-      const product = productBySpu(row.spu);
-      if (!product) return "";
+      const product = placementProduct(row);
+      const external = placementRef(row).source === "external";
+      const eligible = placementEligibility(product);
       const showSubTemplate = options.showSubTemplate !== false;
+      const valid = eligible.status === "可投放";
+      const status = valid ? "商品资料有效" : "暂停展示";
       return `<tr>
-        <td><b>${product.spu}</b></td><td>${productInfoHtml(product)}</td><td>${product.type}</td><td>${product.skuSummary}</td>
-        <td>${deliveryTag(product.delivery)}</td><td>${stateTag(product.state)}</td>
-        ${showSubTemplate ? `<td>${displaySubTemplateName(row.subTemplateId || "", config)}</td>` : ""}
-        <td>${editable ? `<input class="mini-input" type="number" data-display-row="${index}" data-display-field="sort" value="${row.sort}">` : row.sort}</td>
+        <td>${placementSourceTag(row)}</td><td><b>${safeText(row.spu)}</b></td><td>${product ? placementProductInfo(product) : "商品资料暂不可用（引用保留）"}</td>
+        <td>${external ? "—" : safeText(product?.type || "—")}</td><td>${external ? "—" : safeText(product?.skuSummary || "—")}</td>
+        <td>${external ? "—" : product ? deliveryTag(product.delivery) : "—"}</td><td>${stateTag(product?.state || "未知")}</td>
+        ${showSubTemplate ? `<td>${safeText(displaySubTemplateName(row.subTemplateId || "", config))}</td>` : ""}
+        <td>${editable ? `<input class="mini-input" type="number" data-display-row="${index}" data-display-field="sort" value="${safeText(row.sort)}">` : safeText(row.sort)}</td>
         <td>${editable ? `<select class="mini-input" data-display-row="${index}" data-display-field="pinned"><option ${row.pinned === "否" ? "selected" : ""}>否</option><option ${row.pinned === "是" ? "selected" : ""}>是</option></select>` : row.pinned}</td>
-        ${editable ? `<td>${lastOperatorFromLogs(product.logs)}</td>` : ""}
+        <td class="placement-status"><span class="tag ${valid ? "green" : "orange"}">${status}</span><div class="picker-reason">${valid ? "模板生效且命中范围后展示" : safeText(eligible.reason)}</div>${external && !valid ? '<div class="picker-reason">同一商品重新上架且资料有效、符合投放条件后自动恢复；移除后不再自动恢复。</div>' : ""}<button class="btn text" data-placement-detail="${safeText(placementKey(row))}">查看资料</button></td>
         ${editable ? `<td><button class="btn text danger" data-remove-display-row="${index}">移除</button></td>` : ""}
       </tr>`;
     }
@@ -5637,8 +5847,8 @@
         .filter(item => (item.row.subTemplateId || "") === activeDisplaySubTemplateId);
     }
 
-    function displayPlacementExists(spu, subTemplateId = "", excludeIndex = -1) {
-      return displayProductRows.some((row, index) => index !== excludeIndex && row.spu === spu && (row.subTemplateId || "") === (subTemplateId || ""));
+    function displayPlacementExists(ref, subTemplateId = "", excludeIndex = -1) {
+      return displayProductRows.some((row, index) => index !== excludeIndex && placementKey(row) === placementKey(ref) && (row.subTemplateId || "") === (subTemplateId || ""));
     }
 
     function displayPlacementAvailability(spu, subTemplateId = activeDisplaySubTemplateId) {
@@ -5659,6 +5869,8 @@
         return `<button class="tab-button${active}" type="button" data-display-product-tab="${slot.id}">${slot.name || "未命名二级模板"}<span class="tab-count">${count}</span></button>`;
       }).join("");
       container.querySelectorAll("[data-display-product-tab]").forEach(btn => btn.addEventListener("click", () => {
+        pickerSelection.clear();
+        pickerPage = 1;
         activeDisplaySubTemplateId = btn.dataset.displayProductTab || "";
         renderDisplayProductRows();
       }));
@@ -5684,6 +5896,8 @@
     }
 
     function addDisplaySubTemplate() {
+      pickerSelection.clear();
+      pickerPage = 1;
       const isFirstSubTemplate = displaySubTemplateRows.length === 0;
       const id = `SUB_${Date.now()}`;
       displaySubTemplateRows.push({ id, name: `二级模板${displaySubTemplateRows.length + 1}`, sort: displaySubTemplateRows.length + 1 });
@@ -5718,6 +5932,8 @@
 
     function openDisplayForm(mode, config) {
       displayMode = mode;
+      pickerSelection.clear();
+      pickerPage = 1;
       editingDisplayConfig = config || null;
       hideAllPages();
       document.getElementById("displayFormPage").style.display = "block";
@@ -5808,7 +6024,9 @@
       const entries = displayActiveProductEntries();
       document.getElementById("displayProductTbody").innerHTML = entries.length
         ? entries.map(({ row, index }) => displayProductRowHtml(row, config, true, index, { showSubTemplate: false })).join("")
-        : `<tr><td colspan="10"><div class="empty">当前模板暂无投放商品，可点击添加商品维护当前模板的投放关系。</div></td></tr>`;
+        : `<tr><td colspan="11"><div class="empty">当前模板暂无投放商品，可点击添加商品维护当前模板的投放关系。</div></td></tr>`;
+      const activeRows = entries.map(entry => entry.row);
+      document.getElementById("displayProductSummary").textContent = `已配置 ${uniqueDisplayProductCount(activeRows)} 个 · 商品资料有效 ${displayEligibleCount(activeRows)} 个 · 暂停展示 ${uniqueDisplayProductCount(activeRows) - displayEligibleCount(activeRows)} 个。实际展示还需满足模板状态、时间及投放范围。`;
       document.querySelectorAll("[data-display-row]").forEach(el => el.addEventListener("input", updateDisplayProductRow));
       document.querySelectorAll("select[data-display-row]").forEach(el => el.addEventListener("change", updateDisplayProductRow));
       document.querySelectorAll("[data-remove-display-row]").forEach(btn => btn.addEventListener("click", () => removeProductFromDisplay(Number(btn.dataset.removeDisplayRow))));
@@ -5830,118 +6048,114 @@
     }
 
     function openProductPicker() {
-      const isEditMode = displayMode === "edit";
-      document.getElementById("pickerFilterInCurrentField").style.display = isEditMode ? "" : "none";
-      document.getElementById("productPickerFilters").classList.toggle("three", isEditMode);
-      if (!isEditMode) document.getElementById("pickerFilterInCurrent").value = "全部";
+      ensureActiveDisplaySubTemplate();
+      document.getElementById("pickerTargetContext").textContent = `添加至：${valueOf("displayTemplateName") || "未命名一级模板"} › ${displaySubTemplateName(activeDisplaySubTemplateId)}`;
       renderProductPickerTable();
       openModal("productPickerModal");
     }
 
     function renderProductPickerTable() {
-      const keyword = valueOf("pickerFilterKeyword");
-      const spuKeyword = valueOf("pickerFilterSpu");
-      const spuIds = splitTagValues(spuKeyword).map(item => item.toUpperCase()).filter(Boolean);
-      const type = valueOf("pickerFilterType");
-      const delivery = valueOf("pickerFilterDelivery");
-      const inCurrent = displayMode === "edit" ? valueOf("pickerFilterInCurrent") : "全部";
-      const rows = products.filter(product => {
-        const matchKeyword = !keyword || product.name.includes(keyword);
-        const matchSpu = !spuKeyword || spuIds.some(item => product.spu.toUpperCase().includes(item));
-        const already = displayPlacementAvailability(product.spu, activeDisplaySubTemplateId).already;
-        return matchKeyword
-          && matchSpu
-          && product.state === "上架"
-          && (type === "全部" || product.type === type)
-          && (delivery === "全部" || normalizeDelivery(product.delivery) === delivery)
-          && (inCurrent === "全部" || (inCurrent === "是" ? already : !already))
-          && true;
+      const source = valueOf("pickerFilterSource") || "all";
+      const nnOnly = source === "nn";
+      document.getElementById("pickerFilterTypeField").style.display = nnOnly ? "" : "none";
+      document.getElementById("pickerFilterDeliveryField").style.display = nnOnly ? "" : "none";
+      document.getElementById("pickerSyncBar").style.display = nnOnly ? "none" : "flex";
+      document.getElementById("pickerTable").classList.toggle("external-only", source === "external");
+      document.getElementById("pickerRefreshBtn").disabled = externalSyncBusy;
+      document.getElementById("pickerRefreshBtn").textContent = externalSyncBusy ? "同步中…" : "刷新独立站商品";
+      document.getElementById("pickerSyncStatus").textContent = `${externalSyncMessage} · 最近成功同步：${externalSyncConfirmedAt}`;
+      const keyword = valueOf("pickerFilterKeyword").toLowerCase();
+      const spuIds = splitTagValues(valueOf("pickerFilterSpu")).map(v => v.toLowerCase());
+      const inCurrent = valueOf("pickerFilterInCurrent");
+      const availability = valueOf("pickerFilterAvailability");
+      const rows = [...products.filter(p => p.state === "上架"), ...externalCatalog].filter(product => {
+        const external = product.source === "external";
+        const state = pickerAvailability(product);
+        return (source === "all" || (external ? source === "external" : nnOnly))
+          && (!keyword || product.name.toLowerCase().includes(keyword))
+          && (!spuIds.length || spuIds.some(id => product.spu.toLowerCase().includes(id)))
+          && (!nnOnly || valueOf("pickerFilterType") === "全部" || product.type === valueOf("pickerFilterType"))
+          && (!nnOnly || valueOf("pickerFilterDelivery") === "全部" || normalizeDelivery(product.delivery) === valueOf("pickerFilterDelivery"))
+          && (inCurrent === "全部" || (inCurrent === "是") === (state.label === "已在当前模板"))
+          && (availability === "全部" || availability === state.label);
       });
-      if (!rows.length) {
-        document.getElementById("productPickerTbody").innerHTML = `<tr><td colspan="11"><div class="empty">当前筛选条件下暂无可添加的上架商品</div></td></tr>`;
+      const pages = Math.max(1, Math.ceil(rows.length / pickerPageSize));
+      pickerPage = Math.min(Math.max(1, pickerPage), pages);
+      pickerVisibleProducts = rows.slice((pickerPage - 1) * pickerPageSize, pickerPage * pickerPageSize);
+      document.getElementById("pickerPageMeta").textContent = `共 ${rows.length} 个商品 · 第 ${pickerPage} / ${pages} 页`;
+      document.getElementById("pickerPrevPage").disabled = pickerPage <= 1;
+      document.getElementById("pickerNextPage").disabled = pickerPage >= pages;
+      document.getElementById("productPickerTbody").innerHTML = pickerVisibleProducts.length ? pickerVisibleProducts.map(product => {
+        const key = placementKey(product), attrKey = safeText(key), external = product.source === "external";
+        const state = pickerAvailability(product);
+        const count = displayConfigs.filter(config => config.products.some(row => placementKey(row) === key)).length;
+        return `<tr><td><input type="checkbox" data-picker-select="${attrKey}" ${!state.selectable ? "disabled" : ""} ${pickerSelection.has(key) ? "checked" : ""} aria-label="选择 ${safeText(product.name)}"></td>
+          <td>${placementSourceTag(product)}</td><td><b>${safeText(product.spu)}</b></td><td>${placementProductInfo(product)}</td>
+          <td class="picker-nn-column">${external ? "—" : safeText(product.type)}</td><td class="picker-nn-column">${external ? "—" : safeText(product.skuSummary)}</td><td class="picker-nn-column">${external ? "—" : deliveryTag(product.delivery)}</td>
+          <td>${stateTag(safeText(product.state))}</td><td>${count ? `已投放 ${count} 个模板` : "未投放"}</td>
+          <td><span class="tag ${state.selectable ? "green" : state.label === "已在当前模板" ? "blue" : "orange"}">${state.label}</span>${state.reason ? `<div class="picker-reason">${safeText(state.reason)}</div>` : ""}</td>
+          <td><button class="btn text" data-pick-key="${attrKey}" ${state.selectable ? "" : "disabled"}>${state.label === "已在当前模板" ? "已添加" : "添加"}</button><button class="btn text" data-placement-detail="${attrKey}">查看资料</button></td></tr>`;
+      }).join("") : '<tr><td colspan="11"><div class="empty">当前筛选条件下暂无商品，请调整筛选条件。</div></td></tr>';
+      document.querySelectorAll("[data-picker-select]").forEach(input => input.addEventListener("change", () => {
+        if (input.checked) pickerSelection.add(input.dataset.pickerSelect); else pickerSelection.delete(input.dataset.pickerSelect);
         updatePickerSelectedCount();
-        return;
-      }
-      document.getElementById("productPickerTbody").innerHTML = rows.map(product => {
-        const placement = displayPlacementAvailability(product.spu, activeDisplaySubTemplateId);
-        const isInCurrentTemplate = placement.full;
-        return `<tr>
-          <td><input type="checkbox" data-picker-select="${product.spu}" ${isInCurrentTemplate ? "disabled" : ""} aria-label="选择 ${product.name}"></td>
-          <td><b>${product.spu}</b></td><td>${productInfoHtml(product)}</td><td>${product.type}</td><td>${product.skuSummary}</td>
-          <td>${deliveryTag(product.delivery)}</td><td>${stateTag(product.state)}</td>
-          <td>${product.exposure}</td><td>${product.createdAt || product.updatedAt}</td>
-          <td>${lastOperatorFromLogs(product.logs)}</td>
-          <td>${isInCurrentTemplate ? `<button class="btn text danger" data-unpick-spu="${product.spu}">移除</button>` : `<button class="btn text" data-pick-spu="${product.spu}">添加</button>`}</td>
-        </tr>`;
-      }).join("");
-      const selectAll = document.getElementById("pickerSelectAll");
-      selectAll.onchange = () => {
-        document.querySelectorAll("[data-picker-select]").forEach(input => {
-          if (!input.disabled) input.checked = selectAll.checked;
+      }));
+      document.querySelectorAll("[data-pick-key]").forEach(btn => btn.addEventListener("click", () => addProductsToDisplay([btn.dataset.pickKey])));
+      document.getElementById("pickerSelectAll").onchange = event => {
+        pickerVisibleProducts.filter(p => pickerAvailability(p).selectable).forEach(p => {
+          if (event.target.checked) pickerSelection.add(placementKey(p)); else pickerSelection.delete(placementKey(p));
         });
-        updatePickerSelectedCount();
+        renderProductPickerTable();
       };
-      document.querySelectorAll("[data-picker-select]").forEach(input => input.addEventListener("change", updatePickerSelectedCount));
-      document.querySelectorAll("[data-pick-spu]").forEach(btn => btn.addEventListener("click", () => addProductToDisplay(btn.dataset.pickSpu)));
-      document.querySelectorAll("[data-unpick-spu]").forEach(btn => btn.addEventListener("click", () => removeProductFromPicker(btn.dataset.unpickSpu)));
       updatePickerSelectedCount();
     }
 
     function updatePickerSelectedCount() {
-      const checkboxes = Array.from(document.querySelectorAll("[data-picker-select]"));
-      const selectable = checkboxes.filter(input => !input.disabled);
-      const checked = selectable.filter(input => input.checked);
-      const countEl = document.getElementById("pickerSelectedCount");
-      const addBtn = document.getElementById("pickerAddSelectedBtn");
+      // Retain invalidated selections so submission can report exactly which items changed.
+      const selected = [...pickerSelection];
+      const external = selected.filter(key => placementRef(key).source === "external").length;
+      const invalid = selected.filter(key => !pickerAvailability(placementProduct(key)).selectable).length;
+      document.getElementById("pickerSelectedCount").textContent = `已选 ${selected.length} 个：NN 商品 ${selected.length - external} 个，独立站商品 ${external} 个${invalid ? `（${invalid} 个状态已变化，请重新确认）` : ""}`;
+      document.getElementById("pickerAddSelectedBtn").disabled = !selected.length;
+      document.getElementById("pickerClearSelection").disabled = !selected.length;
+      const selectable = pickerVisibleProducts.filter(p => pickerAvailability(p).selectable);
+      const checked = selectable.filter(p => pickerSelection.has(placementKey(p)));
       const selectAll = document.getElementById("pickerSelectAll");
-      if (countEl) countEl.textContent = `已选 ${checked.length} 个`;
-      if (addBtn) addBtn.disabled = checked.length === 0;
-      if (selectAll) {
-        selectAll.disabled = selectable.length === 0;
-        selectAll.checked = selectable.length > 0 && checked.length === selectable.length;
-        selectAll.indeterminate = checked.length > 0 && checked.length < selectable.length;
-      }
+      selectAll.disabled = !selectable.length;
+      selectAll.checked = selectable.length > 0 && checked.length === selectable.length;
+      selectAll.indeterminate = checked.length > 0 && checked.length < selectable.length;
     }
 
     function addSelectedProductsToDisplay() {
-      const spus = Array.from(document.querySelectorAll("[data-picker-select]:checked")).map(input => input.dataset.pickerSelect);
-      addProductsToDisplay(spus);
+      addProductsToDisplay([...pickerSelection]);
     }
 
-    function addProductToDisplay(spu) {
-      addProductsToDisplay([spu]);
+    function addProductToDisplay(ref) {
+      addProductsToDisplay([placementKey(ref)]);
     }
 
-    function addProductsToDisplay(spus) {
-      if (!spus.length) return toast("请选择需要添加的商品。");
+    function addProductsToDisplay(keys) {
+      if (!keys.length) return toast("请选择需要添加的商品。");
       const failures = [];
       let added = 0;
-      spus.forEach(spu => {
-        const product = productBySpu(spu);
-        if (!product) {
-          failures.push(`${spu} 不存在`);
-          return;
-        }
-        if (product.state !== "上架") {
-          failures.push(`${product.name} 不是上架状态`);
+      keys.forEach(key => {
+        const product = placementProduct(key);
+        const state = pickerAvailability(product);
+        if (!state.selectable) {
+          failures.push(`${product?.name || placementRef(key).spu}：${state.reason}`);
+          pickerSelection.delete(key);
           return;
         }
         const subTemplateId = activeDisplaySubTemplateId;
-        if (displayPlacementExists(spu, subTemplateId)) {
-          failures.push(`${product.name} 已在当前模板中投放`);
-          return;
-        }
-        displayProductRows.push({ spu, subTemplateId, sort: nextDisplayProductSort(subTemplateId), pinned: "否" });
-        added += 1;
+        displayProductRows.push({ ...placementRef(product), subTemplateId, sort: nextDisplayProductSort(subTemplateId), pinned: "否" });
+        pickerSelection.delete(placementKey(product));
+        added++;
       });
-      if (added > 0) {
-        renderDisplayProductRows();
-        renderProductPickerTable();
-      } else {
-        updatePickerSelectedCount();
-      }
-      const failureText = failures.length ? `，${failures.length} 个未添加：${failures.slice(0, 3).join("；")}${failures.length > 3 ? "..." : ""}` : "";
-      toast(`已添加 ${added} 个商品${failureText}。`);
+      renderDisplayProductRows();
+      renderProductPickerTable();
+      const result = `已添加 ${added} 个商品至当前表单，保存模板后生效。${failures.length ? `未添加 ${failures.length} 个：${failures.join("；")}` : ""}`;
+      document.getElementById("pickerTargetContext").textContent = `添加至：${valueOf("displayTemplateName") || "未命名一级模板"} › ${displaySubTemplateName(activeDisplaySubTemplateId)}。${result}`;
+      toast(result);
     }
 
     function removeProductFromDisplay(index) {
@@ -5950,14 +6164,10 @@
       renderDisplayProductRows();
     }
 
-    function removeProductFromPicker(spu) {
-      const subTemplateId = activeDisplaySubTemplateId || "";
-      const index = displayProductRows.findIndex(row => row.spu === spu && (row.subTemplateId || "") === subTemplateId);
-      if (index === -1) return renderProductPickerTable();
-      displayProductRows.splice(index, 1);
-      renderDisplayProductRows();
+    function removeProductFromPicker(ref) {
+      const index = displayProductRows.findIndex(row => placementKey(row) === placementKey(ref) && (row.subTemplateId || "") === (activeDisplaySubTemplateId || ""));
+      if (index >= 0) removeProductFromDisplay(index);
       renderProductPickerTable();
-      toast("已从当前模板移除该商品。");
     }
 
     function moveDisplayProduct(index, direction) {
@@ -5993,7 +6203,7 @@
 
     function removeInvalidDisplayProducts() {
       const config = buildDisplayFormConfig("上架");
-      displayProductRows = displayProductRows.filter(row => getDisplayProductStatus(productBySpu(row.spu), config).status === "可投放");
+      displayProductRows = displayProductRows.filter(row => getDisplayProductStatus(placementProduct(row), config).status === "可投放");
       reorderDisplayProducts(false);
       toast("已移除当前不可投放商品。");
     }
@@ -6046,7 +6256,7 @@
       add("生效结束时间", "生效结束时间缺失", "请填写生效结束时间", !!config.endTime);
       add("生效时间合法性", "生效结束时间早于开始时间", "请调整生效时间", !!config.startTime && !!config.endTime && parseDisplayTime(config.endTime) > parseDisplayTime(config.startTime));
       add("商品配置", "未配置投放商品", "请至少添加 1 个商品", config.products.length > 0);
-      const duplicatePlacement = config.products.some((row, index) => config.products.findIndex(item => item.spu === row.spu && (item.subTemplateId || "") === (row.subTemplateId || "")) !== index);
+      const duplicatePlacement = config.products.some((row, index) => config.products.findIndex(item => placementKey(item) === placementKey(row) && (item.subTemplateId || "") === (row.subTemplateId || "")) !== index);
       add("商品投放关系", "同一商品在同一二级模板中重复投放", "请保留其中一条投放关系，或改投到其他二级模板", !duplicatePlacement);
       const duplicateSort = config.products.some((row, index) => config.products.findIndex(item => String(item.sort) === String(row.sort) && (item.subTemplateId || "") === (row.subTemplateId || "")) !== index);
       const invalidSort = config.products.some(row => !/^[1-9]\d*$/.test(String(row.sort)));
@@ -6055,7 +6265,7 @@
     }
 
     function saveDisplayDraft() {
-      const errors = validateDisplayDraft();
+      const errors = [...validateDisplayDraft(), ...newPlacementErrors(buildDisplayFormConfig("草稿"))];
       if (errors.length) return toast(errors[0].problem);
       upsertDisplayConfig("草稿");
       toast("投放配置草稿已保存。");
@@ -6064,7 +6274,15 @@
     function upsertDisplayConfig(state) {
       const config = buildDisplayFormConfig(state);
       config.state = state;
+      const beforeRows = editingDisplayConfig?.products || [];
+      const changes = [];
+      for (const row of config.products) {
+        const before = beforeRows.find(item => displayPlacementKey(item) === displayPlacementKey(row));
+        if (!before || before.sort !== row.sort || before.pinned !== row.pinned) changes.push({ time: nowText(), user: "平台运营", type: before ? "调整投放商品" : "添加投放商品", object: displayPlacementKey(row), before: before ? JSON.stringify(before) : "—", after: JSON.stringify(row), remark: "商品来源、站点、SPU 及投放位置已记录" });
+      }
+      for (const row of beforeRows) if (!config.products.some(item => displayPlacementKey(item) === displayPlacementKey(row))) changes.push({ time: nowText(), user: "平台运营", type: "移除投放商品", object: displayPlacementKey(row), before: JSON.stringify(row), after: "—", remark: "移除后不自动恢复" });
       config.logs = [
+        ...changes,
         { time: nowText(), user: "平台运营", type: editingDisplayConfig ? "编辑投放规则" : "新建投放配置", object: config.id, before: editingDisplayConfig?.state || "-", after: state, remark: state === "上架" ? "保存并上架" : "保存草稿" },
         ...config.logs
       ];
@@ -6107,7 +6325,7 @@
         if (!/^[1-9]\d*$/.test(String(row.sort))) markInvalidElement(`[data-display-row="${index}"][data-display-field="sort"]`);
         const duplicate = config.products.some((item, itemIndex) => itemIndex !== index && String(item.sort) === String(row.sort) && (item.subTemplateId || "") === (row.subTemplateId || ""));
         if (duplicate) markInvalidElement(`[data-display-row="${index}"][data-display-field="sort"]`);
-        const duplicatePlacement = config.products.some((item, itemIndex) => itemIndex !== index && item.spu === row.spu && (item.subTemplateId || "") === (row.subTemplateId || ""));
+        const duplicatePlacement = config.products.some((item, itemIndex) => itemIndex !== index && placementKey(item) === placementKey(row) && (item.subTemplateId || "") === (row.subTemplateId || ""));
         if (duplicatePlacement) document.getElementById("displaySectionProducts")?.classList.add("invalid");
       });
     }
@@ -6115,20 +6333,23 @@
     function handleDisplayFormEnable() {
       clearDisplayInvalidHighlights();
       const config = buildDisplayFormConfig("上架");
-      const failures = validateDisplayEnable(config);
+      const failures = [...validateDisplayEnable(config), ...newPlacementErrors(config)];
       if (failures.length) {
         highlightDisplayInvalidFields(config);
         focusFirstInvalid("#displayFormPage");
-        toast("信息不完整，无法上架");
+        toast(failures[0].problem);
         return;
       }
       openEnableConfirm({
         title: "确认上架投放配置",
-        message: "上架后，命中生效时间和投放范围的商品才可能在客户端投放。是否确认上架？",
+        message: `已配置 ${uniqueDisplayProductCount(config.products)} 个，商品资料有效 ${displayEligibleCount(config.products)} 个。暂停展示项保留，恢复有效后按投放条件自动展示；无有效商品时前台隐藏空区域。是否确认上架？`,
         confirmText: "确认上架",
         onConfirm: () => {
+          const fresh = buildDisplayFormConfig("上架");
+          const errors = [...validateDisplayEnable(fresh), ...newPlacementErrors(fresh)];
+          if (errors.length) { renderDisplayProductRows(); return toast(errors[0].problem); }
           upsertDisplayConfig("上架");
-          toast("投放配置已上架，命中生效时间后前台可投放。");
+          toast(displayEligibleCount(fresh.products) ? "投放配置已上架，满足条件的商品生效，暂停展示项保留。" : "配置已保留，当前无可展示商品，前台隐藏空区域；商品恢复且模板有效时自动展示。");
         }
       });
     }
@@ -6136,12 +6357,12 @@
     function handleDisplayListEnable(config) {
       const failures = validateDisplayEnable(config);
       if (failures.length) {
-        toast("信息不完整，无法上架");
+        toast(failures[0].problem);
         return;
       }
       openEnableConfirm({
         title: "确认上架投放配置",
-        message: "上架后，命中生效时间和投放范围的商品才可能在客户端投放。是否确认上架？",
+        message: `已配置 ${uniqueDisplayProductCount(config.products)} 个，商品资料有效 ${displayEligibleCount(config.products)} 个。暂停展示项保留，恢复有效后按投放条件自动展示；无有效商品时前台隐藏空区域。是否确认上架？`,
         confirmText: "确认上架",
         onConfirm: () => {
           const target = displayConfigs.find(item => item.id === config.id);
@@ -11975,8 +12196,7 @@
       document.querySelectorAll(".modal.show").forEach(el => el.classList.remove("show"));
       document.getElementById("overlay").classList.remove("show");
     }
-    function nowText() {
-      const d = new Date();
+    function nowText(d = new Date()) {
       const pad = n => String(n).padStart(2, "0");
       return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
     }
