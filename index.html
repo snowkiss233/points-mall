@@ -2233,7 +2233,7 @@
                     <tbody id="displayProductTbody"></tbody>
                   </table>
                 </div>
-                <div class="hint-text">商品配置按二级模板分页管理。当前 Tab 只展示该二级模板下的投放商品，同一个商品可以分别添加到多个二级模板；排序和置顶只在当前二级模板内生效。独立站商品暂停展示时保留配置，恢复有效后自动恢复；移除后不再自动恢复。添加仅修改当前表单，保存后生效。</div>
+                <div class="hint-text">商品配置按二级模板分页管理。当前 Tab 只展示该二级模板下的投放商品，同一个商品可以分别添加到多个二级模板；排序和置顶只在当前二级模板内生效。收到独立站商品下架通知后，NN 商店停止展示该商品，添加商品列表同步移除；原投放关系、排序和置顶保留。收到重新上架通知且符合投放条件后恢复展示；手动移除的商品不再自动恢复。添加仅修改当前表单，保存后生效。</div>
               </div>
             </section>
 
@@ -2296,7 +2296,7 @@
         </div>
         <div class="picker-tools">
           <button class="btn text" id="pickerResetFilters" type="button">重置</button>
-          <div class="picker-sync" id="pickerSyncBar"><span id="pickerSyncStatus" role="status" aria-live="polite"></span><button class="btn text" id="pickerRefreshBtn" type="button">同步独立站商品</button></div>
+          <div class="picker-sync" id="pickerSyncBar"><span id="pickerSyncStatus" role="status" aria-live="polite"></span></div>
         </div>
         <div class="picker-alert" id="pickerSyncError" role="status" style="display:none"></div>
       </div>
@@ -4407,7 +4407,6 @@
           renderProductPickerTable();
         });
       });
-      document.getElementById("pickerRefreshBtn").addEventListener("click", () => refreshExternalCatalog());
       document.getElementById("pickerPrevPage").addEventListener("click", () => { if (pickerReviewMode) pickerSelectedPage--; else pickerPage--; renderProductPickerTable(); });
       document.getElementById("pickerNextPage").addEventListener("click", () => { if (pickerReviewMode) pickerSelectedPage++; else pickerPage++; renderProductPickerTable(); });
       document.getElementById("pickerPageSize").addEventListener("change", event => { pickerPageSize = Number(event.target.value); pickerPage = 1; pickerSelectedPage = 1; renderProductPickerTable(); });
@@ -5576,10 +5575,12 @@
       return config.products.filter(row => !oldKeys.has(displayPlacementKey(row))).flatMap(row => {
         const p = placementProduct(row);
         const reason = !p ? "商品不存在" : p.source === "external" ? externalDataIssue(p) : p.state !== "上架" ? "商品未上架" : "";
-        return reason ? [{ item: "新增商品", problem: `${p?.name || row.spu}：${reason}`, suggestion: "请移除该新增项，刷新后重新选择" }] : [];
+        return reason ? [{ item: "新增商品", problem: `${p?.name || row.spu}：${reason}`, suggestion: "请移除该新增项，商品恢复可用后重新选择" }] : [];
       });
     }
 
+    // Prototype regression helper for system snapshot reconciliation, with no operator entry.
+    // Real change-notification transport and system retry are not connected in this static demo.
     async function refreshExternalCatalog(simulateFailure = false) {
       if (externalSyncBusy) return;
       externalSyncBusy = true;
@@ -5587,7 +5588,7 @@
       renderProductPickerTable();
       await new Promise(resolve => setTimeout(resolve, 600));
       if (simulateFailure) {
-        externalSyncMessage = "同步失败，请稍后重试；仍在有效期内的资料继续使用";
+        externalSyncMessage = "同步失败，等待系统自动恢复；仍在有效期内的资料继续使用";
         externalCatalog.forEach(p => p.syncResult = "同步失败");
       } else {
         externalSyncConfirmedAt = nowText();
@@ -5597,12 +5598,11 @@
         externalCatalog.splice(0, externalCatalog.length, ...onSaleProducts);
         externalSyncMessage = `同步成功，共 ${externalCatalog.length} 个上架商品`;
       }
-      externalSyncLogs.push({ time: nowText(), operator: "平台运营", action: "手动同步独立站商品", result: externalSyncMessage });
+      externalSyncLogs.push({ time: nowText(), operator: "系统", action: "自动更新独立站商品", result: externalSyncMessage });
       externalSyncBusy = false;
       renderProductPickerTable();
       renderDisplayProductRows();
       renderDisplayTable();
-      toast(externalSyncMessage);
     }
 
     function productBySpu(spu) {
@@ -6081,9 +6081,7 @@
       document.getElementById("pickerSelectedToolbar").style.display = pickerReviewMode ? "flex" : "none";
       document.getElementById("pickerSyncBar").style.display = source === "nn" ? "none" : "flex";
       document.getElementById("pickerDemoNote").style.display = source === "nn" && !pickerReviewMode ? "none" : "block";
-      document.getElementById("pickerRefreshBtn").disabled = externalSyncBusy;
-      document.getElementById("pickerRefreshBtn").textContent = externalSyncBusy ? "同步中…" : "同步独立站商品";
-      document.getElementById("pickerSyncStatus").textContent = `最近同步 ${externalSyncConfirmedAt}`;
+      document.getElementById("pickerSyncStatus").textContent = externalSyncBusy ? "独立站商品自动更新中…" : `收到独立站商品变更通知后自动更新 · 最近更新 ${externalSyncConfirmedAt}`;
       const syncError = document.getElementById("pickerSyncError");
       syncError.style.display = source !== "nn" && externalSyncMessage.startsWith("同步失败") ? "block" : "none";
       syncError.textContent = externalSyncMessage;
