@@ -21,9 +21,7 @@ const PhaseOne = (() => {
   SCHEMA.games.fields.splice(legacyIndex, 1, F('游戏类型', 'multi', false, 'tags'), F('游戏模式', 'multi', false, 'tags'), F('发售状态', 'select', true, ['未发售', '已发售']));
   SCHEMA.games.columns = ['ID','游戏名称','发售状态','游戏类型','游戏模式','绑定平台','排序','状态'];
   SCHEMA.games.filters.push(F('发售状态', 'select', false, ['未发售','已发售']));
-  SCHEMA.games.actions.splice(1, 0, '展示预览');
   SCHEMA.games.desc = '配置游戏发售状态、游戏类型与游戏模式。未发售游戏展示“敬请期待”。';
-  SCHEMA.products.actions.push('展示预览');
   SCHEMA.columns = {name:'栏目列表', columns:['栏目名称','栏目标识','栏目状态','排序','说明'], filters:[F('栏目名称'),F('栏目状态','select',false,EN)], fields:[F('栏目名称','readonly',true),F('栏目标识','readonly',true),F('栏目状态','select',true,EN),F('排序','number',true)], actions:['编辑','启禁'],statusKey:'栏目状态',desc:'复用现有栏目枚举。新增 7 个专区为附件候选演示，可排序、启停；正式名单待确认。'};
   SCHEMA.recommend.fields.find(f => f.label === '推荐区域').options = 'columns';
   SCHEMA.recommend.filters.push(F('推荐区域','select',false,'columns'));

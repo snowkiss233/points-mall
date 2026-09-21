@@ -74,35 +74,17 @@
     }
   };
   rowAction = function(key,id,op) {
-    if (op === '展示预览') return preview(key,Model.get(db,key,id));
     if (op === '专区预览') return sectionPreview(Model.get(db,key,id));
     return baseRow(key,id,op);
   };
 
-  function preview(key,row) {
-    const product = key === 'products' ? row : null;
-    const game = product ? PhaseOne.productGames(db,product)[0] : row;
-    const mid = modal('展示预览 · '+(row?.['商品名称']||row?.['游戏名称']||''),'<div data-preview-content></div>','<button class="btn" data-action="close">关闭</button>',true);
-    const root = document.getElementById(mid), area = root.querySelector('[data-preview-content]');
-    const draw = () => {
-      const outcome = PhaseOne.purchase(db,game,product);
-      const title = row?.['商品名称'] || game?.['游戏名称'] || '暂无游戏';
-      area.innerHTML = `<div class="notice">本地效果预览：读取已保存的后台配置，不访问真实商城、不创建订单。</div><section class="phase-preview"><div class="phase-cover">${esc(title.slice(0,2))}</div><div><span class="badge blue">${esc(game?.['发售状态']||'未配置')}</span><h2>${esc(title)}</h2><p>${esc(game?.['游戏副标题']||'游戏详情展示')}</p><p>游戏类型：${esc(fmt(game?.['游戏类型']))}</p><p>游戏模式：${esc(fmt(game?.['游戏模式']))}</p>${product?'<p>商品状态：'+esc(product['状态'])+' · 售价 ¥ '+esc(product['人民币售价'])+'</p>':''}<button class="btn primary" data-preview-buy ${outcome.allowed?'':'disabled'}>${esc(outcome.label)}</button><p class="muted">${esc(outcome.message)}</p></div></section><div class="notice" data-preview-result>根据已保存的发售状态展示购买按钮。</div>`;
-      area.querySelector('[data-preview-buy]').onclick=()=>{
-        if (!outcome.allowed) return;
-        area.querySelector('[data-preview-result]').textContent='购买效果演示完成，不创建订单、不扣库存。';
-      };
-    };
-    draw();
-  }
   function sectionPreview(row) {
     const column = Model.get(db,'columns',row.refs?.['推荐区域']);
     const ids = [...(row['选择商品']||[])].sort((a,b)=>Number(row['商品排序']?.[a]||0)-Number(row['商品排序']?.[b]||0));
     const products = ids.map(uid=>Model.get(db,'products',uid)).filter(Boolean);
     const eligible = products.filter(p=>p['状态']==='上架' && PhaseOne.productGames(db,p).every(g=>g['状态']==='启用') && (column?.['栏目名称']!=='即将发售'||PhaseOne.productGames(db,p).every(g=>g['发售状态']==='未发售')));
     const active = row['状态']==='启用' && column?.['栏目状态']==='启用';
-    const mid = modal('专区预览 · '+row['栏目名称'],`<div class="notice">栏目类型：${esc(column?.['栏目名称']||'未知')} · 栏目排序：${esc(column?.['排序'])}。此处演示已保存的选品与排序，不生成自动榜单。</div>${!active?'<div class="empty">栏目或推荐记录已停用，当前不展示。</div>':eligible.length?`<div class="phase-cards">${eligible.map(p=>`<article class="panel panel-pad"><span class="badge blue">${esc(PhaseOne.productGames(db,p).some(g=>g['发售状态']==='未发售')?'敬请期待':'已发售')}</span><h3>${esc(p['商品名称'])}</h3><p>¥ ${esc(p['人民币售价'])}</p><button class="btn" data-product-preview="${esc(p.uid)}">查看商品</button></article>`).join('')}</div>`:'<div class="empty">尚无可展示商品，请检查选品、游戏发售状态与上下架。</div>'}`,'<button class="btn" data-action="close">关闭</button>',true);
-    document.getElementById(mid).querySelectorAll('[data-product-preview]').forEach(b=>b.onclick=()=>preview('products',Model.get(db,'products',b.dataset.productPreview)));
+    modal('专区预览 · '+row['栏目名称'],`<div class="notice">栏目类型：${esc(column?.['栏目名称']||'未知')} · 栏目排序：${esc(column?.['排序'])}。此处演示已保存的选品与排序，不生成自动榜单。</div>${!active?'<div class="empty">栏目或推荐记录已停用，当前不展示。</div>':eligible.length?`<div class="phase-cards">${eligible.map(p=>`<article class="panel panel-pad"><span class="badge blue">${esc(PhaseOne.productGames(db,p).some(g=>g['发售状态']==='未发售')?'敬请期待':'已发售')}</span><h3>${esc(p['商品名称'])}</h3><p>¥ ${esc(p['人民币售价'])}</p></article>`).join('')}</div>`:'<div class="empty">尚无可展示商品，请检查选品、游戏发售状态与上下架。</div>'}`,'<button class="btn" data-action="close">关闭</button>',true);
   }
   function riskTrial() {
     const cityChoices = [['CN-420100','中国大陆 · 武汉'],['CN-310100','中国大陆 · 上海'],['HK-HKG','中国香港 · 香港'],['','无法识别']];
@@ -126,7 +108,7 @@
     if (button?.dataset.phase==='recommend') navigate('recommend');
   });
   const style = document.createElement('style');
-  style.textContent='.phase-preview{display:grid;grid-template-columns:180px 1fr;gap:28px;padding:24px;border:1px solid #e5eaf2;border-radius:12px;margin-bottom:18px}.phase-cover{min-height:220px;border-radius:10px;background:linear-gradient(140deg,#16304e,#2877b5);display:grid;place-items:center;font-size:44px;color:white}.phase-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.phase-preview h2{margin:14px 0}.phase-preview p{margin:12px 0}@media(max-width:700px){.phase-preview{grid-template-columns:1fr}.phase-cards{grid-template-columns:1fr}.phase-cover{min-height:100px}}';
+  style.textContent='.phase-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}@media(max-width:700px){.phase-cards{grid-template-columns:1fr}}';
   document.head.appendChild(style);
   render();
 })();
