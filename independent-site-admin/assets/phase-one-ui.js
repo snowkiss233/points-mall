@@ -1,6 +1,6 @@
-/* 一期交互：复用原表单与提交机制，仅补充配置反馈及本地效果预览。 */
+/* 一期交互：复用原表单与提交机制，仅补充本期配置字段及反馈。 */
 (() => {
-  const baseRender = render, baseOpen = openForm, baseValidation = validation, baseRow = rowAction, baseOptions = options, baseFiltered = filteredRows;
+  const baseRender = render, baseOpen = openForm, baseValidation = validation, baseOptions = options, baseFiltered = filteredRows;
   filteredRows = function() {
     const rows = baseFiltered();
     return current === 'columns' ? rows.sort((a,b)=>Number(a['排序'])-Number(b['排序'])) : rows;
@@ -51,7 +51,7 @@
     if (key === 'dictItems' && PhaseOne.isRisk(db,state.draft.parentId)) {
       get('key').readOnly = true;
       get('key类型').disabled = true;
-      form.insertAdjacentHTML('afterbegin','<div class="notice">比较下单与支付的用户侧城市是否一致。只配置规则启停，处置动作待确认；可从列表点击“规则试算”验证。</div>');
+      form.insertAdjacentHTML('afterbegin','<div class="notice">比较下单与支付的用户侧城市是否一致。只配置规则启停，处置动作待确认。</div>');
     }
     if (key === 'products') {
       const box = document.createElement('div');box.className='notice';box.dataset.phaseGame='';form.prepend(box);
@@ -68,47 +68,13 @@
     if (current === 'columns') document.querySelector('.page-head .btn-row')?.insertAdjacentHTML('beforeend','<button class="btn" data-phase="recommend">返回推荐管理</button>');
     if (current === 'dictItems' && PhaseOne.isRisk(db,parentId)) {
       document.querySelector('.page-head [data-action="new"]')?.remove();
-      document.querySelector('.page-head .btn-row')?.insertAdjacentHTML('beforeend','<button class="btn primary" data-phase="risk">规则试算</button>');
       document.querySelectorAll('[data-op="删除"]').forEach(b => b.remove());
-      document.querySelector('.page-head')?.insertAdjacentHTML('afterend','<div class="notice">演示规则默认停用。编辑字典项的“是否启用”，再点击“规则试算”。同城、异城、无法判断分别展示；不执行支付拦截或停发。</div>');
+      document.querySelector('.page-head')?.insertAdjacentHTML('afterend','<div class="notice">通过字典项的“是否启用”配置飞码城市一致性规则；比较与后续处置由服务端执行。</div>');
     }
   };
-  rowAction = function(key,id,op) {
-    if (op === '专区预览') return sectionPreview(Model.get(db,key,id));
-    return baseRow(key,id,op);
-  };
-
-  function sectionPreview(row) {
-    const column = Model.get(db,'columns',row.refs?.['推荐区域']);
-    const ids = [...(row['选择商品']||[])].sort((a,b)=>Number(row['商品排序']?.[a]||0)-Number(row['商品排序']?.[b]||0));
-    const products = ids.map(uid=>Model.get(db,'products',uid)).filter(Boolean);
-    const eligible = products.filter(p=>p['状态']==='上架' && PhaseOne.productGames(db,p).every(g=>g['状态']==='启用') && (column?.['栏目名称']!=='即将发售'||PhaseOne.productGames(db,p).every(g=>g['发售状态']==='未发售')));
-    const active = row['状态']==='启用' && column?.['栏目状态']==='启用';
-    modal('专区预览 · '+row['栏目名称'],`<div class="notice">栏目类型：${esc(column?.['栏目名称']||'未知')} · 栏目排序：${esc(column?.['排序'])}。此处演示已保存的选品与排序，不生成自动榜单。</div>${!active?'<div class="empty">栏目或推荐记录已停用，当前不展示。</div>':eligible.length?`<div class="phase-cards">${eligible.map(p=>`<article class="panel panel-pad"><span class="badge blue">${esc(PhaseOne.productGames(db,p).some(g=>g['发售状态']==='未发售')?'敬请期待':'已发售')}</span><h3>${esc(p['商品名称'])}</h3><p>¥ ${esc(p['人民币售价'])}</p></article>`).join('')}</div>`:'<div class="empty">尚无可展示商品，请检查选品、游戏发售状态与上下架。</div>'}`,'<button class="btn" data-action="close">关闭</button>',true);
-  }
-  function riskTrial() {
-    const cityChoices = [['CN-420100','中国大陆 · 武汉'],['CN-310100','中国大陆 · 上海'],['HK-HKG','中国香港 · 香港'],['','无法识别']];
-    const select = (name,value) => `<select aria-label="${name}" name="${name}">${cityChoices.map(([code,label])=>`<option value="${code}" ${code===value?'selected':''}>${label}</option>`).join('')}</select>`;
-    const mid = modal('飞码规则试算',`<div class="notice">使用虚构用户侧 IP 和手动选择的城市模拟比较，不做真实 IP 定位。支付回调服务器 IP 不作为用户支付 IP。处置动作待确认，本页仅显示结果。</div><div class="btn-row" style="margin-bottom:18px"><button class="btn" data-sample="same">同城样例</button><button class="btn" data-sample="different">异城样例</button><button class="btn" data-sample="unknown">城市缺失样例</button></div><div class="form-grid"><div class="field"><span>下单用户 IP（虚构）</span><input readonly value="192.0.2.10"></div><div class="field"><span>支付用户 IP（虚构）</span><input readonly value="198.51.100.20"></div><div class="field"><span>下单城市</span>${select('下单城市','CN-420100')}</div><div class="field"><span>支付城市</span>${select('支付城市','CN-310100')}</div></div><div class="notice" style="margin-top:20px" data-risk-result role="status">点击“执行试算”读取当前字典规则。</div>`,'<button class="btn" data-action="close">关闭</button><button class="btn primary" data-risk-run>执行试算</button>',true);
-    const root = document.getElementById(mid);
-    const order = root.querySelector('[name="下单城市"]'), payment = root.querySelector('[name="支付城市"]');
-    root.querySelectorAll('[data-sample]').forEach(b=>b.onclick=()=>{
-      order.value='CN-420100';payment.value=b.dataset.sample==='same'?'CN-420100':b.dataset.sample==='different'?'CN-310100':'';
-      root.querySelector('[data-risk-result]').textContent='样例已切换，请执行试算。';SelectControls.refresh(root);
-    });
-    root.querySelector('[data-risk-run]').onclick=()=>{
-      const result = PhaseOne.compareCities(db,order.value,payment.value);
-      if (commit('飞码演示试算：'+result.result,()=>{})) root.querySelector('[data-risk-result]').textContent=result.result+'：'+result.detail;
-    };
-    SelectControls.refresh(root);
-  }
   document.addEventListener('click',event=>{
     const button = event.target.closest('[data-phase]');
-    if (button?.dataset.phase==='risk') riskTrial();
     if (button?.dataset.phase==='recommend') navigate('recommend');
   });
-  const style = document.createElement('style');
-  style.textContent='.phase-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}@media(max-width:700px){.phase-cards{grid-template-columns:1fr}}';
-  document.head.appendChild(style);
   render();
 })();

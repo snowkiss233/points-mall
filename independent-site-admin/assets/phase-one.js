@@ -25,8 +25,7 @@ const PhaseOne = (() => {
   SCHEMA.columns = {name:'栏目列表', columns:['栏目名称','栏目标识','栏目状态','排序','说明'], filters:[F('栏目名称'),F('栏目状态','select',false,EN)], fields:[F('栏目名称','readonly',true),F('栏目标识','readonly',true),F('栏目状态','select',true,EN),F('排序','number',true)], actions:['编辑','启禁'],statusKey:'栏目状态',desc:'复用现有栏目枚举。新增 7 个专区为附件候选演示，可排序、启停；正式名单待确认。'};
   SCHEMA.recommend.fields.find(f => f.label === '推荐区域').options = 'columns';
   SCHEMA.recommend.filters.push(F('推荐区域','select',false,'columns'));
-  SCHEMA.recommend.actions.push('专区预览');
-  SCHEMA.dict.desc = '一期飞码配置：进入“飞码城市一致性（演示）”的字典配置，维护规则启停并试算。';
+  SCHEMA.dict.desc = '一期飞码配置：进入“飞码城市一致性（演示）”的字典配置，维护规则启停。';
   SCHEMA.dictItems.columns = ['value','key','是否启用','描述','排序值'];
   Object.assign(NAME_KEYS, {tags:'标签',columns:'栏目名称'});
 
