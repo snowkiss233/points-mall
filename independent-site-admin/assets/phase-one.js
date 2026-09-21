@@ -1,6 +1,5 @@
 /* 一期配置与本地演示规则。与真实站点、支付和风控服务隔离。 */
 const PhaseOne = (() => {
-  const sites = ['大陆站购买', '香港站购买'];
   const modes = ['单人', '多人', '在线'];
   const sections = ['顶部banner', '热销商品', '游戏排行', '今日推荐', '大家都在玩', '新品上线', '本周热销', '最新上市', '高分榜单', '即将发售'];
   const riskCode = 'demo_order_payment_city';
@@ -19,11 +18,11 @@ const PhaseOne = (() => {
   SCHEMA.tags.fields.unshift(F('标签类型', 'select', true, ['游戏类型', '游戏模式']));
   SCHEMA.tags.desc = '按游戏类型、游戏模式维护标签。存量标签统一归为游戏类型；模式演示值：单人、多人、在线。';
   const legacyIndex = SCHEMA.games.fields.findIndex(f => f.label === '游戏标签');
-  SCHEMA.games.fields.splice(legacyIndex, 1, F('游戏类型', 'multi', false, 'tags'), F('游戏模式', 'multi', false, 'tags'), F('发售状态', 'select', true, ['未发售', '已发售']), F('站点路由', 'multi', true, sites));
-  SCHEMA.games.columns = ['ID','游戏名称','发售状态','站点路由','游戏类型','游戏模式','绑定平台','排序','状态'];
-  SCHEMA.games.filters.push(F('发售状态', 'select', false, ['未发售','已发售']), F('站点路由', 'select', false, sites));
+  SCHEMA.games.fields.splice(legacyIndex, 1, F('游戏类型', 'multi', false, 'tags'), F('游戏模式', 'multi', false, 'tags'), F('发售状态', 'select', true, ['未发售', '已发售']));
+  SCHEMA.games.columns = ['ID','游戏名称','发售状态','游戏类型','游戏模式','绑定平台','排序','状态'];
+  SCHEMA.games.filters.push(F('发售状态', 'select', false, ['未发售','已发售']));
   SCHEMA.games.actions.splice(1, 0, '展示预览');
-  SCHEMA.games.desc = '一期：发售状态、站点路由多选、游戏类型与模式。站点路由仅控制购买，不改变搜索与展示。';
+  SCHEMA.games.desc = '配置游戏发售状态、游戏类型与游戏模式。未发售游戏展示“敬请期待”。';
   SCHEMA.products.actions.push('展示预览');
   SCHEMA.columns = {name:'栏目列表', columns:['栏目名称','栏目标识','栏目状态','排序','说明'], filters:[F('栏目名称'),F('栏目状态','select',false,EN)], fields:[F('栏目名称','readonly',true),F('栏目标识','readonly',true),F('栏目状态','select',true,EN),F('排序','number',true)], actions:['编辑','启禁'],statusKey:'栏目状态',desc:'复用现有栏目枚举。新增 7 个专区为附件候选演示，可排序、启停；正式名单待确认。'};
   SCHEMA.recommend.fields.find(f => f.label === '推荐区域').options = 'columns';
@@ -34,6 +33,12 @@ const PhaseOne = (() => {
   Object.assign(NAME_KEYS, {tags:'标签',columns:'栏目名称'});
 
   function upgrade(db) {
+    // 移除已撤回的配置；审计历史及升级前备份保留。
+    const removeRetiredFields = row => { delete row['站点路由']; delete row._phase1RoutePending; if (row.refs) delete row.refs['站点路由']; };
+    db.games.forEach(removeRetiredFields);
+    db.products.forEach(removeRetiredFields);
+    db.trash.filter(item => ['games','products'].includes(item.key)).forEach(item => removeRetiredFields(item.row));
+    if (db.version >= 3) return db;
     // 仅旧版数据进入；保留已有记录，新增演示实体使用独立 UID。
     const v1 = db.version === 1;
     db.tags.forEach(tag => { tag['标签类型'] = '游戏类型'; });
@@ -50,8 +55,6 @@ const PhaseOne = (() => {
       const names = String(game['游戏标签'] || '').split(/[,，、]/).map(s => s.trim()).filter(Boolean);
       const tags = [...new Set(names)].map(name => ensureTag(name, '游戏类型'));
       game['发售状态'] = '已发售';
-      game['站点路由'] = [];
-      game._phase1RoutePending = true;
       game['游戏类型'] = tags.map(t => t['标签']);
       game['游戏模式'] = [];
       if (!v1) game.refs = {...game.refs,'游戏类型':tags.map(t => t.uid),'游戏模式':[]};
@@ -82,14 +85,14 @@ const PhaseOne = (() => {
     if (!db.dictItems.some(r => r.parentId === risk.uid && r.key === riskKey)) db.dictItems.push({uid:id(db,'dictItems','phase1-city-rule'),parentId:risk.uid,value:'下单与支付城市一致性',key:riskKey,'key类型':'文本','描述':'比较规范化城市标识。异城仅输出命中结果，无法识别时输出无法判断。','排序值':1,'是否启用':'禁用',refs:{}});
 
     const platform = db.platforms[0];
-    for (const [index, name, release, routes] of [[1,'星海远征（一期演示）','未发售',sites],[2,'边境回声（一期演示）','已发售',[sites[1]]]]) {
+    for (const [index, name, release] of [[1,'星海远征（一期演示）','未发售'],[2,'边境回声（一期演示）','已发售']]) {
       const tag = ensureTag('冒险','游戏类型'), mode = ensureTag('单人','游戏模式');
-      const game = {uid:id(db,'games','phase1-game-'+index),ID:'GAME-PHASE1-'+index,'游戏名称':name,'游戏副标题':'虚构游戏，用于验收配置效果','发售状态':release,'站点路由':[...routes],'游戏类型':[tag['标签']],'游戏模式':[mode['标签']],'游戏标签':'冒险','绑定平台':platform?[platform['平台名称']]:[],'生效平台':[],'排序':110-index,'状态':'启用','游戏介绍':'一期验收演示内容。','创建时间':now(),refs:{},_phase1Demo:true};
+      const game = {uid:id(db,'games','phase1-game-'+index),ID:'GAME-PHASE1-'+index,'游戏名称':name,'游戏副标题':'虚构游戏，用于验收配置效果','发售状态':release,'游戏类型':[tag['标签']],'游戏模式':[mode['标签']],'游戏标签':'冒险','绑定平台':platform?[platform['平台名称']]:[],'生效平台':[],'排序':110-index,'状态':'启用','游戏介绍':'一期验收演示内容。','创建时间':now(),refs:{},_phase1Demo:true};
       while (db.games.some(g => g.ID === game.ID)) game.ID += '-demo';
       if (!v1) game.refs = {'游戏类型':[tag.uid],'游戏模式':[mode.uid],'绑定平台':platform?[platform.uid]:[]};
       db.games.unshift(game);
     }
-    db.audit.unshift({time:now(),operator:'原型升级',action:'一期升级：存量标签归为游戏类型，保留原标签与游戏关联；旧游戏购买路由留空待配置；新增虚构游戏、候选栏目与停用的飞码演示规则。'});
+    db.audit.unshift({time:now(),operator:'原型升级',action:'一期升级：存量标签归为游戏类型，保留原标签与游戏关联；新增虚构游戏、候选栏目与停用的飞码演示规则。'});
     return db;
   }
 
@@ -107,7 +110,6 @@ const PhaseOne = (() => {
       if (old && old['标签类型'] !== draft['标签类型'] && Model.references(db,'tags',old.uid).length) return issue('标签类型','该标签已被游戏引用，不能直接修改类型；请新建另一类型的标签');
     }
     if (key === 'games') {
-      if (!list(draft['站点路由']).length) return issue('站点路由','请选择至少一个购买站点');
       for (const field of ['游戏类型','游戏模式']) for (const tagId of list(draft[field])) {
         const tag = Model.get(db,'tags',tagId);
         if (!tag || tag['标签类型'] !== field) return issue(field,'请选择对应类型的有效标签');
@@ -135,8 +137,6 @@ const PhaseOne = (() => {
       names.add(signature);
     }
     for (const game of db.games) {
-      const routes = game['站点路由'];
-      if (!Array.isArray(routes) || new Set(routes).size !== routes.length || routes.some(s => !sites.includes(s))) errors.push('游戏站点路由必须为有效且不重复的多选集合');
       for (const field of ['游戏类型','游戏模式']) if (list(game.refs?.[field]).some(uid => Model.get(db,'tags',uid)?.['标签类型'] !== field)) errors.push('游戏的'+field+'关联类型不一致');
     }
     const codes = db.columns.map(r => r['栏目标识']);
@@ -153,16 +153,12 @@ const PhaseOne = (() => {
     const game = Model.get(db,'games',product.refs?.['绑定游戏类别']);
     return game ? [game] : [];
   }
-  function purchase(db,game,site,product) {
+  function purchase(db,game,product) {
     const games = product ? productGames(db,product) : game ? [game] : [];
     if (!games.length) return {allowed:false,label:'暂无关联游戏',message:'请先关联游戏。'};
     if (games.some(g => g['发售状态'] === '未发售')) return {allowed:false,label:'敬请期待',message:'游戏尚未发售，购买暂未开放。'};
     if (games.some(g => g['状态'] !== '启用') || product && product['状态'] !== '上架') return {allowed:false,label:'暂不可购买',message:'游戏已停用或商品已下架。'};
-    if (games.some(g => !list(g['站点路由']).length)) return {allowed:false,label:'站点路由待配置',message:'请在游戏资料中选择至少一个购买站点。'};
-    const available = sites.filter(s => games.every(g => list(g['站点路由']).includes(s)));
-    if (!available.length) return {allowed:false,label:'无共同购买站点',message:'组合商品的游戏没有共同可购买站点。'};
-    const target = available.includes(site) ? site : available[0];
-    return {allowed:true,label:target === site?'立即购买':'前往'+target,target,message:target === site?'当前站可购买。':'将在预览内切换至对应游戏的'+target+'页面。'};
+    return {allowed:true,label:'立即购买',message:'游戏已发售，可继续购买演示。'};
   }
   function compareCities(db,orderCity,paymentCity) {
     const rule = db.dictItems.find(r => isRisk(db,r.parentId) && r.key === riskKey);
@@ -170,5 +166,5 @@ const PhaseOne = (() => {
     if (!orderCity || !paymentCity) return {result:'无法判断',detail:'至少一侧城市无法识别，不判定为同城或异城。'};
     return orderCity === paymentCity ? {result:'同城',detail:'两侧规范化城市标识一致。'} : {result:'异城 · 命中规则',detail:'两侧城市不同；仅显示比较结果，处置动作待确认，不执行拦截或停发。'};
   }
-  return {sites,modes,sections,riskCode,riskKey,upgrade,choices,formIssue,validate,isRisk,productGames,purchase,compareCities};
+  return {modes,sections,riskCode,riskKey,upgrade,choices,formIssue,validate,isRisk,productGames,purchase,compareCities};
 })();

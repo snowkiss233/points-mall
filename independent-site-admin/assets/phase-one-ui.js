@@ -1,12 +1,9 @@
 /* 一期交互：复用原表单与提交机制，仅补充配置反馈及本地效果预览。 */
 (() => {
-  const baseRender = render, baseOpen = openForm, baseValidation = validation, baseRow = rowAction, baseOptions = options, baseFiltered = filteredRows, baseTable = tableHtml;
+  const baseRender = render, baseOpen = openForm, baseValidation = validation, baseRow = rowAction, baseOptions = options, baseFiltered = filteredRows;
   filteredRows = function() {
     const rows = baseFiltered();
     return current === 'columns' ? rows.sort((a,b)=>Number(a['排序'])-Number(b['排序'])) : rows;
-  };
-  tableHtml = function(data,key=current) {
-    return baseTable(key === 'games' ? data.map(r => !r['站点路由']?.length ? {...r,'站点路由':'待配置'} : r) : data,key);
   };
   options = function(spec,value,empty,draft={},key=current,field='') {
     const html = baseOptions(spec,value,empty,draft,key,field);
@@ -36,9 +33,7 @@
     if (key === 'games') {
       if (!id) {get('发售状态').value='未发售';state.draft['发售状态']='未发售';}
       help('发售状态','未发售可展示，但按钮为“敬请期待”。发行日期不自动切换发售状态。');
-      help('站点路由','至少选择一项；两站均选时在当前站购买。仅控制购买，搜索与展示保持现有逻辑。');
       help('游戏模式','按多选演示；单人、多人、在线为候选值，可在标签管理维护。');
-      if (state.draft._phase1RoutePending) form.insertAdjacentHTML('afterbegin','<div class="notice">旧演示数据未预设购买站点，请选择站点路由后保存。发售状态已按旧演示行为填为“已发售”，可调整。</div>');
     }
     if (key === 'tags') {
       if (!id) get('标签类型').value = filters['标签类型'] || '游戏类型';
@@ -62,7 +57,7 @@
       const box = document.createElement('div');box.className='notice';box.dataset.phaseGame='';form.prepend(box);
       const draw = () => {
         const game = Model.get(db,'games',get('绑定游戏类别')?.value);
-        box.textContent = game ? '关联游戏：'+game['游戏名称']+'；发售状态：'+game['发售状态']+'；站点路由：'+(game['站点路由'].join('、')||'待配置')+'。在游戏资料维护，商品不单独配置。' : '选择游戏后显示继承的发售状态与站点路由。';
+        box.textContent = game ? '关联游戏：'+game['游戏名称']+'；发售状态：'+game['发售状态']+'。在游戏资料维护。' : '选择游戏后显示关联游戏的发售状态。';
       };
       get('绑定游戏类别')?.addEventListener('change',draw);draw();
     }
@@ -89,26 +84,13 @@
     const game = product ? PhaseOne.productGames(db,product)[0] : row;
     const mid = modal('展示预览 · '+(row?.['商品名称']||row?.['游戏名称']||''),'<div data-preview-content></div>','<button class="btn" data-action="close">关闭</button>',true);
     const root = document.getElementById(mid), area = root.querySelector('[data-preview-content]');
-    let site = PhaseOne.sites[0];
     const draw = () => {
-      const outcome = PhaseOne.purchase(db,game,site,product);
+      const outcome = PhaseOne.purchase(db,game,product);
       const title = row?.['商品名称'] || game?.['游戏名称'] || '暂无游戏';
-      area.innerHTML = `<div class="notice">本地效果预览：读取已保存的后台配置，不访问真实商城、不创建订单。两站均选时按当前站购买演示。</div><div class="inline" style="margin-bottom:18px"><strong>当前预览站点</strong>${PhaseOne.sites.map(s=>`<button class="btn ${s===site?'primary':''}" data-site="${esc(s)}">${s.replace('购买','')}</button>`).join('')}</div><section class="phase-preview"><div class="phase-cover">${esc(title.slice(0,2))}</div><div><span class="badge blue">${esc(game?.['发售状态']||'未配置')}</span><h2>${esc(title)}</h2><p>${esc(game?.['游戏副标题']||'游戏详情展示')}</p><p>游戏类型：${esc(fmt(game?.['游戏类型']))}</p><p>游戏模式：${esc(fmt(game?.['游戏模式']))}</p><p>站点路由：${esc(game?.['站点路由']?.join('、')||'待配置')}</p>${product?'<p>商品状态：'+esc(product['状态'])+' · 售价 ¥ '+esc(product['人民币售价'])+'</p>':''}<button class="btn primary" data-preview-buy ${outcome.allowed?'':'disabled'}>${esc(outcome.label)}</button><p class="muted">${esc(outcome.message)}</p></div></section><div class="notice" data-preview-result>切换站点仅改变预览环境；配置不会隐藏任一站的游戏信息。</div>`;
-      area.querySelectorAll('[data-site]').forEach(b=>b.onclick=()=>{site=b.dataset.site;draw();});
-      const info = document.createElement('button');info.className='btn';info.textContent='模拟点击游戏信息';
-      area.querySelector('.inline').append(info);
-      info.onclick=()=>{
-        const games = product ? PhaseOne.productGames(db,product) : game ? [game] : [];
-        const available = games.length ? PhaseOne.sites.filter(s=>games.every(g=>g['站点路由'].includes(s))) : [];
-        const target = available.includes(site) ? site : available[0];
-        if (!target) {area.querySelector('[data-preview-result]').textContent='暂无可用的购买路由，请先在游戏资料配置；当前预览仍可展示。';return;}
-        const moved = target !== site;site=target;draw();
-        area.querySelector('[data-preview-result]').textContent=moved?'点击信息入口后，已在预览内切换至 '+site.replace('购买','')+' 的对应详情；未发售限制仍然生效。':'点击信息入口后，在当前站打开对应详情。';
-      };
+      area.innerHTML = `<div class="notice">本地效果预览：读取已保存的后台配置，不访问真实商城、不创建订单。</div><section class="phase-preview"><div class="phase-cover">${esc(title.slice(0,2))}</div><div><span class="badge blue">${esc(game?.['发售状态']||'未配置')}</span><h2>${esc(title)}</h2><p>${esc(game?.['游戏副标题']||'游戏详情展示')}</p><p>游戏类型：${esc(fmt(game?.['游戏类型']))}</p><p>游戏模式：${esc(fmt(game?.['游戏模式']))}</p>${product?'<p>商品状态：'+esc(product['状态'])+' · 售价 ¥ '+esc(product['人民币售价'])+'</p>':''}<button class="btn primary" data-preview-buy ${outcome.allowed?'':'disabled'}>${esc(outcome.label)}</button><p class="muted">${esc(outcome.message)}</p></div></section><div class="notice" data-preview-result>根据已保存的发售状态展示购买按钮。</div>`;
       area.querySelector('[data-preview-buy]').onclick=()=>{
         if (!outcome.allowed) return;
-        if (outcome.target !== site) {site=outcome.target;draw();area.querySelector('[data-preview-result]').textContent='已在预览内跳转至 '+site.replace('购买','')+' 的同一游戏详情，未打开真实站点。';}
-        else area.querySelector('[data-preview-result]').textContent='配置允许在当前站购买。购买效果演示完成，不创建订单、不扣库存。';
+        area.querySelector('[data-preview-result]').textContent='购买效果演示完成，不创建订单、不扣库存。';
       };
     };
     draw();
@@ -140,7 +122,7 @@
   }
   function guide() {
     const risk = db.dict.find(r=>r['字典编号']===PhaseOne.riskCode);
-    modal('一期验收指引 · 2026-09-21',`<div class="notice">本次交付 5 项后台配置。旧演示数据自动升级并保留备份，无需恢复初始数据。新增专区和模式为候选演示值，风控处置未定，仅演示判断结果。</div><ol class="phase-guide"><li><h3>未发售展示</h3><p>在游戏类别找到“星海远征（一期演示）”，点击展示预览，应显示不可点击的“敬请期待”；编辑为已发售后再预览。</p><a class="btn" href="#${ROUTES.games}" data-phase-nav>进入游戏类别</a></li><li><h3>站点路由多选</h3><p>编辑游戏，分别验证仅大陆、仅香港、两站均选；保存后重新打开，勾选应保留。预览可切换站点，两站均选留在当前站，单站配置演示对应跳转。空选无法保存。</p></li><li><h3>推荐专区</h3><p>推荐管理 → 栏目列表可见原有 3 项与新增 7 项；编辑排序或停用后，推荐区域选项同步。新增推荐并选品，保存后点击专区预览。</p><a class="btn" href="#${ROUTES.recommend}" data-phase-nav>进入推荐管理</a></li><li><h3>标签类型与游戏模式</h3><p>标签管理按“游戏模式”筛选可见单人、多人、在线；新建模式后，在游戏编辑的游戏模式中选择并保存。存量“多人”仍属于游戏类型，同名模式是独立记录。</p><a class="btn" href="#${ROUTES.tags}" data-phase-nav>进入标签管理</a></li><li><h3>飞码城市比较</h3><p>字典配置中编辑规则，将“是否启用”改为启用；使用规则试算验证同城、异城、城市缺失，再停用验证规则关闭。</p><a class="btn" href="${esc(Model.routeHref('dictItems',risk?.uid||''))}" data-phase-nav>进入飞码字典</a></li></ol><p class="muted">存量游戏站点路由留空待配置；保存前需选择。只修改本浏览器演示数据，不调用真实商城、支付或风控接口。</p>`,'<button class="btn" data-action="close">开始验收</button>',true);
+    modal('一期验收指引 · 2026-09-21',`<div class="notice">本次交付 5 项后台配置。旧演示数据自动升级并保留备份，无需恢复初始数据。新增专区和模式为候选演示值，风控处置未定，仅演示判断结果。</div><ol class="phase-guide"><li><h3>未发售展示</h3><p>在游戏类别将“星海远征（一期演示）”设为未发售，点击展示预览，应显示不可点击的“敬请期待”；改为已发售后再预览。</p><a class="btn" href="#${ROUTES.games}" data-phase-nav>进入游戏类别</a></li><li><h3>NN / 雷神授权登录</h3><p>数据字典 → 授权登录开关 → 字典配置，分别启用 NN、雷神。打开登录流程验收，重复授权应复用 UID；手机号验证后查询两平台，再登录历史账号。查询失败或账号冲突会提示并暂停。</p><a class="btn" href="${esc(Model.routeHref('dictItems',AuthorizedLogin.config(db)?.uid||''))}" data-phase-nav>进入授权登录字典</a> <button class="btn" data-login-demo>登录流程验收</button></li><li><h3>推荐专区</h3><p>推荐管理 → 栏目列表可见原有 3 项与新增 7 项；编辑排序或停用后，推荐区域选项同步。新增推荐并选品，保存后点击专区预览。</p><a class="btn" href="#${ROUTES.recommend}" data-phase-nav>进入推荐管理</a></li><li><h3>标签类型与游戏模式</h3><p>标签管理按“游戏模式”筛选可见单人、多人、在线；新建模式后，在游戏编辑的游戏模式中选择并保存。存量“多人”仍属于游戏类型，同名模式是独立记录。</p><a class="btn" href="#${ROUTES.tags}" data-phase-nav>进入标签管理</a></li><li><h3>飞码城市比较</h3><p>字典配置中编辑规则，将“是否启用”改为启用；使用规则试算验证同城、异城、城市缺失，再停用验证规则关闭。</p><a class="btn" href="${esc(Model.routeHref('dictItems',risk?.uid||''))}" data-phase-nav>进入飞码字典</a></li></ol><p class="muted">已移除游戏购买站点配置及相关预览交互。仅修改本浏览器演示数据；授权、短信、查询、支付和风控接口均未接入。</p>`,'<button class="btn" data-action="close">开始验收</button>',true);
   }
 
   document.addEventListener('click',event=>{
