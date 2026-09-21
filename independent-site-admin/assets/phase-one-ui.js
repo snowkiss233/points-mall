@@ -1,10 +1,6 @@
 /* 一期交互：复用原表单与提交机制，仅补充本期配置字段及反馈。 */
 (() => {
-  const baseRender = render, baseOpen = openForm, baseValidation = validation, baseOptions = options, baseFiltered = filteredRows;
-  filteredRows = function() {
-    const rows = baseFiltered();
-    return current === 'columns' ? rows.sort((a,b)=>Number(a['排序'])-Number(b['排序'])) : rows;
-  };
+  const baseRender = render, baseOpen = openForm, baseValidation = validation, baseOptions = options;
   options = function(spec,value,empty,draft={},key=current,field='') {
     const html = baseOptions(spec,value,empty,draft,key,field);
     if (spec !== 'tags' && spec !== 'columns') return html;
@@ -65,16 +61,11 @@
   };
   render = function() {
     baseRender();
-    if (current === 'columns') document.querySelector('.page-head .btn-row')?.insertAdjacentHTML('beforeend','<button class="btn" data-phase="recommend">返回推荐管理</button>');
     if (current === 'dictItems' && PhaseOne.isRisk(db,parentId)) {
       document.querySelector('.page-head [data-action="new"]')?.remove();
       document.querySelectorAll('[data-op="删除"]').forEach(b => b.remove());
       document.querySelector('.page-head')?.insertAdjacentHTML('afterend','<div class="notice">通过字典项的“是否启用”配置飞码城市一致性规则；比较与后续处置由服务端执行。</div>');
     }
   };
-  document.addEventListener('click',event=>{
-    const button = event.target.closest('[data-phase]');
-    if (button?.dataset.phase==='recommend') navigate('recommend');
-  });
   render();
 })();
