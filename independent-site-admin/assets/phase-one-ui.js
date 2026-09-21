@@ -120,21 +120,13 @@
     };
     SelectControls.refresh(root);
   }
-  function guide() {
-    const risk = db.dict.find(r=>r['字典编号']===PhaseOne.riskCode);
-    modal('一期验收指引 · 2026-09-21',`<div class="notice">本次交付 5 项后台配置。旧演示数据自动升级并保留备份，无需恢复初始数据。新增专区和模式为候选演示值，风控处置未定，仅演示判断结果。</div><ol class="phase-guide"><li><h3>未发售展示</h3><p>在游戏类别将“星海远征（一期演示）”设为未发售，点击展示预览，应显示不可点击的“敬请期待”；改为已发售后再预览。</p><a class="btn" href="#${ROUTES.games}" data-phase-nav>进入游戏类别</a></li><li><h3>NN / 雷神授权登录</h3><p>数据字典 → 授权登录开关 → 字典配置，分别启用 NN、雷神。打开登录流程验收，重复授权应复用 UID；手机号验证后查询两平台，再登录历史账号。查询失败或账号冲突会提示并暂停。</p><a class="btn" href="${esc(Model.routeHref('dictItems',AuthorizedLogin.config(db)?.uid||''))}" data-phase-nav>进入授权登录字典</a> <button class="btn" data-login-demo>登录流程验收</button></li><li><h3>推荐专区</h3><p>推荐管理 → 栏目列表可见原有 3 项与新增 7 项；编辑排序或停用后，推荐区域选项同步。新增推荐并选品，保存后点击专区预览。</p><a class="btn" href="#${ROUTES.recommend}" data-phase-nav>进入推荐管理</a></li><li><h3>标签类型与游戏模式</h3><p>标签管理按“游戏模式”筛选可见单人、多人、在线；新建模式后，在游戏编辑的游戏模式中选择并保存。存量“多人”仍属于游戏类型，同名模式是独立记录。</p><a class="btn" href="#${ROUTES.tags}" data-phase-nav>进入标签管理</a></li><li><h3>飞码城市比较</h3><p>字典配置中编辑规则，将“是否启用”改为启用；使用规则试算验证同城、异城、城市缺失，再停用验证规则关闭。</p><a class="btn" href="${esc(Model.routeHref('dictItems',risk?.uid||''))}" data-phase-nav>进入飞码字典</a></li></ol><p class="muted">已移除游戏购买站点配置及相关预览交互。仅修改本浏览器演示数据；授权、短信、查询、支付和风控接口均未接入。</p>`,'<button class="btn" data-action="close">开始验收</button>',true);
-  }
-
   document.addEventListener('click',event=>{
     const button = event.target.closest('[data-phase]');
     if (button?.dataset.phase==='risk') riskTrial();
     if (button?.dataset.phase==='recommend') navigate('recommend');
-    if (button?.dataset.phase==='guide') guide();
-    if (event.target.closest('[data-phase-nav]')) {document.getElementById('overlays').innerHTML='';forms.clear();}
   });
-  document.querySelector('.top-actions').insertAdjacentHTML('afterbegin','<button class="btn primary small" data-phase="guide">一期验收指引</button>');
   const style = document.createElement('style');
-  style.textContent='.phase-preview{display:grid;grid-template-columns:180px 1fr;gap:28px;padding:24px;border:1px solid #e5eaf2;border-radius:12px;margin-bottom:18px}.phase-cover{min-height:220px;border-radius:10px;background:linear-gradient(140deg,#16304e,#2877b5);display:grid;place-items:center;font-size:44px;color:white}.phase-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.phase-guide{padding-left:24px}.phase-guide li{margin-bottom:24px}.phase-guide p{line-height:1.8}.phase-preview h2{margin:14px 0}.phase-preview p{margin:12px 0}@media(max-width:700px){.phase-preview{grid-template-columns:1fr}.phase-cards{grid-template-columns:1fr}.phase-cover{min-height:100px}}';
+  style.textContent='.phase-preview{display:grid;grid-template-columns:180px 1fr;gap:28px;padding:24px;border:1px solid #e5eaf2;border-radius:12px;margin-bottom:18px}.phase-cover{min-height:220px;border-radius:10px;background:linear-gradient(140deg,#16304e,#2877b5);display:grid;place-items:center;font-size:44px;color:white}.phase-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.phase-preview h2{margin:14px 0}.phase-preview p{margin:12px 0}@media(max-width:700px){.phase-preview{grid-template-columns:1fr}.phase-cards{grid-template-columns:1fr}.phase-cover{min-height:100px}}';
   document.head.appendChild(style);
   render();
 })();
