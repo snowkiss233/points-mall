@@ -1,6 +1,6 @@
 /* 原型数据规则。仅处理本地演示数据，不连接真实业务接口。 */
 const Model = (() => {
-  const VERSION = 2;
+  const VERSION = 3;
   const copy = value => JSON.parse(JSON.stringify(value));
   const object = value => value && typeof value === 'object' && !Array.isArray(value);
   const text = value => typeof value === 'string' && value.trim().length > 0;
@@ -27,7 +27,7 @@ const Model = (() => {
       list = list.filter(r => r.uid !== draft.uid && r['菜单类型'] !== '按钮/权限');
       if (draft['菜单类型'] === '子菜单') list = list.filter(r => r['菜单类型'] === '一级菜单');
     }
-    return list;
+    return typeof PhaseOne === 'undefined' ? list : PhaseOne.choices(db,target,key,field,draft,list);
   }
 
   function formDraft(db, key, row) {
@@ -52,6 +52,10 @@ const Model = (() => {
     if (key === 'payInfo' && !row['支付通道ID']) row['支付通道ID'] = uid('PAY-DEMO');
     if (key === 'promotions') row['状态'] = promotionStatus(row);
     if (key === 'supplierPay') row['客户端类型'] = row['支付渠道类型'] === 'PC客户端' ? 'PC端' : 'Web端';
+    if (key === 'games' && typeof PhaseOne !== 'undefined') {
+      row._phase1RoutePending = false;
+      row['游戏标签'] = (row.refs['游戏类型'] || []).map(id => get(db,'tags',id)?.['标签'] || '').join(',');
+    }
     return row;
   }
 
@@ -143,6 +147,7 @@ const Model = (() => {
     if (key === 'products' && label === '供货商') return db.productSuppliers.some(b => b.productId === row.uid && b.supplierId === value);
     if (typeof filter?.options === 'string') return [row.refs?.[label]].flat().includes(value);
     const actual = row[label];
+    if (key === 'games' && label === '站点路由' && !Array.isArray(value)) return (actual || []).includes(value);
     if (Array.isArray(value)) {
       const [start,end] = Array.isArray(actual) ? actual : [actual,actual];
       return (!value[0] || String(end || '').slice(0,10) >= value[0].slice(0,10)) && (!value[1] || String(start || '').slice(0,10) <= value[1].slice(0,10));
@@ -152,7 +157,7 @@ const Model = (() => {
 
   function envelope(db) {
     const errors = [];
-    if (!object(db) || ![1,VERSION].includes(db.version)) return ['不支持的备份版本'];
+    if (!object(db) || ![1,2,VERSION].includes(db.version)) return ['不支持的备份版本'];
     const collections = [...Object.keys(SCHEMA).filter(k => SCHEMA[k].columns), 'productSuppliers'];
     for (const key of collections) {
       if (!Array.isArray(db[key])) { errors.push(`${key} 必须是数组`); continue; }
@@ -189,7 +194,8 @@ const Model = (() => {
         const inactive = (key === 'products' && (row['商品类型'] === '组合商品' ? ['账号类型','货源卡密类型','商品分类','商品子分类'].includes(f.label) : ['选择商品','生效时间'].includes(f.label))) || (key === 'auth' && f.label === '选择模块' && row['生效范围'] === '全部') || (key === 'dictItems' && ((f.label === 'key' && row['key类型'] === '图片') || (f.label === 'key图片' && row['key类型'] !== '图片')));
         if (inactive) continue;
         const value = rels[f.label] ? row.refs?.[f.label] : row[f.label];
-        if (f.required && (value == null || value === '' || Array.isArray(value) && !value.length)) fail(key,row,`缺少${f.label}`);
+        const pendingLegacyRoute = key === 'games' && f.label === '站点路由' && row._phase1RoutePending === true;
+        if (f.required && !pendingLegacyRoute && (value == null || value === '' || Array.isArray(value) && !value.length)) fail(key,row,`缺少${f.label}`);
         if (value == null || value === '') continue;
         if (f.type === 'number' && (typeof value !== 'number' || !Number.isFinite(value) || value < 0)) fail(key,row,`${f.label}必须是非负数字`);
         if (['text','textarea','richtext','readonly','image','video','date','datetime-local'].includes(f.type) && typeof value !== 'string') fail(key,row,`${f.label}必须是文本`);
@@ -236,6 +242,7 @@ const Model = (() => {
     }
     for (const [role, ids] of Object.entries(db.rolePermissions)) if (!get(db,'roles',role) || ids.some(id=>!get(db,'permissions',id))) errors.push('角色授权引用不存在');
     for (const item of db.trash) if (!SCHEMA[item.key]?.columns || !object(item.row) || !text(item.row.uid)) errors.push('回收站记录格式错误');
+    if (typeof PhaseOne !== 'undefined') errors.push(...PhaseOne.validate(db));
     return [...new Set(errors)];
   }
 
@@ -243,9 +250,10 @@ const Model = (() => {
     const db = copy(input), issues = envelope(db);
     if (issues.length) throw new Error(issues.slice(0,5).join('；'));
     if (db.version === VERSION) return db;
-    for (const [key, schema] of Object.entries(SCHEMA)) for (const row of db[key] || []) {
+    if (typeof PhaseOne !== 'undefined') PhaseOne.upgrade(db);
+    if (db.version === 1) for (const [key, schema] of Object.entries(SCHEMA)) for (const row of db[key] || []) {
       row.refs = {};
-      const draft = {...row};
+      const draft = {...row,_migrating:true};
       for (const [label, relation] of Object.entries(relations(key,row))) {
         const old = row[label], values = relation.multi ? old || [] : old ? [old] : [];
         if (!Array.isArray(values)) throw new Error(`${schema.name}的${label}格式错误`);
