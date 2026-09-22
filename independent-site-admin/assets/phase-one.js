@@ -46,10 +46,14 @@ const PhaseOne = (() => {
     if (isNewBadgeDict) badgeLabels.forEach(([value,key],index) => {
       if (!db.dictItems.some(r => r.parentId === badgeDict.uid && r.key === key)) db.dictItems.push({uid:id(db,'dictItems','product-badge-'+key),parentId:badgeDict.uid,value,key,'key类型':'文本','描述':'','排序值':index+1,'是否启用':'启用',refs:{}});
     });
+    let reducedBadges = 0;
     if (db.version !== 1) db.products.forEach(product => {
       product.refs ||= {};
-      product.refs['商品角标标签'] ||= [];
+      const previous = product.refs['商品角标标签'];
+      if (Array.isArray(previous) && previous.length > 1) reducedBadges++;
+      product.refs['商品角标标签'] = Array.isArray(previous) ? previous[0] || '' : previous || '';
     });
+    if (reducedBadges) db.audit.unshift({time:now(),operator:'原型升级',action:`角标单选迁移：${reducedBadges} 个商品曾配置多个角标，保留每个商品的首项；升级前备份保留原值。`});
     if (db.version >= 3) return db;
     // 仅旧版数据进入；保留已有记录，新增演示实体使用独立 UID。
     const v1 = db.version === 1;
@@ -110,8 +114,8 @@ const PhaseOne = (() => {
 
   function choices(db,target,key,field,draft,rows) {
     if (target === 'dictItems' && key === 'products' && field === '商品角标标签') {
-      const selected = list(draft[field]);
-      return rows.filter(r => isBadge(db,r.parentId) && (r['是否启用'] === '启用' || selected.includes(r.uid))).sort((a,b) => Number(a['排序值'] || 0)-Number(b['排序值'] || 0));
+      const selected = draft[field];
+      return rows.filter(r => isBadge(db,r.parentId) && (r['是否启用'] === '启用' || selected === r.uid)).sort((a,b) => Number(a['排序值'] || 0)-Number(b['排序值'] || 0));
     }
     if (target !== 'tags' && target !== 'columns') return rows;
     const selected = list(draft[field]);
@@ -127,10 +131,11 @@ const PhaseOne = (() => {
       if (db.dictItems.some(r => r.parentId === draft.parentId && r.uid !== old?.uid && r.key === draft.key)) return issue('key','同一角标的字典项值不能重复');
     }
     if (key === 'products') {
-      for (const badgeId of list(draft['商品角标标签'])) {
+      const badgeId = draft['商品角标标签'];
+      if (badgeId) {
         const badge = Model.get(db,'dictItems',badgeId);
         if (!badge || !isBadge(db,badge.parentId)) return issue('商品角标标签','请选择商品角标标签字典中的选项');
-        if (badge['是否启用'] !== '启用' && !list(old?.refs?.['商品角标标签']).includes(badgeId)) return issue('商品角标标签','停用角标不能新增绑定');
+        if (badge['是否启用'] !== '启用' && old?.refs?.['商品角标标签'] !== badgeId) return issue('商品角标标签','停用角标不能新增绑定');
       }
     }
     if (key === 'tags') {
@@ -162,7 +167,7 @@ const PhaseOne = (() => {
     if (!badgeDict) errors.push('商品角标标签字典缺失');
     const badgeItems = db.dictItems.filter(r => r.parentId === badgeDict?.uid);
     if (new Set(badgeItems.map(r => r.key)).size !== badgeItems.length || badgeItems.some(r => r['key类型'] !== '文本')) errors.push('商品角标标签字典项值重复或类型错误');
-    for (const product of db.products) if (list(product.refs?.['商品角标标签']).some(uid => !isBadge(db,Model.get(db,'dictItems',uid)?.parentId))) errors.push('商品角标标签关联到其他字典');
+    for (const product of db.products) if (product.refs?.['商品角标标签'] && !isBadge(db,Model.get(db,'dictItems',product.refs['商品角标标签'])?.parentId)) errors.push('商品角标标签关联到其他字典');
     const names = new Set();
     for (const tag of db.tags) {
       const signature = tag['标签类型'] + ':' + String(tag['标签']).trim();
