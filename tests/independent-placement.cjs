@@ -22,35 +22,56 @@ let passed = 0;
 function test(name, source) { run(source); passed++; console.log('PASS', name); }
 
 run(`const actualRenderPicker = renderProductPickerTable; renderDisplayProductRows = () => {}; renderProductPickerTable = () => {}; renderDisplayTable = () => {}; toast = () => {};`);
-test('Initial synchronized catalog contains on-sale products only', `
+test('Initial synchronized catalog contains valid on-sale demo products only', `
   assert.equal(externalCatalog.length, 5);
   assert.ok(externalCatalog.every(p => p.state === '上架'));
+  assert.ok(externalCatalog.every(p => Number.isFinite(p.amount) && p.amount >= 0));
+  assert.ok(externalCatalog.every(p => placementEligibility(p).status === '可投放'));
+  assert.ok(externalCatalog.every(p => !Object.hasOwn(p, 'siteId')));
   for (const state of ['下架', '已删除', '未知']) {
     const excluded = externalSourceCatalog.find(p => p.state === state);
     assert.ok(excluded);
     assert.equal(placementProduct(excluded), undefined);
   }
 `);
-test('Source and site isolation, plus placement-level deduplication', `
+test('Source and product ID define identity; legacy site keys migrate without retaining site', `
   const nnRef = { spu: 'SPU10001' };
   const extRef = externalCatalog[0];
   assert.notEqual(placementKey(nnRef), placementKey(extRef));
-  assert.notEqual(placementKey(extRef), placementKey({...extRef, siteId:'second-site'}));
+  assert.equal(placementKey(extRef), placementKey({...extRef, siteId:'legacy-site'}));
+  assert.deepEqual(JSON.parse(placementKey(extRef)), ['external', extRef.spu]);
+  const legacyKey = JSON.stringify(['external', 'legacy-site', extRef.spu]);
+  assert.equal(placementKey(legacyKey), placementKey(extRef));
+  assert.equal(placementProduct(legacyKey), extRef);
+  assert.deepEqual(placementRef({...extRef, siteId:'legacy-site'}), {source:'external', spu:extRef.spu});
+  assert.deepEqual(placementRef(legacyKey), {source:'external', spu:extRef.spu});
   assert.equal(uniqueDisplayProductCount([nnRef, extRef, {...extRef, subTemplateId:'second'}]), 2);
   displayProductRows = [{...nnRef, subTemplateId:'one'}];
   assert.equal(displayPlacementExists(extRef, 'one'), false);
   assert.equal(displayPlacementExists(nnRef, 'one'), true);
   assert.equal(displayPlacementExists(nnRef, 'two'), false);
 `);
-test('External eligibility does not require NN SKU, inventory, or fulfillment', `
+test('On-sale external products remain selectable without NN fields, price, or unexpired metadata', `
   assert.equal(externalCatalog[0].stock, undefined);
   assert.equal(placementEligibility(externalCatalog[0]).status, '可投放');
   assert.equal(placementEligibility({...externalCatalog[0], state:'未知'}).status, '不可投放');
-  assert.equal(placementEligibility({...externalCatalog[0], amount:null}).status, '不可投放');
-  assert.equal(placementEligibility({...externalCatalog[0], expiresAt:Date.now()-1}).status, '不可投放');
-  assert.equal(placementEligibility({...externalCatalog[0], landingUrl:'https://evil.example/products/SPU10001'}).status, '不可投放');
-  assert.equal(placementEligibility({...externalCatalog[0], landingUrl:'https://shop.example.com/products/another'}).status, '不可投放');
-  assert.equal(placementEligibility({...externalCatalog[0], subtitle:''}).status, '可投放');
+  for (const overrides of [{amount:null}, {expiresAt:Date.now()-1}, {subtitle:''}, {stock:0, delivery:'未配置', cdkey:'库存不足'}]) {
+    const candidate = {...externalCatalog[0], ...overrides};
+    assert.equal(placementEligibility(candidate).status, '可投放');
+    assert.equal(pickerAvailability(candidate).selectable, true);
+  }
+`);
+test('NN stock, fulfillment, state and current-placement rules remain unchanged', `
+  const nnProduct = products.find(p => placementEligibility(p).status === '可投放');
+  assert.ok(nnProduct);
+  assert.equal(placementEligibility({...nnProduct, stock:0}).status, '不可投放');
+  assert.equal(placementEligibility({...nnProduct, delivery:'未配置'}).status, '不可投放');
+  assert.equal(placementEligibility({...nnProduct, cdkey:'库存不足'}).status, '不可投放');
+  assert.equal(pickerAvailability({...nnProduct, state:'下架'}).selectable, false);
+  const rowsBeforeNnCheck = displayProductRows;
+  displayProductRows = [{...placementRef(nnProduct), subTemplateId:activeDisplaySubTemplateId}];
+  assert.equal(pickerAvailability(nnProduct).selectable, false);
+  displayProductRows = rowsBeforeNnCheck;
 `);
 test('Down/up retains references, sort and pin; template windows still gate visibility', `
   const restoring = externalCatalog[1];
@@ -68,19 +89,21 @@ test('Down/up retains references, sort and pin; template windows still gate visi
   assert.equal(displayEligibleCount([{...savedRow, spu:'NEW_ID'}]), 0);
   restoring.state = '上架';
 `);
-test('Existing paused reference can save; newly added invalid reference cannot', `
+test('Existing paused external reference can save; newly added invalid NN reference cannot', `
   const pausedRow = {...placementRef(externalSourceCatalog.find(p => p.state === '下架')), subTemplateId:'hot', sort:8, pinned:'是'};
+  const pausedNnProduct = products.find(p => p.state !== '上架');
+  assert.ok(pausedNnProduct);
   editingDisplayConfig = { products:[pausedRow] };
   assert.equal(newPlacementErrors({products:[pausedRow]}).length, 0);
-  assert.equal(newPlacementErrors({products:[pausedRow, {...pausedRow, subTemplateId:'other'}]}).length, 1);
+  assert.equal(newPlacementErrors({products:[pausedRow, {...placementRef(pausedNnProduct), subTemplateId:'other'}]}).length, 1);
   assert.equal(displayProductRowHtml({...pausedRow, spu:'MISSING'}, {}, true, 0).includes('引用保留'), true);
 `);
-test('Changed selection blocks the entire confirmation; removing it allows one atomic addition', `
+test('Changed NN selection blocks mixed-source confirmation; removing it allows one atomic addition', `
   activeDisplaySubTemplateId = 'hot';
   displaySubTemplateRows = [{id:'hot',name:'热门',sort:1}];
   displayProductRows = [];
   const selectedGood = externalCatalog[0];
-  const selectedChanged = externalCatalog[1];
+  const selectedChanged = products.find(p => p.state === '上架');
   selectedChanged.state = '下架';
   pickerSelection = new Set([placementKey(selectedGood),placementKey(selectedChanged)]);
   addSelectedProductsToDisplay();
@@ -95,6 +118,31 @@ test('Changed selection blocks the entire confirmation; removing it allows one a
   addProductsToDisplay([placementKey(selectedGood)]);
   assert.equal(displayProductRows.length, 1);
   selectedChanged.state = '上架';
+`);
+test('External repeated choices are allowed and idempotent; other positions and templates can share the product', `
+  const rowsBeforeSharedCheck = displayProductRows;
+  const sharedProduct = externalCatalog[1];
+  const sharedRow = {...placementRef(sharedProduct), subTemplateId:'hot', sort:8, pinned:'是'};
+  displayProductRows = [sharedRow];
+  displayConfigs.push({id:'SHARED_TEST_TEMPLATE', products:[{...sharedRow}]});
+  assert.equal(pickerAvailability(sharedProduct).selectable, true);
+  pickerSelection = new Set([placementKey(sharedProduct)]);
+  addSelectedProductsToDisplay();
+  assert.equal(pickerSelection.size, 0);
+  assert.equal(displayProductRows.length, 1);
+  assert.deepEqual(displayProductRows[0], sharedRow);
+  assert.equal(sharedRow.sort, 8);
+  assert.equal(sharedRow.pinned, '是');
+  activeDisplaySubTemplateId = 'other';
+  assert.equal(pickerAvailability(sharedProduct).selectable, true);
+  addProductsToDisplay([placementKey(sharedProduct), placementKey(sharedProduct)]);
+  assert.equal(displayProductRows.length, 2);
+  assert.equal(displayProductRows[1].subTemplateId, 'other');
+  assert.equal(uniqueDisplayProductCount(displayProductRows), 1);
+  assert.ok(displayProductRows.every(row => !Object.hasOwn(row, 'siteId')));
+  displayConfigs.pop();
+  activeDisplaySubTemplateId = 'hot';
+  displayProductRows = rowsBeforeSharedCheck;
 `);
 test('Cancel and overlay dismissal discard only pending choices, not previously added rows', `
   const committedSnapshot = JSON.stringify(displayProductRows);
@@ -156,28 +204,49 @@ test('Visible source, name and ID filters work; reset preserves pending choices'
   assert.equal(document.getElementById('productPickerTbody').innerHTML.includes('查看资料'), false);
   discardPickerSelection();
 `);
+test('Every listed external row can be selected together, including previously added or stale-price products', `
+  const externalBeforeSelectionCheck = {...externalCatalog[0]};
+  externalCatalog[0].amount = null;
+  externalCatalog[0].expiresAt = Date.now() - 1;
+  assert.equal(displayPlacementExists(externalCatalog[0], 'hot'), true);
+  document.getElementById('pickerFilterSource').value = 'external';
+  actualRenderPicker();
+  assert.equal(pickerVisibleProducts.length, externalCatalog.length);
+  assert.equal(document.getElementById('productPickerTbody').innerHTML.includes('disabled'), false);
+  document.getElementById('pickerSelectAll').onchange({target:{checked:true}});
+  assert.equal(pickerSelection.size, externalCatalog.length);
+  for (const product of externalCatalog) assert.ok(pickerSelection.has(placementKey(product)));
+  Object.keys(externalCatalog[0]).forEach(key => delete externalCatalog[0][key]);
+  Object.assign(externalCatalog[0], externalBeforeSelectionCheck);
+  discardPickerSelection();
+  resetPickerFilters();
+`);
 test('Unknown external reference cannot resolve to a same-ID NN product', `
-  assert.equal(placementProduct({source:'external',siteId:'unknown-site',spu:'SPU10001'}), undefined);
+  const nnOnlyProduct = products.find(p => !externalCatalog.some(external => external.spu === p.spu));
+  assert.ok(nnOnlyProduct);
+  assert.equal(placementProduct({source:'external',spu:nnOnlyProduct.spu}), undefined);
+  assert.equal(placementProduct({source:'external',siteId:'legacy-site',spu:'SPU10001'}), externalCatalog[0]);
   assert.equal(placementProduct('SPU10001').source, undefined);
 `);
 
 (async () => {
-  run(`const confirmedBeforeFailure = externalSyncConfirmedAt; const itemConfirmedBeforeFailure = externalCatalog[0].confirmedAt; const expiryBeforeFailure = externalCatalog[0].expiresAt; const relationsBeforeSync = JSON.stringify(displayProductRows);`);
+  run(`const confirmedBeforeFailure = externalSyncConfirmedAt; const catalogBeforeFailure = JSON.stringify(externalCatalog); const relationsBeforeSync = JSON.stringify(displayProductRows);`);
   await run('refreshExternalCatalog(true)');
-  test('Sync failure retains last confirmed time, expiry and relations', `
+  test('Sync failure retains the confirmed catalog, last success time and relations', `
     assert.equal(externalSyncConfirmedAt, confirmedBeforeFailure);
-    assert.equal(externalCatalog[0].confirmedAt, itemConfirmedBeforeFailure);
-    assert.equal(externalCatalog[0].expiresAt, expiryBeforeFailure);
+    assert.equal(JSON.stringify(externalCatalog), catalogBeforeFailure);
     assert.equal(placementEligibility(externalCatalog[0]).status, '可投放');
     assert.equal(JSON.stringify(displayProductRows), relationsBeforeSync);
     assert.equal(externalSyncBusy, false);
   `);
   await run('refreshExternalCatalog()');
-  test('Refresh imports only on-sale products, recovers expiry, and retains data validation', `
+  test('Complete refresh imports only on-sale products and all of them remain selectable', `
     assert.equal(externalCatalog.length, 5);
     assert.ok(externalCatalog.every(p => p.state === '上架'));
     assert.equal(placementEligibility(externalCatalog.find(p => p.spu === 'EXT20005')).status, '可投放');
-    assert.equal(placementEligibility(externalCatalog.find(p => p.spu === 'EXT20004')).status, '不可投放');
+    assert.equal(placementEligibility(externalCatalog.find(p => p.spu === 'EXT20004')).status, '可投放');
+    assert.ok(externalCatalog.every(p => pickerAvailability(p).selectable));
+    assert.ok(externalCatalog.every(p => !Object.hasOwn(p, 'siteId')));
     assert.equal(externalCatalog.some(p => ['EXT20003','EXT20007','EXT20008'].includes(p.spu)), false);
     assert.equal(JSON.stringify(displayProductRows), relationsBeforeSync);
     assert.equal(externalSyncLogs.length, 2);
@@ -188,29 +257,42 @@ test('Unknown external reference cannot resolve to a same-ID NN product', `
     const retainedRow = {...placementRef(sourceChanging), subTemplateId:'saved', sort:9, pinned:'是'};
     displayProductRows.push(retainedRow);
     const beforeRemoval = JSON.stringify(displayProductRows);
+    const catalogBeforeRemoval = JSON.stringify(externalCatalog);
+    const confirmedBeforeRemoval = externalSyncConfirmedAt;
     pickerSelection = new Set([placementKey(sourceChanging)]);
     sourceChanging.state = '下架';
   `);
   await run('refreshExternalCatalog(true)');
   test('Failed refresh does not remove cached products or references', `
     assert.ok(placementProduct(sourceChanging));
+    assert.equal(JSON.stringify(externalCatalog), catalogBeforeRemoval);
     assert.equal(JSON.stringify(displayProductRows), beforeRemoval);
   `);
+  await run('refreshExternalCatalog(false, false)');
+  test('Incomplete on-sale snapshot retains all cached products, references and last success time', `
+    assert.equal(JSON.stringify(externalCatalog), catalogBeforeRemoval);
+    assert.equal(externalSyncConfirmedAt, confirmedBeforeRemoval);
+    assert.equal(JSON.stringify(displayProductRows), beforeRemoval);
+    assert.equal(displayEligibleCount([retainedRow]), 1);
+    assert.equal(pickerSelection.size, 1);
+    assert.equal(externalSyncBusy, false);
+  `);
   await run('refreshExternalCatalog()');
-  test('Confirmed disappearance removes the candidate and blocks pending additions while retaining saved references', `
+  test('Confirmed disappearance removes the candidate and pending choice while retaining saved references', `
     assert.equal(placementProduct(sourceChanging), undefined);
     assert.equal(JSON.stringify(displayProductRows), beforeRemoval);
     assert.equal(displayEligibleCount([retainedRow]), 0);
     pickerReviewMode = false;
     actualRenderPicker();
     assert.equal(pickerVisibleProducts.some(p => p.spu === sourceChanging.spu), false);
+    assert.equal(pickerSelection.size, 0);
     addSelectedProductsToDisplay();
     assert.equal(JSON.stringify(displayProductRows), beforeRemoval);
-    assert.equal(pickerSelection.size, 1);
-    assert.equal(pickerReviewMode, true);
+    assert.equal(pickerReviewMode, false);
+    pickerReviewMode = true;
     actualRenderPicker();
-    assert.ok(document.getElementById('pickerSelectionError').textContent.includes('不可添加'));
-    assert.ok(document.getElementById('productPickerTbody').innerHTML.includes('商品不存在'));
+    assert.equal(pickerVisibleProducts.length, 0);
+    assert.equal(document.getElementById('pickerSelectionError').textContent, '');
     discardPickerSelection();
     sourceChanging.state = '上架';
   `);

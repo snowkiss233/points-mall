@@ -1702,7 +1702,7 @@
           <div class="table-head">
             <div>
               <div class="table-title">投放配置数据</div>
-              <div class="table-meta">全局模板覆盖全部社区；活动模板按活动 ID 路由；商品数量按来源、站点及 SPU ID 去重统计；模板排序值越大越靠左。</div>
+              <div class="table-meta">全局模板覆盖全部社区；活动模板按活动 ID 路由；商品数量按来源及 SPU ID 去重统计；模板排序值越大越靠左。</div>
             </div>
             <div class="table-meta" id="displayTableCount">共 0 条</div>
           </div>
@@ -2233,7 +2233,7 @@
                     <tbody id="displayProductTbody"></tbody>
                   </table>
                 </div>
-                <div class="hint-text">商品配置按二级模板分页管理。当前 Tab 只展示该二级模板下的投放商品，同一个商品可以分别添加到多个二级模板；排序和置顶只在当前二级模板内生效。收到独立站商品下架通知后，NN 商店停止展示该商品，添加商品列表同步移除；原投放关系、排序和置顶保留。收到重新上架通知且符合投放条件后恢复展示；手动移除的商品不再自动恢复。添加仅修改当前表单，保存后生效。</div>
+                <div class="hint-text">同一商品可在多个模板引用，排序和置顶分别维护。独立站商品未出现在最新完整上架列表时停止展示，保留原配置；重新出现后按模板条件自动恢复。同步失败或列表不完整时保留上次结果。添加或移除商品后，保存模板生效。</div>
               </div>
             </section>
 
@@ -3144,11 +3144,9 @@
     // Mock upstream data is separate from NN's synchronized on-sale catalog.
     const externalSourceCatalog = createExternalCatalogDemo();
     const externalCatalog = externalSourceCatalog.filter(p => p.state === "上架").map(p => ({ ...p }));
-    // Only demo fixtures use this duration; production expiry comes from the agreed sync contract.
-    const externalDemoValidityMs = 60 * 60 * 1000;
     displayConfigs[0].products.push(
-      { source: "external", siteId: "independent-demo", spu: "EXT20002", subTemplateId: "SUB_HOME_HOT", sort: 4, pinned: "是" },
-      { source: "external", siteId: "independent-demo", spu: "EXT20003", subTemplateId: "SUB_HOME_HOT", sort: 5, pinned: "否" }
+      { source: "external", spu: "EXT20002", subTemplateId: "SUB_HOME_HOT", sort: 4, pinned: "是" },
+      { source: "external", spu: "EXT20003", subTemplateId: "SUB_HOME_HOT", sort: 5, pinned: "否" }
     );
     let displaySubTemplateRows = [];
     let activeDisplaySubTemplateId = "";
@@ -5474,36 +5472,39 @@
 
     function createExternalCatalogDemo() {
       const rows = [
-        ["SPU10001", "星际远航", "在独立站选择标准版或豪华版", "HKD", 258, "起价", "上架"],
-        ["EXT20002", "山海纪行", "开放世界冒险 · PC 版", "HKD", 198, "单一价格", "上架"],
-        ["EXT20003", "极速地平线", "多版本可选", "USD", 39.99, "起价", "下架"],
-        ["EXT20004", "幻境工坊", "展示价格待修正", "HKD", null, "单一价格", "上架"],
-        ["EXT20005", "深海探索", "海底冒险 · 单人游戏", "USD", 19.99, "单一价格", "上架"],
-        ["EXT20006", "云端农场", "", "HKD", 88, "单一价格", "上架"],
-        ["EXT20007", "遗迹守望", "源商品已删除", "HKD", 128, "单一价格", "已删除"],
-        ["EXT20008", "极夜行动", "源状态尚未确认", "USD", 29.99, "单一价格", "未知"]
+        ["SPU10001", "星际远航", "在独立站选择标准版或豪华版", "CNY", 258, "起价", "上架"],
+        ["EXT20002", "山海纪行", "开放世界冒险 · PC 版", "CNY", 198, "单一价格", "上架"],
+        ["EXT20003", "极速地平线", "多版本可选", "CNY", 239, "起价", "下架"],
+        ["EXT20004", "幻境工坊", "建造属于你的奇幻世界", "CNY", 128, "单一价格", "上架"],
+        ["EXT20005", "深海探索", "海底冒险 · 单人游戏", "CNY", 98, "单一价格", "上架"],
+        ["EXT20006", "云端农场", "", "CNY", 88, "单一价格", "上架"],
+        ["EXT20007", "遗迹守望", "源商品已删除", "CNY", 128, "单一价格", "已删除"],
+        ["EXT20008", "极夜行动", "源状态尚未确认", "CNY", 168, "单一价格", "未知"]
       ];
       return rows.map(([spu, name, subtitle, currency, amount, priceType, state], index) => ({
-        source: "external", siteId: "independent-demo", spu, name, subtitle, currency, amount, priceType, state,
+        source: "external", spu, name, subtitle, currency, amount, priceType, state,
         image: "data:image/svg+xml;charset=utf-8," + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="88" height="108"><rect width="88" height="108" fill="${["#27466b", "#62745a", "#675b83", "#547981"][index % 4]}"/><circle cx="68" cy="24" r="30" fill="#fff" opacity=".1"/><text x="44" y="63" text-anchor="middle" fill="white" font-size="20">${name.slice(0, 2)}</text></svg>`),
         landingUrl: `https://shop.example.com/products/${spu}`,
-        confirmedAt: index === 4 ? "2026-09-01 09:00" : nowText(),
-        expiresAt: Date.now() + (index === 4 ? -1 : 3600000),
-        syncResult: index === 4 ? "同步失败" : "同步成功"
+        confirmedAt: nowText()
       }));
     }
 
     function placementRef(value) {
       if (typeof value === "string") {
-        if (value.startsWith("[")) { try { const [source, siteId, spu] = JSON.parse(value); return { source, siteId, spu }; } catch {} }
-        return { source: "nn", siteId: "", spu: value };
+        if (value.startsWith("[")) {
+          try {
+            const parts = JSON.parse(value);
+            return { source: parts[0], spu: parts.length === 3 ? parts[2] : parts[1] };
+          } catch {}
+        }
+        return { source: "nn", spu: value };
       }
-      return { source: value?.source || "nn", siteId: value?.source === "external" ? value.siteId : "", spu: value?.spu || "" };
+      return { source: value?.source || "nn", spu: value?.spu || "" };
     }
 
     function placementKey(value) {
       const ref = placementRef(value);
-      return JSON.stringify([ref.source, ref.siteId, ref.spu]);
+      return JSON.stringify([ref.source, ref.spu]);
     }
 
     function placementProduct(value) {
@@ -5516,36 +5517,25 @@
       return `<span class="tag ${external ? "purple" : "blue"}">${external ? "独立站商品" : "NN 商品"}</span>`;
     }
 
-    function externalDataIssue(product) {
-      if (!product) return "商品资料暂不可用";
-      if (product.state !== "上架") return product.state === "下架" ? "独立站商品已下架" : product.state === "已删除" ? "独立站商品已删除" : "商品状态未确认";
-      if (!product.name?.trim()) return "商品标题缺失";
-      if (!product.image) return "商品图片缺失";
-      if (typeof product.amount !== "number" || !Number.isFinite(product.amount) || product.amount < 0) return "展示价格缺失或无效";
-      if (!["HKD", "USD", "CNY"].includes(product.currency)) return "展示币种缺失或不支持";
-      if (!["单一价格", "起价"].includes(product.priceType)) return "价格类型未确认";
-      try { const url = new URL(product.landingUrl); if (url.origin !== "https://shop.example.com" || url.username || url.password || url.pathname !== `/products/${encodeURIComponent(product.spu)}`) return "商品落地页无效"; } catch { return "商品落地页无效"; }
-      if (!product.confirmedAt || !Number.isFinite(product.expiresAt) || product.expiresAt <= Date.now()) return "同步数据已过期";
-      return "";
-    }
-
     function placementEligibility(product) {
       if (product?.source === "external") {
-        const reason = externalDataIssue(product);
+        const reason = product.state === "上架" ? "" : "独立站商品已下架";
         return { status: reason ? "不可投放" : "可投放", reason: reason || "无" };
       }
       return getDisplayProductStatus(product, { state: "上架" });
     }
 
     function pickerAvailability(product) {
+      // The synchronized external catalog contains usable on-sale products only.
+      if (product?.source === "external") return { label: "可添加", reason: "", selectable: true };
       if (product && displayPlacementExists(product, activeDisplaySubTemplateId)) return { label: "已添加", reason: "当前投放位置已添加", selectable: false };
-      const reason = !product ? "商品不存在" : product.source === "external" ? externalDataIssue(product) : product.state !== "上架" ? "NN 商品未上架" : "";
+      const reason = !product ? "商品不存在" : product.state !== "上架" ? "NN 商品未上架" : "";
       return { label: reason ? "不可添加" : "可添加", reason, selectable: !reason };
     }
 
     function externalPriceText(product) {
-      if (typeof product.amount !== "number" || !Number.isFinite(product.amount) || product.amount < 0 || !product.currency) return "价格资料异常";
-      return `${product.currency} ${product.amount.toFixed(2)}${product.priceType === "起价" ? " 起" : ""}`;
+      if (typeof product.amount !== "number" || !Number.isFinite(product.amount)) return "—";
+      return `¥${product.amount.toFixed(2)}${product.priceType === "起价" ? " 起" : ""}`;
     }
 
     function placementProductInfo(product) {
@@ -5572,30 +5562,32 @@
 
     function newPlacementErrors(config) {
       const oldKeys = new Set((editingDisplayConfig?.products || []).map(displayPlacementKey));
-      return config.products.filter(row => !oldKeys.has(displayPlacementKey(row))).flatMap(row => {
+      return config.products.filter(row => placementRef(row).source !== "external" && !oldKeys.has(displayPlacementKey(row))).flatMap(row => {
         const p = placementProduct(row);
-        const reason = !p ? "商品不存在" : p.source === "external" ? externalDataIssue(p) : p.state !== "上架" ? "商品未上架" : "";
+        const reason = !p ? "商品不存在" : p.state !== "上架" ? "商品未上架" : "";
         return reason ? [{ item: "新增商品", problem: `${p?.name || row.spu}：${reason}`, suggestion: "请移除该新增项，商品恢复可用后重新选择" }] : [];
       });
     }
 
     // Prototype regression helper for system snapshot reconciliation, with no operator entry.
     // Real change-notification transport and system retry are not connected in this static demo.
-    async function refreshExternalCatalog(simulateFailure = false) {
+    async function refreshExternalCatalog(simulateFailure = false, snapshotComplete = true) {
       if (externalSyncBusy) return;
       externalSyncBusy = true;
       externalSyncMessage = "正在同步…";
       renderProductPickerTable();
       await new Promise(resolve => setTimeout(resolve, 600));
-      if (simulateFailure) {
-        externalSyncMessage = "同步失败，等待系统自动恢复；仍在有效期内的资料继续使用";
-        externalCatalog.forEach(p => p.syncResult = "同步失败");
+      if (simulateFailure || !snapshotComplete) {
+        externalSyncMessage = `同步失败（${simulateFailure ? "请求失败" : "列表不完整"}），保留上次结果，系统将自动重试`;
       } else {
         externalSyncConfirmedAt = nowText();
         // A successful complete on-sale response replaces the candidate catalog.
         // Missing items leave the catalog; existing placement references are retained.
-        const onSaleProducts = externalSourceCatalog.filter(p => p.state === "上架").map(p => ({ ...p, confirmedAt: externalSyncConfirmedAt, expiresAt: Date.now() + externalDemoValidityMs, syncResult: "同步成功" }));
+        const onSaleProducts = externalSourceCatalog.filter(p => p.state === "上架").map(p => ({ ...p, confirmedAt: externalSyncConfirmedAt }));
         externalCatalog.splice(0, externalCatalog.length, ...onSaleProducts);
+        for (const key of pickerSelection) {
+          if (placementRef(key).source === "external" && !placementProduct(key)) pickerSelection.delete(key);
+        }
         externalSyncMessage = `同步成功，共 ${externalCatalog.length} 个上架商品`;
       }
       externalSyncLogs.push({ time: nowText(), operator: "系统", action: "自动更新独立站商品", result: externalSyncMessage });
@@ -5749,9 +5741,9 @@
         ${detailSection("模板基础信息", infoGrid(basicRows) + `<div class="hint-text">模板名称用于对应投放页面的商品分区；全局模板覆盖全部社区，游戏专区模板按社区范围投放，活动模板通过活动 ID 路由。</div>`)}
         ${detailSection("投放配置", infoGrid([
           ["配置状态", config.state], ["生效开始时间", config.startTime || "-"],
-          ["生效结束时间", config.endTime || "-"], ["已配置商品数", uniqueDisplayProductCount(config.products)], ["当前可展示商品数", displayVisibleCount(config)], ["商品资料有效数", displayEligibleCount(config.products)],
+          ["生效结束时间", config.endTime || "-"], ["已配置商品数", uniqueDisplayProductCount(config.products)], ["当前可展示商品数", displayVisibleCount(config)],
           ["创建时间", config.createdAt || config.updatedAt], ["备注", config.remark || "-"]
-        ]) + `<div class="hint-text">已配置数量包含暂停展示商品，按来源、站点和 SPU ID 去重；当前可展示数量按模板状态、时间及商品资格计算，具体用户还需命中投放范围。</div>`)}
+        ]) + `<div class="hint-text">商品数按来源和 SPU ID 去重。下架商品保留配置；实际展示还需满足模板状态、时间及投放范围。</div>`)}
         ${detailSection("二级模板", displaySubTemplateReadonlyTable(config.subTemplates || []))}
         ${detailSection("投放商品列表", displayDetailProductContent(config))}
       `;
@@ -5782,7 +5774,7 @@
         const count = uniqueDisplayProductCount(displayDetailProductRows(config, slot.id));
         return `<button class="tab-button${index === 0 ? " active" : ""}" type="button" data-display-detail-tab="${slot.id}">${slot.name || "未命名二级模板"}<span class="tab-count">${count}</span></button>`;
       }).join("")}</div>` : "";
-      return `${tabs}<div id="displayDetailProductTable">${displayProductTable(displayDetailProductRows(config, activeId), config, false, { showSubTemplate: false })}</div>${hasSubTemplates ? `<div class="hint-text">按二级模板切换查看投放商品；Tab 数字为当前二级模板内按来源、站点和 SPU ID 去重后的已配置商品数。</div>` : ""}`;
+      return `${tabs}<div id="displayDetailProductTable">${displayProductTable(displayDetailProductRows(config, activeId), config, false, { showSubTemplate: false })}</div>${hasSubTemplates ? `<div class="hint-text">按二级模板切换查看商品；Tab 数字为按来源和 SPU ID 去重后的商品数。</div>` : ""}`;
     }
 
     function bindDisplayDetailProductTabs(config) {
@@ -5806,9 +5798,9 @@
       const external = placementRef(row).source === "external";
       const showSubTemplate = options.showSubTemplate !== false;
       return `<tr>
-        <td>${placementSourceTag(row)}</td><td><b>${safeText(row.spu)}</b></td><td>${product ? placementProductInfo(product) : "商品资料暂不可用（引用保留）"}</td>
+        <td>${placementSourceTag(row)}</td><td><b>${safeText(row.spu)}</b></td><td>${product ? placementProductInfo(product) : external ? "商品已下架（引用保留）" : "商品资料暂不可用（引用保留）"}</td>
         <td>${external ? "—" : safeText(product?.type || "—")}</td><td>${external ? "—" : safeText(product?.skuSummary || "—")}</td>
-        <td>${external ? "—" : product ? deliveryTag(product.delivery) : "—"}</td><td>${stateTag(product?.state || "未知")}</td>
+        <td>${external ? "—" : product ? deliveryTag(product.delivery) : "—"}</td><td>${stateTag(product?.state || (external ? "下架" : "未知"))}</td>
         ${showSubTemplate ? `<td>${safeText(displaySubTemplateName(row.subTemplateId || "", config))}</td>` : ""}
         <td>${editable ? `<input class="mini-input" type="number" data-display-row="${index}" data-display-field="sort" value="${safeText(row.sort)}">` : safeText(row.sort)}</td>
         <td>${editable ? `<select class="mini-input" data-display-row="${index}" data-display-field="pinned"><option ${row.pinned === "否" ? "selected" : ""}>否</option><option ${row.pinned === "是" ? "selected" : ""}>是</option></select>` : row.pinned}</td>
@@ -5853,7 +5845,7 @@
       const already = displayPlacementExists(spu, subTemplateId);
       return {
         already,
-        full: already
+        full: placementRef(spu).source === "external" ? false : already
       };
     }
 
@@ -6024,7 +6016,7 @@
         ? entries.map(({ row, index }) => displayProductRowHtml(row, config, true, index, { showSubTemplate: false })).join("")
         : `<tr><td colspan="10"><div class="empty">当前模板暂无投放商品，可点击添加商品维护当前模板的投放关系。</div></td></tr>`;
       const activeRows = entries.map(entry => entry.row);
-      document.getElementById("displayProductSummary").textContent = `已配置 ${uniqueDisplayProductCount(activeRows)} 个 · 商品资料有效 ${displayEligibleCount(activeRows)} 个 · 暂停展示 ${uniqueDisplayProductCount(activeRows) - displayEligibleCount(activeRows)} 个。实际展示还需满足模板状态、时间及投放范围。`;
+      document.getElementById("displayProductSummary").textContent = `已配置 ${uniqueDisplayProductCount(activeRows)} 个 · 可展示商品 ${displayEligibleCount(activeRows)} 个 · 暂停展示 ${uniqueDisplayProductCount(activeRows) - displayEligibleCount(activeRows)} 个。实际展示还需满足模板状态、时间及投放范围。`;
       document.querySelectorAll("[data-display-row]").forEach(el => el.addEventListener("input", updateDisplayProductRow));
       document.querySelectorAll("select[data-display-row]").forEach(el => el.addEventListener("change", updateDisplayProductRow));
       document.querySelectorAll("[data-remove-display-row]").forEach(btn => btn.addEventListener("click", () => removeProductFromDisplay(Number(btn.dataset.removeDisplayRow))));
@@ -6081,7 +6073,7 @@
       document.getElementById("pickerSelectedToolbar").style.display = pickerReviewMode ? "flex" : "none";
       document.getElementById("pickerSyncBar").style.display = source === "nn" ? "none" : "flex";
       document.getElementById("pickerDemoNote").style.display = source === "nn" && !pickerReviewMode ? "none" : "block";
-      document.getElementById("pickerSyncStatus").textContent = externalSyncBusy ? "独立站商品自动更新中…" : `收到独立站商品变更通知后自动更新 · 最近更新 ${externalSyncConfirmedAt}`;
+      document.getElementById("pickerSyncStatus").textContent = externalSyncBusy ? "独立站商品自动更新中…" : `仅同步上架商品 · 系统自动更新 · 最近更新 ${externalSyncConfirmedAt}`;
       const syncError = document.getElementById("pickerSyncError");
       syncError.style.display = source !== "nn" && externalSyncMessage.startsWith("同步失败") ? "block" : "none";
       syncError.textContent = externalSyncMessage;
@@ -6158,7 +6150,7 @@
     }
 
     function addProductsToDisplay(keys) {
-      const uniqueKeys = [...new Set(keys)];
+      const uniqueKeys = [...new Set(keys.map(placementKey))];
       if (!uniqueKeys.length) return toast("请选择需要添加的商品。");
       // Validate the entire selection before mutating the parent form.
       if (uniqueKeys.some(key => !pickerAvailability(placementProduct(key)).selectable)) {
@@ -6169,10 +6161,11 @@
         return;
       }
       const subTemplateId = activeDisplaySubTemplateId;
-      uniqueKeys.forEach(key => displayProductRows.push({ ...placementRef(placementProduct(key)), subTemplateId, sort: nextDisplayProductSort(subTemplateId), pinned: "否" }));
+      const newKeys = uniqueKeys.filter(key => !displayPlacementExists(key, subTemplateId));
+      newKeys.forEach(key => displayProductRows.push({ ...placementRef(placementProduct(key)), subTemplateId, sort: nextDisplayProductSort(subTemplateId), pinned: "否" }));
       renderDisplayProductRows();
       closeModal("productPickerModal");
-      toast(`已添加 ${uniqueKeys.length} 个商品，保存模板后生效。`);
+      toast(newKeys.length ? `已添加 ${newKeys.length} 个商品，保存模板后生效。` : "所选商品已在当前位置，已保留原配置。");
     }
 
     function removeProductFromDisplay(index) {
@@ -6289,7 +6282,7 @@
       const changes = [];
       for (const row of config.products) {
         const before = beforeRows.find(item => displayPlacementKey(item) === displayPlacementKey(row));
-        if (!before || before.sort !== row.sort || before.pinned !== row.pinned) changes.push({ time: nowText(), user: "平台运营", type: before ? "调整投放商品" : "添加投放商品", object: displayPlacementKey(row), before: before ? JSON.stringify(before) : "—", after: JSON.stringify(row), remark: "商品来源、站点、SPU 及投放位置已记录" });
+        if (!before || before.sort !== row.sort || before.pinned !== row.pinned) changes.push({ time: nowText(), user: "平台运营", type: before ? "调整投放商品" : "添加投放商品", object: displayPlacementKey(row), before: before ? JSON.stringify(before) : "—", after: JSON.stringify(row), remark: "商品来源、SPU 及投放位置已记录" });
       }
       for (const row of beforeRows) if (!config.products.some(item => displayPlacementKey(item) === displayPlacementKey(row))) changes.push({ time: nowText(), user: "平台运营", type: "移除投放商品", object: displayPlacementKey(row), before: JSON.stringify(row), after: "—", remark: "移除后不自动恢复" });
       config.logs = [
@@ -6353,7 +6346,7 @@
       }
       openEnableConfirm({
         title: "确认上架投放配置",
-        message: `已配置 ${uniqueDisplayProductCount(config.products)} 个，商品资料有效 ${displayEligibleCount(config.products)} 个。暂停展示项保留，恢复有效后按投放条件自动展示；无有效商品时前台隐藏空区域。是否确认上架？`,
+        message: `已配置 ${uniqueDisplayProductCount(config.products)} 个，可展示商品 ${displayEligibleCount(config.products)} 个。独立站商品下架后保留配置，重新上架后按投放条件自动展示；无可展示商品时隐藏空区域。是否确认上架？`,
         confirmText: "确认上架",
         onConfirm: () => {
           const fresh = buildDisplayFormConfig("上架");
@@ -6373,7 +6366,7 @@
       }
       openEnableConfirm({
         title: "确认上架投放配置",
-        message: `已配置 ${uniqueDisplayProductCount(config.products)} 个，商品资料有效 ${displayEligibleCount(config.products)} 个。暂停展示项保留，恢复有效后按投放条件自动展示；无有效商品时前台隐藏空区域。是否确认上架？`,
+        message: `已配置 ${uniqueDisplayProductCount(config.products)} 个，可展示商品 ${displayEligibleCount(config.products)} 个。独立站商品下架后保留配置，重新上架后按投放条件自动展示；无可展示商品时隐藏空区域。是否确认上架？`,
         confirmText: "确认上架",
         onConfirm: () => {
           const target = displayConfigs.find(item => item.id === config.id);
