@@ -87,7 +87,7 @@ const AuthorizedLogin = (() => {
     user['手机号'] = '已验证（虚构样例）';
     return {ok:true,status:ids.length?'reused':'created',userId:user.uid,lookups,message:ids.length?'登录已匹配的历史账号，独立站 UID 保持不变。':'两平台均未匹配，注册独立站手机号演示账号。'};
   }
-  SCHEMA.dict.desc = '授权登录开关：分别配置 NN 与雷神加速器；飞码字典：配置城市一致性规则。通过字典配置维护启停。';
+  SCHEMA.dict.desc = '通过字典配置维护授权登录开关、飞码城市一致性规则及商品角标标签。';
   SCHEMA.users.columns.push('登录来源','授权标识');
   return {code,platforms,hashes,samples,label,isConfig,config,enabled,upgrade,formIssue,validate,authorize,phoneLogin};
 })();
