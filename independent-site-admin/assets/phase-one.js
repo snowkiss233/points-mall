@@ -20,7 +20,7 @@ const PhaseOne = (() => {
   SCHEMA.tags.fields.unshift(F('标签类型', 'select', true, ['游戏类型', '游戏模式']));
   SCHEMA.tags.desc = '按游戏类型、游戏模式维护标签。存量标签统一归为游戏类型；模式演示值：单人、多人、在线。';
   const legacyIndex = SCHEMA.games.fields.findIndex(f => f.label === '游戏标签');
-  SCHEMA.games.fields.splice(legacyIndex, 1, F('游戏类型', 'multi', false, 'tags'), F('游戏模式', 'multi', false, 'tags'), F('发售状态', 'select', true, ['未发售', '已发售']));
+  SCHEMA.games.fields.splice(legacyIndex, 1, F('游戏类型', 'multi', false, 'tags'), F('游戏模式', 'multi', false, 'tags'), F('角标标签', 'select', false, 'dictItems'), F('发售状态', 'select', true, ['未发售', '已发售']));
   SCHEMA.games.columns = ['ID','游戏名称','发售状态','游戏类型','游戏模式','绑定平台','排序','状态'];
   SCHEMA.games.filters.push(F('发售状态', 'select', false, ['未发售','已发售']));
   SCHEMA.games.desc = '配置游戏发售状态、游戏类型与游戏模式。未发售游戏展示“敬请期待”。';
@@ -40,20 +40,37 @@ const PhaseOne = (() => {
     let badgeDict = db.dict.find(r => r['字典编号'] === badgeCode);
     const isNewBadgeDict = !badgeDict;
     if (!badgeDict) {
-      badgeDict = {uid:id(db,'dict','product-badges'),'字典名称':'商品角标标签','字典编号':badgeCode,'描述':'商品卡片角标的可选标签。','字典群组':'商城配置',refs:{}};
+      badgeDict = {uid:id(db,'dict','product-badges'),'字典名称':'角标标签','字典编号':badgeCode,'描述':'游戏角标的可选标签。','字典群组':'商城配置',refs:{}};
       db.dict.push(badgeDict);
     }
+    if (badgeDict['字典名称'] === '商品角标标签') badgeDict['字典名称'] = '角标标签';
     if (isNewBadgeDict) badgeLabels.forEach(([value,key],index) => {
       if (!db.dictItems.some(r => r.parentId === badgeDict.uid && r.key === key)) db.dictItems.push({uid:id(db,'dictItems','product-badge-'+key),parentId:badgeDict.uid,value,key,'key类型':'文本','描述':'','排序值':index+1,'是否启用':'启用',refs:{}});
     });
-    let reducedBadges = 0;
-    if (db.version !== 1) db.products.forEach(product => {
-      product.refs ||= {};
-      const previous = product.refs['商品角标标签'];
-      if (Array.isArray(previous) && previous.length > 1) reducedBadges++;
-      product.refs['商品角标标签'] = Array.isArray(previous) ? previous[0] || '' : previous || '';
-    });
-    if (reducedBadges) db.audit.unshift({time:now(),operator:'原型升级',action:`角标单选迁移：${reducedBadges} 个商品曾配置多个角标，保留每个商品的首项；升级前备份保留原值。`});
+    const candidates = new Map();
+    let ambiguous = 0, unmapped = 0;
+    for (const product of db.products) {
+      const previous = product.refs?.['商品角标标签'];
+      const badges = Array.isArray(previous) ? previous.filter(Boolean) : previous ? [previous] : [];
+      const gameId = product.refs?.['绑定游戏类别'];
+      if (badges.length && !gameId) unmapped++;
+      if (badges.length && gameId) candidates.set(gameId, [...(candidates.get(gameId) || []), ...badges]);
+      delete product.refs?.['商品角标标签'];
+      delete product['商品角标标签'];
+    }
+    for (const item of db.trash.filter(item => item.key === 'products')) {
+      delete item.row.refs?.['商品角标标签'];
+      delete item.row['商品角标标签'];
+    }
+    let migrated = 0;
+    for (const game of db.games) {
+      game.refs ||= {};
+      const badges = [...new Set(candidates.get(game.uid) || [])];
+      game.refs['角标标签'] = badges.length === 1 ? badges[0] : '';
+      if (badges.length === 1) migrated++;
+      if (badges.length > 1) ambiguous++;
+    }
+    if (migrated || ambiguous || unmapped) db.audit.unshift({time:now(),operator:'原型升级',action:`角标位置迁移：${migrated} 个游戏继承原商品角标；${ambiguous} 个游戏存在多角标冲突、${unmapped} 个商品未关联游戏，未自动选择角标。原始数据保留在升级前备份中。`});
     if (db.version >= 3) return db;
     // 仅旧版数据进入；保留已有记录，新增演示实体使用独立 UID。
     const v1 = db.version === 1;
@@ -105,7 +122,7 @@ const PhaseOne = (() => {
       const tag = ensureTag('冒险','游戏类型'), mode = ensureTag('单人','游戏模式');
       const game = {uid:id(db,'games','phase1-game-'+index),ID:'GAME-PHASE1-'+index,'游戏名称':name,'游戏副标题':'虚构游戏，用于验收配置效果','发售状态':release,'游戏类型':[tag['标签']],'游戏模式':[mode['标签']],'游戏标签':'冒险','绑定平台':platform?[platform['平台名称']]:[],'生效平台':[],'排序':110-index,'状态':'启用','游戏介绍':'一期验收演示内容。','创建时间':now(),refs:{},_phase1Demo:true};
       while (db.games.some(g => g.ID === game.ID)) game.ID += '-demo';
-      if (!v1) game.refs = {'游戏类型':[tag.uid],'游戏模式':[mode.uid],'绑定平台':platform?[platform.uid]:[]};
+      if (!v1) game.refs = {'游戏类型':[tag.uid],'游戏模式':[mode.uid],'角标标签':'','绑定平台':platform?[platform.uid]:[]};
       db.games.unshift(game);
     }
     db.audit.unshift({time:now(),operator:'原型升级',action:'一期升级：存量标签归为游戏类型，保留原标签与游戏关联；新增虚构游戏、候选栏目与停用的飞码演示规则。'});
@@ -113,7 +130,7 @@ const PhaseOne = (() => {
   }
 
   function choices(db,target,key,field,draft,rows) {
-    if (target === 'dictItems' && key === 'products' && field === '商品角标标签') {
+    if (target === 'dictItems' && key === 'games' && field === '角标标签') {
       const selected = draft[field];
       return rows.filter(r => isBadge(db,r.parentId) && (r['是否启用'] === '启用' || selected === r.uid)).sort((a,b) => Number(a['排序值'] || 0)-Number(b['排序值'] || 0));
     }
@@ -125,17 +142,17 @@ const PhaseOne = (() => {
 
   function formIssue(db,key,draft,old) {
     const issue = (field,message) => ({field,message});
-    if (key === 'dict' && old && isBadge(db,old.uid) && draft['字典编号'] !== badgeCode) return issue('字典编号','商品角标标签使用固定字典编号');
+    if (key === 'dict' && old && isBadge(db,old.uid) && draft['字典编号'] !== badgeCode) return issue('字典编号','角标标签使用固定字典编号');
     if (key === 'dictItems' && isBadge(db,draft.parentId)) {
-      if (draft['key类型'] !== '文本') return issue('key类型','商品角标标签只能使用文本值');
+      if (draft['key类型'] !== '文本') return issue('key类型','角标标签只能使用文本值');
       if (db.dictItems.some(r => r.parentId === draft.parentId && r.uid !== old?.uid && r.key === draft.key)) return issue('key','同一角标的字典项值不能重复');
     }
-    if (key === 'products') {
-      const badgeId = draft['商品角标标签'];
+    if (key === 'games') {
+      const badgeId = draft['角标标签'];
       if (badgeId) {
         const badge = Model.get(db,'dictItems',badgeId);
-        if (!badge || !isBadge(db,badge.parentId)) return issue('商品角标标签','请选择商品角标标签字典中的选项');
-        if (badge['是否启用'] !== '启用' && old?.refs?.['商品角标标签'] !== badgeId) return issue('商品角标标签','停用角标不能新增绑定');
+        if (!badge || !isBadge(db,badge.parentId)) return issue('角标标签','请选择角标标签字典中的选项');
+        if (badge['是否启用'] !== '启用' && old?.refs?.['角标标签'] !== badgeId) return issue('角标标签','停用角标不能新增绑定');
       }
     }
     if (key === 'tags') {
@@ -164,10 +181,10 @@ const PhaseOne = (() => {
   function validate(db) {
     const errors = [];
     const badgeDict = db.dict.find(r => r['字典编号'] === badgeCode);
-    if (!badgeDict) errors.push('商品角标标签字典缺失');
+    if (!badgeDict) errors.push('角标标签字典缺失');
     const badgeItems = db.dictItems.filter(r => r.parentId === badgeDict?.uid);
-    if (new Set(badgeItems.map(r => r.key)).size !== badgeItems.length || badgeItems.some(r => r['key类型'] !== '文本')) errors.push('商品角标标签字典项值重复或类型错误');
-    for (const product of db.products) if (product.refs?.['商品角标标签'] && !isBadge(db,Model.get(db,'dictItems',product.refs['商品角标标签'])?.parentId)) errors.push('商品角标标签关联到其他字典');
+    if (new Set(badgeItems.map(r => r.key)).size !== badgeItems.length || badgeItems.some(r => r['key类型'] !== '文本')) errors.push('角标标签字典项值重复或类型错误');
+    for (const game of db.games) if (game.refs?.['角标标签'] && !isBadge(db,Model.get(db,'dictItems',game.refs['角标标签'])?.parentId)) errors.push('角标标签关联到其他字典');
     const names = new Set();
     for (const tag of db.tags) {
       const signature = tag['标签类型'] + ':' + String(tag['标签']).trim();
