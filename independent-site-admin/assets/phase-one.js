@@ -7,6 +7,9 @@ const PhaseOne = (() => {
   const badgeCode = 'product_corner_badges';
   const tagTypeCode = 'game_tag_types';
   const tagTypeDefinitions = [['游戏类型','game_type'],['游戏模式','game_mode']];
+  // 正式文本由运营提供；当前仅用明确标识的占位内容演示预载，不包含自拟激活步骤。
+  const steamActivationGuide = '【演示占位】Steam 激活指南正文待运营提供。';
+  const searchInterval = 3000;
   const badgeLabels = [['热门','hot'],['推荐','recommended'],['新品','new'],['史低','historical_low'],['超史低','record_low'],['特惠','special_offer']];
   const now = () => new Date().toISOString();
   const copy = value => JSON.parse(JSON.stringify(value));
@@ -97,7 +100,7 @@ const PhaseOne = (() => {
     for (const game of db.games) {
       game.refs ||= {};
       const badges = [...new Set(candidates.get(game.uid) || [])];
-      game.refs['角标标签'] = badges.length === 1 ? badges[0] : '';
+      if (db.version < 7) game.refs['角标标签'] = badges.length === 1 ? badges[0] : '';
       if (badges.length === 1) migrated++;
       if (badges.length > 1) ambiguous++;
     }
@@ -188,6 +191,7 @@ const PhaseOne = (() => {
 
   function formIssue(db,key,draft,old) {
     const issue = (field,message) => ({field,message});
+    if (key === 'searchHints' && (!Number.isSafeInteger(draft['排序']) || draft['排序'] < 0)) return issue('排序','排序请输入非负整数');
     if (key === 'dict' && old && isBadge(db,old.uid) && draft['字典编号'] !== badgeCode) return issue('字典编号','角标标签使用固定字典编号');
     if (key === 'dictItems' && isBadge(db,draft.parentId)) {
       if (draft['key类型'] !== '文本') return issue('key类型','角标标签只能使用文本值');
@@ -235,6 +239,10 @@ const PhaseOne = (() => {
 
   function validate(db) {
     const errors = [];
+    for (const row of db.searchHints || []) {
+      if (typeof row['底纹文案'] !== 'string' || !row['底纹文案'].trim()) errors.push('搜索底纹文案不能为空');
+      if (!Number.isSafeInteger(row['排序']) || row['排序'] < 0) errors.push('搜索底纹排序必须为非负整数');
+    }
     const badgeDict = db.dict.find(r => r['字典编号'] === badgeCode);
     if (!badgeDict) errors.push('角标标签字典缺失');
     const badgeItems = db.dictItems.filter(r => r.parentId === badgeDict?.uid);
@@ -262,6 +270,17 @@ const PhaseOne = (() => {
   function isRisk(db,parentId) { return Model.get(db,'dict',parentId)?.['字典编号'] === riskCode; }
   function isBadge(db,parentId) { return Model.get(db,'dict',parentId)?.['字典编号'] === badgeCode; }
   function isTagType(db,parentId) { return Model.get(db,'dict',parentId)?.['字典编号'] === tagTypeCode; }
+  function searchHintRows(db) {
+    return [...(db.searchHints || [])].filter(r=>r['状态']==='启用'&&String(r['底纹文案']||'').trim()).sort((a,b)=>a['排序']-b['排序']||String(a['创建时间']||'').localeCompare(String(b['创建时间']||''))||a.uid.localeCompare(b.uid));
+  }
+  function searchHintAt(rows,elapsed=0) {
+    return rows.length ? rows[Math.floor(Math.max(0,elapsed)/searchInterval)%rows.length]['底纹文案'] : '搜索游戏';
+  }
+  function guideForPlatforms(db,platformIds,currentText) {
+    if (String(currentText||'').trim()) return currentText;
+    const hasSteam=list(platformIds).some(uid=>String(Model.get(db,'platforms',uid)?.['平台名称']||'').trim().toLowerCase()==='steam');
+    return hasSteam ? steamActivationGuide : currentText || '';
+  }
   function refresh(db) {
     for (const game of db.games) game['游戏标签'] = list(game.refs?.['游戏标签']).map(uid => {
       const tag = Model.get(db,'tags',uid);
@@ -287,5 +306,5 @@ const PhaseOne = (() => {
     if (!orderCity || !paymentCity) return {result:'无法判断',detail:'至少一侧城市无法识别，不判定为同城或异城。'};
     return orderCity === paymentCity ? {result:'同城',detail:'两侧规范化城市标识一致。'} : {result:'异城 · 命中规则',detail:'两侧城市不同；仅显示比较结果，处置动作待确认，不执行拦截或停发。'};
   }
-  return {modes,sections,riskCode,riskKey,badgeCode,tagTypeCode,upgrade,choices,formIssue,validate,isRisk,isBadge,isTagType,refresh,productGames,purchase,compareCities};
+  return {modes,sections,riskCode,riskKey,badgeCode,tagTypeCode,steamActivationGuide,searchInterval,searchHintRows,searchHintAt,guideForPlatforms,upgrade,choices,formIssue,validate,isRisk,isBadge,isTagType,refresh,productGames,purchase,compareCities};
 })();
