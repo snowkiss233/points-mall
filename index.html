@@ -1702,7 +1702,7 @@
           <div class="table-head">
             <div>
               <div class="table-title">投放配置数据</div>
-              <div class="table-meta">全局模板覆盖全部社区；活动模板按活动 ID 路由；商品数量按来源及 SPU ID 去重统计；模板排序值越大越靠左。</div>
+              <div class="table-meta">全局模板覆盖全部社区；活动模板按活动 ID 路由；商品数量按来源及商品 ID 去重统计；模板排序值越大越靠左。</div>
             </div>
             <div class="table-meta" id="displayTableCount">共 0 条</div>
           </div>
@@ -2292,7 +2292,7 @@
         <div class="form-grid three" id="productPickerFilters">
           <div class="field"><label for="pickerFilterSource">商品来源</label><select id="pickerFilterSource"><option value="all">全部来源</option><option value="nn">NN 商品</option><option value="external">独立站商品</option></select></div>
           <div class="field"><label for="pickerFilterKeyword">商品名称</label><input id="pickerFilterKeyword" placeholder="搜索商品名称"></div>
-          <div class="field"><label for="pickerFilterSpu">SPU ID</label><input id="pickerFilterSpu" placeholder="多个 ID 可用逗号分隔"></div>
+          <div class="field"><label for="pickerFilterSpu">商品 ID</label><input id="pickerFilterSpu" placeholder="NN 商品填 SPU ID，独立站商品填 SKU ID；多个 ID 用逗号分隔"></div>
         </div>
         <div class="picker-tools">
           <button class="btn text" id="pickerResetFilters" type="button">重置</button>
@@ -3145,8 +3145,8 @@
     const externalSourceCatalog = createExternalCatalogDemo();
     const externalCatalog = externalSourceCatalog.filter(p => p.state === "上架").map(p => ({ ...p }));
     displayConfigs[0].products.push(
-      { source: "external", spu: "EXT20002", subTemplateId: "SUB_HOME_HOT", sort: 4, pinned: "是" },
-      { source: "external", spu: "EXT20003", subTemplateId: "SUB_HOME_HOT", sort: 5, pinned: "否" }
+      { source: "external", spu: "SKU20002", subTemplateId: "SUB_HOME_HOT", sort: 4, pinned: "是" },
+      { source: "external", spu: "SKU20003", subTemplateId: "SUB_HOME_HOT", sort: 5, pinned: "否" }
     );
     let displaySubTemplateRows = [];
     let activeDisplaySubTemplateId = "";
@@ -5472,14 +5472,14 @@
 
     function createExternalCatalogDemo() {
       const rows = [
-        ["SPU10001", "星际远航", "在独立站选择标准版或豪华版", "CNY", 258, "起价", "上架"],
-        ["EXT20002", "山海纪行", "开放世界冒险 · PC 版", "CNY", 198, "单一价格", "上架"],
-        ["EXT20003", "极速地平线", "多版本可选", "CNY", 239, "起价", "下架"],
-        ["EXT20004", "幻境工坊", "建造属于你的奇幻世界", "CNY", 128, "单一价格", "上架"],
-        ["EXT20005", "深海探索", "海底冒险 · 单人游戏", "CNY", 98, "单一价格", "上架"],
-        ["EXT20006", "云端农场", "", "CNY", 88, "单一价格", "上架"],
-        ["EXT20007", "遗迹守望", "源商品已删除", "CNY", 128, "单一价格", "已删除"],
-        ["EXT20008", "极夜行动", "源状态尚未确认", "CNY", 168, "单一价格", "未知"]
+        ["SKU10001", "星际远航", "在独立站选择标准版或豪华版", "CNY", 258, "起价", "上架"],
+        ["SKU20002", "山海纪行", "开放世界冒险 · PC 版", "CNY", 198, "单一价格", "上架"],
+        ["SKU20003", "极速地平线", "多版本可选", "CNY", 239, "起价", "下架"],
+        ["SKU20004", "幻境工坊", "建造属于你的奇幻世界", "CNY", 128, "单一价格", "上架"],
+        ["SKU20005", "深海探索", "海底冒险 · 单人游戏", "CNY", 98, "单一价格", "上架"],
+        ["SKU20006", "云端农场", "", "CNY", 88, "单一价格", "上架"],
+        ["SKU20007", "遗迹守望", "源商品已删除", "CNY", 128, "单一价格", "已删除"],
+        ["SKU20008", "极夜行动", "源状态尚未确认", "CNY", 168, "单一价格", "未知"]
       ];
       return rows.map(([spu, name, subtitle, currency, amount, priceType, state], index) => ({
         source: "external", spu, name, subtitle, currency, amount, priceType, state,
@@ -5743,7 +5743,7 @@
           ["配置状态", config.state], ["生效开始时间", config.startTime || "-"],
           ["生效结束时间", config.endTime || "-"], ["已配置商品数", uniqueDisplayProductCount(config.products)], ["当前可展示商品数", displayVisibleCount(config)],
           ["创建时间", config.createdAt || config.updatedAt], ["备注", config.remark || "-"]
-        ]) + `<div class="hint-text">商品数按来源和 SPU ID 去重。下架商品保留配置；实际展示还需满足模板状态、时间及投放范围。</div>`)}
+        ]) + `<div class="hint-text">商品数按来源和商品 ID 去重。下架商品保留配置；实际展示还需满足模板状态、时间及投放范围。</div>`)}
         ${detailSection("二级模板", displaySubTemplateReadonlyTable(config.subTemplates || []))}
         ${detailSection("投放商品列表", displayDetailProductContent(config))}
       `;
@@ -5774,7 +5774,7 @@
         const count = uniqueDisplayProductCount(displayDetailProductRows(config, slot.id));
         return `<button class="tab-button${index === 0 ? " active" : ""}" type="button" data-display-detail-tab="${slot.id}">${slot.name || "未命名二级模板"}<span class="tab-count">${count}</span></button>`;
       }).join("")}</div>` : "";
-      return `${tabs}<div id="displayDetailProductTable">${displayProductTable(displayDetailProductRows(config, activeId), config, false, { showSubTemplate: false })}</div>${hasSubTemplates ? `<div class="hint-text">按二级模板切换查看商品；Tab 数字为按来源和 SPU ID 去重后的商品数。</div>` : ""}`;
+      return `${tabs}<div id="displayDetailProductTable">${displayProductTable(displayDetailProductRows(config, activeId), config, false, { showSubTemplate: false })}</div>${hasSubTemplates ? `<div class="hint-text">按二级模板切换查看商品；Tab 数字为按来源和商品 ID 去重后的商品数。</div>` : ""}`;
     }
 
     function bindDisplayDetailProductTabs(config) {
@@ -6282,7 +6282,7 @@
       const changes = [];
       for (const row of config.products) {
         const before = beforeRows.find(item => displayPlacementKey(item) === displayPlacementKey(row));
-        if (!before || before.sort !== row.sort || before.pinned !== row.pinned) changes.push({ time: nowText(), user: "平台运营", type: before ? "调整投放商品" : "添加投放商品", object: displayPlacementKey(row), before: before ? JSON.stringify(before) : "—", after: JSON.stringify(row), remark: "商品来源、SPU 及投放位置已记录" });
+        if (!before || before.sort !== row.sort || before.pinned !== row.pinned) changes.push({ time: nowText(), user: "平台运营", type: before ? "调整投放商品" : "添加投放商品", object: displayPlacementKey(row), before: before ? JSON.stringify(before) : "—", after: JSON.stringify(row), remark: "商品来源、商品 ID 及投放位置已记录" });
       }
       for (const row of beforeRows) if (!config.products.some(item => displayPlacementKey(item) === displayPlacementKey(row))) changes.push({ time: nowText(), user: "平台运营", type: "移除投放商品", object: displayPlacementKey(row), before: JSON.stringify(row), after: "—", remark: "移除后不自动恢复" });
       config.logs = [

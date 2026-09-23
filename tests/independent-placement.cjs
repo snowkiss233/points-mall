@@ -35,8 +35,8 @@ test('Initial synchronized catalog contains valid on-sale demo products only', `
   }
 `);
 test('Source and product ID define identity; legacy site keys migrate without retaining site', `
-  const nnRef = { spu: 'SPU10001' };
   const extRef = externalCatalog[0];
+  const nnRef = { spu: extRef.spu };
   assert.notEqual(placementKey(nnRef), placementKey(extRef));
   assert.equal(placementKey(extRef), placementKey({...extRef, siteId:'legacy-site'}));
   assert.deepEqual(JSON.parse(placementKey(extRef)), ['external', extRef.spu]);
@@ -186,7 +186,7 @@ test('Cross-page review ignores browse filters and restores the browse page with
 test('Visible source, name and ID filters work; reset preserves pending choices', `
   document.getElementById('pickerFilterSource').value = 'external';
   document.getElementById('pickerFilterKeyword').value = '星际';
-  document.getElementById('pickerFilterSpu').value = 'SPU10001';
+  document.getElementById('pickerFilterSpu').value = 'SKU10001';
   actualRenderPicker();
   assert.equal(pickerVisibleProducts.length, 1);
   assert.equal(pickerVisibleProducts[0].source, 'external');
@@ -225,7 +225,7 @@ test('Unknown external reference cannot resolve to a same-ID NN product', `
   const nnOnlyProduct = products.find(p => !externalCatalog.some(external => external.spu === p.spu));
   assert.ok(nnOnlyProduct);
   assert.equal(placementProduct({source:'external',spu:nnOnlyProduct.spu}), undefined);
-  assert.equal(placementProduct({source:'external',siteId:'legacy-site',spu:'SPU10001'}), externalCatalog[0]);
+  assert.equal(placementProduct({source:'external',siteId:'legacy-site',spu:'SKU10001'}), externalCatalog[0]);
   assert.equal(placementProduct('SPU10001').source, undefined);
 `);
 
@@ -243,17 +243,17 @@ test('Unknown external reference cannot resolve to a same-ID NN product', `
   test('Complete refresh imports only on-sale products and all of them remain selectable', `
     assert.equal(externalCatalog.length, 5);
     assert.ok(externalCatalog.every(p => p.state === '上架'));
-    assert.equal(placementEligibility(externalCatalog.find(p => p.spu === 'EXT20005')).status, '可投放');
-    assert.equal(placementEligibility(externalCatalog.find(p => p.spu === 'EXT20004')).status, '可投放');
+    assert.equal(placementEligibility(externalCatalog.find(p => p.spu === 'SKU20005')).status, '可投放');
+    assert.equal(placementEligibility(externalCatalog.find(p => p.spu === 'SKU20004')).status, '可投放');
     assert.ok(externalCatalog.every(p => pickerAvailability(p).selectable));
     assert.ok(externalCatalog.every(p => !Object.hasOwn(p, 'siteId')));
-    assert.equal(externalCatalog.some(p => ['EXT20003','EXT20007','EXT20008'].includes(p.spu)), false);
+    assert.equal(externalCatalog.some(p => ['SKU20003','SKU20007','SKU20008'].includes(p.spu)), false);
     assert.equal(JSON.stringify(displayProductRows), relationsBeforeSync);
     assert.equal(externalSyncLogs.length, 2);
     assert.equal(externalSyncBusy, false);
   `);
   run(`
-    const sourceChanging = externalSourceCatalog.find(p => p.spu === 'EXT20002');
+    const sourceChanging = externalSourceCatalog.find(p => p.spu === 'SKU20002');
     const retainedRow = {...placementRef(sourceChanging), subTemplateId:'saved', sort:9, pinned:'是'};
     displayProductRows.push(retainedRow);
     const beforeRemoval = JSON.stringify(displayProductRows);
