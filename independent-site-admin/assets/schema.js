@@ -74,6 +74,6 @@ ROUTES.searchHints='/activity/mall/searchPlaceholder';
 GROUPS.find(([name])=>name==='广告位管理')[1].splice(1,0,'searchHints');
 SCHEMA.searchHints={name:'搜索底纹配置',desc:'配置客户端搜索框内的提示文案。单条固定展示，多条按排序从小到大每 3 秒循环展示。',columns:['底纹文案','排序','状态'],filters:[F('底纹文案'),F('状态','select',false,EN)],fields:[F('底纹文案','text',true),F('排序','number',true),F('状态','select',true,EN)],actions:['编辑','启禁','删除'],add:true};
 NAME_KEYS.searchHints='底纹文案';
-SCHEMA.games.fields.splice(SCHEMA.games.fields.findIndex(f=>f.label==='游戏介绍'),0,F('激活指南','textarea'));
+SCHEMA.games.fields.splice(SCHEMA.games.fields.findIndex(f=>f.label==='游戏介绍')+1,0,F('激活指南','textarea'));
 const PRODUCT_FIELDS=[F('商品名称','text',true),F('商品子标题'),F('绑定游戏类别','select',true,'games'),F('版本','select',false,'versions'),F('生效平台','select',false,'platforms'),F('生效渠道','multi',false,'channels'),F('商品类型','select',true,['独立商品','组合商品']),F('账号类型','select',true,['账号','CDK']),F('货源卡密类型','select',true,['CDK','账号']),F('商品分类','select',true,'categories'),F('商品子分类','select',false,'subcategories'),F('选择商品','productPicker',true),F('生效时间','range',true),F('人民币售价','number',true),F('人民币原价','number',true),F('币种价格','currency'),F('单次购买上限','number'),F('销量展示','number'),F('库存告急值','number'),F('排序','number'),F('状态','select',false,ON),F('横图样式','image'),F('商品规格'),F('规格介绍','textarea'),F('商品详情','textarea')];
 PRODUCT_FIELDS.find(f=>f.label==='商品详情').type='richtext';

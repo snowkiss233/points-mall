@@ -1,6 +1,6 @@
 /* 原型数据规则。仅处理本地演示数据，不连接真实业务接口。 */
 const Model = (() => {
-  const VERSION = 9;
+  const VERSION = 10;
   const copy = value => JSON.parse(JSON.stringify(value));
   const object = value => value && typeof value === 'object' && !Array.isArray(value);
   const text = value => typeof value === 'string' && value.trim().length > 0;
@@ -156,7 +156,7 @@ const Model = (() => {
 
   function envelope(db) {
     const errors = [];
-    if (!object(db) || ![1,2,3,4,5,6,7,8,VERSION].includes(db.version)) return ['不支持的备份版本'];
+    if (!object(db) || ![1,2,3,4,5,6,7,8,9,VERSION].includes(db.version)) return ['不支持的备份版本'];
     const collections = [...Object.keys(SCHEMA).filter(k => SCHEMA[k].columns), 'productSuppliers'];
     for (const key of collections) {
       if (key === 'searchHints' && db.version < 9 && db[key] === undefined) continue;
@@ -251,6 +251,8 @@ const Model = (() => {
     if (issues.length) throw new Error(issues.slice(0,5).join('；'));
     if (db.version === VERSION) return db;
     db.searchHints ||= [];
+    // 本次只补充演示底纹；后续刷新不复活已删除的数据，也不覆盖运营配置。
+    db.searchHints.push(...makeSearchHintSeed().filter(sample=>!db.searchHints.some(row=>row.uid===sample.uid||row['底纹文案']===sample['底纹文案'])));
     if (db.version < 8 && typeof PhaseOne !== 'undefined') PhaseOne.upgrade(db);
     if (db.version < 4 && typeof AuthorizedLogin !== 'undefined') AuthorizedLogin.upgrade(db);
     if (db.version === 1) for (const [key, schema] of Object.entries(SCHEMA)) for (const row of db[key] || []) {
