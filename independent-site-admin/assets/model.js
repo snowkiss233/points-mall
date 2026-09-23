@@ -1,6 +1,6 @@
 /* 原型数据规则。仅处理本地演示数据，不连接真实业务接口。 */
 const Model = (() => {
-  const VERSION = 7;
+  const VERSION = 8;
   const copy = value => JSON.parse(JSON.stringify(value));
   const object = value => value && typeof value === 'object' && !Array.isArray(value);
   const text = value => typeof value === 'string' && value.trim().length > 0;
@@ -120,6 +120,7 @@ const Model = (() => {
       const source = get(db, 'sources', row.uid);
       if (source) Object.assign(row, {'商品名称':source['商品名称'],'商品库存':source['商品库存'],'商品状态':source['状态']});
     }
+    if (typeof PhaseOne !== 'undefined' && typeof PhaseOne.refresh === 'function') PhaseOne.refresh(db);
     return db;
   }
 
@@ -155,7 +156,7 @@ const Model = (() => {
 
   function envelope(db) {
     const errors = [];
-    if (!object(db) || ![1,2,3,4,5,6,VERSION].includes(db.version)) return ['不支持的备份版本'];
+    if (!object(db) || ![1,2,3,4,5,6,7,VERSION].includes(db.version)) return ['不支持的备份版本'];
     const collections = [...Object.keys(SCHEMA).filter(k => SCHEMA[k].columns), 'productSuppliers'];
     for (const key of collections) {
       if (!Array.isArray(db[key])) { errors.push(`${key} 必须是数组`); continue; }

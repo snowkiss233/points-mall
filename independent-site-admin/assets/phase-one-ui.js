@@ -8,6 +8,7 @@
     template.innerHTML = '<select>'+html+'</select>';
     for (const option of template.content.querySelectorAll('option')) {
       const row = Model.get(db,spec,option.value);
+      if (row && spec === 'tags' && key === 'games' && field === '游戏标签') option.textContent = row['标签类型']+' / '+row['标签'];
       if (row && row[spec === 'tags' ? '状态' : '栏目状态'] !== (spec === 'tags' ? '开启' : '启用')) {
         option.disabled = true;
         option.textContent += '（已停用）';
@@ -29,10 +30,10 @@
     if (key === 'games') {
       if (!id) {get('发售状态').value='未发售';state.draft['发售状态']='未发售';}
       help('发售状态','未发售可展示，但按钮为“敬请期待”。发行日期不自动切换发售状态。');
-      help('游戏模式','按多选演示；单人、多人、在线为候选值，可在标签管理维护。');
+      help('游戏标签','统一多选游戏标签；选项按字典维护的标签类型标识，新增类型无需增加表单字段。');
     }
     if (key === 'tags') {
-      if (!id) get('标签类型').value = filters['标签类型'] || '游戏类型';
+      if (!id) get('标签类型').value = filters['标签类型'] || db.dictItems.find(r=>PhaseOne.isTagType(db,r.parentId)&&r.value==='游戏类型')?.uid || '';
       if (id && Model.references(db,'tags',id).length) {
         get('标签类型').disabled = true;
         help('标签类型','已有游戏引用；如需另一类型，请新建标签。');

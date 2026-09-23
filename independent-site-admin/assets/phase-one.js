@@ -5,6 +5,8 @@ const PhaseOne = (() => {
   const riskCode = 'demo_order_payment_city';
   const riskKey = 'order_payment_same_city';
   const badgeCode = 'product_corner_badges';
+  const tagTypeCode = 'game_tag_types';
+  const tagTypeDefinitions = [['游戏类型','game_type'],['游戏模式','game_mode']];
   const badgeLabels = [['热门','hot'],['推荐','recommended'],['新品','new'],['史低','historical_low'],['超史低','record_low'],['特惠','special_offer']];
   const now = () => new Date().toISOString();
   const copy = value => JSON.parse(JSON.stringify(value));
@@ -16,14 +18,14 @@ const PhaseOne = (() => {
   };
 
   SCHEMA.tags.columns.splice(1, 0, '标签类型');
-  SCHEMA.tags.filters.push(F('标签类型', 'select', false, ['游戏类型', '游戏模式']));
-  SCHEMA.tags.fields.unshift(F('标签类型', 'select', true, ['游戏类型', '游戏模式']));
-  SCHEMA.tags.desc = '按游戏类型、游戏模式维护标签。存量标签统一归为游戏类型；模式演示值：单人、多人、在线。';
+  SCHEMA.tags.filters.push(F('标签类型', 'select', false, 'dictItems'));
+  SCHEMA.tags.fields.unshift(F('标签类型', 'select', true, 'dictItems'));
+  SCHEMA.tags.desc = '标签类型由数据字典维护；同一类型内标签名称不可重复，不同类型允许同名。';
   const legacyIndex = SCHEMA.games.fields.findIndex(f => f.label === '游戏标签');
-  SCHEMA.games.fields.splice(legacyIndex, 1, F('游戏类型', 'multi', false, 'tags'), F('游戏模式', 'multi', false, 'tags'), F('角标标签', 'select', false, 'dictItems'), F('发售状态', 'select', true, ['未发售', '已发售']));
-  SCHEMA.games.columns = ['ID','游戏名称','发售状态','游戏类型','游戏模式','绑定平台','排序','状态'];
+  SCHEMA.games.fields.splice(legacyIndex, 1, F('游戏标签', 'multi', false, 'tags'), F('角标标签', 'select', false, 'dictItems'), F('发售状态', 'select', true, ['未发售', '已发售']));
+  SCHEMA.games.columns = ['ID','游戏名称','发售状态','游戏标签','绑定平台','排序','状态'];
   SCHEMA.games.filters.push(F('发售状态', 'select', false, ['未发售','已发售']));
-  SCHEMA.games.desc = '配置游戏发售状态、游戏类型与游戏模式。未发售游戏展示“敬请期待”。';
+  SCHEMA.games.desc = '配置游戏发售状态与游戏标签。标签按字典维护的类型分组，未发售游戏展示“敬请期待”。';
   SCHEMA.columns = {name:'栏目列表', columns:['栏目名称','栏目状态','排序','说明'], filters:[], fields:[F('栏目名称','readonly',true),F('栏目标识','readonly',true),F('栏目状态','select',true,EN),F('排序','number',true)], actions:['编辑','启禁'],statusKey:'栏目状态',desc:'复用现有栏目枚举。新增 7 个专区为附件候选演示，可排序、启停；正式名单待确认。'};
   SCHEMA.recommend.fields.find(f => f.label === '推荐区域').options = 'columns';
   SCHEMA.recommend.filters.push(F('推荐区域','select',false,'columns'));
@@ -37,6 +39,35 @@ const PhaseOne = (() => {
     db.games.forEach(removeRetiredFields);
     db.products.forEach(removeRetiredFields);
     db.trash.filter(item => ['games','products'].includes(item.key)).forEach(item => removeRetiredFields(item.row));
+    let tagTypeDict = db.dict.find(r => r['字典编号'] === tagTypeCode);
+    if (!tagTypeDict) {
+      tagTypeDict = {uid:id(db,'dict','game-tag-types'),'字典名称':'标签类型','字典编号':tagTypeCode,'描述':'标签管理中的标签类型候选项。','字典群组':'商城配置',refs:{}};
+      db.dict.push(tagTypeDict);
+    }
+    for (const [value,key] of tagTypeDefinitions) if (!db.dictItems.some(r => r.parentId === tagTypeDict.uid && r.key === key)) {
+      db.dictItems.push({uid:id(db,'dictItems','game-tag-type-'+key),parentId:tagTypeDict.uid,value,key,'key类型':'文本','描述':'','排序值':tagTypeDefinitions.findIndex(x => x[1] === key)+1,'是否启用':'启用',refs:{}});
+    }
+    const typeItem = value => db.dictItems.find(r => r.parentId === tagTypeDict.uid && (r.uid === value || r.value === value || r.key === value));
+    let tagSchemaMigrated = false;
+    if (db.version !== 1) {
+      for (const tag of db.tags) {
+        tag.refs ||= {};
+        const item = typeItem(tag.refs['标签类型']) || typeItem(tag['标签类型']) || typeItem('游戏类型');
+        if (tag.refs['标签类型'] !== item.uid) tagSchemaMigrated = true;
+        tag.refs['标签类型'] = item.uid;
+      }
+      for (const game of db.games) {
+        game.refs ||= {};
+        const merged = [...new Set([...list(game.refs['游戏标签']),...list(game.refs['游戏类型']),...list(game.refs['游戏模式'])])];
+        if (game.refs['游戏类型'] || game.refs['游戏模式'] || !game.refs['游戏标签']) tagSchemaMigrated = true;
+        game.refs['游戏标签'] = merged;
+        delete game.refs['游戏类型'];
+        delete game.refs['游戏模式'];
+        delete game['游戏类型'];
+        delete game['游戏模式'];
+      }
+    }
+    if (tagSchemaMigrated) db.audit.unshift({time:now(),operator:'原型升级',action:'标签结构升级：标签类型改由数据字典维护；游戏的类型、模式关联合并为统一游戏标签关联。'});
     let badgeDict = db.dict.find(r => r['字典编号'] === badgeCode);
     const isNewBadgeDict = !badgeDict;
     if (!badgeDict) {
@@ -76,11 +107,14 @@ const PhaseOne = (() => {
     const v1 = db.version === 1;
     db.tags.forEach(tag => { tag['标签类型'] = '游戏类型'; });
     const ensureTag = (name, type) => {
-      let tag = db.tags.find(t => t['标签'] === name && t['标签类型'] === type);
+      const item = typeItem(type);
+      let tag = db.tags.find(t => t['标签'] === name && (t.refs?.['标签类型'] === item.uid || t['标签类型'] === type));
       if (!tag) {
-        tag = {uid:id(db,'tags','phase1-tag-'+db.tags.length),'标签':name,'标签类型':type,'排序值':db.tags.length+1,'状态':'开启','创建时间':now(),refs:{}};
+        tag = {uid:id(db,'tags','phase1-tag-'+db.tags.length),'标签':name,'标签类型':type,'排序值':db.tags.length+1,'状态':'开启','创建时间':now(),refs:{'标签类型':item.uid}};
         db.tags.push(tag);
       }
+      tag.refs ||= {};
+      tag.refs['标签类型'] = item.uid;
       return tag;
     };
     modes.forEach(name => ensureTag(name, '游戏模式'));
@@ -88,9 +122,10 @@ const PhaseOne = (() => {
       const names = String(game['游戏标签'] || '').split(/[,，、]/).map(s => s.trim()).filter(Boolean);
       const tags = [...new Set(names)].map(name => ensureTag(name, '游戏类型'));
       game['发售状态'] = '已发售';
-      game['游戏类型'] = tags.map(t => t['标签']);
-      game['游戏模式'] = [];
-      if (!v1) game.refs = {...game.refs,'游戏类型':tags.map(t => t.uid),'游戏模式':[]};
+      game['游戏标签'] = tags.map(t => t['标签']);
+      delete game['游戏类型'];
+      delete game['游戏模式'];
+      if (!v1) game.refs = {...game.refs,'游戏标签':tags.map(t => t.uid)};
     }
     const ensureColumn = (name, index) => {
       let column = db.columns.find(r => r['栏目名称'] === name);
@@ -120,9 +155,9 @@ const PhaseOne = (() => {
     const platform = db.platforms[0];
     for (const [index, name, release] of [[1,'星海远征（一期演示）','未发售'],[2,'边境回声（一期演示）','已发售']]) {
       const tag = ensureTag('冒险','游戏类型'), mode = ensureTag('单人','游戏模式');
-      const game = {uid:id(db,'games','phase1-game-'+index),ID:'GAME-PHASE1-'+index,'游戏名称':name,'游戏副标题':'虚构游戏，用于验收配置效果','发售状态':release,'游戏类型':[tag['标签']],'游戏模式':[mode['标签']],'游戏标签':'冒险','绑定平台':platform?[platform['平台名称']]:[],'生效平台':[],'排序':110-index,'状态':'启用','游戏介绍':'一期验收演示内容。','创建时间':now(),refs:{},_phase1Demo:true};
+      const game = {uid:id(db,'games','phase1-game-'+index),ID:'GAME-PHASE1-'+index,'游戏名称':name,'游戏副标题':'虚构游戏，用于验收配置效果','发售状态':release,'游戏标签':[tag['标签'],mode['标签']],'绑定平台':platform?[platform['平台名称']]:[],'生效平台':[],'排序':110-index,'状态':'启用','游戏介绍':'一期验收演示内容。','创建时间':now(),refs:{},_phase1Demo:true};
       while (db.games.some(g => g.ID === game.ID)) game.ID += '-demo';
-      if (!v1) game.refs = {'游戏类型':[tag.uid],'游戏模式':[mode.uid],'角标标签':'','绑定平台':platform?[platform.uid]:[]};
+      if (!v1) game.refs = {'游戏标签':[tag.uid,mode.uid],'角标标签':'','绑定平台':platform?[platform.uid]:[]};
       db.games.unshift(game);
     }
     db.audit.unshift({time:now(),operator:'原型升级',action:'一期升级：存量标签归为游戏类型，保留原标签与游戏关联；新增虚构游戏、候选栏目与停用的飞码演示规则。'});
@@ -134,10 +169,21 @@ const PhaseOne = (() => {
       const selected = draft[field];
       return rows.filter(r => isBadge(db,r.parentId) && (r['是否启用'] === '启用' || selected === r.uid)).sort((a,b) => Number(a['排序值'] || 0)-Number(b['排序值'] || 0));
     }
+    if (target === 'dictItems' && key === 'tags' && field === '标签类型') {
+      const selected = draft[field];
+      return rows.filter(r => isTagType(db,r.parentId) && (r['是否启用'] === '启用' || selected === r.uid)).sort((a,b) => Number(a['排序值'] || 0)-Number(b['排序值'] || 0));
+    }
     if (target !== 'tags' && target !== 'columns') return rows;
+    let tagRows = rows;
+    if (target === 'tags' && key === 'games' && field === '游戏标签' && draft._migrating && db.version === 1 && !draft._phase1Demo) tagRows = rows.filter(r => r['标签类型'] === '游戏类型');
     const selected = list(draft[field]);
     const selectedIds = Array.isArray(draft[field]) ? selected : [draft[field]];
-    return rows.filter(r => (target !== 'tags' || key !== 'games' || r['标签类型'] === field) && (draft._migrating || r[target === 'tags' ? '状态' : '栏目状态'] === (target === 'tags' ? '开启' : '启用') || selectedIds.includes(r.uid))).sort((a,b) => Number(a['排序值'] ?? a['排序'])-Number(b['排序值'] ?? b['排序']));
+    return tagRows.filter(r => {
+      const selectedRow = selectedIds.includes(r.uid);
+      const active = r[target === 'tags' ? '状态' : '栏目状态'] === (target === 'tags' ? '开启' : '启用');
+      const typeActive = target !== 'tags' || Model.get(db,'dictItems',r.refs?.['标签类型'])?.['是否启用'] === '启用';
+      return draft._migrating || active && typeActive || selectedRow;
+    }).sort((a,b) => Number(a['排序值'] ?? a['排序'])-Number(b['排序值'] ?? b['排序']));
   }
 
   function formIssue(db,key,draft,old) {
@@ -146,6 +192,12 @@ const PhaseOne = (() => {
     if (key === 'dictItems' && isBadge(db,draft.parentId)) {
       if (draft['key类型'] !== '文本') return issue('key类型','角标标签只能使用文本值');
       if (db.dictItems.some(r => r.parentId === draft.parentId && r.uid !== old?.uid && r.key === draft.key)) return issue('key','同一角标的字典项值不能重复');
+    }
+    if (key === 'dict' && old && isTagType(db,old.uid) && draft['字典编号'] !== tagTypeCode) return issue('字典编号','标签类型使用固定字典编号');
+    if (key === 'dictItems' && isTagType(db,draft.parentId)) {
+      if (draft['key类型'] !== '文本') return issue('key类型','标签类型只能使用文本值');
+      if (db.dictItems.some(r => r.parentId === draft.parentId && r.uid !== old?.uid && r.key === draft.key)) return issue('key','标签类型的字典项值不能重复');
+      if (old && old.key !== draft.key && Model.references(db,'dictItems',old.uid).length) return issue('key','该标签类型已被引用，不能修改字典项值');
     }
     if (key === 'games') {
       const badgeId = draft['角标标签'];
@@ -156,14 +208,17 @@ const PhaseOne = (() => {
       }
     }
     if (key === 'tags') {
-      if (db.tags.some(r => r.uid !== old?.uid && r['标签类型'] === draft['标签类型'] && r['标签'].trim() === String(draft['标签']).trim())) return issue('标签','同一标签类型下名称不能重复');
-      if (old && old['标签类型'] !== draft['标签类型'] && Model.references(db,'tags',old.uid).length) return issue('标签类型','该标签已被游戏引用，不能直接修改类型；请新建另一类型的标签');
+      const type = Model.get(db,'dictItems',draft['标签类型']);
+      if (!type || !isTagType(db,type.parentId)) return issue('标签类型','请选择标签类型字典中的选项');
+      if (type['是否启用'] !== '启用' && old?.refs?.['标签类型'] !== type.uid) return issue('标签类型','停用的标签类型不能新增选择');
+      if (db.tags.some(r => r.uid !== old?.uid && r.refs?.['标签类型'] === draft['标签类型'] && r['标签'].trim() === String(draft['标签']).trim())) return issue('标签','同一标签类型下名称不能重复');
+      if (old && old.refs?.['标签类型'] !== draft['标签类型'] && Model.references(db,'tags',old.uid).length) return issue('标签类型','该标签已被游戏引用，不能直接修改类型；请新建另一类型的标签');
     }
     if (key === 'games') {
-      for (const field of ['游戏类型','游戏模式']) for (const tagId of list(draft[field])) {
+      for (const tagId of list(draft['游戏标签'])) {
         const tag = Model.get(db,'tags',tagId);
-        if (!tag || tag['标签类型'] !== field) return issue(field,'请选择对应类型的有效标签');
-        if (tag['状态'] !== '开启' && !list(old?.refs?.[field]).includes(tagId)) return issue(field,'停用标签不能新增绑定');
+        if (!tag || !isTagType(db,Model.get(db,'dictItems',tag.refs?.['标签类型'])?.parentId)) return issue('游戏标签','请选择有效的游戏标签');
+        if ((tag['状态'] !== '开启' || Model.get(db,'dictItems',tag.refs?.['标签类型'])?.['是否启用'] !== '启用') && !list(old?.refs?.['游戏标签']).includes(tagId)) return issue('游戏标签','停用的标签或标签类型不能新增绑定');
       }
     }
     if (key === 'recommend') {
@@ -185,15 +240,18 @@ const PhaseOne = (() => {
     const badgeItems = db.dictItems.filter(r => r.parentId === badgeDict?.uid);
     if (new Set(badgeItems.map(r => r.key)).size !== badgeItems.length || badgeItems.some(r => r['key类型'] !== '文本')) errors.push('角标标签字典项值重复或类型错误');
     for (const game of db.games) if (game.refs?.['角标标签'] && !isBadge(db,Model.get(db,'dictItems',game.refs['角标标签'])?.parentId)) errors.push('角标标签关联到其他字典');
+    const tagTypeDict = db.dict.find(r => r['字典编号'] === tagTypeCode);
+    if (!tagTypeDict) errors.push('标签类型字典缺失');
+    const tagTypeItems = db.dictItems.filter(r => r.parentId === tagTypeDict?.uid);
+    if (new Set(tagTypeItems.map(r => r.key)).size !== tagTypeItems.length || tagTypeItems.some(r => r['key类型'] !== '文本')) errors.push('标签类型字典项值重复或类型错误');
     const names = new Set();
     for (const tag of db.tags) {
-      const signature = tag['标签类型'] + ':' + String(tag['标签']).trim();
+      if (!isTagType(db,Model.get(db,'dictItems',tag.refs?.['标签类型'])?.parentId)) errors.push('标签管理：标签类型关联无效');
+      const signature = tag.refs?.['标签类型'] + ':' + String(tag['标签']).trim();
       if (names.has(signature)) errors.push('标签管理：同一类型下名称重复');
       names.add(signature);
     }
-    for (const game of db.games) {
-      for (const field of ['游戏类型','游戏模式']) if (list(game.refs?.[field]).some(uid => Model.get(db,'tags',uid)?.['标签类型'] !== field)) errors.push('游戏的'+field+'关联类型不一致');
-    }
+    for (const game of db.games) if (game.refs?.['游戏类型'] || game.refs?.['游戏模式']) errors.push('游戏仍包含旧标签关联字段');
     const codes = db.columns.map(r => r['栏目标识']);
     if (new Set(codes).size !== codes.length) errors.push('栏目标识不能重复');
     for (const item of db.dictItems.filter(r => isRisk(db,r.parentId))) if (item.key !== riskKey || item['key类型'] !== '文本') errors.push('飞码字典只能维护固定城市比较规则');
@@ -203,6 +261,13 @@ const PhaseOne = (() => {
 
   function isRisk(db,parentId) { return Model.get(db,'dict',parentId)?.['字典编号'] === riskCode; }
   function isBadge(db,parentId) { return Model.get(db,'dict',parentId)?.['字典编号'] === badgeCode; }
+  function isTagType(db,parentId) { return Model.get(db,'dict',parentId)?.['字典编号'] === tagTypeCode; }
+  function refresh(db) {
+    for (const game of db.games) game['游戏标签'] = list(game.refs?.['游戏标签']).map(uid => {
+      const tag = Model.get(db,'tags',uid);
+      return tag ? `${tag['标签类型']}：${tag['标签']}` : '';
+    }).filter(Boolean);
+  }
   function productGames(db,product) {
     if (!product) return [];
     if (product['商品类型'] === '组合商品') return list(product['选择商品']).flatMap(uid => productGames(db,Model.get(db,'products',uid)));
@@ -222,5 +287,5 @@ const PhaseOne = (() => {
     if (!orderCity || !paymentCity) return {result:'无法判断',detail:'至少一侧城市无法识别，不判定为同城或异城。'};
     return orderCity === paymentCity ? {result:'同城',detail:'两侧规范化城市标识一致。'} : {result:'异城 · 命中规则',detail:'两侧城市不同；仅显示比较结果，处置动作待确认，不执行拦截或停发。'};
   }
-  return {modes,sections,riskCode,riskKey,badgeCode,upgrade,choices,formIssue,validate,isRisk,isBadge,productGames,purchase,compareCities};
+  return {modes,sections,riskCode,riskKey,badgeCode,tagTypeCode,upgrade,choices,formIssue,validate,isRisk,isBadge,isTagType,refresh,productGames,purchase,compareCities};
 })();
