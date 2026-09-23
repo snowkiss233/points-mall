@@ -69,6 +69,7 @@ SCHEMA.games.fields.find(f=>f.label==='游戏介绍').type='richtext';
 SCHEMA.articles.fields.find(f=>f.label==='文章内容').type='richtext';
 SCHEMA.promotions.fields.find(f=>f.label==='状态').label='控制状态';
 SCHEMA.promotions.fields.find(f=>f.label==='控制状态').options=['启用','禁用','暂停'];
+SCHEMA.recommend.fields.splice(SCHEMA.recommend.fields.findIndex(f=>f.label==='栏目名称')+1,0,F('栏目副标题'));
 const NAME_KEYS={products:'商品名称',suppliers:'供货商',games:'游戏名称',platforms:'平台名称',channels:'渠道名称',sources:'商品名称',payInfo:'支付通道名称',roles:'角色名称',permissions:'权限名称',categories:'分类名称',versions:'版本名称',subcategories:'分类名称'};
 ROUTES.searchHints='/activity/mall/searchPlaceholder';
 GROUPS.find(([name])=>name==='广告位管理')[1].splice(1,0,'searchHints');

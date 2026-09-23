@@ -60,7 +60,14 @@
       }
       help('标签','同一类型不能重名；不同类型可以同名，关联独立保存。');
     }
-    if (key === 'recommend') help('推荐区域','新增 7 个专区为候选演示枚举。即将发售专区选品需关联未发售游戏。');
+    if (key === 'recommend') {
+      help('推荐区域','新增 7 个专区为候选演示枚举。即将发售专区选品需关联未发售游戏。');
+      const title = form.querySelector('[data-field="栏目名称"]'), subtitle = form.querySelector('[data-field="栏目副标题"]');
+      const titles = document.createElement('div');
+      titles.className = 'stack';
+      title.before(titles);titles.append(title,subtitle);
+      help('栏目副标题','展示在客户端栏目主标题下方，未填写时不展示、不占位。');
+    }
     if (key === 'dict' && id && PhaseOne.isRisk(db,id)) {
       get('字典编号').readOnly = true;
       help('字典编号','一期演示规则使用固定编号；请在字典配置中调整启停。');
