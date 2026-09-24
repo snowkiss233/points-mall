@@ -25,6 +25,7 @@
     return PhaseOne.formIssue(db,key,draft,Model.get(db,key,state.rowId)) || baseValidation(key,draft,state);
   };
   openForm = function(key,id=null,defaults={}) {
+    if (key === 'products' && Model.get(db,key,id)?.['状态'] === '上架') return toast('请先下架商品，再编辑商品资料',true);
     const oldCount = forms.size;
     baseOpen(key,id,defaults);
     if (forms.size === oldCount) return;
@@ -35,6 +36,10 @@
     if (key === 'games') {
       if (!id) {get('发售状态').value='未发售';state.draft['发售状态']='未发售';}
       help('发售状态','未发售可展示，但按钮为“敬请期待”。发行日期不自动切换发售状态。');
+      if (id && PhaseOne.listedProducts(db,id).length) {
+        get('发售状态').disabled = true;
+        help('发售状态','请先下架该游戏关联的全部上架商品，再调整发售状态。');
+      }
       help('游戏标签','统一多选游戏标签；选项按字典维护的标签类型标识，新增类型无需增加表单字段。');
       const guide = get('激活指南'), platforms = get('绑定平台');
       let guideTouched = false;
@@ -80,10 +85,11 @@
     if (key === 'products') {
       const box = document.createElement('div');box.className='notice';box.dataset.phaseGame='';form.prepend(box);
       const draw = () => {
+        if (get('商品类型')?.value === '组合商品') {box.textContent='组合商品按组成的独立商品分别校验供货与库存；包含未发售游戏时，整个组合不可购买。';return;}
         const game = Model.get(db,'games',get('绑定游戏类别')?.value);
-        box.textContent = game ? '关联游戏：'+game['游戏名称']+'；发售状态：'+game['发售状态']+'。在游戏资料维护。' : '选择游戏后显示关联游戏的发售状态。';
+        box.textContent = game ? '关联游戏：'+game['游戏名称']+'；发售状态：'+game['发售状态']+'（在游戏类别维护）。'+(game['发售状态']==='未发售'?'该游戏的商品可不绑定供货商、无库存上架，仅展示“敬请期待”，不可购买。':'已发售商品上架须绑定已启用供货商，且关联货源有可用库存；可先保存为下架，再配置供货商。') : '选择游戏后显示发售状态及上架规则；发售状态在游戏类别维护。';
       };
-      get('绑定游戏类别')?.addEventListener('change',draw);draw();
+      get('绑定游戏类别')?.addEventListener('change',draw);get('商品类型')?.addEventListener('change',draw);draw();
     }
     SelectControls.refresh(form);
   };

@@ -191,6 +191,11 @@ const PhaseOne = (() => {
 
   function formIssue(db,key,draft,old) {
     const issue = (field,message) => ({field,message});
+    if (key === 'products' && old?.['状态'] === '上架') return issue('状态','请先下架商品，再编辑商品资料');
+    if (key === 'products' && draft['状态'] === '上架') {
+      const error = listingIssue(db,Model.fromForm(db,key,{...draft,uid:old?.uid || draft.uid}));
+      if (error) return error;
+    }
     if (key === 'searchHints' && (!Number.isSafeInteger(draft['排序']) || draft['排序'] < 0)) return issue('排序','排序请输入非负整数');
     if (key === 'dict' && old && isBadge(db,old.uid) && draft['字典编号'] !== badgeCode) return issue('字典编号','角标标签使用固定字典编号');
     if (key === 'dictItems' && isBadge(db,draft.parentId)) {
@@ -204,6 +209,7 @@ const PhaseOne = (() => {
       if (old && old.key !== draft.key && Model.references(db,'dictItems',old.uid).length) return issue('key','该标签类型已被引用，不能修改字典项值');
     }
     if (key === 'games') {
+      if (old && draft['发售状态'] !== undefined && draft['发售状态'] !== old['发售状态'] && listedProducts(db,old.uid).length) return issue('发售状态','请先下架该游戏关联的全部上架商品，再调整发售状态');
       const badgeId = draft['角标标签'];
       if (badgeId) {
         const badge = Model.get(db,'dictItems',badgeId);
@@ -293,12 +299,48 @@ const PhaseOne = (() => {
     const game = Model.get(db,'games',product.refs?.['绑定游戏类别']);
     return game ? [game] : [];
   }
+  function listedProducts(db,gameId) {
+    return db.products.filter(p=>p['状态']==='上架' && productGames(db,p).some(g=>g.uid===gameId));
+  }
   function purchase(db,game,product) {
     const games = product ? productGames(db,product) : game ? [game] : [];
     if (!games.length) return {allowed:false,label:'暂无关联游戏',message:'请先关联游戏。'};
     if (games.some(g => g['发售状态'] === '未发售')) return {allowed:false,label:'敬请期待',message:'游戏尚未发售，购买暂未开放。'};
     if (games.some(g => g['状态'] !== '启用') || product && product['状态'] !== '上架') return {allowed:false,label:'暂不可购买',message:'游戏已停用或商品已下架。'};
+    const supplyError = product && listingIssue(db,product);
+    if (supplyError) return {allowed:false,label:'暂不可购买',message:supplyError.message};
     return {allowed:true,label:'立即购买',message:'游戏已发售，可继续购买演示。'};
+  }
+  function listingIssue(db,product) {
+    const issue = (field,message) => ({field,message});
+    if (product['商品类型'] === '组合商品') {
+      const ids = list(product['选择商品']);
+      if (!ids.length) return issue('选择商品','请先选择组成商品');
+      for (const uid of ids) {
+        const child = Model.get(db,'products',uid);
+        if (!child || child['商品类型'] !== '独立商品') return issue('选择商品','请选择有效的独立商品');
+        if (child['状态'] !== '上架') return issue('选择商品',`${child['商品名称']}尚未上架，请先上架组成商品`);
+        const error = listingIssue(db,child);
+        if (error) return issue('选择商品',`${child['商品名称']}：${error.message}`);
+      }
+      return null;
+    }
+    const game = Model.get(db,'games',product.refs?.['绑定游戏类别']);
+    if (!game) return issue('绑定游戏类别','请先选择有效的关联游戏');
+    if (game['发售状态'] === '未发售') return null;
+    if (game['发售状态'] !== '已发售') return issue('绑定游戏类别','关联游戏的发售状态无效，请先维护游戏资料');
+    const sources = db.productSuppliers.filter(b=>b.productId===product.uid && b['状态']==='启用').flatMap(b=>{
+      const source = Model.get(db,'sources',b.sourceId), supplier = Model.get(db,'suppliers',b.supplierId);
+      return supplier && source?.parentId===supplier.uid ? [source] : [];
+    });
+    if (!sources.length) return issue('状态','已发售商品上架前须绑定并启用供货商。请先保存为下架，再通过“供货商管理”配置。');
+    const hasStock = sources.some(source=>{
+      if (source['状态'] !== '上架') return false;
+      if (Model.get(db,'suppliers',source.parentId)?.['合作方式'] === '接口') return Number(source['商品库存']) > 0;
+      const batchIds = new Set(db.batches.filter(b=>b.parentId===source.uid && b['状态']==='上架').map(b=>b.uid));
+      return Model.stockRows(db,'source',source.uid).some(row=>row['状态']==='未使用' && batchIds.has(row.parentId));
+    });
+    return hasStock ? null : issue('状态','已发售商品上架前，已启用供货商的关联货源须有可用库存。');
   }
   function compareCities(db,orderCity,paymentCity) {
     const rule = db.dictItems.find(r => isRisk(db,r.parentId) && r.key === riskKey);
@@ -306,5 +348,5 @@ const PhaseOne = (() => {
     if (!orderCity || !paymentCity) return {result:'无法判断',detail:'至少一侧城市无法识别，不判定为同城或异城。'};
     return orderCity === paymentCity ? {result:'同城',detail:'两侧规范化城市标识一致。'} : {result:'异城 · 命中规则',detail:'两侧城市不同；仅显示比较结果，处置动作待确认，不执行拦截或停发。'};
   }
-  return {modes,sections,riskCode,riskKey,badgeCode,tagTypeCode,steamActivationGuide,searchInterval,searchHintRows,searchHintAt,guideForPlatforms,upgrade,choices,formIssue,validate,isRisk,isBadge,isTagType,refresh,productGames,purchase,compareCities};
+  return {modes,sections,riskCode,riskKey,badgeCode,tagTypeCode,steamActivationGuide,searchInterval,searchHintRows,searchHintAt,guideForPlatforms,upgrade,choices,formIssue,validate,isRisk,isBadge,isTagType,refresh,productGames,listedProducts,listingIssue,purchase,compareCities};
 })();
