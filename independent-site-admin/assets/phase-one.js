@@ -191,9 +191,10 @@ const PhaseOne = (() => {
 
   function formIssue(db,key,draft,old) {
     const issue = (field,message) => ({field,message});
-    if (key === 'products' && old?.['状态'] === '上架') return issue('状态','请先下架商品，再编辑商品资料');
     if (key === 'products' && draft['状态'] === '上架') {
-      const error = listingIssue(db,Model.fromForm(db,key,{...draft,uid:old?.uid || draft.uid}));
+      const saved = Model.fromForm(db,key,{...draft,uid:old?.uid || draft.uid});
+      const sameGoods = old && saved['商品类型'] === old['商品类型'] && saved.refs?.['绑定游戏类别'] === old.refs?.['绑定游戏类别'] && JSON.stringify(saved['选择商品'] || []) === JSON.stringify(old['选择商品'] || []);
+      const error = listingIssue(db,saved,old?.['状态'] !== '上架' || !sameGoods);
       if (error) return error;
     }
     if (key === 'searchHints' && (!Number.isSafeInteger(draft['排序']) || draft['排序'] < 0)) return issue('排序','排序请输入非负整数');
@@ -209,7 +210,6 @@ const PhaseOne = (() => {
       if (old && old.key !== draft.key && Model.references(db,'dictItems',old.uid).length) return issue('key','该标签类型已被引用，不能修改字典项值');
     }
     if (key === 'games') {
-      if (old && draft['发售状态'] !== undefined && draft['发售状态'] !== old['发售状态'] && listedProducts(db,old.uid).length) return issue('发售状态','请先下架该游戏关联的全部上架商品，再调整发售状态');
       const badgeId = draft['角标标签'];
       if (badgeId) {
         const badge = Model.get(db,'dictItems',badgeId);
@@ -302,6 +302,17 @@ const PhaseOne = (() => {
   function listedProducts(db,gameId) {
     return db.products.filter(p=>p['状态']==='上架' && productGames(db,p).some(g=>g.uid===gameId));
   }
+  function applyReleaseChange(db,old,game,time) {
+    if (!old || old['发售状态'] !== '未发售' || game['发售状态'] !== '已发售') return [];
+    Model.refresh(db);
+    const affected = listedProducts(db,game.uid).filter(p=>!(Number(p['库存']) > 0));
+    for (const product of affected) {
+      product['状态'] = '下架';
+      product['更新时间'] = time;
+      db.audit.unshift({time,action:`游戏“${game['游戏名称']}”由未发售改为已发售，商品“${product['商品名称']}”（${product['商品ID'] || product.uid}）因无可用库存自动下架`,operator:'演示运营'});
+    }
+    return affected;
+  }
   function purchase(db,game,product) {
     const games = product ? productGames(db,product) : game ? [game] : [];
     if (!games.length) return {allowed:false,label:'暂无关联游戏',message:'请先关联游戏。'};
@@ -311,7 +322,7 @@ const PhaseOne = (() => {
     if (supplyError) return {allowed:false,label:'暂不可购买',message:supplyError.message};
     return {allowed:true,label:'立即购买',message:'游戏已发售，可继续购买演示。'};
   }
-  function listingIssue(db,product) {
+  function listingIssue(db,product,checkStock=true) {
     const issue = (field,message) => ({field,message});
     if (product['商品类型'] === '组合商品') {
       const ids = list(product['选择商品']);
@@ -320,7 +331,7 @@ const PhaseOne = (() => {
         const child = Model.get(db,'products',uid);
         if (!child || child['商品类型'] !== '独立商品') return issue('选择商品','请选择有效的独立商品');
         if (child['状态'] !== '上架') return issue('选择商品',`${child['商品名称']}尚未上架，请先上架组成商品`);
-        const error = listingIssue(db,child);
+        const error = listingIssue(db,child,checkStock);
         if (error) return issue('选择商品',`${child['商品名称']}：${error.message}`);
       }
       return null;
@@ -329,6 +340,7 @@ const PhaseOne = (() => {
     if (!game) return issue('绑定游戏类别','请先选择有效的关联游戏');
     if (game['发售状态'] === '未发售') return null;
     if (game['发售状态'] !== '已发售') return issue('绑定游戏类别','关联游戏的发售状态无效，请先维护游戏资料');
+    if (!checkStock) return null;
     const sources = db.productSuppliers.filter(b=>b.productId===product.uid && b['状态']==='启用').flatMap(b=>{
       const source = Model.get(db,'sources',b.sourceId), supplier = Model.get(db,'suppliers',b.supplierId);
       return supplier && source?.parentId===supplier.uid ? [source] : [];
@@ -348,5 +360,5 @@ const PhaseOne = (() => {
     if (!orderCity || !paymentCity) return {result:'无法判断',detail:'至少一侧城市无法识别，不判定为同城或异城。'};
     return orderCity === paymentCity ? {result:'同城',detail:'两侧规范化城市标识一致。'} : {result:'异城 · 命中规则',detail:'两侧城市不同；仅显示比较结果，处置动作待确认，不执行拦截或停发。'};
   }
-  return {modes,sections,riskCode,riskKey,badgeCode,tagTypeCode,steamActivationGuide,searchInterval,searchHintRows,searchHintAt,guideForPlatforms,upgrade,choices,formIssue,validate,isRisk,isBadge,isTagType,refresh,productGames,listedProducts,listingIssue,purchase,compareCities};
+  return {modes,sections,riskCode,riskKey,badgeCode,tagTypeCode,steamActivationGuide,searchInterval,searchHintRows,searchHintAt,guideForPlatforms,upgrade,choices,formIssue,validate,isRisk,isBadge,isTagType,refresh,productGames,listedProducts,applyReleaseChange,listingIssue,purchase,compareCities};
 })();

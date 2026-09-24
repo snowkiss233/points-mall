@@ -25,7 +25,6 @@
     return PhaseOne.formIssue(db,key,draft,Model.get(db,key,state.rowId)) || baseValidation(key,draft,state);
   };
   openForm = function(key,id=null,defaults={}) {
-    if (key === 'products' && Model.get(db,key,id)?.['状态'] === '上架') return toast('请先下架商品，再编辑商品资料',true);
     const oldCount = forms.size;
     baseOpen(key,id,defaults);
     if (forms.size === oldCount) return;
@@ -36,10 +35,7 @@
     if (key === 'games') {
       if (!id) {get('发售状态').value='未发售';state.draft['发售状态']='未发售';}
       help('发售状态','未发售可展示，但按钮为“敬请期待”。发行日期不自动切换发售状态。');
-      if (id && PhaseOne.listedProducts(db,id).length) {
-        get('发售状态').disabled = true;
-        help('发售状态','请先下架该游戏关联的全部上架商品，再调整发售状态。');
-      }
+      help('发售状态','未发售改为已发售并保存时，关联的上架商品若无可用库存将自动下架，有库存的保持上架。');
       help('游戏标签','统一多选游戏标签；选项按字典维护的标签类型标识，新增类型无需增加表单字段。');
       const guide = get('激活指南'), platforms = get('绑定平台');
       let guideTouched = false;
