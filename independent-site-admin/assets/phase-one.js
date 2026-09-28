@@ -25,10 +25,12 @@ const PhaseOne = (() => {
   SCHEMA.tags.fields.unshift(F('标签类型', 'select', true, 'dictItems'));
   SCHEMA.tags.desc = '标签类型由数据字典维护；同一类型内标签名称不可重复，不同类型允许同名。';
   const legacyIndex = SCHEMA.games.fields.findIndex(f => f.label === '游戏标签');
-  SCHEMA.games.fields.splice(legacyIndex, 1, F('游戏标签', 'multi', false, 'tags'), F('角标标签', 'select', false, 'dictItems'), F('发售状态', 'select', true, ['未发售', '已发售']));
-  SCHEMA.games.columns = ['ID','游戏名称','发售状态','游戏标签','绑定平台','排序','状态'];
-  SCHEMA.games.filters.push(F('发售状态', 'select', false, ['未发售','已发售']));
-  SCHEMA.games.desc = '配置游戏发售状态与游戏标签。标签按字典维护的类型分组，未发售游戏展示“敬请期待”。';
+  SCHEMA.games.fields.splice(legacyIndex, 1, F('游戏标签', 'multi', false, 'tags'));
+  SCHEMA.games.columns = ['ID','游戏名称','游戏标签','绑定平台','排序','状态'];
+  SCHEMA.games.desc = '配置游戏资料与游戏标签。标签按字典维护的类型分组。';
+  PRODUCT_FIELDS.splice(6,0,F('发售状态','select',true,['未发售','已发售']),F('角标标签','select',false,'dictItems'));
+  SCHEMA.products.columns.splice(2,0,'发售状态','角标标签');
+  SCHEMA.products.filters.push(F('发售状态','select',false,['未发售','已发售']));
   SCHEMA.columns = {name:'栏目列表', columns:['栏目名称','栏目状态','排序','说明'], filters:[], fields:[F('栏目名称','readonly',true),F('栏目标识','readonly',true),F('栏目状态','select',true,EN),F('排序','number',true)], actions:['编辑','启禁'],statusKey:'栏目状态',desc:'复用现有栏目枚举。新增 7 个专区为附件候选演示，可排序、启停；正式名单待确认。'};
   SCHEMA.recommend.fields.find(f => f.label === '推荐区域').options = 'columns';
   SCHEMA.recommend.filters.push(F('推荐区域','select',false,'columns'));
@@ -168,7 +170,7 @@ const PhaseOne = (() => {
   }
 
   function choices(db,target,key,field,draft,rows) {
-    if (target === 'dictItems' && key === 'games' && field === '角标标签') {
+    if (target === 'dictItems' && key === 'products' && field === '角标标签') {
       const selected = draft[field];
       return rows.filter(r => isBadge(db,r.parentId) && (r['是否启用'] === '启用' || selected === r.uid)).sort((a,b) => Number(a['排序值'] || 0)-Number(b['排序值'] || 0));
     }
@@ -209,7 +211,7 @@ const PhaseOne = (() => {
       if (db.dictItems.some(r => r.parentId === draft.parentId && r.uid !== old?.uid && r.key === draft.key)) return issue('key','标签类型的字典项值不能重复');
       if (old && old.key !== draft.key && Model.references(db,'dictItems',old.uid).length) return issue('key','该标签类型已被引用，不能修改字典项值');
     }
-    if (key === 'games') {
+    if (key === 'products') {
       const badgeId = draft['角标标签'];
       if (badgeId) {
         const badge = Model.get(db,'dictItems',badgeId);
@@ -234,7 +236,7 @@ const PhaseOne = (() => {
     if (key === 'recommend') {
       const column = Model.get(db,'columns',draft['推荐区域']);
       if (!column || column['栏目状态'] !== '启用' && old?.refs?.['推荐区域'] !== column.uid) return issue('推荐区域','请选择已启用的栏目');
-      if (column['栏目名称'] === '即将发售' && list(draft['选择商品']).some(uid => productGames(db,Model.get(db,'products',uid)).some(g => g['发售状态'] !== '未发售'))) return issue('选择商品','即将发售专区只能选择关联未发售游戏的商品');
+      if (column['栏目名称'] === '即将发售' && list(draft['选择商品']).some(uid => Model.get(db,'products',uid)?.['发售状态'] !== '未发售')) return issue('选择商品','即将发售专区只能选择未发售商品');
     }
     if (key === 'dictItems' && isRisk(db,draft.parentId)) {
       if (draft.key !== riskKey || draft['key类型'] !== '文本') return issue('key','城市比较规则使用固定文本标识，不能修改规则标识或类型');
@@ -253,7 +255,7 @@ const PhaseOne = (() => {
     if (!badgeDict) errors.push('角标标签字典缺失');
     const badgeItems = db.dictItems.filter(r => r.parentId === badgeDict?.uid);
     if (new Set(badgeItems.map(r => r.key)).size !== badgeItems.length || badgeItems.some(r => r['key类型'] !== '文本')) errors.push('角标标签字典项值重复或类型错误');
-    for (const game of db.games) if (game.refs?.['角标标签'] && !isBadge(db,Model.get(db,'dictItems',game.refs['角标标签'])?.parentId)) errors.push('角标标签关联到其他字典');
+    for (const product of db.products) if (product.refs?.['角标标签'] && !isBadge(db,Model.get(db,'dictItems',product.refs['角标标签'])?.parentId)) errors.push('角标标签关联到其他字典');
     const tagTypeDict = db.dict.find(r => r['字典编号'] === tagTypeCode);
     if (!tagTypeDict) errors.push('标签类型字典缺失');
     const tagTypeItems = db.dictItems.filter(r => r.parentId === tagTypeDict?.uid);
@@ -299,24 +301,22 @@ const PhaseOne = (() => {
     const game = Model.get(db,'games',product.refs?.['绑定游戏类别']);
     return game ? [game] : [];
   }
-  function listedProducts(db,gameId) {
-    return db.products.filter(p=>p['状态']==='上架' && productGames(db,p).some(g=>g.uid===gameId));
-  }
-  function applyReleaseChange(db,old,game,time) {
-    if (!old || old['发售状态'] !== '未发售' || game['发售状态'] !== '已发售') return [];
+  function applyReleaseChange(db,old,product,time) {
+    if (!old || old['发售状态'] !== '未发售' || product['发售状态'] !== '已发售') return [];
     Model.refresh(db);
-    const affected = listedProducts(db,game.uid).filter(p=>!(Number(p['库存']) > 0));
-    for (const product of affected) {
-      product['状态'] = '下架';
-      product['更新时间'] = time;
-      db.audit.unshift({time,action:`游戏“${game['游戏名称']}”由未发售改为已发售，商品“${product['商品名称']}”（${product['商品ID'] || product.uid}）因无可用库存自动下架`,operator:'演示运营'});
+    const affected = db.products.filter(p=>p['状态']==='上架' && (p.uid===product.uid || p['商品类型']==='组合商品' && list(p['选择商品']).includes(product.uid)) && !(Number(p['库存']) > 0));
+    for (const row of affected) {
+      row['状态'] = '下架';
+      row['更新时间'] = time;
+      db.audit.unshift({time,action:`商品“${product['商品名称']}”由未发售改为已发售，商品“${row['商品名称']}”（${row['商品ID'] || row.uid}）因无可用库存自动下架`,operator:'演示运营'});
     }
     return affected;
   }
   function purchase(db,game,product) {
-    const games = product ? productGames(db,product) : game ? [game] : [];
+    if (!product) return {allowed:false,label:'请选择商品',message:'发售状态按商品维护。'};
+    const games = productGames(db,product);
     if (!games.length) return {allowed:false,label:'暂无关联游戏',message:'请先关联游戏。'};
-    if (games.some(g => g['发售状态'] === '未发售')) return {allowed:false,label:'敬请期待',message:'游戏尚未发售，购买暂未开放。'};
+    if (product['发售状态'] === '未发售' || list(product['选择商品']).some(uid=>Model.get(db,'products',uid)?.['发售状态']==='未发售')) return {allowed:false,label:'敬请期待',message:'商品尚未发售，购买暂未开放。'};
     if (games.some(g => g['状态'] !== '启用') || product && product['状态'] !== '上架') return {allowed:false,label:'暂不可购买',message:'游戏已停用或商品已下架。'};
     const supplyError = product && listingIssue(db,product);
     if (supplyError) return {allowed:false,label:'暂不可购买',message:supplyError.message};
@@ -324,6 +324,7 @@ const PhaseOne = (() => {
   }
   function listingIssue(db,product,checkStock=true) {
     const issue = (field,message) => ({field,message});
+    if (!['未发售','已发售'].includes(product['发售状态'])) return issue('发售状态','请选择有效的发售状态');
     if (product['商品类型'] === '组合商品') {
       const ids = list(product['选择商品']);
       if (!ids.length) return issue('选择商品','请先选择组成商品');
@@ -338,8 +339,7 @@ const PhaseOne = (() => {
     }
     const game = Model.get(db,'games',product.refs?.['绑定游戏类别']);
     if (!game) return issue('绑定游戏类别','请先选择有效的关联游戏');
-    if (game['发售状态'] === '未发售') return null;
-    if (game['发售状态'] !== '已发售') return issue('绑定游戏类别','关联游戏的发售状态无效，请先维护游戏资料');
+    if (product['发售状态'] === '未发售') return null;
     if (!checkStock) return null;
     const sources = db.productSuppliers.filter(b=>b.productId===product.uid && b['状态']==='启用').flatMap(b=>{
       const source = Model.get(db,'sources',b.sourceId), supplier = Model.get(db,'suppliers',b.supplierId);
@@ -360,5 +360,22 @@ const PhaseOne = (() => {
     if (!orderCity || !paymentCity) return {result:'无法判断',detail:'至少一侧城市无法识别，不判定为同城或异城。'};
     return orderCity === paymentCity ? {result:'同城',detail:'两侧规范化城市标识一致。'} : {result:'异城 · 命中规则',detail:'两侧城市不同；仅显示比较结果，处置动作待确认，不执行拦截或停发。'};
   }
-  return {modes,sections,riskCode,riskKey,badgeCode,tagTypeCode,steamActivationGuide,searchInterval,searchHintRows,searchHintAt,guideForPlatforms,upgrade,choices,formIssue,validate,isRisk,isBadge,isTagType,refresh,productGames,listedProducts,applyReleaseChange,listingIssue,purchase,compareCities};
+  function upgradeProductFields(db) {
+    const games = [...db.games,...db.trash.filter(i=>i.key==='games').map(i=>i.row)];
+    const products = [...db.products,...db.trash.filter(i=>i.key==='products').map(i=>i.row)];
+    for (const product of products) {
+      product.refs ||= {};
+      const game = games.find(g=>g.uid===product.refs['绑定游戏类别']);
+      if (!Object.prototype.hasOwnProperty.call(product,'发售状态')) {
+        const related = product['商品类型']==='组合商品' ? list(product['选择商品']).map(uid=>Model.get(db,'products',uid)).filter(Boolean).map(p=>games.find(g=>g.uid===p.refs?.['绑定游戏类别'])) : [game];
+        product['发售状态'] = related.some(g=>g?.['发售状态']==='未发售') ? '未发售' : '已发售';
+      }
+      if (db.version < 8 || !Object.prototype.hasOwnProperty.call(product.refs,'角标标签')) product.refs['角标标签'] = game?.refs?.['角标标签'] || '';
+    }
+    for (const game of games) {delete game['发售状态'];delete game['角标标签'];delete game.refs?.['角标标签'];}
+    const dict = db.dict.find(r=>r['字典编号']===badgeCode);
+    if (dict?.['描述']==='游戏角标的可选标签。') dict['描述']='商品角标的可选标签。';
+    db.audit.unshift({time:now(),operator:'原型升级',action:'发售状态、角标标签移至商品管理，已有游戏配置迁移至对应商品；后续按商品独立维护。'});
+  }
+  return {modes,sections,riskCode,riskKey,badgeCode,tagTypeCode,steamActivationGuide,searchInterval,searchHintRows,searchHintAt,guideForPlatforms,upgrade,upgradeProductFields,choices,formIssue,validate,isRisk,isBadge,isTagType,refresh,productGames,applyReleaseChange,listingIssue,purchase,compareCities};
 })();

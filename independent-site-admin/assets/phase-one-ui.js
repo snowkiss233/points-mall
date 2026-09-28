@@ -33,9 +33,6 @@
     const get = name => form.elements.namedItem(name);
     const help = (name,text) => form.querySelector('[data-field="'+name+'"]')?.insertAdjacentHTML('beforeend','<div class="field-help">'+esc(text)+'</div>');
     if (key === 'games') {
-      if (!id) {get('发售状态').value='未发售';state.draft['发售状态']='未发售';}
-      help('发售状态','未发售可展示，但按钮为“敬请期待”。发行日期不自动切换发售状态。');
-      help('发售状态','未发售改为已发售并保存时，关联的上架商品若无可用库存将自动下架，有库存的保持上架。');
       help('游戏标签','统一多选游戏标签；选项按字典维护的标签类型标识，新增类型无需增加表单字段。');
       const guide = get('激活指南'), platforms = get('绑定平台');
       let guideTouched = false;
@@ -62,7 +59,7 @@
       help('标签','同一类型不能重名；不同类型可以同名，关联独立保存。');
     }
     if (key === 'recommend') {
-      help('推荐区域','新增 7 个专区为候选演示枚举。即将发售专区选品需关联未发售游戏。');
+      help('推荐区域','新增 7 个专区为候选演示枚举。即将发售专区只能选择未发售商品。');
       const title = form.querySelector('[data-field="栏目名称"]'), subtitle = form.querySelector('[data-field="栏目副标题"]');
       const titles = document.createElement('div');
       titles.className = 'stack';
@@ -79,13 +76,9 @@
       form.insertAdjacentHTML('afterbegin','<div class="notice">比较下单与支付的用户侧城市是否一致。只配置规则启停，处置动作待确认。</div>');
     }
     if (key === 'products') {
-      const box = document.createElement('div');box.className='notice';box.dataset.phaseGame='';form.prepend(box);
-      const draw = () => {
-        if (get('商品类型')?.value === '组合商品') {box.textContent='组合商品按组成的独立商品分别校验供货与库存；包含未发售游戏时，整个组合不可购买。';return;}
-        const game = Model.get(db,'games',get('绑定游戏类别')?.value);
-        box.textContent = game ? '关联游戏：'+game['游戏名称']+'；发售状态：'+game['发售状态']+'（在游戏类别维护）。'+(game['发售状态']==='未发售'?'该游戏的商品可不绑定供货商、无库存上架，仅展示“敬请期待”，不可购买。':'已发售商品上架须绑定已启用供货商，且关联货源有可用库存；可先保存为下架，再配置供货商。') : '选择游戏后显示发售状态及上架规则；发售状态在游戏类别维护。';
-      };
-      get('绑定游戏类别')?.addEventListener('change',draw);get('商品类型')?.addEventListener('change',draw);draw();
+      if (!id) {get('发售状态').value='未发售';state.draft['发售状态']='未发售';}
+      help('发售状态','未发售商品可不绑定供货商、无库存上架，仅展示“敬请期待”，不可购买。上架商品改为已发售并保存时，无可用库存将自动下架。');
+      help('角标标签','非必填，单选；可选项由数据字典中的“角标标签”维护。');
     }
     SelectControls.refresh(form);
   };
