@@ -6,6 +6,7 @@ const PhaseOne = (() => {
   const riskKey = 'order_payment_same_city';
   const badgeCode = 'product_corner_badges';
   const tagTypeCode = 'game_tag_types';
+  const searchHintCode = 'client_search_placeholders';
   const tagTypeDefinitions = [['游戏类型','game_type'],['游戏模式','game_mode']];
   // 正式文本由运营提供；当前仅用明确标识的占位内容演示预载，不包含自拟激活步骤。
   const steamActivationGuide = '【演示占位】Steam 激活指南正文待运营提供。';
@@ -199,7 +200,14 @@ const PhaseOne = (() => {
       const error = listingIssue(db,saved,old?.['状态'] !== '上架' || !sameGoods);
       if (error) return error;
     }
-    if (key === 'searchHints' && (!Number.isSafeInteger(draft['排序']) || draft['排序'] < 0)) return issue('排序','排序请输入非负整数');
+    if (key === 'dict' && old && isSearchHint(db,old.uid) && draft['字典编号'] !== searchHintCode) return issue('字典编号','搜索底纹使用固定字典编号');
+    if (key === 'dictItems' && isSearchHint(db,draft.parentId)) {
+      if (!String(draft.value || '').trim()) return issue('value','底纹文案不能为空');
+      if (!String(draft.key || '').trim()) return issue('key','请填写字典项标识');
+      if (draft['key类型'] !== '文本') return issue('key类型','搜索底纹只能使用文本类型');
+      if (!Number.isSafeInteger(draft['排序值']) || draft['排序值'] < 0) return issue('排序值','排序请输入非负整数');
+      if (db.dictItems.some(r=>r.parentId===draft.parentId && r.uid!==old?.uid && r.key===draft.key)) return issue('key','搜索底纹的字典项标识不能重复');
+    }
     if (key === 'dict' && old && isBadge(db,old.uid) && draft['字典编号'] !== badgeCode) return issue('字典编号','角标标签使用固定字典编号');
     if (key === 'dictItems' && isBadge(db,draft.parentId)) {
       if (draft['key类型'] !== '文本') return issue('key类型','角标标签只能使用文本值');
@@ -247,10 +255,13 @@ const PhaseOne = (() => {
 
   function validate(db) {
     const errors = [];
-    for (const row of db.searchHints || []) {
-      if (typeof row['底纹文案'] !== 'string' || !row['底纹文案'].trim()) errors.push('搜索底纹文案不能为空');
-      if (!Number.isSafeInteger(row['排序']) || row['排序'] < 0) errors.push('搜索底纹排序必须为非负整数');
+    const searchHints = db.dictItems.filter(r=>isSearchHint(db,r.parentId));
+    for (const row of searchHints) {
+      if (typeof row.value !== 'string' || !row.value.trim()) errors.push('搜索底纹文案不能为空');
+      if (!Number.isSafeInteger(row['排序值']) || row['排序值'] < 0) errors.push('搜索底纹排序必须为非负整数');
+      if (row['key类型'] !== '文本') errors.push('搜索底纹只能使用文本类型');
     }
+    if (new Set(searchHints.map(r=>r.key)).size !== searchHints.length) errors.push('搜索底纹的字典项标识不能重复');
     const badgeDict = db.dict.find(r => r['字典编号'] === badgeCode);
     if (!badgeDict) errors.push('角标标签字典缺失');
     const badgeItems = db.dictItems.filter(r => r.parentId === badgeDict?.uid);
@@ -278,11 +289,15 @@ const PhaseOne = (() => {
   function isRisk(db,parentId) { return Model.get(db,'dict',parentId)?.['字典编号'] === riskCode; }
   function isBadge(db,parentId) { return Model.get(db,'dict',parentId)?.['字典编号'] === badgeCode; }
   function isTagType(db,parentId) { return Model.get(db,'dict',parentId)?.['字典编号'] === tagTypeCode; }
+  function isSearchHint(db,parentId) { return Model.get(db,'dict',parentId)?.['字典编号'] === searchHintCode; }
+  function searchHintCompare(a,b) {
+    return a['排序值']-b['排序值'] || String(a['创建时间']||'').localeCompare(String(b['创建时间']||'')) || a.uid.localeCompare(b.uid);
+  }
   function searchHintRows(db) {
-    return [...(db.searchHints || [])].filter(r=>r['状态']==='启用'&&String(r['底纹文案']||'').trim()).sort((a,b)=>a['排序']-b['排序']||String(a['创建时间']||'').localeCompare(String(b['创建时间']||''))||a.uid.localeCompare(b.uid));
+    return db.dictItems.filter(r=>isSearchHint(db,r.parentId)&&r['是否启用']==='启用'&&String(r.value||'').trim()).sort(searchHintCompare);
   }
   function searchHintAt(rows,elapsed=0) {
-    return rows.length ? rows[Math.floor(Math.max(0,elapsed)/searchInterval)%rows.length]['底纹文案'] : '搜索游戏';
+    return rows.length ? rows[Math.floor(Math.max(0,elapsed)/searchInterval)%rows.length].value : '搜索游戏';
   }
   function guideForPlatforms(db,platformIds,currentText) {
     if (String(currentText||'').trim()) return currentText;
@@ -377,5 +392,27 @@ const PhaseOne = (() => {
     if (dict?.['描述']==='游戏角标的可选标签。') dict['描述']='商品角标的可选标签。';
     db.audit.unshift({time:now(),operator:'原型升级',action:'发售状态、角标标签移至商品管理，已有游戏配置迁移至对应商品；后续按商品独立维护。'});
   }
-  return {modes,sections,riskCode,riskKey,badgeCode,tagTypeCode,steamActivationGuide,searchInterval,searchHintRows,searchHintAt,guideForPlatforms,upgrade,upgradeProductFields,choices,formIssue,validate,isRisk,isBadge,isTagType,refresh,productGames,applyReleaseChange,listingIssue,purchase,compareCities};
+  function upgradeSearchHints(db) {
+    let dict = db.dict.find(r=>r['字典编号']===searchHintCode);
+    if (!dict) {
+      dict = {uid:id(db,'dict','search-placeholders'),'字典名称':'搜索底纹','字典编号':searchHintCode,'描述':'客户端搜索框提示文案；单条固定，多条按排序每 3 秒轮播。','字典群组':'商城配置',refs:{}};
+      db.dict.push(dict);
+    }
+    const convert = row => {
+      if (!row || typeof row.uid!=='string' || typeof row['底纹文案']!=='string' || !row['底纹文案'].trim() || !Number.isSafeInteger(row['排序']) || row['排序']<0 || !['启用','禁用'].includes(row['状态'])) throw new Error('旧搜索底纹数据无效，请检查文案、排序与状态');
+      const uid = id(db,'dictItems','search-hint-'+row.uid.slice(0,80));
+      let key = row.uid, index = 1;
+      while (db.dictItems.some(r=>r.parentId===dict.uid && r.key===key)) key=row.uid+'-'+index++;
+      return {uid,parentId:dict.uid,value:row['底纹文案'],key,'key类型':'文本','描述':'','排序值':row['排序'],'是否启用':row['状态'],'创建时间':row['创建时间']||'','更新时间':row['更新时间']||'',refs:{}};
+    };
+    const seen = new Set();
+    for (const row of db.searchHints || []) {
+      if (seen.has(row?.uid)) throw new Error('旧搜索底纹数据的 uid 重复');
+      seen.add(row?.uid);db.dictItems.push(convert(row));
+    }
+    for (const item of db.trash.filter(i=>i.key==='searchHints')) {item.row=convert(item.row);item.key='dictItems';}
+    delete db.searchHints;
+    db.audit.unshift({time:now(),operator:'原型升级',action:'搜索底纹移至数据字典，保留原文案、顺序与启停状态；移除独立菜单。'});
+  }
+  return {modes,sections,riskCode,riskKey,badgeCode,tagTypeCode,searchHintCode,steamActivationGuide,searchInterval,searchHintRows,searchHintAt,searchHintCompare,guideForPlatforms,upgrade,upgradeProductFields,upgradeSearchHints,choices,formIssue,validate,isRisk,isBadge,isTagType,isSearchHint,refresh,productGames,applyReleaseChange,listingIssue,purchase,compareCities};
 })();

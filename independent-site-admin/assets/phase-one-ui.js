@@ -4,7 +4,7 @@
   const baseFilteredRows = filteredRows;
   filteredRows = function() {
     const rows = baseFilteredRows();
-    return current === 'searchHints' ? rows.sort((a,b)=>a['排序']-b['排序']||String(a['创建时间']||'').localeCompare(String(b['创建时间']||''))||a.uid.localeCompare(b.uid)) : rows;
+    return current === 'dictItems' && PhaseOne.isSearchHint(db,parentId) ? rows.sort(PhaseOne.searchHintCompare) : rows;
   };
   options = function(spec,value,empty,draft={},key=current,field='') {
     const html = baseOptions(spec,value,empty,draft,key,field);
@@ -46,9 +46,13 @@
       if (!saved || !Object.prototype.hasOwnProperty.call(saved,'激活指南')) preload();
       help('激活指南','选择 Steam 时向空白字段预填指南，可编辑；已有内容不会被覆盖。正式文案待运营提供，当前预填内容为演示占位。');
     }
-    if (key === 'searchHints') {
-      if (!id) get('排序').value = Math.max(0,...db.searchHints.map(r=>r['排序']))+1;
-      help('排序','数值越小越先展示；相同排序按创建时间先后展示。仅启用的文案参与轮播，间隔固定为 3 秒。');
+    if (key === 'dict' && id && PhaseOne.isSearchHint(db,id)) get('字典编号').readOnly = true;
+    if (key === 'dictItems' && PhaseOne.isSearchHint(db,state.draft.parentId)) {
+      if (!id) get('排序值').value = Math.max(0,...db.dictItems.filter(r=>r.parentId===state.draft.parentId).map(r=>r['排序值']))+1;
+      get('key类型').disabled = true;
+      help('value','客户端搜索框内展示的底纹文案，不能为空。');
+      help('key','字典项标识，同一搜索底纹字典内不能重复。');
+      help('排序值','数值越小越先展示；相同排序按创建时间先后展示。单条固定，多条每 3 秒轮播；仅启用项参与。');
     }
     if (key === 'tags') {
       if (!id) get('标签类型').value = filters['标签类型'] || db.dictItems.find(r=>PhaseOne.isTagType(db,r.parentId)&&r.value==='游戏类型')?.uid || '';
