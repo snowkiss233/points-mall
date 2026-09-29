@@ -29,7 +29,7 @@ const PhaseOne = (() => {
   SCHEMA.games.fields.splice(legacyIndex, 1, F('游戏标签', 'multi', false, 'tags'));
   SCHEMA.games.columns = ['ID','游戏名称','游戏标签','绑定平台','排序','状态'];
   SCHEMA.games.desc = '配置游戏资料与游戏标签。标签按字典维护的类型分组。';
-  PRODUCT_FIELDS.splice(6,0,F('发售状态','select',true,['未发售','已发售']),F('角标标签','select',false,'dictItems'),F('发售时间','releaseDate'));
+  PRODUCT_FIELDS.splice(6,0,F('发售状态','select',true,['未发售','已发售']),F('角标标签','select',false,'dictItems'),F('发售时间','date'));
   SCHEMA.products.columns.splice(2,0,'发售状态','角标标签');
   SCHEMA.products.filters.push(F('发售状态','select',false,['未发售','已发售']));
   SCHEMA.columns = {name:'栏目列表', columns:['栏目名称','栏目状态','排序','说明'], filters:[], fields:[F('栏目名称','readonly',true),F('栏目标识','readonly',true),F('栏目状态','select',true,EN),F('排序','number',true)], actions:['编辑','启禁'],statusKey:'栏目状态',desc:'复用现有栏目枚举。新增 7 个专区为附件候选演示，可排序、启停；正式名单待确认。'};
@@ -402,8 +402,7 @@ const PhaseOne = (() => {
   }
   function releaseTimeIssue(product) {
     const value = product['发售时间'];
-    if (value == null || value === '') return product['发售状态'] === '未发售' ? '请选择发售日期，或勾选“时间待定”' : null;
-    if (value === '时间待定') return null;
+    if (value == null || value === '') return null;
     if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return '发售时间请选择有效的年月日日期';
     const [year,month,day] = value.split('-').map(Number);
     const date = new Date(0);date.setUTCFullYear(year,month-1,day);date.setUTCHours(0,0,0,0);
