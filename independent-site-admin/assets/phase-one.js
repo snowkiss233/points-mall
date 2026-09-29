@@ -400,6 +400,9 @@ const PhaseOne = (() => {
     if (dict?.['描述']==='游戏角标的可选标签。') dict['描述']='商品角标的可选标签。';
     db.audit.unshift({time:now(),operator:'原型升级',action:'发售状态、角标标签移至商品管理，已有游戏配置迁移至对应商品；后续按商品独立维护。'});
   }
+  function formatReleaseDate(value) {
+    return value ? value.replace(/^(\d{4})-(\d{2})-(\d{2})$/, '$1年$2月$3日') : '时间待定';
+  }
   function releaseTimeIssue(product) {
     const value = product['发售时间'];
     if (value == null || value === '') return null;
@@ -430,5 +433,5 @@ const PhaseOne = (() => {
     delete db.searchHints;
     db.audit.unshift({time:now(),operator:'原型升级',action:'搜索底纹移至数据字典，保留原文案、顺序与启停状态；移除独立菜单。'});
   }
-  return {modes,sections,riskCode,riskKey,badgeCode,tagTypeCode,searchHintCode,steamActivationGuide,searchInterval,searchHintRows,searchHintAt,searchHintCompare,guideForPlatforms,upgrade,upgradeProductFields,upgradeSearchHints,choices,formIssue,validate,isRisk,isBadge,isTagType,isSearchHint,refresh,productGames,applyReleaseChange,listingIssue,purchase,compareCities};
+  return {formatReleaseDate,modes,sections,riskCode,riskKey,badgeCode,tagTypeCode,searchHintCode,steamActivationGuide,searchInterval,searchHintRows,searchHintAt,searchHintCompare,guideForPlatforms,upgrade,upgradeProductFields,upgradeSearchHints,choices,formIssue,validate,isRisk,isBadge,isTagType,isSearchHint,refresh,productGames,applyReleaseChange,listingIssue,purchase,compareCities};
 })();

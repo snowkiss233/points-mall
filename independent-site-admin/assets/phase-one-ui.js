@@ -84,7 +84,26 @@
       const statusField = form.querySelector('[data-field="发售状态"]'), timeField = form.querySelector('[data-field="发售时间"]');
       const schedule = document.createElement('div');schedule.className='stack';
       statusField.before(schedule);schedule.append(statusField,timeField);
-      help('发售时间','非必填；未填写时，客户端显示“时间待定”。日期到达后不会自动变更发售状态。');
+      const dateInput = get('发售时间'), dateControl = document.createElement('div');
+      dateControl.className = 'release-date-control';
+      dateInput.before(dateControl);dateControl.append(dateInput);
+      dateInput.classList.add('release-date-native');dateInput.tabIndex = -1;dateInput.setAttribute('aria-hidden','true');
+      const dateButton = document.createElement('button');dateButton.type='button';dateButton.className='release-date-display';
+      dateButton.setAttribute('aria-haspopup','dialog');
+      dateButton.innerHTML='<span></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/></svg>';
+      const clearDate = document.createElement('button');clearDate.type='button';clearDate.className='release-date-clear';
+      clearDate.textContent='×';clearDate.setAttribute('aria-label','清空发售时间');clearDate.title='清空发售时间';
+      const syncDate = () => {
+        const text = PhaseOne.formatReleaseDate(dateInput.value);
+        dateButton.querySelector('span').textContent=text;
+        dateButton.setAttribute('aria-label','选择发售时间，当前'+text);
+        dateButton.classList.toggle('is-empty',!dateInput.value);clearDate.hidden=!dateInput.value;
+      };
+      dateButton.addEventListener('click',()=>dateInput.showPicker());
+      clearDate.addEventListener('click',()=>{dateInput.value='';dateInput.dispatchEvent(new Event('change',{bubbles:true}));});
+      dateInput.addEventListener('change',syncDate);
+      dateControl.append(dateButton,clearDate);syncDate();
+      help('发售时间','非必填；客户端按“2026年09月24日”格式展示，留空显示“时间待定”。日期到达后不会自动变更发售状态。');
       updateDependencies(fid);
       help('发售状态','未发售商品可不绑定供货商、无库存上架，仅展示“敬请期待”，不可购买。上架商品改为已发售并保存时，无可用库存将自动下架。');
       help('角标标签','非必填，单选；可选项由数据字典中的“角标标签”维护。');
