@@ -29,7 +29,7 @@ const PhaseOne = (() => {
   SCHEMA.games.fields.splice(legacyIndex, 1, F('游戏标签', 'multi', false, 'tags'));
   SCHEMA.games.columns = ['ID','游戏名称','游戏标签','绑定平台','排序','状态'];
   SCHEMA.games.desc = '配置游戏资料与游戏标签。标签按字典维护的类型分组。';
-  PRODUCT_FIELDS.splice(6,0,F('发售状态','select',true,['未发售','已发售']),F('角标标签','select',false,'dictItems'));
+  PRODUCT_FIELDS.splice(6,0,F('发售状态','select',true,['未发售','已发售']),F('角标标签','select',false,'dictItems'),F('发售时间','releaseDate'));
   SCHEMA.products.columns.splice(2,0,'发售状态','角标标签');
   SCHEMA.products.filters.push(F('发售状态','select',false,['未发售','已发售']));
   SCHEMA.columns = {name:'栏目列表', columns:['栏目名称','栏目状态','排序','说明'], filters:[], fields:[F('栏目名称','readonly',true),F('栏目标识','readonly',true),F('栏目状态','select',true,EN),F('排序','number',true)], actions:['编辑','启禁'],statusKey:'栏目状态',desc:'复用现有栏目枚举。新增 7 个专区为附件候选演示，可排序、启停；正式名单待确认。'};
@@ -194,6 +194,10 @@ const PhaseOne = (() => {
 
   function formIssue(db,key,draft,old) {
     const issue = (field,message) => ({field,message});
+    if (key === 'products') {
+      const scheduleError = releaseTimeIssue(draft);
+      if (scheduleError) return issue('发售时间',scheduleError);
+    }
     if (key === 'products' && draft['状态'] === '上架') {
       const saved = Model.fromForm(db,key,{...draft,uid:old?.uid || draft.uid});
       const sameGoods = old && saved['商品类型'] === old['商品类型'] && saved.refs?.['绑定游戏类别'] === old.refs?.['绑定游戏类别'] && JSON.stringify(saved['选择商品'] || []) === JSON.stringify(old['选择商品'] || []);
@@ -255,6 +259,10 @@ const PhaseOne = (() => {
 
   function validate(db) {
     const errors = [];
+    for (const product of db.products) {
+      const scheduleError = releaseTimeIssue(product);
+      if (scheduleError) errors.push('商品 '+product.uid+'：'+scheduleError);
+    }
     const searchHints = db.dictItems.filter(r=>isSearchHint(db,r.parentId));
     for (const row of searchHints) {
       if (typeof row.value !== 'string' || !row.value.trim()) errors.push('搜索底纹文案不能为空');
@@ -391,6 +399,15 @@ const PhaseOne = (() => {
     const dict = db.dict.find(r=>r['字典编号']===badgeCode);
     if (dict?.['描述']==='游戏角标的可选标签。') dict['描述']='商品角标的可选标签。';
     db.audit.unshift({time:now(),operator:'原型升级',action:'发售状态、角标标签移至商品管理，已有游戏配置迁移至对应商品；后续按商品独立维护。'});
+  }
+  function releaseTimeIssue(product) {
+    const value = product['发售时间'];
+    if (value == null || value === '') return product['发售状态'] === '未发售' ? '请选择发售日期，或勾选“时间待定”' : null;
+    if (value === '时间待定') return null;
+    if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return '发售时间请选择有效的年月日日期';
+    const [year,month,day] = value.split('-').map(Number);
+    const date = new Date(0);date.setUTCFullYear(year,month-1,day);date.setUTCHours(0,0,0,0);
+    return year > 0 && date.getUTCFullYear() === year && date.getUTCMonth() === month-1 && date.getUTCDate() === day ? null : '发售时间请选择有效的年月日日期';
   }
   function upgradeSearchHints(db) {
     let dict = db.dict.find(r=>r['字典编号']===searchHintCode);

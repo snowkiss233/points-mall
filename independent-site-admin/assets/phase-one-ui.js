@@ -81,6 +81,12 @@
     }
     if (key === 'products') {
       if (!id) {get('发售状态').value='未发售';state.draft['发售状态']='未发售';}
+      const statusField = form.querySelector('[data-field="发售状态"]'), timeField = form.querySelector('[data-field="发售时间"]');
+      const schedule = document.createElement('div');schedule.className='stack';
+      statusField.before(schedule);schedule.append(statusField,timeField);
+      timeField.querySelector(':scope > span').classList.add('required');
+      help('发售时间','选择年月日，或勾选“时间待定”。日期到达后不会自动变更发售状态。');
+      updateDependencies(fid);
       help('发售状态','未发售商品可不绑定供货商、无库存上架，仅展示“敬请期待”，不可购买。上架商品改为已发售并保存时，无可用库存将自动下架。');
       help('角标标签','非必填，单选；可选项由数据字典中的“角标标签”维护。');
     }
