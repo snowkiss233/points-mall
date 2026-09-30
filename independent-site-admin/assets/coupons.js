@@ -1,7 +1,12 @@
 /* 优惠券领域模型：本地原型数据，计价输入由交易侧提供；不连接真实支付。 */
-ROUTES.coupons = '/marketing/coupons';
-SCHEMA.coupons = {name:'优惠券',desc:'管理券模板、发放记录与用户持券，查询订单用券情况。'};
-GROUPS.splice(GROUPS.findIndex(g=>g[0]==='商品管理')+1,0,['营销管理',['coupons']]);
+const COUPON_PAGES = {
+  coupons:{view:'templates',name:'优惠券管理',path:'/marketing/coupons',desc:'配置优惠券规则，管理发布、发放与停用。'},
+  couponGrants:{view:'tasks',name:'发券记录',path:'/marketing/couponGrants',desc:'查询发放批次与逐人结果，支持重试失败项。'},
+  couponWallet:{view:'wallet',name:'用户券',path:'/marketing/couponWallet',desc:'查询用户持券，校验使用条件及回收未使用优惠券。'},
+  couponUses:{view:'uses',name:'用券记录',path:'/marketing/couponUses',desc:'查询订单用券、抵扣金额及退款返券结果。'}
+};
+for(const [key,p] of Object.entries(COUPON_PAGES)){ROUTES[key]=p.path;SCHEMA[key]={name:p.name,desc:p.desc};}
+GROUPS.splice(GROUPS.findIndex(g=>g[0]==='商品管理')+1,0,['营销管理',Object.keys(COUPON_PAGES)]);
 const Coupons = (() => {
   const copy = v => JSON.parse(JSON.stringify(v));
   const now = () => new Date().toISOString();
@@ -171,6 +176,12 @@ const Coupons = (() => {
     return errors;
   }
   function upgrade(db,t=now()) {
+    let parent=db.permissions.find(p=>p['菜单类型']==='一级菜单'&&(p['路径']==='/marketing'||p['权限名称']==='营销管理'));
+    if(!parent){parent={uid:'perm-coupon-parent',refs:{'父级菜单':''},'权限名称':'营销管理','菜单类型':'一级菜单','组件':'Layout','路径':'/marketing','状态':'启用'};db.permissions.push(parent);}
+    parent['路径']='/marketing';
+    const original=db.permissions.find(p=>p['路径']===ROUTES.coupons),oldId=original?.uid;
+    const menuIds=Object.entries(COUPON_PAGES).map(([key,p])=>{let menu=db.permissions.find(m=>m['路径']===p.path);if(!menu){menu={uid:key==='coupons'?'perm-coupon-child':'perm-'+key,refs:{'父级菜单':parent.uid},'权限名称':p.name,'菜单类型':'子菜单','组件':key,'路径':p.path,'状态':'启用'};db.permissions.push(menu);}else menu['权限名称']=p.name;return menu.uid;});
+    for(const role of db.roles.filter(r=>['管理员','平台运营'].includes(r['角色名称'])||(oldId&&(db.rolePermissions[r.uid]||[]).includes(oldId))))db.rolePermissions[role.uid]=[...new Set([...(db.rolePermissions[role.uid]||[]),parent.uid,...menuIds])];
     if(db.couponData)return;
     db.couponData={templates:[],scopes:[],grantTasks:[],grantItems:[],userCoupons:[],redemptions:[],events:[]};
     const base={currency:'CNY',face:2000,threshold:6000,scope:'ALL',skuIds:[],limit:2000,userLimit:10,validFrom:at(t,-5),validTo:at(t,30),issueFrom:at(t,-7),issueTo:at(t,20)};
@@ -198,7 +209,6 @@ const Coupons = (() => {
       }
     }
     expire(db,t);
-    if(!db.permissions.some(p=>p['路径']===ROUTES.coupons)){db.permissions.push({uid:'perm-coupon-parent',refs:{'父级菜单':''},'权限名称':'营销管理','菜单类型':'一级菜单','组件':'Layout','路径':'/marketing','状态':'启用'},{uid:'perm-coupon-child',refs:{'父级菜单':'perm-coupon-parent'},'权限名称':'优惠券','菜单类型':'子菜单','组件':'coupons','路径':ROUTES.coupons,'状态':'启用'});for(const role of db.roles.filter(r=>['管理员','平台运营'].includes(r['角色名称'])))db.rolePermissions[role.uid]=[...new Set([...(db.rolePermissions[role.uid]||[]),'perm-coupon-parent','perm-coupon-child'])];}
     db.audit.unshift({time:date(t),operator:'原型升级',action:'新增营销管理 / 优惠券及独立演示记录；存量商品、订单记录保留。'});
   }
   return {labels,get,now,at,money,date,minor,displayStatus,templateState,templateStatus,templateIssue,saveTemplate,setTemplateStatus,grant,retryGrant,expire,revoke,quote,demoContext,lock,redeem,release,returnAfterRefund,validate,upgrade};
