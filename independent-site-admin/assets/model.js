@@ -1,6 +1,6 @@
 /* 原型数据规则。仅处理本地演示数据，不连接真实业务接口。 */
 const Model = (() => {
-  const VERSION = 14;
+  const VERSION = 15;
   const copy = value => JSON.parse(JSON.stringify(value));
   const object = value => value && typeof value === 'object' && !Array.isArray(value);
   const text = value => typeof value === 'string' && value.trim().length > 0;
@@ -156,7 +156,7 @@ const Model = (() => {
 
   function envelope(db) {
     const errors = [];
-    if (!object(db) || ![1,2,3,4,5,6,7,8,9,10,11,12,13,VERSION].includes(db.version)) return ['不支持的备份版本'];
+    if (!object(db) || ![1,2,3,4,5,6,7,8,9,10,11,12,13,14,VERSION].includes(db.version)) return ['不支持的备份版本'];
     if (db.version < 12 && db.searchHints !== undefined && !Array.isArray(db.searchHints)) errors.push('旧搜索底纹数据必须是数组');
     const collections = [...Object.keys(SCHEMA).filter(k => SCHEMA[k].columns), 'productSuppliers'];
     for (const key of collections) {
@@ -243,6 +243,7 @@ const Model = (() => {
     for (const item of db.trash) if (!SCHEMA[item.key]?.columns || !object(item.row) || !text(item.row.uid)) errors.push('回收站记录格式错误');
     if (typeof PhaseOne !== 'undefined') errors.push(...PhaseOne.validate(db));
     if (typeof AuthorizedLogin !== 'undefined') errors.push(...AuthorizedLogin.validate(db));
+    if (typeof Coupons !== 'undefined') errors.push(...Coupons.validate(db));
     return [...new Set(errors)];
   }
 
@@ -289,6 +290,7 @@ const Model = (() => {
     for (const product of [...db.products,...db.trash.filter(item=>item.key==='products').map(item=>item.row)]) {
       if (product['发售时间'] == null || product['发售时间'] === '时间待定') product['发售时间'] = '';
     }
+    if (typeof Coupons !== 'undefined') Coupons.upgrade(db);
     db.version = VERSION;
     for (const item of db.trash) if (item.key === 'dict') item.row.refs = {};
     return db;
