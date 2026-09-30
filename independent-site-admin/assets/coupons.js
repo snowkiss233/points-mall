@@ -24,11 +24,17 @@ const Coupons = (() => {
   function templateStatus(c){return {ENABLED:'已上架',PAUSED:'已下架'}[c.status]||c.status;}
   function batchState(c,t=now()){return c.status!=='DRAFT'&&c.issueTo&&ms(t)>=ms(c.issueTo)?'CLOSED':c.status;}
   const validityText=b=>b.validityType==='AFTER_RECEIPT'?`领取后 ${b.validDays} 天内有效`:date(b.validFrom)+' 至 '+date(b.validTo);
-  const audienceText=b=>b.audienceType==='PACKAGE'?(b.audienceName||'指定人群包'):'全部用户';
+  const audienceText=b=>b.audienceType==='UIDS'?`指定人群（${b.audienceUids?.length||0} 人）`:'全部用户';
+  function audienceIssue(db,values){
+    if(!Array.isArray(values)||!values.length)return '请上传 Excel 导入指定人群 UID';
+    if(values.some(v=>typeof v!=='string'||!v.trim()||v!==v.trim()))return '导入 UID 格式错误';
+    if(new Set(values).size!==values.length)return '导入 UID 不能重复';
+    const known=new Set(db.users.map(u=>u['用户UID'])),missing=values.filter(v=>!known.has(v));
+    return missing.length?'UID 不存在：'+missing.slice(0,5).join('、')+(missing.length>5?' 等 '+missing.length+' 个':''):'';
+  }
   function audienceUsers(db,b){
     if(b.audienceType==='ALL')return [...new Set(db.users.map(u=>u['用户UID']).filter(Boolean))];
-    const pack=db.couponData.audiencePacks.find(p=>p.id===b.audiencePackageId);
-    assert(pack,'请选择有效人群包');return [...new Set(pack.userUids)];
+    const error=audienceIssue(db,b.audienceUids);assert(!error,error);return [...b.audienceUids];
   }
   function log(db,action,objectId,before,after,reason='',t=now(),extra={}) {db.couponData.events.unshift({id:id('LOG'),action,objectId,before,after,reason,time:t,operator:['优惠券过期','订单锁券','支付核销','关单释放','全额退款返券判定'].includes(action)?'交易系统（演示）':'演示运营',...extra});}
   function templateIssue(db,d) {
@@ -40,14 +46,13 @@ const Coupons = (() => {
     if(!['ALL','SKU'].includes(d.scope))return '请选择适用范围';
     if(d.scope==='SKU'&&(!d.skuIds?.length||d.skuIds.some(x=>!Model.get(db,'products',x))))return '请至少选择一个有效商品';
     if(d.scope==='SKU'&&new Set(d.skuIds).size!==d.skuIds.length)return '适用商品不能重复';
-    if(!Array.isArray(d.allowedMethods)||!d.allowedMethods.length||d.allowedMethods.some(m=>!methodLabels[m]))return '请至少选择一种允许发放方式';
     return '';
   }
   function rule(db,templateId){const t=get(db,'templates',templateId);return {name:t.name,currency:t.currency,face:t.face,threshold:t.threshold,scope:t.scope,bearer:'PLATFORM',skuIds:db.couponData.scopes.filter(s=>s.templateId===t.id).map(s=>s.skuId)};}
   function saveTemplate(db,d,templateId='',t=now()) {
     const error=templateIssue(db,d);assert(!error,error);const old=templateId?get(db,'templates',templateId):null;
     assert(!templateId||old,'券模板不存在');assert(!old?.deletedAt,'模板已删除，不能编辑');
-    const fields={name:d.name.trim(),currency:d.currency,face:d.face,threshold:d.threshold,scope:d.scope,allowedMethods:[...new Set(d.allowedMethods)]};
+    const fields={name:d.name.trim(),currency:d.currency,face:d.face,threshold:d.threshold,scope:d.scope};
     const row=old?Object.assign(old,fields,{updatedAt:t,revision:(old.revision||1)+1}):{id:id('TPL'),...fields,status:'ENABLED',bearer:'PLATFORM',ruleType:'FIXED_AMOUNT',revision:1,deletedAt:null,createdAt:t,updatedAt:t,publishedAt:t};
     if(!old)db.couponData.templates.unshift(row);
     db.couponData.scopes=db.couponData.scopes.filter(s=>s.templateId!==row.id);
@@ -70,7 +75,7 @@ const Coupons = (() => {
   function batchIssue(db,d,existing=false){
     const tpl=get(db,'templates',d.templateId);if(!tpl)return '请选择优惠券模板';
     if(!d.name?.trim()||d.name.trim().length>60)return '请填写 1–60 字计划名称';
-    if(!methodLabels[d.method]||!(existing?(d.ruleSnapshot?.allowedMethods||[d.method]):tpl.allowedMethods).includes(d.method))return '发放方式不在模板允许范围内';
+    if(!methodLabels[d.method])return '请选择有效发放方式';
     if(d.limit!==null&&(!int(d.limit)||d.limit<1))return '计划发放总量须为正整数，或留空表示不限';
     if(!int(d.userLimit)||d.userLimit<1)return '每人本计划发放上限须为正整数';
     if(d.limit!==null&&d.userLimit>d.limit)return '每人上限不能超过计划总量';
@@ -84,21 +89,23 @@ const Coupons = (() => {
     if(!Number.isFinite(ms(d.issueFrom)))return '缺少发放开始时间';
     if(d.issueTo&&(!Number.isFinite(ms(d.issueTo))||ms(d.issueFrom)>=ms(d.issueTo)))return '发放结束时间须晚于开始时间';
     if((d.timingType||'IMMEDIATE')!=='IMMEDIATE')return '本期仅支持立即发放';
-    if(!['ALL','PACKAGE'].includes(d.audienceType||'ALL'))return '请选择发放人群';
-    if(d.audienceType==='PACKAGE'&&!d.audiencePackageId)return '请选择指定人群包';
-    if(d.audienceType==='PACKAGE'&&!existing&&!db.couponData.audiencePacks.some(p=>p.id===d.audiencePackageId))return '人群包不存在';
+    if(!['ALL','UIDS'].includes(d.audienceType||'ALL'))return '请选择发放人群';
+    if(d.audienceType==='UIDS'){
+      if(!Array.isArray(d.audienceUids)||!existing&&!d.audienceUids.length)return '请上传 Excel 导入指定人群 UID';
+      if(!existing){const error=audienceIssue(db,d.audienceUids);if(error)return error;}
+    }
     return '';
   }
   function saveBatch(db,d,batchId='',t=now()){
     const old=batchId?get(db,'batches',batchId):null;assert(!batchId||old,'发放计划不存在');assert(!old||old.status==='DRAFT','已开启计划配置不可编辑，请新建计划');
     const same=old&&old.templateId===d.templateId,tpl=get(db,'templates',d.templateId);
     if(!same)assert(tpl&&tpl.status==='ENABLED'&&!tpl.deletedAt,'请选择已上架且未删除的模板');
-    const snapshot=same?old.ruleSnapshot:{...rule(db,d.templateId),allowedMethods:[...tpl.allowedMethods],templateRevision:tpl.revision||1};
+    const snapshot=same?old.ruleSnapshot:{...rule(db,d.templateId),templateRevision:tpl.revision||1};
     d={validityType:'FIXED',timingType:'IMMEDIATE',audienceType:'ALL',...d};
     if(d.validityType==='AFTER_RECEIPT'){d.validFrom=null;d.validTo=null;}else d.validDays=null;
-    if(d.audienceType==='PACKAGE')assert(db.couponData.audiencePacks.some(p=>p.id===d.audiencePackageId),'请选择有效人群包');
+    if(d.audienceType==='UIDS'){const issue=audienceIssue(db,d.audienceUids);assert(!issue,issue);}
     const error=batchIssue(db,{...d,ruleSnapshot:snapshot},true);assert(!error,error);
-    const fields={name:d.name.trim(),templateId:d.templateId,method:d.method,limit:d.limit,userLimit:d.userLimit,validFrom:d.validFrom,validTo:d.validTo,issueFrom:d.issueFrom,issueTo:d.issueTo,ruleSnapshot:copy(snapshot),validityType:d.validityType,validDays:d.validDays,timingType:d.timingType,audienceType:d.audienceType,audiencePackageId:d.audienceType==='PACKAGE'?d.audiencePackageId:null,audienceName:d.audienceType==='PACKAGE'?db.couponData.audiencePacks.find(p=>p.id===d.audiencePackageId).name:'全部用户'};
+    const fields={name:d.name.trim(),templateId:d.templateId,method:d.method,limit:d.limit,userLimit:d.userLimit,validFrom:d.validFrom,validTo:d.validTo,issueFrom:d.issueFrom,issueTo:d.issueTo,ruleSnapshot:copy(snapshot),validityType:d.validityType,validDays:d.validDays,timingType:d.timingType,audienceType:d.audienceType,audienceUids:d.audienceType==='UIDS'?[...d.audienceUids]:[],audienceFileName:d.audienceType==='UIDS'?(d.audienceFileName||''):''};
     const row=old?Object.assign(old,fields,{updatedAt:t}):{id:id('BATCH'),...fields,status:'DRAFT',issued:0,createdAt:t,updatedAt:t,publishedAt:null};
     if(!old)db.couponData.batches.unshift(row);log(db,old?'编辑发放计划':'创建发放计划',row.id,old?'DRAFT':'',row.status,'券规则按创建计划时保存，后续模板变更不影响本计划',t);return row;
   }
@@ -117,8 +124,8 @@ const Coupons = (() => {
     const b=get(db,'batches',batchId);assert(b?.status==='DRAFT','计划只能开启一次');
     const targets=audienceUsers(db,b);
     if(b.method==='MANUAL'){
-      assert(targets.length,'所选人群暂无用户，不能开启人工发放');
-      assert(targets.every(uid=>db.users.some(u=>u['用户UID']===uid)),'人群包包含无效用户，请更新人群包');
+      assert(targets.length,'所选人群暂无用户，不能创建人工发放计划');
+      assert(targets.every(uid=>db.users.some(u=>u['用户UID']===uid)),'指定人群包含无效用户，请重新导入');
       assert(b.limit===null||targets.length<=b.limit-b.issued,'计划剩余额度不足以覆盖所选人群，请调整总量');
     }
     setBatchStatus(db,batchId,'ENABLED',t);
@@ -134,7 +141,7 @@ const Coupons = (() => {
     try {
       grantable(batch,task.source==='BACKOFFICE'?'MANUAL':'SYSTEM',t);
       const user=db.users.find(u=>u['用户UID']===item.targetUid);assert(user,'用户 UID 不存在');item.userId=user.uid;
-      assert(batch.audienceType!=='PACKAGE'||batch.audienceUids?.includes(item.targetUid),'用户不在本计划指定人群包内');
+      assert(batch.audienceType!=='UIDS'||batch.audienceUids?.includes(item.targetUid),'用户不在本计划指定人群内');
       const prior=db.couponData.userCoupons.find(c=>c.grantItemId===item.id);if(prior){item.status='SUCCESS';item.couponId=prior.id;item.error='';return item;}
       assert(batch.limit===null||batch.issued<batch.limit,'本计划发放总量已达上限');
       assert(db.couponData.userCoupons.filter(c=>c.batchId===batch.id&&c.userId===user.uid).length<batch.userLimit,'该用户本计划累计发放数量已达上限');
@@ -250,22 +257,31 @@ const Coupons = (() => {
     db.audit.unshift({time:date(t),operator:'原型升级',action:'券模板与发放计划解耦；历史额度、日期及用户券关系保留。'});
   }
   function normalizePlans(db,t){
-    const d=db.couponData;if(d.planModelVersion===19)return;
+    const d=db.couponData;if(d.planModelVersion===20)return;
     for(const tpl of d.templates){if(tpl.status==='DRAFT')tpl.status='PAUSED';tpl.revision||=1;tpl.deletedAt??=null;}
-    for(const b of d.batches){b.ruleSnapshot||=rule(db,b.templateId);b.ruleSnapshot.allowedMethods||=[...new Set([...(get(db,'templates',b.templateId).allowedMethods||[]),b.method])];b.ruleSnapshot.templateRevision||=1;}
-    d.audiencePacks||=[{id:'CP-AUDIENCE-NN',name:'NN 渠道用户（演示）',userUids:db.users.filter(u=>u['注册渠道标识']==='nn-demo').map(u=>u['用户UID'])},{id:'CP-AUDIENCE-WEB',name:'独立站用户（演示）',userUids:db.users.filter(u=>u['注册渠道标识']==='web-demo').map(u=>u['用户UID'])}];
+    for(const b of d.batches){b.ruleSnapshot||=rule(db,b.templateId);b.ruleSnapshot.templateRevision||=1;}
     for(const u of db.users){if(!u['用户昵称']&&['U-DEMO-01','U-DEMO-02'].includes(u['用户UID']))u['用户昵称']=u['用户UID']==='U-DEMO-01'?'远山（演示）':'星海（演示）';}
     for(const b of d.batches){
       b.validityType||='FIXED';b.validDays??=null;b.timingType||='IMMEDIATE';b.audienceType||='ALL';b.audiencePackageId??=null;b.audienceName||='全部用户';
       if(b.status==='PAUSED'){b.legacyStatus='PAUSED';b.status='CLOSED';b.endedAt=t;b.endReason='旧版暂停计划归档';}
       if(b.status==='ENABLED'&&ms(b.issueFrom)>ms(t)){b.legacyIssueFrom=b.issueFrom;b.status='DRAFT';b.endReason='旧版定时计划需手动开启';}
     }
-    d.planModelVersion=19;db.audit.unshift({time:date(t),operator:'原型升级',action:'发放计划支持领取后有效期、人群和立即发放；旧暂停计划归档，历史用户券及交易记录保留。'});
+    for(const tpl of d.templates)delete tpl.allowedMethods;
+    for(const b of d.batches){
+      delete b.ruleSnapshot.allowedMethods;
+      if(b.audienceType==='PACKAGE'){
+        b.audienceType='UIDS';b.audienceUids||=[...(d.audiencePacks?.find(p=>p.id===b.audiencePackageId)?.userUids||[])];
+        b.audienceFileName||='历史指定人群';
+      }
+      delete b.audiencePackageId;delete b.audienceName;
+    }
+    delete d.audiencePacks;
+    d.planModelVersion=20;db.audit.unshift({time:date(t),operator:'原型升级',action:'模板移除发放方式约束；指定人群采用 UID 名单，历史券、发放计划及交易记录保留。'});
   }
   function recipients(db,batchId){
     return db.couponData.userCoupons.filter(c=>c.batchId===batchId).map(c=>{
       const item=get(db,'grantItems',c.grantItemId),task=get(db,'grantTasks',item.taskId),uses=db.couponData.redemptions.filter(r=>r.couponId===c.id),times=uses.filter(r=>r.redeemedAt).map(r=>r.redeemedAt).sort();
-      return {coupon:c,uid:Model.get(db,'users',c.userId)?.['用户UID']||c.userId,nickname:Model.get(db,'users',c.userId)?.['用户昵称']||Model.get(db,'users',c.userId)?.['昵称']||'未设置昵称',receivedAt:c.issuedAt,redeemedAt:times.at(-1)||null,redemptionCount:times.length,channel:task.source==='SYSTEM'?'三方活动（接口）':'后台人工发放',sourceSystem:task.sourceSystem||'管理后台',activityName:task.activityName||'',operator:task.operator,sourceRecordId:task.sourceRecordId||'',uses};
+      return {coupon:c,uid:Model.get(db,'users',c.userId)?.['用户UID']||c.userId,nickname:Model.get(db,'users',c.userId)?.['用户昵称']||Model.get(db,'users',c.userId)?.['昵称']||'未设置昵称',receivedAt:c.issuedAt,redeemedAt:times.at(-1)||null,redemptionCount:times.length,channel:task.source==='SYSTEM'?'活动奖励':'后台发放',sourceSystem:task.sourceSystem||'管理后台',activityName:task.activityName||'',operator:task.operator,sourceRecordId:task.sourceRecordId||'',uses};
     });
   }
   function seedReusable(db,t){
@@ -314,5 +330,5 @@ const Coupons = (() => {
     expire(db,t);normalizePlans(db,t);seedReusable(db,t);
     db.audit.unshift({time:date(t),operator:'原型升级',action:'新增营销管理 / 优惠券及独立演示记录；存量商品、订单记录保留。'});
   }
-  return {labels,methodLabels,get,now,at,money,date,minor,displayStatus,templateState,templateStatus,templateIssue,saveTemplate,setTemplateStatus,deleteTemplate,recipients,validityText,audienceText,audienceUsers,activatePlan,batchState,batchIssue,saveBatch,setBatchStatus,grantFromSystem,grant,retryGrant,expire,revoke,quote,demoContext,lock,redeem,release,returnAfterRefund,validate,upgrade};
+  return {labels,methodLabels,get,now,at,money,date,minor,displayStatus,templateState,templateStatus,templateIssue,saveTemplate,setTemplateStatus,deleteTemplate,recipients,validityText,audienceText,audienceIssue,audienceUsers,activatePlan,batchState,batchIssue,saveBatch,setBatchStatus,grantFromSystem,grant,retryGrant,expire,revoke,quote,demoContext,lock,redeem,release,returnAfterRefund,validate,upgrade};
 })();

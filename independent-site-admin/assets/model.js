@@ -1,6 +1,6 @@
 /* 原型数据规则。仅处理本地演示数据，不连接真实业务接口。 */
 const Model = (() => {
-  const VERSION = 19;
+  const VERSION = 20;
   const copy = value => JSON.parse(JSON.stringify(value));
   const object = value => value && typeof value === 'object' && !Array.isArray(value);
   const text = value => typeof value === 'string' && value.trim().length > 0;
@@ -156,7 +156,7 @@ const Model = (() => {
 
   function envelope(db) {
     const errors = [];
-    if (!object(db) || ![1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,VERSION].includes(db.version)) return ['不支持的备份版本'];
+    if (!object(db) || ![1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,VERSION].includes(db.version)) return ['不支持的备份版本'];
     if (db.version < 12 && db.searchHints !== undefined && !Array.isArray(db.searchHints)) errors.push('旧搜索底纹数据必须是数组');
     const collections = [...Object.keys(SCHEMA).filter(k => SCHEMA[k].columns), 'productSuppliers'];
     for (const key of collections) {
