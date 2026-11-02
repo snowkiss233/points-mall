@@ -20,11 +20,12 @@ const Coupons = (() => {
   const labels={DRAFT:'未开启（历史）',SCHEDULED:'待发放',ENABLED:'已开启',PAUSED:'已下架',CLOSED:'已结束',AVAILABLE:'未使用',PENDING:'待生效',LOCKED:'订单锁定',USED:'已核销',EXPIRED:'已过期',REVOKED:'已回收',SUCCESS:'成功',PARTIAL_SUCCESS:'部分成功',FAILED:'失败',REDEEMED:'已核销',RELEASED:'已释放',RETURNED:'已返还',NONE:'未触发',EXPIRED_NOT_RETURNED:'已过期不返券'};
   function displayStatus(c,t=now()){return c.status==='AVAILABLE'?(ms(t)>=ms(c.validTo)?'EXPIRED':ms(t)<ms(c.validFrom)?'PENDING':'AVAILABLE'):c.status;}
   const methodLabels={MANUAL:'人工发放',SYSTEM:'接口发放'};
+  const triggerSceneLabels={HOME:'首页',PRODUCT_DETAIL:'商品详情页',GAME_LIST:'游戏查询列表',PAYMENT_SUCCESS:'支付完成'};
   function templateState(c){return c.status;}
   function templateStatus(c){return {ENABLED:'已上架',PAUSED:'已下架'}[c.status]||c.status;}
   function batchState(c,t=now()){return c.status!=='DRAFT'&&c.issueTo&&ms(t)>=ms(c.issueTo)?'CLOSED':c.status;}
   const validityText=b=>b.validityType==='AFTER_RECEIPT'?`领取后 ${b.validDays} 天内有效`:date(b.validFrom)+' 至 '+date(b.validTo);
-  const audienceText=b=>b.audienceType==='CONDITIONS'?'指定人群 · '+[b.audienceConditions?.registeredFrom?'注册时间':'',b.audienceConditions?.uids?.length?'Excel 名单':'',({UNPAID:'未付费',PAID_ANY:'已付费 · 任意消费',PAID_SKU:'已付费 · 指定商品消费'})[b.audienceConditions?.payment]||''].filter(Boolean).join(' + '):b.audienceType==='UIDS'?`指定人群（${b.audienceUids?.length||0} 人）`:'全部用户';
+  const audienceText=b=>b.method==='SYSTEM'?'接口调用方指定':b.audienceType==='CONDITIONS'?'指定人群 · '+[b.audienceConditions?.registeredFrom?'注册时间':'',({UNPAID:'未付费',PAID_ANY:'已付费 · 任意消费',PAID_SKU:'已付费 · 指定商品消费'})[b.audienceConditions?.payment]||''].filter(Boolean).join(' + '):b.audienceType==='UIDS'?`Excel 导入名单（${b.audienceUids?.length||0} 人）`:'全部用户';
   function audienceIssue(db,values){
     if(!Array.isArray(values)||!values.length)return '请上传 Excel 导入指定人群 UID';
     if(values.some(v=>typeof v!=='string'||!v.trim()||v!==v.trim()))return '导入 UID 格式错误';
@@ -104,9 +105,10 @@ const Coupons = (() => {
     }else if(!int(d.validDays)||d.validDays<1||!Number.isFinite(new Date(ms('2026-01-01')+d.validDays*86400000).getTime()))return '领取后有效天数须为有效正整数';
     if(!Number.isFinite(ms(d.issueFrom)))return '缺少发放开始时间';
     if(d.issueTo&&(!Number.isFinite(ms(d.issueTo))||ms(d.issueFrom)>=ms(d.issueTo)))return '发放结束时间须晚于开始时间';
+    if(!existing&&d.method==='SYSTEM'&&!d.issueTo)return '接口发放截止时间为必填项';
     if((d.timingType||'IMMEDIATE')!=='IMMEDIATE')return '本期仅支持立即发放';
-    if(!['ALL','UIDS','CONDITIONS'].includes(d.audienceType||'ALL'))return '请选择发放人群';
-    if(d.audienceType==='CONDITIONS'){
+    if(d.method==='MANUAL'&&!['ALL','UIDS','CONDITIONS'].includes(d.audienceType||'ALL'))return '请选择发放人群';
+    if(d.method==='MANUAL'&&d.audienceType==='CONDITIONS'){
       const c=d.audienceConditions||{};
       if(!c.registeredFrom&&!c.uids?.length&&!c.payment)return '请至少配置一项指定人群条件';
       if(c.registeredFrom||c.registeredTo)if(!Number.isFinite(ms(c.registeredFrom))||!Number.isFinite(ms(c.registeredTo))||ms(c.registeredFrom)>ms(c.registeredTo))return '请填写有效的注册时间范围';
@@ -114,10 +116,11 @@ const Coupons = (() => {
       if(c.payment&&!['UNPAID','PAID_ANY','PAID_SKU'].includes(c.payment))return '付费条件无效';
       if(c.payment==='PAID_SKU'&&(!c.paidSkuIds?.length||c.paidSkuIds.some(pid=>!Model.get(db,'products',pid))))return '请选择消费商品';
     }
-    if(d.audienceType==='UIDS'){
+    if(d.method==='MANUAL'&&d.audienceType==='UIDS'){
       if(!Array.isArray(d.audienceUids)||!existing&&!d.audienceUids.length)return '请上传 Excel 导入指定人群 UID';
       if(!existing){const error=audienceIssue(db,d.audienceUids);if(error)return error;}
     }
+    if(!existing&&(!Array.isArray(d.triggerScenes)||!d.triggerScenes.length||d.triggerScenes.some(scene=>!triggerSceneLabels[scene])))return '请至少选择一个有效触发场景';
     return '';
   }
   function saveBatch(db,d,batchId='',t=now()){
@@ -125,11 +128,11 @@ const Coupons = (() => {
     const same=old&&old.templateId===d.templateId,tpl=get(db,'templates',d.templateId);
     if(!same)assert(tpl&&tpl.status==='ENABLED'&&!tpl.deletedAt,'请选择已上架且未删除的模板');
     const snapshot=same?old.ruleSnapshot:{...rule(db,d.templateId),templateRevision:tpl.revision||1};
-    d={validityType:'FIXED',timingType:'IMMEDIATE',audienceType:'ALL',...d};
+    d={validityType:'FIXED',timingType:'IMMEDIATE',audienceType:'ALL',triggerScenes:d.triggerScenes===undefined?['HOME']:d.triggerScenes,...d};
     if(d.validityType==='AFTER_RECEIPT'){d.validFrom=null;d.validTo=null;}else d.validDays=null;
     if(d.audienceType==='UIDS'){const issue=audienceIssue(db,d.audienceUids);assert(!issue,issue);}
-    const error=batchIssue(db,{...d,ruleSnapshot:snapshot},true);assert(!error,error);
-    const fields={name:d.name.trim(),templateId:d.templateId,method:d.method,limit:d.limit===undefined?null:d.limit,userLimit:d.userLimit===undefined?null:d.userLimit,audienceConditions:copy(d.audienceConditions||{}),validFrom:d.validFrom,validTo:d.validTo,issueFrom:d.issueFrom,issueTo:d.issueTo,ruleSnapshot:copy(snapshot),validityType:d.validityType,validDays:d.validDays,timingType:d.timingType,audienceType:d.audienceType,audienceUids:d.audienceType==='UIDS'?[...d.audienceUids]:[],audienceFileName:['UIDS','CONDITIONS'].includes(d.audienceType)?(d.audienceFileName||''):''};
+    const error=batchIssue(db,{...d,ruleSnapshot:snapshot},!!old);assert(!error,error);
+    const fields={name:d.name.trim(),templateId:d.templateId,method:d.method,limit:d.limit===undefined?null:d.limit,userLimit:d.userLimit===undefined?null:d.userLimit,audienceConditions:copy(d.audienceConditions||{}),validFrom:d.validFrom,validTo:d.validTo,issueFrom:d.issueFrom,issueTo:d.issueTo,triggerScenes:[...(d.triggerScenes||[])],ruleSnapshot:copy(snapshot),validityType:d.validityType,validDays:d.validDays,timingType:d.timingType,audienceType:d.method==='SYSTEM'?'ALL':d.audienceType,audienceUids:d.method==='MANUAL'&&d.audienceType==='UIDS'?[...d.audienceUids]:[],audienceFileName:d.method==='MANUAL'&&['UIDS','CONDITIONS'].includes(d.audienceType)?(d.audienceFileName||''):''};
     const row=old?Object.assign(old,fields,{updatedAt:t}):{id:id('BATCH'),...fields,status:'DRAFT',issued:0,createdAt:t,updatedAt:t,publishedAt:null};
     if(!old)db.couponData.batches.unshift(row);log(db,old?'编辑发放计划':'创建发放计划',row.id,old?'DRAFT':'',row.status,'券规则按创建计划时保存，后续模板变更不影响本计划',t);return row;
   }
@@ -165,7 +168,7 @@ const Coupons = (() => {
     try {
       grantable(batch,task.source==='BACKOFFICE'?'MANUAL':'SYSTEM',t);
       const user=db.users.find(u=>u['用户UID']===item.targetUid);assert(user,'用户 UID 不存在');item.userId=user.uid;
-      assert(batch.method==='MANUAL'&&batch.recipientSnapshot?batch.recipientSnapshot.includes(item.targetUid):matchesAudience(db,batch,user),'用户不在本计划指定人群内');
+      assert(batch.method==='SYSTEM'||(batch.recipientSnapshot?batch.recipientSnapshot.includes(item.targetUid):matchesAudience(db,batch,user)),'用户不在本计划指定人群内');
       const prior=db.couponData.userCoupons.find(c=>c.grantItemId===item.id);if(prior){item.status='SUCCESS';item.couponId=prior.id;item.error='';return item;}
       assert(batch.limit===null||batch.issued<batch.limit,'本计划发放总量已达上限');
       assert(batch.userLimit==null||db.couponData.userCoupons.filter(c=>c.batchId===batch.id&&c.userId===user.uid).length<batch.userLimit,'该用户本计划累计发放数量已达上限');
@@ -358,5 +361,5 @@ const Coupons = (() => {
     expire(db,t);normalizePlans(db,t);seedReusable(db,t);
     db.audit.unshift({time:date(t),operator:'原型升级',action:'新增营销管理 / 优惠券及独立演示记录；存量商品、订单记录保留。'});
   }
-  return {labels,methodLabels,get,now,at,money,date,minor,displayStatus,templateState,templateStatus,templateIssue,saveTemplate,setTemplateStatus,deleteTemplate,recipients,validityText,audienceText,audienceIssue,audienceUsers,matchesAudience,activatePlan,batchState,batchIssue,saveBatch,setBatchStatus,grantFromSystem,grant,retryGrant,expire,revoke,quote,demoContext,lock,redeem,release,returnAfterRefund,validate,upgrade};
+  return {labels,methodLabels,triggerSceneLabels,get,now,at,money,date,minor,displayStatus,templateState,templateStatus,templateIssue,saveTemplate,setTemplateStatus,deleteTemplate,recipients,validityText,audienceText,audienceIssue,audienceUsers,matchesAudience,activatePlan,batchState,batchIssue,saveBatch,setBatchStatus,grantFromSystem,grant,retryGrant,expire,revoke,quote,demoContext,lock,redeem,release,returnAfterRefund,validate,upgrade};
 })();
