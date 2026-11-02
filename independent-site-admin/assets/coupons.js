@@ -130,7 +130,7 @@ const Coupons = (() => {
     if(d.validityType==='AFTER_RECEIPT'){d.validFrom=null;d.validTo=null;}else d.validDays=null;
     if(d.audienceType==='UIDS'){const issue=audienceIssue(db,d.audienceUids);assert(!issue,issue);}
     const error=batchIssue(db,{...d,ruleSnapshot:snapshot},true);assert(!error,error);
-    const fields={name:d.name.trim(),templateId:d.templateId,method:d.method,limit:d.limit,userLimit:d.userLimit??null,audienceConditions:copy(d.audienceConditions||{}),validFrom:d.validFrom,validTo:d.validTo,issueFrom:d.issueFrom,issueTo:d.issueTo,ruleSnapshot:copy(snapshot),validityType:d.validityType,validDays:d.validDays,timingType:d.timingType,audienceType:d.audienceType,audienceUids:d.audienceType==='UIDS'?[...d.audienceUids]:[],audienceFileName:['UIDS','CONDITIONS'].includes(d.audienceType)?(d.audienceFileName||''):''};
+    const fields={name:d.name.trim(),templateId:d.templateId,method:d.method,limit:d.limit===undefined?null:d.limit,userLimit:d.userLimit===undefined?null:d.userLimit,audienceConditions:copy(d.audienceConditions||{}),validFrom:d.validFrom,validTo:d.validTo,issueFrom:d.issueFrom,issueTo:d.issueTo,ruleSnapshot:copy(snapshot),validityType:d.validityType,validDays:d.validDays,timingType:d.timingType,audienceType:d.audienceType,audienceUids:d.audienceType==='UIDS'?[...d.audienceUids]:[],audienceFileName:['UIDS','CONDITIONS'].includes(d.audienceType)?(d.audienceFileName||''):''};
     const row=old?Object.assign(old,fields,{updatedAt:t}):{id:id('BATCH'),...fields,status:'DRAFT',issued:0,createdAt:t,updatedAt:t,publishedAt:null};
     if(!old)db.couponData.batches.unshift(row);log(db,old?'编辑发放计划':'创建发放计划',row.id,old?'DRAFT':'',row.status,'券规则按创建计划时保存，后续模板变更不影响本计划',t);return row;
   }

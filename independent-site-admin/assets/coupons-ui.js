@@ -12,7 +12,7 @@ const CouponUI = (() => {
   const summary=t=>t.ruleType==='DISCOUNT'?`${t.threshold?'满 '+C.money(t.threshold)+' 元，':'无门槛 '}${t.discountTenths/10} 折`:t.threshold?`满 ${C.money(t.threshold)} 减 ${C.money(t.face)}`:`无门槛减 ${C.money(t.face)}`;
   const sel=(name,opts,value='',multiple=false)=>`<select aria-label="${h(({status:'状态',skuIds:'适用商品',method:'发放方式',batchId:'发放计划',templateId:'优惠券模板'})[name]||name)}" name="${h(name)}" ${multiple?'multiple':''}>${multiple?'':'<option value="">全部</option>'}${opts.map(([v,l])=>`<option value="${h(v)}" ${(multiple?value.includes(v):value===v)?'selected':''}>${h(l)}</option>`).join('')}</select>`;
   const field=(name,control,help='',required=false,wide=false)=>`<div class="field ${wide?'span2':''}"><span class="${required?'required':''}">${h(name)}</span>${control}${help?`<div class="field-help">${h(help)}</div>`:''}</div>`;
-  const input=(name,value='',type='text',attrs='')=>`<input aria-label="${h(({issueFrom:'开始发放时间',issueTo:'结束发放时间',validFrom:'券生效时间',validTo:'券失效时间',validDays:'有效天数',name:'模板名称',face:'券面额（元）',threshold:'使用门槛（元）',limit:'计划发放总量（张）',userLimit:'每人本计划发放上限（张）',quantity:'数量',keyword:'名称或编号',user:'用户 UID',order:'订单编号'})[name]||name)}" name="${h(name)}" type="${type}" value="${h(value)}" ${attrs}>`;
+  const input=(name,value='',type='text',attrs='')=>`<input aria-label="${h(({issueFrom:'开始发放时间',issueTo:'结束发放时间',validFrom:'券生效时间',validTo:'券失效时间',validDays:'有效天数',name:'模板名称',face:'券面额（元）',threshold:'使用门槛（元）',quantity:'数量',keyword:'名称或编号',user:'用户 UID',order:'订单编号'})[name]||name)}" name="${h(name)}" type="${type}" value="${h(value)}" ${attrs}>`;
   const table=(headers,rows)=>`<div class="table-wrap"><table class="coupon-table"><thead><tr>${headers.map(x=>`<th class="${x==='操作'?'actions-cell':''}">${x}</th>`).join('')}</tr></thead><tbody>${rows.length?rows.map(cells=>`<tr>${cells.map((x,i)=>`<td class="${headers[i]==='操作'?'actions-cell':''}">${x}</td>`).join('')}</tr>`).join(''):`<tr><td class="empty" colspan="${headers.length}">暂无符合条件的数据</td></tr>`}</tbody></table></div>`;
   const dl=rows=>`<dl class="detail-grid coupon-details">${rows.map(([label,value])=>`<div><dt>${h(label)}</dt><dd>${h(value??'—')}</dd></div>`).join('')}</dl>`;
   function run(action,fn,done){let result;if(commit(action,()=>{result=fn();})){done?.(result);return true;}return false;}
@@ -38,8 +38,8 @@ const CouponUI = (() => {
       headers=['优惠券 ID','优惠券名称','优惠规则','适用范围','关联发放计划数','模板状态','操作'];
       cells=rows.map(t=>[`<span class="coupon-number">${h(t.id)}</span>`,`<strong>${h(t.name)}</strong>`,h(summary(t)),t.scope==='ALL'?'全部商品':`指定 ${d.scopes.filter(x=>x.templateId===t.id).length} 个商品`,button(String(d.batches.filter(b=>b.templateId===t.id).length),'relatedPlans',t.id),templatePill(t),`<div class="coupon-actions">${button('详情','templateDetail',t.id)}${button('编辑','editTemplate',t.id)}${t.status==='ENABLED'?button('新建发放','planFromTemplate',t.id):''}${button(t.status==='ENABLED'?'下架':'上架',t.status==='ENABLED'?'disableTemplate':'enableTemplate',t.id)}${button('删除','deleteTemplate',t.id)}</div>`]);
     }else{
-      headers=['计划 ID','计划名称','优惠券模板','发放方式','发放人群','开启时间','券有效期','已发 / 总量','计划状态','操作'];
-      cells=rows.map(b=>[`<span class="coupon-number">${h(b.id)}</span>`,`<strong>${h(b.name)}</strong>`,button(b.ruleSnapshot?.name||template(b.templateId)?.name,'planRule',b.id),h(C.methodLabels[b.method]),h(C.audienceText(b)),h(C.date(b.publishedAt)),`<span class="coupon-wrap coupon-date">${h(C.validityText(b))}</span>`,`${b.issued} / ${b.limit??'不限'}${quotaFull(b)?'<small class="coupon-source">额度已用尽</small>':''}`,pill(C.batchState(b))+(b.legacyPlan&&b.status!=='DRAFT'?'<small class="coupon-source">历史计划</small>':''),`<div class="coupon-actions">${button('发放详情','batchDetail',b.id)}${b.status==='DRAFT'?button('编辑','editBatch',b.id)+button('开启','openBatch',b.id):''}${C.batchState(b)!=='CLOSED'?button('结束','endBatch',b.id):''}</div>`]);
+      headers=['计划 ID','计划名称','优惠券模板','发放方式','发放人群','开启时间','券有效期','已发数量','计划状态','操作'];
+      cells=rows.map(b=>[`<span class="coupon-number">${h(b.id)}</span>`,`<strong>${h(b.name)}</strong>`,button(b.ruleSnapshot?.name||template(b.templateId)?.name,'planRule',b.id),h(C.methodLabels[b.method]),h(C.audienceText(b)),h(C.date(b.publishedAt)),`<span class="coupon-wrap coupon-date">${h(C.validityText(b))}</span>`,`${b.issued}${b.limit!==null&&b.limit!==undefined?`<small class="coupon-source">历史总量 ${b.limit}</small>`:''}`,pill(C.batchState(b))+(b.legacyPlan&&b.status!=='DRAFT'?'<small class="coupon-source">历史计划</small>':''),`<div class="coupon-actions">${button('发放详情','batchDetail',b.id)}${b.status==='DRAFT'?button('编辑','editBatch',b.id)+button('开启','openBatch',b.id):''}${C.batchState(b)!=='CLOSED'?button('结束','endBatch',b.id):''}</div>`]);
     }
     const actions=tab==='templates'?'<button class="btn primary" data-cp="newTemplate">＋ 新建模板</button>':'<button class="btn primary" data-cp="newBatch">＋ 新建发放计划</button>';
     $('#content').innerHTML=`<div class="page-head"><div><h1>${h(pageInfo.name)}</h1><p>${h(pageInfo.desc)}</p></div><div class="btn-row"><a class="btn" href="coupon-client.html" target="_blank" rel="noopener">客户端领券演示</a>${actions}</div></div>${filtersHtml}<section class="panel"><div class="panel-title"><h3>${tabs[tab]}</h3><span class="muted">共 ${all.length} 条</span></div>${table(headers,cells)}<div class="pagination"><button class="btn small" data-cp="prev" ${cpPage===1?'disabled':''}>上一页</button><span>${cpPage} / ${pages}</span><button class="btn small" data-cp="next" ${cpPage===pages?'disabled':''}>下一页</button><select aria-label="优惠券每页条数" id="cpPageSize">${[10,20,50].map(n=>`<option value="${n}" ${n===cpSize?'selected':''}>${n} 条/页</option>`).join('')}</select></div></section>`;
@@ -105,7 +105,7 @@ const CouponUI = (() => {
   const closingRule=b=>b.method==='MANUAL'&&!b.legacyPlan?'执行完成后自动结束':b.issueTo?C.date(b.issueTo):'未设置（手动结束）';
   const closingReason=b=>C.batchState(b)!=='CLOSED'?'—':b.endReason||(b.endedAt?'历史结束（未记录原因）':'到达发放截止时间');
   function showBatch(batchId='',templateId=''){
-    const old=batchId?batch(batchId):null,d=old?{...old}:{name:'',templateId,method:'MANUAL',limit:1000,userLimit:1,validityType:'FIXED',validFrom:C.now(),validTo:C.at(C.now(),30),validDays:7,audienceType:'ALL',audienceUids:[],audienceFileName:'',timingType:'IMMEDIATE',issueTo:''};
+    const old=batchId?batch(batchId):null,d=old?{...old}:{name:'',templateId,method:'MANUAL',limit:null,userLimit:null,validityType:'FIXED',validFrom:C.now(),validTo:C.at(C.now(),30),validDays:7,audienceType:'ALL',audienceUids:[],audienceFileName:'',timingType:'IMMEDIATE',issueTo:''};
     const choices=db.couponData.templates.filter(t=>t.status==='ENABLED'&&!t.deletedAt);
     if(batchId&&!choices.some(t=>t.id===d.templateId))choices.unshift({...template(d.templateId),name:d.ruleSnapshot.name+'（原计划保留）'});
     const radios=(name,options,value)=>`<div class="coupon-radio-row">${options.map(([v,l,disabled])=>`<label class="coupon-radio ${disabled?'disabled':''}"><input type="radio" name="${name}" aria-label="${l}" value="${v}" ${v===value?'checked':''} ${disabled?'disabled':''}><span>${l}</span></label>`).join('')}</div>`;
@@ -120,7 +120,6 @@ const CouponUI = (() => {
       <div class="field span2" id="cpAudienceField"><span class="required">导入用户 UID</span><div class="coupon-upload"><a class="btn small" href="assets/templates/coupon-audience-template.xlsx" download="优惠券指定人群导入模板.xlsx">下载 Excel 模板</a><input name="audienceFile" type="file" aria-label="上传指定人群 Excel" accept=".xlsx"></div><div class="field-help">仅支持 .xlsx，且只能有一个含数据的工作表；首列为 UID，从第 2 行起每行填写一个，使用文本格式保留前导零与长 UID。重复 UID 自动去重。原型单次最多 10,000 行，文件不超过 5 MB。</div><div class="coupon-import-result" id="cpImportResult" aria-live="polite"></div></div>
       ${field('发放时间',radios('timingType',[['IMMEDIATE','立即发放'],['SCHEDULED','定时发放（暂不支持）',true]],'IMMEDIATE'),'创建后立即生效。',true,true)}
       <div class="field span2" id="cpTimingHelp"><div class="field-help"></div></div>
-      ${field('计划发放总量（张）',input('limit',d.limit??'','number','min="1" step="1" placeholder="留空表示不限"'),'回收、过期不返还发行额度。')}
       ${field('券有效期',radios('validityType',[['FIXED','固定周期'],['AFTER_RECEIPT','领取后有效']],d.validityType),'',true,true)}
       <div class="field span2" id="cpFixedDates"><span class="required">有效日期</span><div class="coupon-date-inputs">${input('validFrom',local(d.validFrom),'datetime-local')}<span>至</span>${input('validTo',local(d.validTo),'datetime-local')}</div></div>
       <div class="field span2" id="cpRelativeDays"><span class="required">有效天数</span><div class="coupon-days">领取后 ${input('validDays',d.validDays||7,'number','min="1" step="1"')} 天内有效</div><div class="field-help">从实际到账时间起算，1 天为 24 小时。例：10月1日 10:00 领取，7 天后于10月8日 10:00 失效。</div></div>
@@ -141,8 +140,8 @@ const CouponUI = (() => {
       $('#cpRelativeDays').hidden=!relative;form.elements.validDays.disabled=!relative;
       $('#cpIssueEnd').hidden=manual;form.elements.issueTo.disabled=manual;
 
-      const count=C.audienceUsers(db,{audienceType:pack?'CONDITIONS':'ALL',audienceConditions:conditions()}).length,limit=form.elements.limit.value;
-      $('#cpTimingHelp .field-help').textContent=manual?`当前人群 ${count} 人，需发放 ${count} 张，每人 1 张。${limit!==''&&Number(limit)<count?'计划总量不足，请调整。':''}全部用户按创建时名单确定；执行完成后计划自动结束并归档。`:'创建后立即接收接口请求；仅所选人群可获券。调用方需传用户 UID、业务名称、来源系统及唯一奖励明细编号。';
+      const count=C.audienceUsers(db,{audienceType:pack?'CONDITIONS':'ALL',audienceConditions:conditions()}).length;
+      $('#cpTimingHelp .field-help').textContent=manual?`当前人群 ${count} 人，创建后每人发放 1 张；执行完成后计划自动结束并归档。`:'创建后立即接收接口请求；仅所选人群可获券。调用方需传用户 UID、业务名称、来源系统及唯一奖励明细编号。';
       SelectControls.refresh(form);
     };
     form.elements.templateId.onchange=()=>{
@@ -151,7 +150,7 @@ const CouponUI = (() => {
       box.textContent=t?summary(saved||t)+'；'+((saved||t).scope==='ALL'?'全部商品':'指定 '+ids.length+' 个商品')+'。规则随计划保存，后续模板变更不影响本计划。':'请选择模板查看优惠规则。';
       if(t&&(saved||t).scope==='SKU'){box.insertAdjacentHTML('beforeend',' <button type="button" class="link-btn">查看适用商品</button>');box.querySelector('button').onclick=()=>showSkus(ids);}update();
     };
-    form.addEventListener('change',e=>{if(['method','audienceType','validityType','useRegistration','useUids','paymentAudience','registeredFrom','registeredTo'].includes(e.target.name))update();});form.elements.limit.oninput=update;form.elements.templateId.onchange();
+    form.addEventListener('change',e=>{if(['method','audienceType','validityType','useRegistration','useUids','paymentAudience','registeredFrom','registeredTo'].includes(e.target.name))update();});form.elements.templateId.onchange();
     form.elements.audienceFile.onchange=async()=>{
       const file=form.elements.audienceFile.files[0],ticket=++uploadVersion,box=$('#cpImportResult'),submit=$('#'+mid+' .modal-foot button[type=submit]');
       importedUids=[];importedFile='';uploading=false;box.classList.remove('bad');update();
@@ -169,7 +168,7 @@ const CouponUI = (() => {
     };
     form.onsubmit=e=>{e.preventDefault();try{
       if(uploading)throw Error('请等待 Excel 校验完成');
-      const data=Object.fromEntries(new FormData(form)),time=C.now(),payload={name:data.batchName,templateId:data.templateId,method:data.method,limit:data.limit===''?null:Number(data.limit),userLimit:null,audienceType:data.audienceType,audienceConditions:data.audienceType==='CONDITIONS'?conditions():{},audienceUids:[],audienceFileName:importedFile,timingType:data.timingType,validityType:data.validityType,validDays:data.validityType==='AFTER_RECEIPT'?Number(data.validDays):null,issueFrom:time};
+      const data=Object.fromEntries(new FormData(form)),time=C.now(),payload={name:data.batchName,templateId:data.templateId,method:data.method,limit:null,userLimit:null,audienceType:data.audienceType,audienceConditions:data.audienceType==='CONDITIONS'?conditions():{},audienceUids:[],audienceFileName:importedFile,timingType:data.timingType,validityType:data.validityType,validDays:data.validityType==='AFTER_RECEIPT'?Number(data.validDays):null,issueFrom:time};
       for(const k of ['issueTo','validFrom','validTo'])payload[k]=data[k]?new Date(data[k]).toISOString():null;
       if(payload.audienceType==='CONDITIONS'&&form.elements.useUids.checked&&!importedUids.length)throw Error('请上传 Excel 导入指定人群 UID');
       if(payload.audienceType==='CONDITIONS'&&form.elements.useRegistration.checked&&(!payload.audienceConditions.registeredFrom||!payload.audienceConditions.registeredTo))throw Error('请完整填写注册时间范围');
@@ -179,7 +178,7 @@ const CouponUI = (() => {
   }
   function batchDetail(id){
     const b=batch(id),t=b.ruleSnapshot||template(b.templateId);recipientState={id,keyword:'',status:'',page:1};
-    modal('发放详情',dl([['计划名称',b.name],['计划编号',b.id],['优惠券模板',t.name],['优惠券模板 ID',b.templateId],['优惠规则',summary(t)],['发放方式',C.methodLabels[b.method]],['发放人群',C.audienceText(b)],['发放时间类型','立即发放'],['计划状态',C.labels[C.batchState(b)]],['已发 / 总量',b.issued+' / '+(b.limit??'不限')+(quotaFull(b)?'（额度已用尽）':'')],['开启时间',C.date(b.publishedAt)],[b.method==='MANUAL'&&!b.legacyPlan?'结束方式':'发放截止时间',closingRule(b)],['结束时间',C.date(b.endedAt||(C.batchState(b)==='CLOSED'?b.issueTo:null))],['结束原因',closingReason(b)],['券有效期',C.validityText(b)]])+(b.audienceType!=='ALL'?'<p>'+button('查看人群名单','viewAudience',id)+'</p>':'')+(b.legacyPlan?'<p class="field-help">历史计划：保留原配置及发券记录，新计划按当前规则执行。</p>':'')+'<div id="cpPlanRecipients"></div>','<button class="btn" data-action="close">关闭</button>',true);refreshRecipients();
+    modal('发放详情',dl([['计划名称',b.name],['计划编号',b.id],['优惠券模板',t.name],['优惠券模板 ID',b.templateId],['优惠规则',summary(t)],['发放方式',C.methodLabels[b.method]],['发放人群',C.audienceText(b)],['发放时间类型','立即发放'],['计划状态',C.labels[C.batchState(b)]],['已发数量',`${b.issued}${b.limit!==null&&b.limit!==undefined?'（历史总量 '+b.limit+'）':''}`],['开启时间',C.date(b.publishedAt)],[b.method==='MANUAL'&&!b.legacyPlan?'结束方式':'发放截止时间',closingRule(b)],['结束时间',C.date(b.endedAt||(C.batchState(b)==='CLOSED'?b.issueTo:null))],['结束原因',closingReason(b)],['券有效期',C.validityText(b)]])+(b.audienceType!=='ALL'?'<p>'+button('查看人群名单','viewAudience',id)+'</p>':'')+(b.legacyPlan?'<p class="field-help">历史计划：保留原配置及发券记录，新计划按当前规则执行。</p>':'')+'<div id="cpPlanRecipients"></div>','<button class="btn" data-action="close">关闭</button>',true);refreshRecipients();
   }
   function refreshRecipients(){
     const root=$('#cpPlanRecipients');if(!root||!recipientState)return;const q=recipientState;
