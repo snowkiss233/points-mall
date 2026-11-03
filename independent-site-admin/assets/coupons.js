@@ -17,13 +17,24 @@ const Coupons = (() => {
   const money = n => (n/100).toFixed(2);
   const date = t => t?new Date(t).toLocaleString('sv-SE',{hour12:false}):'—';
   function minor(v) {assert(/^\d+(\.\d{1,2})?$/.test(String(v)),'金额须为非负数字，最多两位小数');const n=Math.round(Number(v)*100);assert(int(n),'金额超出有效范围');return n;}
-  const labels={DRAFT:'未开启（历史）',SCHEDULED:'待发放',ENABLED:'发放中',PAUSED:'已下架',CLOSED:'已结束',VOID:'已作废',AVAILABLE:'未使用',PENDING:'待生效',LOCKED:'订单锁定',USED:'已核销',EXPIRED:'已过期',REVOKED:'已回收',SUCCESS:'成功',PARTIAL_SUCCESS:'部分成功',FAILED:'失败',REDEEMED:'已核销',RELEASED:'已释放',RETURNED:'已返还',NONE:'未触发',EXPIRED_NOT_RETURNED:'已过期不返券'};
+  const labels={DRAFT:'未开启（历史）',SCHEDULED:'待发放',ENABLED:'进行中',PAUSED:'已下架',CLOSED:'已结束',VOID:'已作废',AVAILABLE:'未使用',PENDING:'待生效',LOCKED:'订单锁定',USED:'已核销',EXPIRED:'已过期',REVOKED:'已回收',SUCCESS:'成功',PARTIAL_SUCCESS:'部分成功',FAILED:'失败',REDEEMED:'已核销',RELEASED:'已释放',RETURNED:'已返还',NONE:'未触发',EXPIRED_NOT_RETURNED:'已过期不返券',NOT_STARTED:'未发放',ISSUING:'发放中',ISSUED:'已发完',INCOMPLETE:'未发完',CONTINUOUS:'持续发放'};
   function displayStatus(c,t=now()){return c.status==='AVAILABLE'?(ms(t)>=ms(c.validTo)?'EXPIRED':ms(t)<ms(c.validFrom)?'PENDING':'AVAILABLE'):c.status;}
   const methodLabels={MANUAL:'人工发放',SYSTEM:'接口发放'};
   const triggerSceneLabels={HOME:'首页',PRODUCT_DETAIL:'商品详情页',GAME_LIST:'游戏查询列表',PAYMENT_SUCCESS:'支付完成'};
   function templateState(c){return c.status;}
   function templateStatus(c){return {ENABLED:'已上架',PAUSED:'已下架',VOID:'已作废'}[c.status]||c.status;}
   function batchState(c,t=now()){return c.status!=='DRAFT'&&c.issueTo&&ms(t)>=ms(c.issueTo)?'CLOSED':c.status;}
+  function issueState(db,b){
+    if(b.method==='SYSTEM')return 'CONTINUOUS';
+    if(b.status==='DRAFT')return 'NOT_STARTED';
+    const tasks=db.couponData.grantTasks.filter(task=>task.batchId===b.id);
+    const items=db.couponData.grantItems.filter(item=>tasks.some(task=>task.id===item.taskId));
+    if(items.some(item=>item.status==='PENDING'||item.status==='RUNNING'))return 'ISSUING';
+    const expected=Array.isArray(b.recipientSnapshot)?b.recipientSnapshot.length:tasks.reduce((sum,task)=>sum+(task.targetCount||0),0);
+    const succeeded=items.filter(item=>item.status==='SUCCESS').length;
+    if(expected>0&&succeeded>=expected)return 'ISSUED';
+    return succeeded||items.length?'INCOMPLETE':'NOT_STARTED';
+  }
   const validityText=b=>{if(b.validityType!=='AFTER_RECEIPT')return date(b.validFrom)+' 至 '+date(b.validTo);let s=b.validDurationSeconds??(b.validDays||0)*86400;const d=Math.floor(s/86400);s%=86400;const h=Math.floor(s/3600);s%=3600;const m=Math.floor(s/60);s%=60;return '领取后 '+[[d,'天'],[h,'小时'],[m,'分'],[s,'秒']].filter(([n])=>n).map(([n,u])=>n+u).join('')+'内有效';};
   const audienceText=b=>b.method==='SYSTEM'?'接口调用方指定':b.audienceType==='CONDITIONS'?'指定人群 · '+[b.audienceConditions?.registeredFrom?'注册时间':'',({UNPAID:'未付费',PAID_ANY:'已付费 · 任意消费',PAID_SKU:'已付费 · 指定商品消费'})[b.audienceConditions?.payment]||''].filter(Boolean).join(' + '):b.audienceType==='UIDS'?`Excel 导入名单（${b.audienceUids?.length||0} 人）`:'全部用户';
   function audienceIssue(db,values){
@@ -371,5 +382,5 @@ const Coupons = (() => {
     expire(db,t);normalizePlans(db,t);seedReusable(db,t);
     db.audit.unshift({time:date(t),operator:'原型升级',action:'新增营销管理 / 优惠券及独立演示记录；存量商品、订单记录保留。'});
   }
-  return {labels,methodLabels,triggerSceneLabels,get,now,at,money,date,minor,displayStatus,templateState,templateStatus,templateIssue,saveTemplate,setTemplateStatus,deleteTemplate,recipients,validityText,audienceText,audienceIssue,audienceUsers,matchesAudience,activatePlan,batchState,batchIssue,saveBatch,setBatchStatus,grantFromSystem,grant,retryGrant,expire,revoke,quote,demoContext,lock,redeem,release,returnAfterRefund,validate,upgrade};
+  return {labels,methodLabels,triggerSceneLabels,get,now,at,money,date,minor,displayStatus,templateState,templateStatus,templateIssue,saveTemplate,setTemplateStatus,deleteTemplate,recipients,validityText,audienceText,audienceIssue,audienceUsers,matchesAudience,activatePlan,batchState,issueState,batchIssue,saveBatch,setBatchStatus,grantFromSystem,grant,retryGrant,expire,revoke,quote,demoContext,lock,redeem,release,returnAfterRefund,validate,upgrade};
 })();
