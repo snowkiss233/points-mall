@@ -35,7 +35,7 @@ const CouponUI = (() => {
     let headers,cells;
     if(tab==='templates'){
       headers=['优惠券 ID','优惠券名称','优惠规则','适用范围','关联发放计划数','模板状态','操作'];
-      cells=rows.map(t=>[`<span class="coupon-number">${h(t.id)}</span>`,`<strong>${h(t.name)}</strong>`,h(summary(t)),t.scope==='ALL'?'全部商品':`指定 ${d.scopes.filter(x=>x.templateId===t.id).length} 个商品`,button(String(d.batches.filter(b=>b.templateId===t.id).length),'relatedPlans',t.id),templatePill(t),`<div class="coupon-actions">${button('详情','templateDetail',t.id)}${button('编辑','editTemplate',t.id)}${t.status==='ENABLED'?button('新建发放','planFromTemplate',t.id):''}${button(t.status==='ENABLED'?'下架':'上架',t.status==='ENABLED'?'disableTemplate':'enableTemplate',t.id)}${button('删除','deleteTemplate',t.id)}</div>`]);
+      cells=rows.map(t=>[`<span class="coupon-number">${h(t.id)}</span>`,`<strong>${h(t.name)}</strong>`,h(summary(t)),t.scope==='ALL'?'全部商品':`指定 ${d.scopes.filter(x=>x.templateId===t.id).length} 个商品`,button(String(d.batches.filter(b=>b.templateId===t.id).length),'relatedPlans',t.id),templatePill(t),`<div class="coupon-actions">${button('编辑','editTemplate',t.id)}${t.status==='ENABLED'?button('新建发放','planFromTemplate',t.id):''}${button(t.status==='ENABLED'?'下架':'上架',t.status==='ENABLED'?'disableTemplate':'enableTemplate',t.id)}${button('删除','deleteTemplate',t.id)}</div>`]);
     }else{
       headers=['计划 ID','计划名称','优惠券模板','发放方式','发放人群','开启时间','券有效期','已发数量','计划状态','操作'];
       cells=rows.map(b=>[`<span class="coupon-number">${h(b.id)}</span>`,`<strong>${h(b.name)}</strong>`,button(b.ruleSnapshot?.name||template(b.templateId)?.name,'planRule',b.id),h(C.methodLabels[b.method]),h(C.audienceText(b)),h(C.date(b.publishedAt)),`<span class="coupon-wrap coupon-date">${h(C.validityText(b))}</span>`,`${b.issued}`,pill(C.batchState(b)),`<div class="coupon-actions">${button('发放详情','batchDetail',b.id)}${b.status==='DRAFT'?button('编辑','editBatch',b.id)+button('开启','openBatch',b.id):''}${C.batchState(b)!=='CLOSED'?button('结束','endBatch',b.id):''}</div>`]);
@@ -86,7 +86,6 @@ const CouponUI = (() => {
     root.querySelector('[data-sku-confirm]').onclick=()=>{onConfirm([...picked]);closeModal(mid);};
     SelectControls.refresh(form);draw();
   }
-  function templateDetail(id){showTemplate(id,true);}
   function readOnlyList(title,headers,rows,metadata,searchLabel){
     const mid=modal(title,dl(metadata)+'<div class="cp-readonly-list"></div>','<button class="btn" data-action="close">关闭</button>',true),root=$('#'+mid+' .cp-readonly-list');
     let keyword='',page=1;const size=20;
@@ -104,7 +103,7 @@ const CouponUI = (() => {
   const closingRule=b=>b.method==='MANUAL'&&!b.legacyPlan?'执行完成后自动结束':b.issueTo?C.date(b.issueTo):'历史计划未设截止时间';
   const closingReason=b=>C.batchState(b)!=='CLOSED'?'—':b.endReason||(b.endedAt?'历史结束（未记录原因）':'到达发放截止时间');
   function showBatch(batchId='',templateId=''){
-    const old=batchId?batch(batchId):null,d=old?{...old}:{name:'',templateId,method:'MANUAL',limit:null,userLimit:null,validityType:'FIXED',validFrom:C.now(),validTo:C.at(C.now(),30),validDays:7,audienceType:'ALL',audienceUids:[],audienceFileName:'',timingType:'IMMEDIATE'};
+    const editing=Boolean(batchId),old=batchId?batch(batchId):null,d=old?{...old}:{name:'',templateId,method:'MANUAL',limit:null,userLimit:null,validityType:'FIXED',validFrom:C.now(),validTo:C.at(C.now(),30),validDays:7,audienceType:'ALL',audienceUids:[],audienceFileName:'',timingType:'IMMEDIATE'};
     const choices=db.couponData.templates.filter(t=>t.status==='ENABLED'&&!t.deletedAt);
     if(batchId&&!choices.some(t=>t.id===d.templateId))choices.unshift({...template(d.templateId),name:d.ruleSnapshot.name+'（原计划保留）'});
     const radios=(name,options,value)=>`<div class="coupon-radio-row">${options.map(([v,l,disabled])=>`<label class="coupon-radio ${disabled?'disabled':''}"><input type="radio" name="${name}" aria-label="${l}" value="${v}" ${v===value?'checked':''} ${disabled?'disabled':''}><span>${l}</span></label>`).join('')}</div>`;
@@ -121,17 +120,26 @@ const CouponUI = (() => {
       <div class="field span2" id="cpTimingHelp"><div class="field-help"></div></div>
       <div class="field span2" id="cpTriggerScenes"><span class="required">触发场景</span><div class="coupon-check-grid">${Object.entries(C.triggerSceneLabels).map(([v,l])=>`<label><input type="checkbox" name="triggerScenes" value="${v}"> ${l}</label>`).join('')}</div><div class="field-help">平台发券后，用户在所选场景看到到账提示交互。</div></div>
       ${field('券有效期',radios('validityType',[['FIXED','固定周期'],['AFTER_RECEIPT','领取后有效']],d.validityType),'',true,true)}
-      <div class="field span2" id="cpFixedDates"><span class="required">有效日期</span><div class="coupon-date-inputs">${input('validFrom',local(d.validFrom),'datetime-local')}<span>至</span>${input('validTo',local(d.validTo),'datetime-local')}</div></div>
+      <div class="field span2" id="cpFixedDates"><span class="required">券有效期</span><div class="coupon-date-inputs">${input('validFrom',local(d.validFrom),'datetime-local')}<span>至</span>${input('validTo',local(d.validTo),'datetime-local')}</div></div>
       <div class="field span2" id="cpRelativeDays"><span class="required">有效天数</span><div class="coupon-days">领取后 ${input('validDays',d.validDays||7,'number','min="1" step="1"')} 天内有效</div><div class="field-help">从实际到账时间起算，1 天为 24 小时。例：10月1日 10:00 领取，7 天后于10月8日 10:00 失效。</div></div>
       <div class="field span2" id="cpIssueDeadline"><span class="required">接口发放截止时间</span>${input('issueTo',local(d.issueTo),'datetime-local','required')}<div class="field-help">接口发放请求必须在此时间前提交，不能为空。</div></div>
       <div class="notice span2">计划开启后配置固定；结束后仅供查看，不能重新开启。模板后续编辑、下架或删除不影响本计划。</div>
     </form>`;
-    const mid=modal(batchId?'编辑发放计划':'新建发放计划',body,'<button class="btn" data-action="close">取消</button><button class="btn primary" type="submit" form="cpBatchForm">创建</button>',true),form=$('#cpBatchForm');
+    const mid=modal(batchId?'编辑发放计划':'新建发放计划',body,'<button class="btn" data-action="close">取消</button><button class="btn primary" type="submit" form="cpBatchForm">'+(editing?'保存':'创建')+'</button>',true),form=$('#cpBatchForm');
     let importedUids=[...(d.audienceUids||[])],importedFile=d.audienceFileName||'',uploadVersion=0,uploading=false;
     $('#cpImportResult').textContent=d.audienceType==='UIDS'&&importedUids.length?`已导入 ${importedUids.length} 个 UID（${importedFile||'历史指定人群'}）`:'尚未导入 UID';
     let paidSkuIds=[...(d.audienceConditions?.paidSkuIds||[])];
     const ac=d.audienceConditions||{};form.elements.useRegistration.checked=!!ac.registeredFrom;form.elements.registeredFrom.value=local(ac.registeredFrom);form.elements.registeredTo.value=local(ac.registeredTo);form.elements.paymentAudience.value=ac.payment||'';form.querySelectorAll('input[name="triggerScenes"]').forEach(n=>n.checked=(d.triggerScenes||[]).includes(n.value));
     const conditions=()=>({registeredFrom:form.elements.useRegistration.checked&&form.elements.registeredFrom.value?new Date(form.elements.registeredFrom.value).toISOString():null,registeredTo:form.elements.useRegistration.checked&&form.elements.registeredTo.value?new Date(form.elements.registeredTo.value).toISOString():null,payment:form.elements.paymentAudience.value,paidSkuIds:[...paidSkuIds]});
+    const lockEditFields=()=>{
+      if(!editing)return;
+      const editable=new Set(['triggerScenes','validityType','validFrom','validTo','validDays','issueTo']);
+      form.classList.add('coupon-editing');
+      form.querySelectorAll('input,select,textarea,button').forEach(el=>{
+        if(el.type==='submit')return;
+        el.disabled=!(el.name&&editable.has(el.name));
+      });
+    };
     $('#cpChoosePaid').onclick=()=>chooseSkus(paidSkuIds,ids=>{paidSkuIds=ids;update();});
     const update=()=>{
       const manual=form.elements.method.value==='MANUAL',relative=form.elements.validityType.value==='AFTER_RECEIPT',pack=manual&&form.elements.audienceType.value==='CONDITIONS',uids=manual&&form.elements.audienceType.value==='UIDS';
@@ -139,6 +147,10 @@ const CouponUI = (() => {
       $('#cpIssueDeadline').hidden=manual;form.elements.issueTo.disabled=manual;
       $('#cpFixedDates').hidden=relative;form.elements.validFrom.disabled=relative;form.elements.validTo.disabled=relative;
       $('#cpRelativeDays').hidden=!relative;form.elements.validDays.disabled=!relative;
+      if(editing){
+        form.elements.issueTo.disabled=manual;
+        lockEditFields();
+      }
 
       const count=pack?C.audienceUsers(db,{audienceType:'CONDITIONS',audienceConditions:conditions()}).length:uids?importedUids.length:db.users.length;
       $('#cpTimingHelp .field-help').textContent=manual?`当前人群 ${count} 人，创建后每人发放 1 张；执行完成后计划自动结束并归档。`:'创建后立即接收接口请求；无需选择发放人群，由接口调用方传入用户 UID、业务名称、来源系统及唯一奖励明细编号。';
@@ -168,11 +180,17 @@ const CouponUI = (() => {
     };
     form.onsubmit=e=>{e.preventDefault();try{
       if(uploading)throw Error('请等待 Excel 校验完成');
-      const fd=new FormData(form),data=Object.fromEntries(fd),time=C.now(),payload={name:data.batchName,templateId:data.templateId,method:data.method,limit:null,userLimit:null,audienceType:data.method==='SYSTEM'?'ALL':data.audienceType,audienceConditions:data.method==='MANUAL'&&data.audienceType==='CONDITIONS'?conditions():{},audienceUids:data.method==='MANUAL'&&data.audienceType==='UIDS'?[...importedUids]:[],audienceFileName:data.method==='MANUAL'&&data.audienceType==='UIDS'?importedFile:'',timingType:data.timingType,validityType:data.validityType,validDays:data.validityType==='AFTER_RECEIPT'?Number(data.validDays):null,issueFrom:time,triggerScenes:[...form.querySelectorAll('input[name="triggerScenes"]:checked')].map(n=>n.value),issueTo:data.issueTo?new Date(data.issueTo).toISOString():null};
+      const fd=new FormData(form),data=Object.fromEntries(fd),time=C.now();
+      if(editing){
+        data.batchName=d.name;data.templateId=d.templateId;data.method=d.method;data.audienceType=d.audienceType;data.timingType=d.timingType;
+        data.audienceConditions=d.audienceConditions||{};data.audienceUids=d.audienceUids||[];data.audienceFileName=d.audienceFileName||'';
+        data.validityType=data.validityType||d.validityType;data.validDays=data.validDays||d.validDays;
+      }
+      const payload={name:data.batchName,templateId:data.templateId,method:data.method,limit:editing?d.limit:null,userLimit:editing?d.userLimit:null,audienceType:data.method==='SYSTEM'?'ALL':data.audienceType,audienceConditions:data.method==='MANUAL'&&data.audienceType==='CONDITIONS'?(editing?data.audienceConditions:conditions()):{},audienceUids:data.method==='MANUAL'&&data.audienceType==='UIDS'?(editing?[...data.audienceUids]:[...importedUids]):[],audienceFileName:data.method==='MANUAL'&&data.audienceType==='UIDS'?(editing?data.audienceFileName:importedFile):'',timingType:data.timingType,validityType:data.validityType,validDays:data.validityType==='AFTER_RECEIPT'?Number(data.validDays):null,issueFrom:editing?d.issueFrom:time,triggerScenes:[...form.querySelectorAll('input[name="triggerScenes"]:checked')].map(n=>n.value),issueTo:data.issueTo?new Date(data.issueTo).toISOString():(editing?d.issueTo:null)};
       for(const k of ['validFrom','validTo'])payload[k]=data[k]?new Date(data[k]).toISOString():null;
       if(payload.method==='MANUAL'&&payload.audienceType==='UIDS'&&!importedUids.length)throw Error('请上传 Excel 导入指定人群 UID');
       if(payload.audienceType==='CONDITIONS'&&form.elements.useRegistration.checked&&(!payload.audienceConditions.registeredFrom||!payload.audienceConditions.registeredTo))throw Error('请完整填写注册时间范围');
-      if(!run('创建发放计划',()=>{const b=C.saveBatch(db,payload,batchId,time);C.activatePlan(db,b.id,time);return b;},b=>{closeModal(mid);if(current==='couponGrants')templateUrl('');go('batches',()=>toast(b.method==='MANUAL'?'已向 '+b.issued+' 位用户发券，计划已归档':'接口发放计划已创建并开启'));}))error(form,lastCommitError);
+      if(!run(editing?'编辑发放计划':'创建发放计划',()=>{const b=C.saveBatch(db,payload,batchId,time);if(!editing)C.activatePlan(db,b.id,time);return b;},b=>{closeModal(mid);if(current==='couponGrants')templateUrl('');go('batches',()=>toast(editing?'发放计划已保存':b.method==='MANUAL'?'已向 '+b.issued+' 位用户发券，计划已归档':'接口发放计划已创建并开启'));}))error(form,lastCommitError);
     }catch(err){error(form,err.message==='Invalid time value'?'请完整填写有效日期时间':err.message);}};
   }
   function batchDetail(id){
@@ -197,7 +215,7 @@ const CouponUI = (() => {
     if(action==='reset'){if(tab==='batches')templateUrl('');query={};cpPage=1;selected.clear();return render();}if(['prev','next'].includes(action)){cpPage+=action==='prev'?-1:1;selected.clear();return render();}
     if(action==='viewAudience')return showAudience(id);
     if(action==='newBatch')return showBatch();if(action==='editBatch')return showBatch(id);if(action==='batchDetail')return batchDetail(id);
-    if(action==='newTemplate')return showTemplate();if(action==='editTemplate')return showTemplate(id);if(action==='planFromTemplate')return showBatch('',id);if(action==='planRule')return showTemplate(batch(id).templateId,true,batch(id).ruleSnapshot);if(action==='templateDetail')return templateDetail(id);
+    if(action==='newTemplate')return showTemplate();if(action==='editTemplate')return showTemplate(id);if(action==='planFromTemplate')return showBatch('',id);if(action==='planRule')return showTemplate(batch(id).templateId,true,batch(id).ruleSnapshot);
     if(['disableTemplate','enableTemplate'].includes(action)){const state=action==='disableTemplate'?'PAUSED':'ENABLED',name=state==='PAUSED'?'下架模板':'上架模板';return confirmAction(name,'仅影响后续新建计划；已有计划和已发券继续按保存的规则执行。',()=>run(name,()=>C.setTemplateStatus(db,id,state),()=>{render();toast('模板状态已更新');}));}
     if(action==='deleteTemplate')return confirmAction('删除模板','删除后模板从列表移除，不能用于新建计划。已有计划继续发券，已发券和订单记录保留。确认删除？',()=>run('删除优惠券模板',()=>C.deleteTemplate(db,id),()=>{render();toast('模板已删除；已有计划和已发券不受影响');}));
     if(['openBatch','endBatch'].includes(action)){
