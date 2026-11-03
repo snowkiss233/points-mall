@@ -130,7 +130,8 @@ const Coupons = (() => {
     return '';
   }
   function saveBatch(db,d,batchId='',t=now()){
-    const old=batchId?get(db,'batches',batchId):null;assert(!batchId||old,'发放计划不存在');assert(!old||old.status==='DRAFT','已开启计划配置不可编辑，请新建计划');
+    const old=batchId?get(db,'batches',batchId):null;assert(!batchId||old,'发放计划不存在');assert(!old||batchState(old,t)!=='CLOSED','已结束计划不可编辑');
+    if(old){const editable=['triggerScenes','validityType','validFrom','validTo','validDays','validDurationSeconds','issueTo'];d={...old,...Object.fromEntries(editable.filter(k=>d[k]!==undefined).map(k=>[k,d[k]]))};}
     const same=old&&old.templateId===d.templateId,tpl=get(db,'templates',d.templateId);
     assert(tpl&&tpl.status!=='VOID'&&!tpl.deletedAt,'优惠券模板已作废，不能用于新建或编辑计划');
     if(!same)assert(tpl.status==='ENABLED','请选择已上架的模板');
