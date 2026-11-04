@@ -74,6 +74,9 @@ function updateDependencies(fid,changed=''){const state=forms.get(fid),form=$('#
   const column=Model.get(db,'columns',value('推荐区域'));
   const isAd=column?.['栏目名称']==='广告';
   toggle('广告位置',isAd);
+  const adField=form.querySelector('[data-field="广告位置"]'),adSelect=adField?.querySelector('select');
+  if(adSelect)adSelect.required=isAd;
+  adField?.querySelector('span')?.classList.toggle('required',isAd);
   toggle('选择商品',!isAd);
   if(changed==='推荐区域'){
    if(!isAd){form.elements.namedItem('广告位置').value='';state.draft['广告位置']='';}

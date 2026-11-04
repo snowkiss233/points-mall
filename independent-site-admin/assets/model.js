@@ -1,6 +1,6 @@
 /* 原型数据规则。仅处理本地演示数据，不连接真实业务接口。 */
 const Model = (() => {
-  const VERSION = 21;
+  const VERSION = 22;
   const copy = value => JSON.parse(JSON.stringify(value));
   const object = value => value && typeof value === 'object' && !Array.isArray(value);
   const text = value => typeof value === 'string' && value.trim().length > 0;
@@ -291,6 +291,19 @@ const Model = (() => {
       if (product['发售时间'] == null || product['发售时间'] === '时间待定') product['发售时间'] = '';
     }
     if (typeof Coupons !== 'undefined') Coupons.upgrade(db);
+    if (db.version < 22) {
+      let adColumn = db.columns.find(row => row['栏目名称'] === '广告');
+      if (!adColumn) {
+        adColumn = {uid:uid('column-ad'), '栏目名称':'广告', refs:{}};
+        db.columns.push(adColumn);
+        db.audit.unshift({time:new Date().toISOString(),operator:'原型升级',action:'新增“广告”栏目类型；原推荐配置保留'});
+      }
+      adColumn['栏目标识'] ||= 'section-advertising';
+      adColumn['栏目状态'] ||= adColumn['状态'] || '启用';
+      adColumn['排序'] ||= Math.max(0,...db.columns.filter(row=>row!==adColumn).map(row=>Number(row['排序'])||0))+1;
+      adColumn['说明'] ||= '广告配置类型；广告位置在推荐配置中选择。';
+      adColumn.refs ||= {};
+    }
     db.version = VERSION;
     for (const item of db.trash) if (item.key === 'dict') item.row.refs = {};
     return db;

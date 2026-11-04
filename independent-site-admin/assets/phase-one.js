@@ -139,7 +139,7 @@ const PhaseOne = (() => {
         column = {uid:id(db,'columns','phase1-col-'+index),'栏目名称':name,'栏目状态':'启用','排序':index+1,refs:{}};
         db.columns.push(column);
       }
-      column['栏目标识'] ||= 'section-' + column.uid;
+      column['栏目标识'] ||= name === '广告' ? 'section-advertising' : 'section-' + column.uid;
       column['栏目状态'] ||= column['状态'] || '启用';
       column['排序'] = Number(column['排序'] || index+1);
       column['说明'] ||= name === '广告' ? '广告配置类型；在推荐配置中选择具体投放位置。' : index < 3 ? '原有栏目' : '一期候选演示枚举，待确认';
