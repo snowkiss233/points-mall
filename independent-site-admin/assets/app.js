@@ -89,8 +89,9 @@ function updateDependencies(fid,changed=''){const state=forms.get(fid),form=$('#
   const detail=value('跳转类型')==='商品详情';toggle('跳转商品',detail);toggle('外链地址',!detail);
   const product=form.elements.namedItem('跳转商品'),link=form.elements.namedItem('外链地址');
   if(changed==='跳转类型'){if(detail&&link)link.value='';if(!detail&&product)product.value='';}
-  if(product)product.required=detail;
-  if(link)link.required=!detail;
+  const active=value('状态')==='启用';
+  if(product)product.required=detail&&active;
+  if(link)link.required=!detail&&active;
  }
  if(state.key==='dictItems'){toggle('key图片',value('key类型')==='图片');toggle('key',value('key类型')!=='图片');}
  if(state.key==='suppliers')toggle('选择服务商',value('合作方式')==='接口');

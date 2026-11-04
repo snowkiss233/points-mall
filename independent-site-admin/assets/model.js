@@ -245,8 +245,8 @@ const Model = (() => {
     for (const row of db.searchPlaceholder || []) {
       if (!text(row['底纹文案'])) errors.push('搜索底纹文案不能为空');
       if (!['商品详情','外链'].includes(row['跳转类型'])) errors.push('搜索底纹跳转类型无效');
-      if (row['跳转类型']==='商品详情' && !get(db,'products',row.refs?.['跳转商品'])) errors.push('商品详情跳转必须选择有效商品');
-      if (row['跳转类型']==='外链' && !/^https?:\/\//i.test(String(row['外链地址']||''))) errors.push('外链地址须以 http:// 或 https:// 开头');
+      if (row['状态']==='启用' && row['跳转类型']==='商品详情' && !get(db,'products',row.refs?.['跳转商品'])) errors.push('启用的商品详情跳转必须选择有效商品');
+      if (row['状态']==='启用' && row['跳转类型']==='外链' && !/^https?:\/\//i.test(String(row['外链地址']||''))) errors.push('启用的外链地址须以 http:// 或 https:// 开头');
       if (!Number.isSafeInteger(row['排序']) || row['排序']<0) errors.push('搜索底纹排序必须为非负整数');
     }
     if (typeof AuthorizedLogin !== 'undefined') errors.push(...AuthorizedLogin.validate(db));
@@ -315,11 +315,10 @@ const Model = (() => {
       db.searchPlaceholder ||= [];
       const dict = db.dict.find(row=>row['字典编号']==='client_search_placeholders');
       const oldRows = db.dictItems.filter(row=>row.parentId===dict?.uid);
-      const demoProduct=db.products.find(product=>product['状态']==='上架')?.uid||db.products[0]?.uid||'';
-      for (const [index,row] of oldRows.entries()) db.searchPlaceholder.push({uid:row.uid,ID:'SEARCH-HINT-'+(index+1),底纹文案:row.value,跳转类型:'商品详情',跳转商品:demoProduct,外链地址:'',排序:Number(row['排序值'])||index+1,状态:row['是否启用']||'启用',refs:{'跳转商品':demoProduct},'创建时间':row['创建时间']||new Date().toISOString(),'更新时间':row['更新时间']||new Date().toISOString()});
+      for (const [index,row] of oldRows.entries()) db.searchPlaceholder.push({uid:row.uid,ID:'SEARCH-HINT-'+(index+1),底纹文案:row.value,跳转类型:'商品详情',跳转商品:'',外链地址:'',排序:Number(row['排序值'])||index+1,状态:'禁用',refs:{'跳转商品':''},'创建时间':row['创建时间']||new Date().toISOString(),'更新时间':row['更新时间']||new Date().toISOString()});
       db.dictItems=db.dictItems.filter(row=>row.parentId!==dict?.uid);
       if (dict) db.dict=db.dict.filter(row=>row.uid!==dict.uid);
-      db.audit.unshift({time:new Date().toISOString(),operator:'原型升级',action:'将搜索底纹从数据字典迁移到独立配置菜单；保留文案、排序及启停状态'});
+      db.audit.unshift({time:new Date().toISOString(),operator:'原型升级',action:'将搜索底纹从数据字典迁移到独立配置菜单；保留文案和排序，旧配置置为禁用以等待补充跳转目标'});
     }
     db.version = VERSION;
     for (const item of db.trash) if (item.key === 'dict') item.row.refs = {};

@@ -196,8 +196,8 @@ const PhaseOne = (() => {
     const issue = (field,message) => ({field,message});
     if (key === 'searchPlaceholder') {
       if (!String(draft['底纹文案']||'').trim()) return issue('底纹文案','请输入底纹文案');
-      if (draft['跳转类型']==='商品详情' && !draft['跳转商品']) return issue('跳转商品','请选择跳转商品');
-      if (draft['跳转类型']==='外链' && !/^https?:\/\//i.test(String(draft['外链地址']||''))) return issue('外链地址','请输入 http:// 或 https:// 开头的有效外链');
+      if (draft['状态']==='启用' && draft['跳转类型']==='商品详情' && !draft['跳转商品']) return issue('跳转商品','请选择跳转商品');
+      if (draft['状态']==='启用' && draft['跳转类型']==='外链' && !/^https?:\/\//i.test(String(draft['外链地址']||''))) return issue('外链地址','请输入 http:// 或 https:// 开头的有效外链');
       if (draft['状态']==='启用' && db.searchPlaceholder.some(row=>row.uid!==old?.uid&&row['状态']==='启用'&&String(row['底纹文案']||'').trim()===String(draft['底纹文案']).trim())) return issue('底纹文案','启用的底纹文案不能重复');
     }
     if (key === 'products') {
