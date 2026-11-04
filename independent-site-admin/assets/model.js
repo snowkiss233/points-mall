@@ -1,6 +1,6 @@
 /* 原型数据规则。仅处理本地演示数据，不连接真实业务接口。 */
 const Model = (() => {
-  const VERSION = 22;
+  const VERSION = 23;
   const copy = value => JSON.parse(JSON.stringify(value));
   const object = value => value && typeof value === 'object' && !Array.isArray(value);
   const text = value => typeof value === 'string' && value.trim().length > 0;
@@ -156,9 +156,9 @@ const Model = (() => {
 
   function envelope(db) {
     const errors = [];
-    if (!object(db) || ![1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,VERSION].includes(db.version)) return ['不支持的备份版本'];
+    if (!object(db) || ![1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,VERSION].includes(db.version)) return ['不支持的备份版本'];
     if (db.version < 12 && db.searchHints !== undefined && !Array.isArray(db.searchHints)) errors.push('旧搜索底纹数据必须是数组');
-    const collections = [...Object.keys(SCHEMA).filter(k => SCHEMA[k].columns), 'productSuppliers'];
+    const collections = [...Object.keys(SCHEMA).filter(k => SCHEMA[k].columns && (k !== 'searchPlaceholder' || db.version >= 23)), 'productSuppliers'];
     for (const key of collections) {
       if (!Array.isArray(db[key])) { errors.push(`${key} 必须是数组`); continue; }
       const ids = new Set();
@@ -177,7 +177,7 @@ const Model = (() => {
   function validate(db) {
     const errors = envelope(db);
     if (errors.length) return errors;
-    const primary = {products:'商品名称',games:'游戏名称',tags:'标签',platforms:'平台名称',channels:'渠道名称',users:'用户UID',blacklist:'手机号',orders:'订单编号',refunds:'退款编号',suppliers:'供货商',sources:'商品名称',apiSources:'商品名称',batches:'ID',stock:'CDKEY',categories:'分类名称',subcategories:'分类名称',versions:'版本名称',promotions:'活动名称',payInfo:'支付通道名称',articles:'文章标题',recommend:'栏目名称',admins:'账号',roles:'角色名称',permissions:'权限名称',dict:'字典名称',dictItems:'value'};
+    const primary = {products:'商品名称',games:'游戏名称',tags:'标签',platforms:'平台名称',channels:'渠道名称',users:'用户UID',blacklist:'手机号',orders:'订单编号',refunds:'退款编号',suppliers:'供货商',sources:'商品名称',apiSources:'商品名称',batches:'ID',stock:'CDKEY',categories:'分类名称',subcategories:'分类名称',versions:'版本名称',promotions:'活动名称',payInfo:'支付通道名称',articles:'文章标题',recommend:'栏目名称',searchPlaceholder:'底纹文案',admins:'账号',roles:'角色名称',permissions:'权限名称',dict:'字典名称',dictItems:'value'};
     const fail = (key,row,message) => errors.push(`${SCHEMA[key]?.name || key} ${row.uid}：${message}`);
     for (const [key, schema] of Object.entries(SCHEMA)) for (const row of db[key] || []) {
       if (primary[key] && !text(row[primary[key]])) fail(key,row,`缺少有效的${primary[key]}`);
@@ -242,6 +242,13 @@ const Model = (() => {
     for (const [role, ids] of Object.entries(db.rolePermissions)) if (!get(db,'roles',role) || ids.some(id=>!get(db,'permissions',id))) errors.push('角色授权引用不存在');
     for (const item of db.trash) if (!SCHEMA[item.key]?.columns || !object(item.row) || !text(item.row.uid)) errors.push('回收站记录格式错误');
     if (typeof PhaseOne !== 'undefined') errors.push(...PhaseOne.validate(db));
+    for (const row of db.searchPlaceholder || []) {
+      if (!text(row['底纹文案'])) errors.push('搜索底纹文案不能为空');
+      if (!['商品详情','外链'].includes(row['跳转类型'])) errors.push('搜索底纹跳转类型无效');
+      if (row['跳转类型']==='商品详情' && !get(db,'products',row.refs?.['跳转商品'])) errors.push('商品详情跳转必须选择有效商品');
+      if (row['跳转类型']==='外链' && !/^https?:\/\//i.test(String(row['外链地址']||''))) errors.push('外链地址须以 http:// 或 https:// 开头');
+      if (!Number.isSafeInteger(row['排序']) || row['排序']<0) errors.push('搜索底纹排序必须为非负整数');
+    }
     if (typeof AuthorizedLogin !== 'undefined') errors.push(...AuthorizedLogin.validate(db));
     if (typeof Coupons !== 'undefined') errors.push(...Coupons.validate(db));
     return [...new Set(errors)];
@@ -303,6 +310,16 @@ const Model = (() => {
       adColumn['排序'] ||= Math.max(0,...db.columns.filter(row=>row!==adColumn).map(row=>Number(row['排序'])||0))+1;
       adColumn['说明'] ||= '广告配置类型；广告位置在推荐配置中选择。';
       adColumn.refs ||= {};
+    }
+    if (db.version < 23) {
+      db.searchPlaceholder ||= [];
+      const dict = db.dict.find(row=>row['字典编号']==='client_search_placeholders');
+      const oldRows = db.dictItems.filter(row=>row.parentId===dict?.uid);
+      const demoProduct=db.products.find(product=>product['状态']==='上架')?.uid||db.products[0]?.uid||'';
+      for (const [index,row] of oldRows.entries()) db.searchPlaceholder.push({uid:row.uid,ID:'SEARCH-HINT-'+(index+1),底纹文案:row.value,跳转类型:'商品详情',跳转商品:demoProduct,外链地址:'',排序:Number(row['排序值'])||index+1,状态:row['是否启用']||'启用',refs:{'跳转商品':demoProduct},'创建时间':row['创建时间']||new Date().toISOString(),'更新时间':row['更新时间']||new Date().toISOString()});
+      db.dictItems=db.dictItems.filter(row=>row.parentId!==dict?.uid);
+      if (dict) db.dict=db.dict.filter(row=>row.uid!==dict.uid);
+      db.audit.unshift({time:new Date().toISOString(),operator:'原型升级',action:'将搜索底纹从数据字典迁移到独立配置菜单；保留文案、排序及启停状态'});
     }
     db.version = VERSION;
     for (const item of db.trash) if (item.key === 'dict') item.row.refs = {};

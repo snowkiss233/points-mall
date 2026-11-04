@@ -194,6 +194,12 @@ const PhaseOne = (() => {
 
   function formIssue(db,key,draft,old) {
     const issue = (field,message) => ({field,message});
+    if (key === 'searchPlaceholder') {
+      if (!String(draft['底纹文案']||'').trim()) return issue('底纹文案','请输入底纹文案');
+      if (draft['跳转类型']==='商品详情' && !draft['跳转商品']) return issue('跳转商品','请选择跳转商品');
+      if (draft['跳转类型']==='外链' && !/^https?:\/\//i.test(String(draft['外链地址']||''))) return issue('外链地址','请输入 http:// 或 https:// 开头的有效外链');
+      if (draft['状态']==='启用' && db.searchPlaceholder.some(row=>row.uid!==old?.uid&&row['状态']==='启用'&&String(row['底纹文案']||'').trim()===String(draft['底纹文案']).trim())) return issue('底纹文案','启用的底纹文案不能重复');
+    }
     if (key === 'products') {
       const scheduleError = releaseTimeIssue(draft);
       if (scheduleError) return issue('发售时间',scheduleError);
@@ -300,13 +306,13 @@ const PhaseOne = (() => {
   function isTagType(db,parentId) { return Model.get(db,'dict',parentId)?.['字典编号'] === tagTypeCode; }
   function isSearchHint(db,parentId) { return Model.get(db,'dict',parentId)?.['字典编号'] === searchHintCode; }
   function searchHintCompare(a,b) {
-    return a['排序值']-b['排序值'] || String(a['创建时间']||'').localeCompare(String(b['创建时间']||'')) || a.uid.localeCompare(b.uid);
+    return (a['排序']??a['排序值'])-(b['排序']??b['排序值']) || String(a['创建时间']||'').localeCompare(String(b['创建时间']||'')) || a.uid.localeCompare(b.uid);
   }
   function searchHintRows(db) {
-    return db.dictItems.filter(r=>isSearchHint(db,r.parentId)&&r['是否启用']==='启用'&&String(r.value||'').trim()).sort(searchHintCompare);
+    return (db.searchPlaceholder||[]).filter(r=>r['状态']==='启用'&&String(r['底纹文案']||'').trim()).sort(searchHintCompare);
   }
   function searchHintAt(rows,elapsed=0) {
-    return rows.length ? rows[Math.floor(Math.max(0,elapsed)/searchInterval)%rows.length].value : '搜索游戏';
+    return rows.length ? rows[Math.floor(Math.max(0,elapsed)/searchInterval)%rows.length]['底纹文案'] : '搜索游戏';
   }
   function guideForPlatforms(db,platformIds,currentText) {
     if (String(currentText||'').trim()) return currentText;

@@ -4,7 +4,7 @@
   const baseFilteredRows = filteredRows;
   filteredRows = function() {
     const rows = baseFilteredRows();
-    return current === 'dictItems' && PhaseOne.isSearchHint(db,parentId) ? rows.sort(PhaseOne.searchHintCompare) : rows;
+    return current === 'searchPlaceholder' ? rows.sort(PhaseOne.searchHintCompare) : current === 'dictItems' && PhaseOne.isSearchHint(db,parentId) ? rows.sort(PhaseOne.searchHintCompare) : rows;
   };
   options = function(spec,value,empty,draft={},key=current,field='') {
     const html = baseOptions(spec,value,empty,draft,key,field);
@@ -71,9 +71,14 @@
       title.before(titles);titles.append(title,subtitle);
       help('栏目副标题','展示在客户端栏目主标题下方，未填写时不展示、不占位。');
     }
-    if (key === 'hot') {
-      help('主标题','选填；用于自定义搜索推荐卡片的主标题。');
-      help('副标题','选填；用于自定义搜索推荐卡片的副标题。');
+    if (key === 'searchPlaceholder') {
+      if (!id) get('排序').value=Math.max(0,...db.searchPlaceholder.map(row=>Number(row['排序'])||0))+1;
+      const type=get('跳转类型'), product=form.querySelector('[data-field="跳转商品"]'), link=form.querySelector('[data-field="外链地址"]');
+      const updateTarget=()=>{product.hidden=type.value!=='商品详情';link.hidden=type.value!=='外链';};
+      type.addEventListener('change',updateTarget);updateTarget();
+      help('底纹文案','在搜索框为空时轮播展示；用户提交与当前底纹一致的文案时，按下方目标跳转。');
+      help('跳转类型','选择商品详情或外链；仅显示对应的目标字段。');
+      help('排序','数值越小越先展示；启用配置按排序每 3 秒轮播。');
     }
     if (key === 'dict' && id && PhaseOne.isRisk(db,id)) {
       get('字典编号').readOnly = true;
