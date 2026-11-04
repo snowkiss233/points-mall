@@ -71,6 +71,10 @@
       title.before(titles);titles.append(title,subtitle);
       help('栏目副标题','展示在客户端栏目主标题下方，未填写时不展示、不占位。');
     }
+    if (key === 'hot') {
+      help('主标题','选填；用于自定义搜索推荐卡片的主标题。');
+      help('副标题','选填；用于自定义搜索推荐卡片的副标题。');
+    }
     if (key === 'dict' && id && PhaseOne.isRisk(db,id)) {
       get('字典编号').readOnly = true;
       help('字典编号','一期演示规则使用固定编号；请在字典配置中调整启停。');
