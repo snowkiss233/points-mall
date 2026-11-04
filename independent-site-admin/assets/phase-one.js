@@ -1,7 +1,7 @@
 /* 一期配置与本地演示规则。与真实站点、支付和风控服务隔离。 */
 const PhaseOne = (() => {
   const modes = ['单人', '多人', '在线'];
-  const sections = ['顶部banner', '热销商品', '游戏排行', '今日推荐', '大家都在玩', '新品上线', '本周热销', '最新上市', '高分榜单', '即将发售'];
+  const sections = ['顶部banner', '热销商品', '游戏排行', '今日推荐', '大家都在玩', '新品上线', '本周热销', '最新上市', '高分榜单', '即将发售', '广告'];
   const riskCode = 'demo_order_payment_city';
   const riskKey = 'order_payment_same_city';
   const badgeCode = 'product_corner_badges';
@@ -142,7 +142,7 @@ const PhaseOne = (() => {
       column['栏目标识'] ||= 'section-' + column.uid;
       column['栏目状态'] ||= column['状态'] || '启用';
       column['排序'] = Number(column['排序'] || index+1);
-      column['说明'] ||= index < 3 ? '原有栏目' : '一期候选演示枚举，待确认';
+      column['说明'] ||= name === '广告' ? '广告配置类型；在推荐配置中选择具体投放位置。' : index < 3 ? '原有栏目' : '一期候选演示枚举，待确认';
       return column;
     };
     sections.forEach(ensureColumn);
@@ -248,6 +248,7 @@ const PhaseOne = (() => {
     if (key === 'recommend') {
       const column = Model.get(db,'columns',draft['推荐区域']);
       if (!column || column['栏目状态'] !== '启用' && old?.refs?.['推荐区域'] !== column.uid) return issue('推荐区域','请选择已启用的栏目');
+      if (column['栏目名称'] === '广告' && !['首页-左上角','首页-右上角','首页-左下角','首页-右下角','商品详情页-左上角','商品详情页-右上角','商品详情页-左下角','商品详情页-右下角'].includes(draft['广告位置'])) return issue('广告位置','请选择广告投放位置');
       if (column['栏目名称'] === '即将发售' && list(draft['选择商品']).some(uid => Model.get(db,'products',uid)?.['发售状态'] !== '未发售')) return issue('选择商品','即将发售专区只能选择未发售商品');
     }
     if (key === 'dictItems' && isRisk(db,draft.parentId)) {

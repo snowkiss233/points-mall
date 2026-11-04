@@ -70,6 +70,17 @@ function updateDependencies(fid,changed=''){const state=forms.get(fid),form=$('#
  const dependent=(label,spec,parentLabel,parentPrompt,emptyPrompt)=>{const el=form.elements.namedItem(label);if(!el)return;if(changed===parentLabel)el.innerHTML=options(spec,'','请选择',{...state.draft,[parentLabel]:value(parentLabel)},state.key,label);selectAvailability(el,value(parentLabel)?emptyPrompt:parentPrompt);};
  if(state.key==='products'){const combo=value('商品类型')==='组合商品';['账号类型','货源卡密类型','商品分类','商品子分类'].forEach(n=>toggle(n,!combo));['选择商品','生效时间'].forEach(n=>toggle(n,combo));dependent('版本','versions','绑定游戏类别','请先选择游戏类别','该游戏暂无版本');dependent('商品子分类','subcategories','商品分类','请先选择商品分类','该分类暂无子分类');if(changed==='账号类型'){form.elements.namedItem('货源卡密类型').innerHTML=options([value('账号类型')],value('账号类型'),'请选择');}}
  if(state.key==='products')toggle('发售时间',value('发售状态')==='未发售');
+ if(state.key==='recommend'){
+  const column=Model.get(db,'columns',value('推荐区域'));
+  const isAd=column?.['栏目名称']==='广告';
+  toggle('广告位置',isAd);
+  toggle('选择商品',!isAd);
+  if(changed==='推荐区域'){
+   if(!isAd){form.elements.namedItem('广告位置').value='';state.draft['广告位置']='';}
+   else{state.draft['选择商品']=[];}
+   const picked=form.querySelector('#picked-'+fid);if(isAd&&picked)picked.innerHTML=pickedHtml([],fid);
+  }
+ }
  if(state.key==='auth')toggle('选择模块',value('生效范围')==='部分');
  if(state.key==='dictItems'){toggle('key图片',value('key类型')==='图片');toggle('key',value('key类型')!=='图片');}
  if(state.key==='suppliers')toggle('选择服务商',value('合作方式')==='接口');
