@@ -5,6 +5,7 @@ function makeSearchHintSeed(){
 }
 function makeSeed(){
  const db={};
+ db.giftBlacklist=[];db.bundleBlacklist=[];
  db.searchHints=makeSearchHintSeed();
  db.tags=rows(['标签','排序值','状态'],[['免费',1,'开启'],['多人',2,'开启'],['格斗',3,'开启'],['射击',4,'开启'],['回合制',5,'开启'],['竞速',6,'开启'],['生存',7,'开启'],['欢乐',8,'开启'],['体育',9,'开启'],['恐怖',10,'开启'],['冒险',11,'开启'],['角色扮演',12,'关闭']]);
  db.platforms=rows(['平台名称','平台展示名称','排序值'],['全平台','通用','Steam','EA','We Game','Battle','Rockstar','Epic','Riot game','Origin','PS','Xbox','Nintendo'].map((n,i)=>[n,n,i+1]));

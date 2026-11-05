@@ -1,6 +1,6 @@
 /* 原型数据规则。仅处理本地演示数据，不连接真实业务接口。 */
 const Model = (() => {
-  const VERSION = 25;
+  const VERSION = 26;
   const copy = value => JSON.parse(JSON.stringify(value));
   const object = value => value && typeof value === 'object' && !Array.isArray(value);
   const text = value => typeof value === 'string' && value.trim().length > 0;
@@ -138,6 +138,7 @@ const Model = (() => {
       const field = {products:'productId',suppliers:'supplierId',sources:'sourceId'}[target];
       if (field && binding[field] === id) add(`商品供货关联：${name('products',get(db,'products',binding.productId))}`);
     }
+    for (const key of ['giftBlacklist','bundleBlacklist']) for (const row of db[key] || []) if (target === 'products' && row.productId === id) add(`${key==='giftBlacklist'?'购买赠送':'捆绑销售'}商品黑名单`);
     if (target === 'permissions') for (const [role, ids] of Object.entries(db.rolePermissions)) if (ids.includes(id)) add(`角色授权：${name('roles',get(db,'roles',role))}`);
     return result;
   }
@@ -156,7 +157,7 @@ const Model = (() => {
 
   function envelope(db) {
     const errors = [];
-    if (!object(db) || ![1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,VERSION].includes(db.version)) return ['不支持的备份版本'];
+    if (!object(db) || ![1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,VERSION].includes(db.version)) return ['不支持的备份版本'];
     if (db.version < 12 && db.searchHints !== undefined && !Array.isArray(db.searchHints)) errors.push('旧搜索底纹数据必须是数组');
     const collections = [...Object.keys(SCHEMA).filter(k => SCHEMA[k].columns && (k !== 'searchPlaceholder' || db.version >= 23) && (!['gifts','bundles'].includes(k) || db.version >= 25)), 'productSuppliers'];
     for (const key of collections) {
@@ -169,6 +170,7 @@ const Model = (() => {
       }
     }
     for (const key of ['audit','queryLogs','exportJobs','statJobs','trash','outflows']) if (!Array.isArray(db[key]) || db[key].some(r => !object(r))) errors.push(`${key} 格式错误`);
+    if (db.version >= 26) for (const key of ['giftBlacklist','bundleBlacklist']) if (!Array.isArray(db[key]) || db[key].some(r => !object(r) || !text(r.uid) || !text(r.productId) || !['启用','禁用'].includes(r.status))) errors.push(`${key} 格式错误`);
     if (!object(db.rolePermissions) || Object.values(db.rolePermissions).some(ids => !Array.isArray(ids) || ids.some(id => !text(id)))) errors.push('角色授权格式错误');
     if (!object(db.authGlobal) || typeof db.authGlobal.enabled !== 'boolean' || !['全部','部分'].includes(db.authGlobal.scope) || !Array.isArray(db.authGlobal.modules) || db.authGlobal.modules.some(m => m !== '生成订单实名')) errors.push('全局实名认证配置格式错误');
     return errors;
@@ -238,6 +240,15 @@ const Model = (() => {
       if (bindings.has(pair)) errors.push('同一商品不能重复关联供货商');
       bindings.add(pair);
       if (!['启用','禁用'].includes(row['状态']) || typeof row['排序'] !== 'number' || row['排序'] < 0) errors.push('商品供货商状态或排序错误');
+    }
+    for (const [key,label] of [['giftBlacklist','购买赠送黑名单'],['bundleBlacklist','捆绑销售黑名单']]) {
+      const seen = new Set();
+      for (const row of db[key]) {
+        if (!get(db,'products',row.productId)) errors.push(`${label}包含不存在的商品`);
+        if (!['启用','禁用'].includes(row.status)) errors.push(`${label}状态无效`);
+        if (seen.has(row.productId)) errors.push(`${label}商品重复`);
+        seen.add(row.productId);
+      }
     }
     for (const [role, ids] of Object.entries(db.rolePermissions)) if (!get(db,'roles',role) || ids.some(id=>!get(db,'permissions',id))) errors.push('角色授权引用不存在');
     for (const item of db.trash) if (!SCHEMA[item.key]?.columns || !object(item.row) || !text(item.row.uid)) errors.push('回收站记录格式错误');
@@ -338,6 +349,11 @@ const Model = (() => {
       for (const key of ['gifts','bundles']) if (!db.permissions.some(row=>row['权限名称']===SCHEMA[key].name&&row['菜单类型']==='子菜单')) db.permissions.push({uid:uid('permission'),'权限名称':SCHEMA[key].name,'菜单类型':'子菜单','父级菜单':'营销管理','组件':key,'路径':ROUTES[key],'状态':'启用','创建时间':new Date().toISOString(),refs:{'父级菜单':parent.uid}});
       const admin=db.roles.find(row=>row['角色名称']==='管理员'), adminIds=admin&&(db.rolePermissions||{})[admin.uid]; if (adminIds) for (const row of db.permissions.filter(item=>item['权限名称']==='购买赠送'||item['权限名称']==='捆绑销售商品')) if (!adminIds.includes(row.uid)) adminIds.push(row.uid);
       db.audit.unshift({time:new Date().toISOString(),operator:'原型升级',action:'新增购买赠送与捆绑销售商品菜单；旧配置数据保留'});
+    }
+    if (db.version < 26) {
+      db.giftBlacklist ||= [];
+      db.bundleBlacklist ||= [];
+      db.audit.unshift({time:new Date().toISOString(),operator:'原型升级',action:'新增购买赠送与捆绑销售商品的商品维度黑名单；旧配置数据保留'});
     }
     db.version = VERSION;
     for (const item of db.trash) if (item.key === 'dict') item.row.refs = {};
