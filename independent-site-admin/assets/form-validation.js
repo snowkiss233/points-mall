@@ -54,9 +54,13 @@ const FormValidation = (() => {
         if (start > end) return error(label, `${label}的结束时间不能早于开始时间`);
         continue;
       }
-      if (field.type === 'multi' || field.type === 'productPicker') {
-        if (field.required && !selected(value).length) return error(label, field.type === 'productPicker' ? '请至少选择一个商品' : `请选择${label}`);
+      if (field.type === 'multi' || field.type === 'productPicker' || field.type === 'productMulti') {
+        if (field.required && !selected(value).length) return error(label, field.type === 'productPicker' || field.type === 'productMulti' ? '请至少选择一个商品' : `请选择${label}`);
         if (!empty(value) && !Array.isArray(value)) return error(label, `${label}的选项格式无效`);
+        continue;
+      }
+      if (field.type === 'productSelect') {
+        if (field.required && empty(value)) return error(label, '请选择商品');
         continue;
       }
       if (field.type === 'richtext') {

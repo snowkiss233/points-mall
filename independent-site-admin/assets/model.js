@@ -1,6 +1,6 @@
 /* 原型数据规则。仅处理本地演示数据，不连接真实业务接口。 */
 const Model = (() => {
-  const VERSION = 26;
+  const VERSION = 27;
   const copy = value => JSON.parse(JSON.stringify(value));
   const object = value => value && typeof value === 'object' && !Array.isArray(value);
   const text = value => typeof value === 'string' && value.trim().length > 0;
@@ -12,7 +12,7 @@ const Model = (() => {
 
   function relations(key, row = {}) {
     const result = {};
-    for (const f of fields(key)) if (typeof f.options === 'string') result[f.label] = {target:f.options, multi:f.type === 'multi'};
+    for (const f of fields(key)) if (typeof f.options === 'string') result[f.label] = {target:f.options, multi:f.type === 'multi' || f.type === 'productMulti'};
     if (key === 'articles') result['指定游戏/平台'] = {target:row['指定范围'] === '游戏' ? 'games' : 'platforms', multi:false};
     if (key === 'supplierCommission') result['供货商'] = {target:'suppliers', multi:false};
     return result;
@@ -157,7 +157,7 @@ const Model = (() => {
 
   function envelope(db) {
     const errors = [];
-    if (!object(db) || ![1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,VERSION].includes(db.version)) return ['不支持的备份版本'];
+    if (!object(db) || ![1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27].includes(db.version)) return ['不支持的备份版本'];
     if (db.version < 12 && db.searchHints !== undefined && !Array.isArray(db.searchHints)) errors.push('旧搜索底纹数据必须是数组');
     const collections = [...Object.keys(SCHEMA).filter(k => SCHEMA[k].columns && (k !== 'searchPlaceholder' || db.version >= 23) && (!['gifts','bundles'].includes(k) || db.version >= 25)), 'productSuppliers'];
     for (const key of collections) {
@@ -250,6 +250,10 @@ const Model = (() => {
         seen.add(row.productId);
       }
     }
+    const giftBlocked = new Set((db.giftBlacklist || []).filter(r=>r.status==='启用').map(r=>r.productId));
+    for (const row of db.gifts || []) if ((row.refs?.['关联购买商品'] || []).some(id=>giftBlocked.has(id))) errors.push(`购买赠送 ${row.uid}：关联商品已在启用的商品黑名单中`);
+    const bundleBlocked = new Set((db.bundleBlacklist || []).filter(r=>r.status==='启用').map(r=>r.productId));
+    for (const row of db.bundles || []) if ([row.refs?.['主商品'], ...(row.refs?.['可选商品'] || [])].some(id=>id && bundleBlocked.has(id))) errors.push(`捆绑销售商品 ${row.uid}：主商品或可选商品已在启用的商品黑名单中`);
     for (const [role, ids] of Object.entries(db.rolePermissions)) if (!get(db,'roles',role) || ids.some(id=>!get(db,'permissions',id))) errors.push('角色授权引用不存在');
     for (const item of db.trash) if (!SCHEMA[item.key]?.columns || !object(item.row) || !text(item.row.uid)) errors.push('回收站记录格式错误');
     if (typeof PhaseOne !== 'undefined') errors.push(...PhaseOne.validate(db));
@@ -354,6 +358,27 @@ const Model = (() => {
       db.giftBlacklist ||= [];
       db.bundleBlacklist ||= [];
       db.audit.unshift({time:new Date().toISOString(),operator:'原型升级',action:'新增购买赠送与捆绑销售商品的商品维度黑名单；旧配置数据保留'});
+    }
+    if (db.version < 27) {
+      const sample=makeSeed();
+      let adjustedBlacklist=false;
+      for (const [key,records,labels] of [['giftBlacklist',db.gifts||[],['关联购买商品']],['bundleBlacklist',db.bundles||[],['主商品','可选商品']]]) {
+        const configured=new Set(records.flatMap(row=>labels.flatMap(label=>{const value=row.refs?.[label];return Array.isArray(value)?value:value?[value]:[]})));
+        for (const row of db[key]||[]) if (row.status==='启用'&&configured.has(row.productId)) {row.status='禁用';row.updatedAt=new Date().toISOString();adjustedBlacklist=true;}
+      }
+      for (const key of ['gifts','bundles']) {
+        db[key] ||= [];
+        const known=new Set(db[key].map(row=>row.uid));
+        const blocked=new Set((db[ key==='gifts'?'giftBlacklist':'bundleBlacklist']||[]).filter(item=>item.status==='启用').map(item=>item.productId));
+        for (const row of sample[key]) {
+          if (known.has(row.uid)) continue;
+          const linked=key==='gifts'?row.refs?.['关联购买商品']||[]:[row.refs?.['主商品'],...(row.refs?.['可选商品']||[])];
+          if (linked.some(id=>blocked.has(id))) continue;
+          db[key].push(copy(row));
+        }
+      }
+      db.audit.unshift({time:new Date().toISOString(),operator:'原型升级',action:'补充购买赠送与捆绑销售商品演示存量数据；既有配置保留'});
+      if (adjustedBlacklist) db.audit.unshift({time:new Date().toISOString(),operator:'原型升级',action:'历史黑名单与商品配置存在冲突，已将冲突黑名单置为禁用并保留记录'});
     }
     db.version = VERSION;
     for (const item of db.trash) if (item.key === 'dict') item.row.refs = {};
