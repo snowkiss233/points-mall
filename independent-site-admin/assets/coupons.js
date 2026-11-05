@@ -5,7 +5,7 @@ const COUPON_PAGES = {
 };
 for(const [key,p] of Object.entries(COUPON_PAGES)){ROUTES[key]=p.path;SCHEMA[key]={name:p.name,desc:p.desc};}
 const marketingGroup=GROUPS.find(g=>g[0]==='营销管理');
-if(marketingGroup)marketingGroup[1].unshift(...Object.keys(COUPON_PAGES));
+if(marketingGroup){marketingGroup[1].unshift(...Object.keys(COUPON_PAGES));for(let i=GROUPS.length-1;i>=0;i--)if(GROUPS[i]!==marketingGroup&&GROUPS[i][0]==='营销管理'){marketingGroup[1].push(...GROUPS[i][1]);GROUPS.splice(i,1);}marketingGroup[1]=[...new Set(marketingGroup[1])];}
 else GROUPS.splice(GROUPS.findIndex(g=>g[0]==='商品管理')+1,0,['营销管理',Object.keys(COUPON_PAGES)]);
 const Coupons = (() => {
   const copy = v => JSON.parse(JSON.stringify(v));
