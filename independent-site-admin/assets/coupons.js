@@ -4,7 +4,9 @@ const COUPON_PAGES = {
   couponGrants:{view:'batches',name:'优惠券发放',path:'/marketing/couponGrants',desc:'配置发放人群、时间与券有效期，查看用户获券明细。'},
 };
 for(const [key,p] of Object.entries(COUPON_PAGES)){ROUTES[key]=p.path;SCHEMA[key]={name:p.name,desc:p.desc};}
-GROUPS.splice(GROUPS.findIndex(g=>g[0]==='商品管理')+1,0,['营销管理',Object.keys(COUPON_PAGES)]);
+const marketingGroup=GROUPS.find(g=>g[0]==='营销管理');
+if(marketingGroup)marketingGroup[1].unshift(...Object.keys(COUPON_PAGES));
+else GROUPS.splice(GROUPS.findIndex(g=>g[0]==='商品管理')+1,0,['营销管理',Object.keys(COUPON_PAGES)]);
 const Coupons = (() => {
   const copy = v => JSON.parse(JSON.stringify(v));
   const now = () => new Date().toISOString();
