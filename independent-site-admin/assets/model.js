@@ -336,7 +336,7 @@ const Model = (() => {
         db.permissions.push(parent);
       }
       for (const key of ['gifts','bundles']) if (!db.permissions.some(row=>row['权限名称']===SCHEMA[key].name&&row['菜单类型']==='子菜单')) db.permissions.push({uid:uid('permission'),'权限名称':SCHEMA[key].name,'菜单类型':'子菜单','父级菜单':'营销管理','组件':key,'路径':ROUTES[key],'状态':'启用','创建时间':new Date().toISOString(),refs:{'父级菜单':parent.uid}});
-      for (const ids of Object.values(db.rolePermissions||{})) for (const row of db.permissions.filter(item=>item['权限名称']==='购买赠送'||item['权限名称']==='捆绑销售商品')) if (!ids.includes(row.uid)) ids.push(row.uid);
+      const admin=db.roles.find(row=>row['角色名称']==='管理员'), adminIds=admin&&(db.rolePermissions||{})[admin.uid]; if (adminIds) for (const row of db.permissions.filter(item=>item['权限名称']==='购买赠送'||item['权限名称']==='捆绑销售商品')) if (!adminIds.includes(row.uid)) adminIds.push(row.uid);
       db.audit.unshift({time:new Date().toISOString(),operator:'原型升级',action:'新增购买赠送与捆绑销售商品菜单；旧配置数据保留'});
     }
     db.version = VERSION;
