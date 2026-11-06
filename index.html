@@ -2739,7 +2739,10 @@
         <div class="field"><label>用户</label><input id="editAddressUserInfo" disabled></div>
         <div class="field"><label><span class="required-star">*</span>收货人</label><input id="editRecipient" placeholder="输入收货人"></div>
         <div class="field"><label><span class="required-star">*</span>收货手机号</label><input id="editRecipientPhone" placeholder="输入收货手机号"></div>
-        <div class="field" style="grid-column:1/-1"><label><span class="required-star">*</span>收货地址</label><textarea id="editAddress" maxlength="200" rows="3" placeholder="输入完整收货地址"></textarea></div>
+        <div class="field"><label><span class="required-star">*</span>省</label><input id="editAddressProvince" maxlength="30" placeholder="如湖北省"></div>
+        <div class="field"><label><span class="required-star">*</span>市</label><input id="editAddressCity" maxlength="30" placeholder="如武汉市"></div>
+        <div class="field"><label><span class="required-star">*</span>区/县</label><input id="editAddressDistrict" maxlength="30" placeholder="如洪山区"></div>
+        <div class="field" style="grid-column:1/-1"><label><span class="required-star">*</span>详细地址</label><textarea id="editAddressDetail" maxlength="200" rows="3" placeholder="输入街道、门牌号等详细地址"></textarea></div>
         <div class="field" style="grid-column:1/-1"><label><span class="required-star">*</span>修改原因</label><select id="editAddressReason"><option value="">请选择</option><option>用户申请修改</option><option>客服核实修正</option><option>地址格式补全</option><option>手机号更正</option><option>其他</option></select><div class="hint-text">仅发货前允许修改，系统记录修改前后信息。</div></div>
         <div class="field" id="editAddressOtherReasonField" style="grid-column:1/-1" hidden><label><span class="required-star">*</span>其他原因说明</label><textarea id="editAddressOtherReason" maxlength="200" rows="3" placeholder="请输入修改收货信息的具体原因"></textarea><div class="hint-text">选择“其他”时必填，最多 200 个字符。</div></div>
       </div>
@@ -11800,7 +11803,6 @@
         ${orderFulfillmentDetailSection(order)}
         ${cdkeyExtractionInfoSection(order)}
         ${isPhysicalOrder(order) ? detailSection("收货及物流信息", infoGrid(orderPhysicalShippingItems(order))) : ""}
-        ${isPhysicalOrder(order) ? detailSection("收货信息修改审计", orderAddressAuditHtml(order)) : ""}
       `;
       const actions = [`<button class="btn" data-close-order-detail>关闭</button>`];
       if (canHandleOrderFulfillmentFailure(order)) {
@@ -12044,12 +12046,28 @@
       document.getElementById("editAddressUserInfo").value = `${order.userId} / ${order.nnNo} / ${order.phone}`;
       document.getElementById("editRecipient").value = order.recipient || "";
       document.getElementById("editRecipientPhone").value = order.recipientPhone || "";
-      document.getElementById("editAddress").value = order.address || "";
+      const addressParts = splitShippingAddress(order.address || "");
+      document.getElementById("editAddressProvince").value = addressParts.province;
+      document.getElementById("editAddressCity").value = addressParts.city;
+      document.getElementById("editAddressDistrict").value = addressParts.district;
+      document.getElementById("editAddressDetail").value = addressParts.detail;
       document.getElementById("editAddressReason").value = "";
       document.getElementById("editAddressOtherReason").value = "";
       toggleEditAddressOtherReason();
       closeAllLayers();
       openModal("addressEditModal");
+    }
+
+    function splitShippingAddress(address) {
+      const parts = { province: "", city: "", district: "", detail: address === "-" ? "" : address.trim() };
+      if (!parts.detail) return parts;
+      const regions = [...parts.detail.matchAll(/.{1,20}?(?:特别行政区|自治区|自治州|地区|省|市|区|县|旗|盟)/g)].slice(0, 3);
+      if (!regions.length) return parts;
+      parts.province = regions[0][0].trim();
+      parts.city = regions[1]?.[0].trim() || "";
+      parts.district = regions[2]?.[0].trim() || "";
+      parts.detail = parts.detail.slice(regions[regions.length - 1].index + regions[regions.length - 1][0].length).trim();
+      return parts;
     }
 
     function toggleEditAddressOtherReason() {
@@ -12066,10 +12084,14 @@
       if (!order || !canShipPhysicalOrder(order)) return toast("当前订单不支持修改收货信息。");
       const recipient = valueOf("editRecipient");
       const phone = valueOf("editRecipientPhone");
-      const address = valueOf("editAddress");
+      const province = valueOf("editAddressProvince");
+      const city = valueOf("editAddressCity");
+      const district = valueOf("editAddressDistrict");
+      const detail = valueOf("editAddressDetail");
+      const address = `${province}${city}${district}${detail}`;
       const reason = valueOf("editAddressReason");
       const otherReason = valueOf("editAddressOtherReason");
-      if (!recipient || !/^1\d{10}$/.test(phone) || !address || !reason) return toast("请完整填写有效的收货信息和修改原因。");
+      if (!recipient || !/^1\d{10}$/.test(phone) || !province || !city || !district || !detail || !reason) return toast("请完整填写有效的收货信息和修改原因。");
       if (reason === "其他" && !otherReason) return toast("请输入其他修改原因。");
       const auditReason = reason === "其他" ? `其他：${otherReason}` : reason;
       const before = { recipient: order.recipient, phone: order.recipientPhone, address: order.address };
@@ -12083,7 +12105,7 @@
       order.fulfillResult = "已收到有效收货地址，待运营发货";
       closeModal("addressEditModal");
       renderOrderManagementTable();
-      toast("收货信息已修改并记录审计。");
+      toast("收货信息已修改。");
     }
 
     function openOrderLogistics(orderNo) {
