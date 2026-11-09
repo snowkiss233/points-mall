@@ -177,8 +177,13 @@ window.SelectControls = (() => {
       !(option.parentElement?.tagName === 'OPTGROUP' && option.parentElement.hidden) &&
       option.textContent.toLocaleLowerCase().includes(query.toLocaleLowerCase().trim()));
     list.replaceChildren();
+    let lastGroup = null;
     active.options = options.map((option, index) => {
+      const group = option.parentElement?.tagName === 'OPTGROUP' ? option.parentElement.label : '';
+      if (group && group !== lastGroup) list.append(make('div', 'sc-group-label', group));
+      lastGroup = group;
       const item = make('div', 'sc-option');
+      if (option.value === control.select.dataset.selectAllValue) item.classList.add('sc-option-all');
       item.id = `${control.id}-${index}`;
       item.setAttribute('role', 'option');
       item.setAttribute('aria-selected', String(option.selected));
@@ -222,7 +227,20 @@ window.SelectControls = (() => {
     if (!active || unavailable(option)) return;
     const {control} = active;
     const select = control.select;
-    if (select.multiple) option.selected = !option.selected;
+    if (select.multiple) {
+      const allValue = select.dataset.selectAllValue;
+      if (allValue && option.value === allValue) {
+        const selected = !option.selected;
+        [...select.options].forEach(item => { item.selected = false; });
+        option.selected = selected;
+      } else {
+        option.selected = !option.selected;
+        if (option.selected && allValue) {
+          const allOption = [...select.options].find(item => item.value === allValue);
+          if (allOption) allOption.selected = false;
+        }
+      }
+    }
     else { select.selectedIndex = option.index; close(); }
     select.dispatchEvent(new Event('change', {bubbles: true}));
     if (select.isConnected) refresh(select);

@@ -1,6 +1,7 @@
 /* 原型数据规则。仅处理本地演示数据，不连接真实业务接口。 */
 const Model = (() => {
   const VERSION = 28;
+  const ALL_CHANNELS = '__all_channels__';
   const copy = value => JSON.parse(JSON.stringify(value));
   const object = value => value && typeof value === 'object' && !Array.isArray(value);
   const text = value => typeof value === 'string' && value.trim().length > 0;
@@ -90,7 +91,7 @@ const Model = (() => {
       if (!schema.columns) continue;
       for (const row of db[key] || []) for (const [label, relation] of Object.entries(relations(key, row))) {
         const value = row.refs?.[label];
-        row[label] = relation.multi ? (value || []).map(id => name(relation.target, get(db, relation.target, id))) : name(relation.target, get(db, relation.target, value));
+        row[label] = relation.multi ? (value || []).map(id => key === 'recommend' && label === '生效渠道' && id === ALL_CHANNELS ? '全部渠道（含未来新增渠道）' : name(relation.target, get(db, relation.target, id))) : name(relation.target, get(db, relation.target, value));
       }
     }
     for (const batch of db.batches) batch['商品库存'] = stockRows(db, 'batch', batch.uid).filter(r => r['状态'] === '未使用').length;
@@ -110,7 +111,7 @@ const Model = (() => {
       const selected = (product['选择商品'] || []).map(id => get(db, 'products', id));
       product['库存'] = selected.length ? Math.min(...selected.map(p => p?.['状态'] === '上架' ? Number(p['库存'] || 0) : 0)) : 0;
     }
-    for (const row of db.recommend) row['渠道Code'] = (row.refs?.['生效渠道'] || []).map(id => get(db, 'channels', id)?.['渠道代码'] || '').join(',');
+    for (const row of db.recommend) row['渠道Code'] = (row.refs?.['生效渠道'] || []).includes(ALL_CHANNELS) ? '全部渠道' : (row.refs?.['生效渠道'] || []).map(id => get(db, 'channels', id)?.['渠道代码'] || '').join(',');
     for (const key of ['shopPay','supplierPay']) for (const row of db[key]) {
       const pay = get(db, 'payInfo', row.refs?.['支付通道名称']);
       if (pay) for (const label of ['支付通道ID','支付通道简称','商户号']) row[label] = pay[label];
@@ -190,7 +191,9 @@ const Model = (() => {
         const value = row.refs?.[label];
         if (relation.multi ? !Array.isArray(value) : typeof value !== 'string') { fail(key,row,`${label}关联格式错误`); continue; }
         const ids = relation.multi ? value : value ? [value] : [];
-        if (new Set(ids).size !== ids.length || ids.some(id => !text(id) || !get(db,relation.target,id))) fail(key,row,`${label}存在失效或重复关联`);
+        const allChannels = key === 'recommend' && label === '生效渠道' && ids.includes(ALL_CHANNELS);
+        if (allChannels && ids.length !== 1) fail(key,row,`${label}选择全部时不能同时选择单独渠道`);
+        if (new Set(ids).size !== ids.length || ids.some(id => !text(id) || (id === ALL_CHANNELS ? !allChannels : !get(db,relation.target,id)))) fail(key,row,`${label}存在失效或重复关联`);
       }
       if (key === 'bundles') {
         const prices = row['可选商品捆绑价'] || {}, selected = row.refs?.['可选商品'] || [];
@@ -426,5 +429,5 @@ const Model = (() => {
     const parent = parentKey && get(db,parentKey,route.parent);
     return {parentKey,parent,valid:!parentKey || Boolean(parent)};
   }
-  return {VERSION,copy,uid,name,get,fields,relations,choices,formDraft,fromForm,promotionStatus,statusAction,stockRows,refresh,references,matches,validate,prepare,addStock,routeInfo,routeHref,parentContext};
+  return {VERSION,ALL_CHANNELS,copy,uid,name,get,fields,relations,choices,formDraft,fromForm,promotionStatus,statusAction,stockRows,refresh,references,matches,validate,prepare,addStock,routeInfo,routeHref,parentContext};
 })();
