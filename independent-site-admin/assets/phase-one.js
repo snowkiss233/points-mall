@@ -376,12 +376,8 @@ const PhaseOne = (() => {
       return supplier && source?.parentId===supplier.uid ? [source] : [];
     });
     if (!sources.length) return issue('状态','已发售商品上架前须绑定并启用供货商。请先保存为下架，再通过“供货商管理”配置。');
-    const hasStock = sources.some(source=>{
-      if (source['状态'] !== '上架') return false;
-      if (Model.get(db,'suppliers',source.parentId)?.['合作方式'] === '接口') return Number(source['商品库存']) > 0;
-      const batchIds = new Set(db.batches.filter(b=>b.parentId===source.uid && b['状态']==='上架').map(b=>b.uid));
-      return Model.stockRows(db,'source',source.uid).some(row=>row['状态']==='未使用' && batchIds.has(row.parentId));
-    });
+    const routed = Model.resolveProductSupplier(db,product.uid,1);
+    const hasStock = Boolean(routed && sources.some(source=>source.uid===routed.sourceId));
     return hasStock ? null : issue('状态','已发售商品上架前，已启用供货商的关联货源须有可用库存。');
   }
   function compareCities(db,orderCity,paymentCity) {

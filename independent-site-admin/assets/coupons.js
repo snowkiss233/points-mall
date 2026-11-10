@@ -247,7 +247,7 @@ const Coupons = (() => {
     const p=Model.get(db,'products',skuId);assert(p,'请选择商品');
     let unit=minor(p['人民币售价']),promoNames=[],supplierNames=[];
     const members=p['商品类型']==='组合商品'?(p['选择商品']||[]):[skuId];
-    for(const member of members){const binding=db.productSuppliers.filter(b=>b.productId===member&&b['状态']==='启用').sort((a,b)=>a['排序']-b['排序'])[0];assert(binding,'商品尚未绑定有效供货商');supplierNames.push(Model.get(db,'suppliers',binding.supplierId)?.['供货商']||'');
+    for(const member of members){const binding=Model.resolveProductSupplier(db,member,quantity);assert(binding,'商品未配置可用货源或库存不足');supplierNames.push(Model.get(db,'suppliers',binding.supplierId)?.['供货商']||'');
       const active=db.promotions.filter(r=>r.refs?.['关联货源']?.includes(binding.sourceId)&&Model.promotionStatus(r,new Date(t))==='执行中');
       assert(active.length<=1,'该货源存在重叠活动，需确认最终交易报价');
       if(active.length&&p['商品类型']==='组合商品')throw Error('组合商品包含活动货源，需以交易服务最终组合报价验券');

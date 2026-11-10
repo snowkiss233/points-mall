@@ -1,6 +1,6 @@
 /* 原型数据规则。仅处理本地演示数据，不连接真实业务接口。 */
 const Model = (() => {
-  const VERSION = 28;
+  const VERSION = 29;
   const ALL_CHANNELS = '__all_channels__';
   const copy = value => JSON.parse(JSON.stringify(value));
   const object = value => value && typeof value === 'object' && !Array.isArray(value);
@@ -86,6 +86,21 @@ const Model = (() => {
     return db.stock.filter(row => dimension === 'source' ? row.sourceId === id : row.parentId === id);
   }
 
+  function productSupplierBindings(db, productId) {
+    return db.productSuppliers.filter(b => b.productId === productId).sort((a,b) => Number(a['排序'] || 0) - Number(b['排序'] || 0) || String(a.uid).localeCompare(String(b.uid)));
+  }
+
+  function resolveProductSupplier(db, productId, quantity = 1) {
+    const product = get(db,'products',productId), bindings = productSupplierBindings(db,productId);
+    if (!product) return null;
+    const available = bindings.filter(b => {
+      const source = get(db,'sources',b.sourceId);
+      return b['状态'] === '启用' && source?.['状态'] === '上架' && Number(source['商品库存'] || 0) >= quantity;
+    });
+    if (product['货源切换模式'] === '自动切换') return available[0] || null;
+    return available.find(b => b.sourceId === product['手动当前货源ID']) || null;
+  }
+
   function refresh(db) {
     for (const [key, schema] of Object.entries(SCHEMA)) {
       if (!schema.columns) continue;
@@ -158,7 +173,7 @@ const Model = (() => {
 
   function envelope(db) {
     const errors = [];
-    if (!object(db) || ![1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28].includes(db.version)) return ['不支持的备份版本'];
+    if (!object(db) || ![1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29].includes(db.version)) return ['不支持的备份版本'];
     if (db.version < 12 && db.searchHints !== undefined && !Array.isArray(db.searchHints)) errors.push('旧搜索底纹数据必须是数组');
     const collections = [...Object.keys(SCHEMA).filter(k => SCHEMA[k].columns && (k !== 'searchPlaceholder' || db.version >= 23) && (!['gifts','bundles'].includes(k) || db.version >= 25)), 'productSuppliers'];
     for (const key of collections) {
@@ -246,7 +261,13 @@ const Model = (() => {
       const pair = `${row.productId}/${row.supplierId}`;
       if (bindings.has(pair)) errors.push('同一商品不能重复关联供货商');
       bindings.add(pair);
-      if (!['启用','禁用'].includes(row['状态']) || typeof row['排序'] !== 'number' || row['排序'] < 0) errors.push('商品供货商状态或排序错误');
+      if (!['启用','禁用'].includes(row['状态']) || !Number.isSafeInteger(row['排序']) || row['排序'] < 1) errors.push('商品供货商状态或排序错误');
+    }
+    for (const product of db.products) {
+      if (!['手动切换','自动切换'].includes(product['货源切换模式'])) errors.push(`商品 ${product.uid}：货源切换模式无效`);
+      const bindings = productSupplierBindings(db,product.uid), orders = bindings.map(b=>b['排序']);
+      if (new Set(orders).size !== orders.length) errors.push(`商品 ${product.uid}：供货顺序不能重复`);
+      if (product['手动当前货源ID'] && !bindings.some(b=>b.sourceId===product['手动当前货源ID'])) errors.push(`商品 ${product.uid}：当前货源未关联`);
     }
     for (const [key,label] of [['giftBlacklist','购买赠送黑名单'],['bundleBlacklist','捆绑销售黑名单']]) {
       const seen = new Set();
@@ -387,6 +408,15 @@ const Model = (() => {
       db.audit.unshift({time:new Date().toISOString(),operator:'原型升级',action:'补充购买赠送与捆绑销售商品演示存量数据；既有配置保留'});
       if (adjustedBlacklist) db.audit.unshift({time:new Date().toISOString(),operator:'原型升级',action:'历史黑名单与商品配置存在冲突，已将冲突黑名单置为禁用并保留记录'});
     }
+    if (db.version < 29) {
+      for (const product of db.products) {
+        product['货源切换模式'] = '手动切换';
+        const bindings = db.productSuppliers.filter(b=>b.productId===product.uid).sort((a,b)=>Number(a['排序']||0)-Number(b['排序']||0)||String(a.uid).localeCompare(String(b.uid)));
+        bindings.forEach((binding,index)=>binding['排序']=index+1);
+        product['手动当前货源ID'] = bindings.find(b=>b['状态']==='启用')?.sourceId || '';
+      }
+      db.audit.unshift({time:new Date().toISOString(),operator:'原型升级',action:'新增商品级货源切换模式与供货顺序；既有商品默认手动切换并保留原关联'});
+    }
     db.version = VERSION;
     for (const item of db.trash) if (item.key === 'dict') item.row.refs = {};
     return db;
@@ -429,5 +459,5 @@ const Model = (() => {
     const parent = parentKey && get(db,parentKey,route.parent);
     return {parentKey,parent,valid:!parentKey || Boolean(parent)};
   }
-  return {VERSION,ALL_CHANNELS,copy,uid,name,get,fields,relations,choices,formDraft,fromForm,promotionStatus,statusAction,stockRows,refresh,references,matches,validate,prepare,addStock,routeInfo,routeHref,parentContext};
+  return {VERSION,ALL_CHANNELS,copy,uid,name,get,fields,relations,choices,formDraft,fromForm,promotionStatus,statusAction,stockRows,productSupplierBindings,resolveProductSupplier,refresh,references,matches,validate,prepare,addStock,routeInfo,routeHref,parentContext};
 })();
