@@ -13,7 +13,7 @@
     wrap.querySelectorAll('input,select,textarea,button').forEach(el => el.disabled = !visible);
   };
   const categoryIsCdk = categoryId => db.categories.find(c => c.uid === categoryId)?.['分类名称'] === '游戏道具 CDK';
-  const gameBanner = columnId => db.columns.find(c => c.uid === columnId)?.['栏目名称'] === '游戏内页Banner';
+  const gameBanner = columnId => db.columns.find(c => c.uid === columnId)?.['栏目名称'] === '游戏详情页Banner';
 
   openForm = function(key,id=null,defaults={}) {
     const before = forms.size;
@@ -23,14 +23,9 @@
     const form = document.getElementById(fid);
     if (!form) return;
     const help = (name,message) => fieldWrap(form,name)?.insertAdjacentHTML('beforeend',`<div class="field-help">${esc(message)}</div>`);
-    if (key === 'games') {
-      if (!id) {form.elements.namedItem('推荐方式').value='自动匹配';state.draft['推荐方式']='自动匹配';}
-      help('推荐方式','默认推荐由运营选择游戏；自动匹配按当前游戏的“游戏类型”标签筛选已启用、可售的其他游戏。');
-      help('默认推荐游戏','仅在“默认推荐”时生效；不可选择当前游戏。');
-    }
     if (key === 'recommend') {
-      help('关联游戏','栏目类型为“游戏内页Banner”时必选，Banner 仅展示在该游戏内页。');
-      help('图片','游戏内页Banner需配置图片、链接类型和链接地址。');
+      help('关联游戏','栏目类型为“游戏详情页Banner”时必选，Banner 仅展示在该游戏详情页。');
+      help('图片','游戏详情页Banner需配置图片、链接类型和链接地址。');
     }
     if (key === 'products') {
       if (!id) {form.elements.namedItem('商详样式').value='当前默认样式';state.draft['商详样式']='当前默认样式';}
@@ -44,7 +39,6 @@
     previousDependencies(fid,changed);
     const state=forms.get(fid),form=document.getElementById(fid);
     if (!state || !form) return;
-    if (state.key === 'games') toggle(form,'默认推荐游戏',form.elements.namedItem('推荐方式')?.value === '默认推荐');
     if (state.key === 'recommend') {
       const banner=gameBanner(form.elements.namedItem('推荐区域')?.value);
       toggle(form,'关联游戏',banner);
@@ -65,18 +59,13 @@
       if (!categoryIsCdk(out['商品分类']) || out['商品类型'] !== '独立商品') out['商详样式']='当前默认样式';
     }
     if (state?.key === 'recommend' && !gameBanner(out['推荐区域'])) out['关联游戏']='';
-    if (state?.key === 'games' && out['推荐方式'] !== '默认推荐') out['默认推荐游戏']=[];
     return out;
   };
 
   validation = function(key,draft,state) {
-    if (key === 'games' && draft['推荐方式'] === '默认推荐') {
-      if (!draft['默认推荐游戏']?.length) return {field:'默认推荐游戏',message:'请至少选择一个默认推荐游戏'};
-      if (state.rowId && draft['默认推荐游戏'].includes(state.rowId)) return {field:'默认推荐游戏',message:'不能推荐当前游戏'};
-    }
     if (key === 'recommend' && gameBanner(draft['推荐区域'])) {
       if (!draft['关联游戏']) return {field:'关联游戏',message:'请选择 Banner 所属游戏'};
-      if (!draft['图片']) return {field:'图片',message:'请上传游戏内页 Banner 图片'};
+      if (!draft['图片']) return {field:'图片',message:'请上传游戏详情页 Banner 图片'};
       if (!draft['链接类型'] || !draft['链接地址']?.trim()) return {field:'链接地址',message:'请配置 Banner 链接类型和地址'};
     }
     if (key === 'products') {

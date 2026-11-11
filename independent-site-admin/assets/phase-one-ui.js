@@ -63,7 +63,7 @@
       help('标签','同一类型不能重名；不同类型可以同名，关联独立保存。');
     }
     if (key === 'recommend') {
-      help('推荐区域','游戏内页Banner为本期新增栏目；广告类型需继续选择具体投放位置。即将发售专区只能选择未发售商品。');
+      help('推荐区域','游戏详情页Banner为本期新增栏目；广告类型需继续选择具体投放位置。即将发售专区只能选择未发售商品。');
       help('广告位置','仅栏目类型选择“广告”时需要配置；位置按首页或商品详情页的四个角区分。');
       const title = form.querySelector('[data-field="栏目名称"]'), subtitle = form.querySelector('[data-field="栏目副标题"]');
       const titles = document.createElement('div');
