@@ -24,13 +24,13 @@
     if (!form) return;
     const help = (name,message) => fieldWrap(form,name)?.insertAdjacentHTML('beforeend',`<div class="field-help">${esc(message)}</div>`);
     if (key === 'recommend') {
-      help('关联游戏','栏目类型为“游戏详情页Banner”时必选，Banner 仅展示在该游戏详情页。');
+      help('关联游戏','可选择多个游戏；不选时在所有游戏对应的商品详情页展示，选中后仅在所选游戏对应的商品详情页展示。');
       help('图片','游戏详情页Banner需配置图片、链接类型和链接地址。');
     }
     if (key === 'products') {
       if (!id) {form.elements.namedItem('商详样式').value='当前默认样式';state.draft['商详样式']='当前默认样式';}
       help('商品别名','每行一个，可用于搜索命中；不会替换商品正式名称。');
-      help('商详样式','仅“游戏道具 CDK”分类可选择。定制样式只展示当前 SKU 配置图片，并隐藏开发商、发行商、发行日期卡片。');
+      help('商详样式','仅“游戏道具 CDK”分类可选择，默认使用当前默认样式；需要定制展示时手动选择“游戏道具 CDK 商详定制样式”。定制样式只展示当前 SKU 配置图片，并隐藏开发商、发行商、发行日期卡片。');
     }
     updateDependencies(fid);
   };
@@ -45,7 +45,7 @@
       toggle(form,'选择商品',!banner);
     }
     if (state.key === 'products') {
-      const eligible=form.elements.namedItem('商品类型')?.value === '独立商品' && categoryIsCdk(form.elements.namedItem('商品分类')?.value);
+      const eligible=categoryIsCdk(form.elements.namedItem('商品分类')?.value);
       toggle(form,'商详样式',eligible);
       if (!eligible) form.elements.namedItem('商详样式').value='当前默认样式';
     }
@@ -56,15 +56,14 @@
     const out=previousRead(fid),state=forms.get(fid),form=document.getElementById(fid);
     if (state?.key === 'products') {
       out['商品别名']=[...new Set((form.elements.namedItem('商品别名')?.value||'').split(/[\n,，、]/).map(s=>s.trim()).filter(Boolean))];
-      if (!categoryIsCdk(out['商品分类']) || out['商品类型'] !== '独立商品') out['商详样式']='当前默认样式';
+      if (!categoryIsCdk(out['商品分类'])) out['商详样式']='当前默认样式';
     }
-    if (state?.key === 'recommend' && !gameBanner(out['推荐区域'])) out['关联游戏']='';
+    if (state?.key === 'recommend' && !gameBanner(out['推荐区域'])) out['关联游戏']=[];
     return out;
   };
 
   validation = function(key,draft,state) {
     if (key === 'recommend' && gameBanner(draft['推荐区域'])) {
-      if (!draft['关联游戏']) return {field:'关联游戏',message:'请选择 Banner 所属游戏'};
       if (!draft['图片']) return {field:'图片',message:'请上传游戏详情页 Banner 图片'};
       if (!draft['链接类型'] || !draft['链接地址']?.trim()) return {field:'链接地址',message:'请配置 Banner 链接类型和地址'};
     }
