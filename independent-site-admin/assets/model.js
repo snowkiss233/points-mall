@@ -1,6 +1,6 @@
 /* 原型数据规则。仅处理本地演示数据，不连接真实业务接口。 */
 const Model = (() => {
-  const VERSION = 29;
+  const VERSION = 30;
   const ALL_CHANNELS = '__all_channels__';
   const copy = value => JSON.parse(JSON.stringify(value));
   const object = value => value && typeof value === 'object' && !Array.isArray(value);
@@ -161,6 +161,11 @@ const Model = (() => {
 
   function matches(db, key, row, label, value, filter) {
     if (!value || Array.isArray(value) && !value.some(Boolean)) return true;
+    if (filter?.type === 'multi') {
+      const selected = Array.isArray(value) ? value : [value];
+      const names = selected.map(id => typeof filter.options === 'string' ? name(filter.options,get(db,filter.options,id)) : id);
+      return names.includes(String(row[label] || ''));
+    }
     if (key === 'products' && label === '供货商') return db.productSuppliers.some(b => b.productId === row.uid && b.supplierId === value);
     if (typeof filter?.options === 'string') return [row.refs?.[label]].flat().includes(value);
     const actual = row[label];
@@ -173,7 +178,7 @@ const Model = (() => {
 
   function envelope(db) {
     const errors = [];
-    if (!object(db) || ![1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29].includes(db.version)) return ['不支持的备份版本'];
+    if (!object(db) || ![1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,VERSION].includes(db.version)) return ['不支持的备份版本'];
     if (db.version < 12 && db.searchHints !== undefined && !Array.isArray(db.searchHints)) errors.push('旧搜索底纹数据必须是数组');
     const collections = [...Object.keys(SCHEMA).filter(k => SCHEMA[k].columns && (k !== 'searchPlaceholder' || db.version >= 23) && (!['gifts','bundles'].includes(k) || db.version >= 25)), 'productSuppliers'];
     for (const key of collections) {
@@ -294,6 +299,7 @@ const Model = (() => {
     }
     if (typeof AuthorizedLogin !== 'undefined') errors.push(...AuthorizedLogin.validate(db));
     if (typeof Coupons !== 'undefined') errors.push(...Coupons.validate(db));
+    if (typeof V123 !== 'undefined') errors.push(...V123.validate(db));
     return [...new Set(errors)];
   }
 
@@ -417,6 +423,7 @@ const Model = (() => {
       }
       db.audit.unshift({time:new Date().toISOString(),operator:'原型升级',action:'新增商品级货源切换模式与供货顺序；既有商品默认手动切换并保留原关联'});
     }
+    if (db.version < 30 && typeof V123 !== 'undefined') V123.upgrade(db);
     db.version = VERSION;
     for (const item of db.trash) if (item.key === 'dict') item.row.refs = {};
     return db;
