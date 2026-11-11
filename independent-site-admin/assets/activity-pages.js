@@ -1,6 +1,6 @@
 /* 活动落地页原型数据与路由。页面内容限制为模板预设模块，供本地演示。 */
-const ACTIVITY_PAGE_KEYS={activityPages:{name:'活动页面',path:'/marketing/activityPages'},activityTemplates:{name:'页面模板',path:'/marketing/activityTemplates'}};
-for(const [key,page] of Object.entries(ACTIVITY_PAGE_KEYS)){ROUTES[key]=page.path;SCHEMA[key]={name:page.name,desc:key==='activityPages'?'基于页面模板配置活动内容，预览后发布到活动页。':'维护可复用的活动页面结构与模块组合。'};}
+const ACTIVITY_PAGE_KEYS={activityPages:{name:'专题页管理',path:'/marketing/activityPages'},activityTemplates:{name:'专题页模板',path:'/marketing/activityTemplates'}};
+for(const [key,page] of Object.entries(ACTIVITY_PAGE_KEYS)){ROUTES[key]=page.path;SCHEMA[key]={name:page.name,desc:key==='activityPages'?'基于专题页模板配置页面内容，预览后发布。':'维护可复用的专题页结构与模块组合。'};}
 const activityGroup=GROUPS.find(group=>group[0]==='营销管理');
 if(activityGroup){activityGroup[1].unshift(...Object.keys(ACTIVITY_PAGE_KEYS));activityGroup[1]=[...new Set(activityGroup[1])];}
 else GROUPS.splice(GROUPS.findIndex(group=>group[0]==='商品管理')+1,0,['营销管理',Object.keys(ACTIVITY_PAGE_KEYS)]);
