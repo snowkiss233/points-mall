@@ -3,6 +3,7 @@ SCHEMA.recommend.columns.splice(4,0,'关联游戏');
 SCHEMA.recommend.fields.splice(1,0,F('关联游戏','select',false,'games'));
 SCHEMA.orders.columns.splice(SCHEMA.orders.columns.indexOf('渠道名称')+1,0,'供应商');
 SCHEMA.orders.filters.push(F('订单来源','multi',false,['独立站','NN 商店','PC 客户端','活动页']),F('渠道名称','multi',false,'channels'),F('供应商','multi',false,'suppliers'),F('是否提取','select',false,['是','否']));
+SCHEMA.products.filters.splice(SCHEMA.products.filters.findIndex(f=>f.label==='状态'),0,F('商品分类','select',false,'categories'));
 PRODUCT_FIELDS.splice(1,0,F('商品别名','aliasList'));
 PRODUCT_FIELDS.splice(PRODUCT_FIELDS.findIndex(f=>f.label==='商品分类')+1,0,F('商详样式','select',true,['当前默认样式','游戏道具 CDK 定制样式']));
 SCHEMA.products.columns.splice(2,0,'商品别名','商详样式');
