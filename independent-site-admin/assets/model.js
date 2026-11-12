@@ -1,6 +1,6 @@
 /* 原型数据规则。仅处理本地演示数据，不连接真实业务接口。 */
 const Model = (() => {
-  const VERSION = 36;
+  const VERSION = 37;
   const ALL_CHANNELS = '__all_channels__';
   const copy = value => JSON.parse(JSON.stringify(value));
   const object = value => value && typeof value === 'object' && !Array.isArray(value);
@@ -424,7 +424,7 @@ const Model = (() => {
       db.audit.unshift({time:new Date().toISOString(),operator:'原型升级',action:'新增商品级货源切换模式与供货顺序；既有商品默认手动切换并保留原关联'});
     }
     if (db.version < 33 && typeof V123 !== 'undefined') V123.upgrade(db);
-    if (db.version < 36 && typeof ActivityPages !== 'undefined') ActivityPages.upgrade(db);
+    if (db.version < 37 && typeof ActivityPages !== 'undefined') ActivityPages.upgrade(db);
     db.version = VERSION;
     for (const item of db.trash) if (item.key === 'dict') item.row.refs = {};
     return db;
