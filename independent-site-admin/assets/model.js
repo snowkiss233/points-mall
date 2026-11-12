@@ -1,6 +1,6 @@
 /* 原型数据规则。仅处理本地演示数据，不连接真实业务接口。 */
 const Model = (() => {
-  const VERSION = 38;
+  const VERSION = 39;
   const ALL_CHANNELS = '__all_channels__';
   const copy = value => JSON.parse(JSON.stringify(value));
   const object = value => value && typeof value === 'object' && !Array.isArray(value);
@@ -159,7 +159,7 @@ const Model = (() => {
       const field = {products:'productId',suppliers:'supplierId',sources:'sourceId'}[target];
       if (field && binding[field] === id) add(`商品供货关联：${name('products',get(db,'products',binding.productId))}`);
     }
-    for (const key of ['giftBlacklist','bundleBlacklist']) for (const row of db[key] || []) if (target === 'products' && row.productId === id) add(`${key==='giftBlacklist'?'购买赠送':'捆绑销售'}商品黑名单`);
+    for (const key of ['giftBlacklist','bundleBlacklist']) for (const row of db[key] || []) if (target === 'products' && row.productId === id) add(`${key==='giftBlacklist'?'购买赠送':'加购'}商品黑名单`);
     if (target === 'permissions') for (const [role, ids] of Object.entries(db.rolePermissions)) if (ids.includes(id)) add(`角色授权：${name('roles',get(db,'roles',role))}`);
     return result;
   }
@@ -221,7 +221,7 @@ const Model = (() => {
         if (new Set(ids).size !== ids.length || ids.some(id => !text(id) || (id === ALL_CHANNELS ? !allChannels : !get(db,relation.target,id)))) fail(key,row,`${label}存在失效或重复关联`);
       }
       if (key === 'bundles') {
-        const prices = row['可选商品捆绑价'] || {}, selected = row.refs?.['可选商品'] || [];
+        const prices = row['加购商品加购价'] || {}, selected = row.refs?.['加购商品'] || [];
         if (!object(prices) || Object.entries(prices).some(([id,value]) => !selected.includes(id) || typeof value !== 'number' || !Number.isFinite(value) || value < 0)) fail(key,row,'加购价格式错误');
       }
       for (const f of fields(key)) {
@@ -302,7 +302,7 @@ const Model = (() => {
       }
     }
     for (const row of db.gifts || []) if (row['适用对象']!=='全局默认' && (row.refs?.['关联购买商品'] || []).some(id=>giftBlocked.has(id))) errors.push(`购买赠送 ${row.uid}：关联商品已在启用的商品黑名单中`);
-    for (const row of db.bundles || []) if ((row['适用对象']!=='全局默认'&&row.refs?.['主商品']&&bundleBlocked.has(row.refs['主商品'])) || (row.refs?.['可选商品']||[]).some(id=>bundleBlocked.has(id))) errors.push(`加购商品管理 ${row.uid}：适用商品或可选商品已在启用的商品黑名单中`);
+    for (const row of db.bundles || []) if ((row['适用对象']!=='全局默认'&&row.refs?.['主商品']&&bundleBlocked.has(row.refs['主商品'])) || (row.refs?.['加购商品']||[]).some(id=>bundleBlocked.has(id))) errors.push(`加购商品管理 ${row.uid}：适用商品或加购商品已在启用的商品黑名单中`);
     for (const [role, ids] of Object.entries(db.rolePermissions)) if (!get(db,'roles',role) || ids.some(id=>!get(db,'permissions',id))) errors.push('角色授权引用不存在');
     for (const item of db.trash) if (!SCHEMA[item.key]?.columns || !object(item.row) || !text(item.row.uid)) errors.push('回收站记录格式错误');
     if (typeof PhaseOne !== 'undefined') errors.push(...PhaseOne.validate(db));
@@ -446,6 +446,19 @@ const Model = (() => {
       for (const row of db.bundles || []) row['适用对象'] ||= '指定商品';
       for (const row of db.permissions || []) if (row['权限名称']==='捆绑销售商品') row['权限名称']='加购商品管理';
       db.audit.unshift({time:new Date().toISOString(),operator:'原型升级',action:'将捆绑销售商品菜单更名为加购商品管理，并增加全局默认/指定商品适用对象；历史配置保留'});
+    }
+    if (db.version < 39) {
+      const migrateAddonRow = row => {
+        row.refs ||= {};
+        const selected=row.refs['可选商品']||row.refs['加购商品']||row['可选商品']||row['加购商品']||[];
+        row['加购商品']=selected; row.refs['加购商品']=selected;
+        row['加购商品加购价'] ||= row['可选商品捆绑价'] || {};
+        delete row['可选商品']; delete row['可选商品捆绑价']; delete row.refs['可选商品'];
+      };
+      for (const row of db.bundles || []) migrateAddonRow(row);
+      for (const item of db.trash || []) if (item.key === 'bundles' && object(item.row)) migrateAddonRow(item.row);
+      for (const row of db.gifts || []) row['赠品素材'] ||= '';
+      db.audit.unshift({time:new Date().toISOString(),operator:'原型升级',action:'将加购规则字段更名为加购商品，并新增赠品素材配置；既有商品及价格配置保留'});
     }
     db.version = VERSION;
     for (const item of db.trash) if (item.key === 'dict') item.row.refs = {};
