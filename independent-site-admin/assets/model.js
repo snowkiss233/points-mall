@@ -1,6 +1,6 @@
 /* 原型数据规则。仅处理本地演示数据，不连接真实业务接口。 */
 const Model = (() => {
-  const VERSION = 37;
+  const VERSION = 38;
   const ALL_CHANNELS = '__all_channels__';
   const copy = value => JSON.parse(JSON.stringify(value));
   const object = value => value && typeof value === 'object' && !Array.isArray(value);
@@ -47,6 +47,11 @@ const Model = (() => {
         for (const label of ['商品分类','商品子分类']) row.refs[label] = '';
         row['账号类型'] = row['货源卡密类型'] = '';
       } else row['选择商品'] = [];
+    }
+    if (['gifts','bundles'].includes(key) && row['适用对象'] === '全局默认') {
+      const relation = key === 'gifts' ? '关联购买商品' : '主商品';
+      row.refs[relation] = key === 'gifts' ? [] : '';
+      row[relation] = key === 'gifts' ? [] : '';
     }
     if (key === 'articles' && row['指定范围'] === '不绑定') row.refs['指定游戏/平台'] = '';
     if (key === 'permissions' && row['菜单类型'] === '一级菜单') row.refs['父级菜单'] = '';
@@ -217,10 +222,10 @@ const Model = (() => {
       }
       if (key === 'bundles') {
         const prices = row['可选商品捆绑价'] || {}, selected = row.refs?.['可选商品'] || [];
-        if (!object(prices) || Object.entries(prices).some(([id,value]) => !selected.includes(id) || typeof value !== 'number' || !Number.isFinite(value) || value < 0)) fail(key,row,'可选商品捆绑价格式错误');
+        if (!object(prices) || Object.entries(prices).some(([id,value]) => !selected.includes(id) || typeof value !== 'number' || !Number.isFinite(value) || value < 0)) fail(key,row,'加购价格式错误');
       }
       for (const f of fields(key)) {
-        const inactive = (key === 'products' && (row['商品类型'] === '组合商品' ? ['账号类型','货源卡密类型','商品分类','商品子分类'].includes(f.label) : ['选择商品','生效时间'].includes(f.label))) || (key === 'auth' && f.label === '选择模块' && row['生效范围'] === '全部') || (key === 'dictItems' && ((f.label === 'key' && row['key类型'] === '图片') || (f.label === 'key图片' && row['key类型'] !== '图片')));
+        const inactive = (key === 'products' && (row['商品类型'] === '组合商品' ? ['账号类型','货源卡密类型','商品分类','商品子分类'].includes(f.label) : ['选择商品','生效时间'].includes(f.label))) || (['gifts','bundles'].includes(key) && row['适用对象'] === '全局默认' && ['关联购买商品','主商品'].includes(f.label)) || (key === 'auth' && f.label === '选择模块' && row['生效范围'] === '全部') || (key === 'dictItems' && ((f.label === 'key' && row['key类型'] === '图片') || (f.label === 'key图片' && row['key类型'] !== '图片')));
         if (inactive) continue;
         const value = rels[f.label] ? row.refs?.[f.label] : row[f.label];
         if (f.required && (value == null || value === '' || Array.isArray(value) && !value.length)) fail(key,row,`缺少${f.label}`);
@@ -274,7 +279,7 @@ const Model = (() => {
       if (new Set(orders).size !== orders.length) errors.push(`商品 ${product.uid}：供货顺序不能重复`);
       if (product['手动当前货源ID'] && !bindings.some(b=>b.sourceId===product['手动当前货源ID'])) errors.push(`商品 ${product.uid}：当前货源未关联`);
     }
-    for (const [key,label] of [['giftBlacklist','购买赠送黑名单'],['bundleBlacklist','捆绑销售黑名单']]) {
+    for (const [key,label] of [['giftBlacklist','购买赠送黑名单'],['bundleBlacklist','加购商品黑名单']]) {
       const seen = new Set();
       for (const row of db[key]) {
         if (!get(db,'products',row.productId)) errors.push(`${label}包含不存在的商品`);
@@ -284,9 +289,20 @@ const Model = (() => {
       }
     }
     const giftBlocked = new Set((db.giftBlacklist || []).filter(r=>r.status==='启用').map(r=>r.productId));
-    for (const row of db.gifts || []) if ((row.refs?.['关联购买商品'] || []).some(id=>giftBlocked.has(id))) errors.push(`购买赠送 ${row.uid}：关联商品已在启用的商品黑名单中`);
     const bundleBlocked = new Set((db.bundleBlacklist || []).filter(r=>r.status==='启用').map(r=>r.productId));
-    for (const row of db.bundles || []) if ([row.refs?.['主商品'], ...(row.refs?.['可选商品'] || [])].some(id=>id && bundleBlocked.has(id))) errors.push(`捆绑销售商品 ${row.uid}：主商品或可选商品已在启用的商品黑名单中`);
+    const activeScopeIds = (key,row) => row['适用对象'] === '全局默认' ? [] : key === 'gifts' ? (row.refs?.['关联购买商品'] || []) : [row.refs?.['主商品']].filter(Boolean);
+    for (const key of ['gifts','bundles']) {
+      const enabled=(db[key]||[]).filter(row=>row['状态']==='启用'),globals=enabled.filter(row=>row['适用对象']==='全局默认');
+      if (globals.length>1) errors.push(`${SCHEMA[key].name}只能有一条启用的全局默认规则`);
+      const seenTargets=new Set();
+      for (const row of db[key]||[]) {
+        if (!['全局默认','指定商品'].includes(row['适用对象'])) errors.push(`${SCHEMA[key].name} ${row.uid}：适用对象无效`);
+        if (row['状态']!=='启用') continue;
+        for (const id of activeScopeIds(key,row)) { if (seenTargets.has(id)) errors.push(`${SCHEMA[key].name}：指定商品重复配置`); seenTargets.add(id); }
+      }
+    }
+    for (const row of db.gifts || []) if (row['适用对象']!=='全局默认' && (row.refs?.['关联购买商品'] || []).some(id=>giftBlocked.has(id))) errors.push(`购买赠送 ${row.uid}：关联商品已在启用的商品黑名单中`);
+    for (const row of db.bundles || []) if ((row['适用对象']!=='全局默认'&&row.refs?.['主商品']&&bundleBlocked.has(row.refs['主商品'])) || (row.refs?.['可选商品']||[]).some(id=>bundleBlocked.has(id))) errors.push(`加购商品管理 ${row.uid}：适用商品或可选商品已在启用的商品黑名单中`);
     for (const [role, ids] of Object.entries(db.rolePermissions)) if (!get(db,'roles',role) || ids.some(id=>!get(db,'permissions',id))) errors.push('角色授权引用不存在');
     for (const item of db.trash) if (!SCHEMA[item.key]?.columns || !object(item.row) || !text(item.row.uid)) errors.push('回收站记录格式错误');
     if (typeof PhaseOne !== 'undefined') errors.push(...PhaseOne.validate(db));
@@ -425,6 +441,12 @@ const Model = (() => {
     }
     if (db.version < 33 && typeof V123 !== 'undefined') V123.upgrade(db);
     if (db.version < 37 && typeof ActivityPages !== 'undefined') ActivityPages.upgrade(db);
+    if (db.version < 38) {
+      for (const row of db.gifts || []) row['适用对象'] ||= '指定商品';
+      for (const row of db.bundles || []) row['适用对象'] ||= '指定商品';
+      for (const row of db.permissions || []) if (row['权限名称']==='捆绑销售商品') row['权限名称']='加购商品管理';
+      db.audit.unshift({time:new Date().toISOString(),operator:'原型升级',action:'将捆绑销售商品菜单更名为加购商品管理，并增加全局默认/指定商品适用对象；历史配置保留'});
+    }
     db.version = VERSION;
     for (const item of db.trash) if (item.key === 'dict') item.row.refs = {};
     return db;
