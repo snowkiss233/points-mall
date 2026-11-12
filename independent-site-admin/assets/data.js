@@ -1,5 +1,6 @@
 /* 全部为虚构演示记录。手机号、商户号、订单号、卡密均非真实资料。 */
 const rows=(labels,values)=>values.map((v,i)=>Object.assign({uid:String(i+1),'创建时间':'2026-09-20 09:30:00','更新时间':'2026-09-20 09:30:00','操作人':'演示运营','创建人':'演示运营','状态':'启用'},Object.fromEntries(labels.map((l,j)=>[l,v[j]??'']))));
+function makeActivationRegionSeed(platforms){const samples={Steam:['全球通用','亚洲','欧洲','北美'],PS:['港区','日区','美区','欧区']};return Object.entries(samples).flatMap(([platform,regions])=>{const bound=platforms.find(row=>row['平台名称']===platform);return bound?regions.map((region,index)=>({uid:`region-${platform.toLowerCase()}-${index+1}`,'生效平台':platform,'激活地区':region,'状态':'启用','更新时间':'2026-11-12 10:00:00',refs:{'生效平台':bound.uid}})):[];});}
 function makeSearchHintSeed(){
  return rows(['底纹文案','排序','状态'],[['搜索黑神话：悟空',1,'启用'],['搜索战争雷霆',2,'启用'],['搜索城市：天际线',3,'启用'],['搜索古墓丽影：暗影',4,'禁用']]).map((row,i)=>({...row,uid:'search-hint-demo-'+(i+1),refs:{}}));
 }
@@ -9,6 +10,7 @@ function makeSeed(){
  db.searchHints=makeSearchHintSeed();
  db.tags=rows(['标签','排序值','状态'],[['免费',1,'开启'],['多人',2,'开启'],['格斗',3,'开启'],['射击',4,'开启'],['回合制',5,'开启'],['竞速',6,'开启'],['生存',7,'开启'],['欢乐',8,'开启'],['体育',9,'开启'],['恐怖',10,'开启'],['冒险',11,'开启'],['角色扮演',12,'关闭']]);
  db.platforms=rows(['平台名称','平台展示名称','排序值'],['全平台','通用','Steam','EA','We Game','Battle','Rockstar','Epic','Riot game','Origin','PS','Xbox','Nintendo'].map((n,i)=>[n,n,i+1]));
+ db.activationRegions=makeActivationRegionSeed(db.platforms);
  db.games=rows(['ID','游戏名称','绑定平台','排序','状态','游戏标签'],[['G001','战争雷霆',['Steam'],99,'启用','多人,射击'],['G002','黑神话：悟空',['Steam','We Game'],98,'启用','动作,冒险'],['G003','绝地求生',['Steam','PS','Xbox'],97,'启用','多人,射击'],['G004','城市：天际线',['Steam'],96,'启用','建造,模拟'],['G005','古墓丽影：暗影',['Steam'],95,'禁用','动作,冒险']]);
  db.versions=rows(['版本名称','排序','状态','parentId'],[['标准版',1,'启用','1'],['豪华版',2,'启用','1'],['标准版',1,'启用','2'],['数字豪华版',2,'启用','2'],['标准版',1,'启用','3'],['标准版',1,'启用','4']]);
  db.categories=rows(['ID','商品类别','分类名称','排序','状态'],[['C101','游戏商品','游戏道具',1,'启用'],['C102','游戏商品','游戏本体',2,'启用'],['C103','游戏商品','游戏GB',3,'启用'],['C201','虚拟商品','头像',4,'禁用'],['C301','实物商品','键鼠',5,'禁用']]);
@@ -53,7 +55,7 @@ function makeSeed(){
  db.admins=rows(['账号','姓名','角色','状态','所属部门'],[['operator-demo','演示运营',['平台运营'],'启用','运营部'],['admin-demo','演示管理员',['管理员'],'启用','平台部']]);
  db.roles=rows(['角色ID','角色名称','角色说明'],[['ROLE01','管理员','全部演示菜单管理'],['ROLE02','平台运营','商品、供货商和广告内容维护']]);
  db.permissions=GROUPS.filter(g=>g[0]!=='工作台').flatMap((g,i)=>[{uid:'p'+i,'权限名称':g[0],'菜单类型':'一级菜单','组件':'Layout','路径':ROUTES[g[1][0]],'状态':'启用','创建时间':'2026-09-20'},...g[1].map((k,j)=>({uid:'p'+i+'-'+j,'权限名称':SCHEMA[k].name,'菜单类型':'子菜单','父级菜单':g[0],'组件':k,'路径':ROUTES[k],'状态':'启用','创建时间':'2026-09-20'}))]);
- db.rolePermissions={'1':db.permissions.map(p=>p.uid),'2':db.permissions.filter(p=>['商品管理','供货商管理','推荐管理','文章管理'].includes(p['权限名称'])).map(p=>p.uid)};
+ db.rolePermissions={'1':db.permissions.map(p=>p.uid),'2':db.permissions.filter(p=>['商品管理','激活地区管理','供货商管理','推荐管理','文章管理'].includes(p['权限名称'])).map(p=>p.uid)};
  db.dict=rows(['字典名称','字典编号','描述','字典类型','字典群组'],[['支付方式','demo_pay_type','演示支付枚举','字符串','支付配置'],['商品类型','demo_goods_type','独立商品与组合商品','数字','商城配置']]);
  db.dictItems=rows(['value','key','描述','排序值','是否启用','parentId'],[['支付宝扫码','alipay','',1,'启用','1'],['微信扫码','wechat','',2,'启用','1'],['独立商品','1','',1,'启用','2'],['组合商品','2','',2,'启用','2']]);
  db.blacklist[0]['权限限制']=['拉黑支付'];db.blacklist[0]['状态']='拉黑支付';db.versions.forEach((r,i)=>r.ID='VER-DEMO-'+(i+1));db.subcategories.forEach(r=>r['商品类别']=db.categories.find(c=>c.uid===r.parentId)['商品类别']);db.dictItems.forEach(r=>r['key类型']='文本');db.columns=[];db.apiSources=db.sources.filter(r=>db.suppliers.find(s=>s.uid===r.parentId)?.['合作方式']==='接口').map(r=>({...r,'三方商品ID':'THIRD-DEMO-'+r.uid,'商品状态':r['状态']}));

@@ -1,6 +1,6 @@
 /* 原型数据规则。仅处理本地演示数据，不连接真实业务接口。 */
 const Model = (() => {
-  const VERSION = 39;
+  const VERSION = 40;
   const ALL_CHANNELS = '__all_channels__';
   const copy = value => JSON.parse(JSON.stringify(value));
   const object = value => value && typeof value === 'object' && !Array.isArray(value);
@@ -23,6 +23,7 @@ const Model = (() => {
     let list = [...(db[target] || [])];
     if (target === 'versions' && key === 'products') list = list.filter(r => r.parentId === draft['绑定游戏类别']);
     if (target === 'subcategories' && key === 'products') list = list.filter(r => r.parentId === draft['商品分类']);
+    if (target === 'activationRegions' && key === 'products' && field === '激活地区') list = list.filter(r => r.refs?.['生效平台'] === draft['生效平台'] && (r['状态'] === '启用' || draft['激活地区'] === r.uid));
     if (target === 'sources' && key === 'promotions') list = list.filter(r => r.parentId === draft['供应商']);
     if (target === 'permissions') {
       list = list.filter(r => r.uid !== draft.uid && r['菜单类型'] !== '按钮/权限');
@@ -183,9 +184,9 @@ const Model = (() => {
 
   function envelope(db) {
     const errors = [];
-    if (!object(db) || ![1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,VERSION].includes(db.version)) return ['不支持的备份版本'];
+    if (!object(db) || ![1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,VERSION].includes(db.version)) return ['不支持的备份版本'];
     if (db.version < 12 && db.searchHints !== undefined && !Array.isArray(db.searchHints)) errors.push('旧搜索底纹数据必须是数组');
-    const collections = [...Object.keys(SCHEMA).filter(k => SCHEMA[k].columns && (k !== 'searchPlaceholder' || db.version >= 23) && (!['gifts','bundles'].includes(k) || db.version >= 25)), 'productSuppliers'];
+    const collections = [...Object.keys(SCHEMA).filter(k => SCHEMA[k].columns && (k !== 'searchPlaceholder' || db.version >= 23) && (!['gifts','bundles'].includes(k) || db.version >= 25) && (k !== 'activationRegions' || db.version >= 40)), 'productSuppliers'];
     for (const key of collections) {
       if (!Array.isArray(db[key])) { errors.push(`${key} 必须是数组`); continue; }
       const ids = new Set();
@@ -205,7 +206,7 @@ const Model = (() => {
   function validate(db) {
     const errors = envelope(db);
     if (errors.length) return errors;
-    const primary = {products:'商品名称',games:'游戏名称',tags:'标签',platforms:'平台名称',channels:'渠道名称',users:'用户UID',blacklist:'手机号',orders:'订单编号',refunds:'退款编号',suppliers:'供货商',sources:'商品名称',apiSources:'商品名称',batches:'ID',stock:'CDKEY',categories:'分类名称',subcategories:'分类名称',versions:'版本名称',promotions:'活动名称',payInfo:'支付通道名称',articles:'文章标题',recommend:'栏目名称',searchPlaceholder:'底纹文案',admins:'账号',roles:'角色名称',permissions:'权限名称',dict:'字典名称',dictItems:'value'};
+    const primary = {products:'商品名称',activationRegions:'激活地区',games:'游戏名称',tags:'标签',platforms:'平台名称',channels:'渠道名称',users:'用户UID',blacklist:'手机号',orders:'订单编号',refunds:'退款编号',suppliers:'供货商',sources:'商品名称',apiSources:'商品名称',batches:'ID',stock:'CDKEY',categories:'分类名称',subcategories:'分类名称',versions:'版本名称',promotions:'活动名称',payInfo:'支付通道名称',articles:'文章标题',recommend:'栏目名称',searchPlaceholder:'底纹文案',admins:'账号',roles:'角色名称',permissions:'权限名称',dict:'字典名称',dictItems:'value'};
     const fail = (key,row,message) => errors.push(`${SCHEMA[key]?.name || key} ${row.uid}：${message}`);
     for (const [key, schema] of Object.entries(SCHEMA)) for (const row of db[key] || []) {
       if (primary[key] && !text(row[primary[key]])) fail(key,row,`缺少有效的${primary[key]}`);
@@ -243,6 +244,7 @@ const Model = (() => {
       if (key === 'products') {
         if (row.refs?.['版本'] && get(db,'versions',row.refs['版本'])?.parentId !== row.refs['绑定游戏类别']) fail(key,row,'版本不属于所选游戏');
         if (row.refs?.['商品子分类'] && get(db,'subcategories',row.refs['商品子分类'])?.parentId !== row.refs['商品分类']) fail(key,row,'子分类不属于所选分类');
+        if (row.refs?.['激活地区'] && get(db,'activationRegions',row.refs['激活地区'])?.refs?.['生效平台'] !== row.refs?.['生效平台']) fail(key,row,'激活地区不属于所选生效平台');
         const prices = row['币种价格'];
         if (!Array.isArray(prices) || prices.some(p => !object(p) || !['N币','雷神币'].includes(p.currency) || [p.price,p.original].some(n => typeof n !== 'number' || n < 0 || !Number.isFinite(n))) || new Set(prices.map(p=>p.currency)).size !== prices.length) fail(key,row,'币种价格格式错误');
       }
@@ -259,10 +261,17 @@ const Model = (() => {
         const parent = get(db,'permissions',row.refs['父级菜单']);
         if (parent?.uid === row.uid || row['菜单类型'] === '一级菜单' || parent?.['菜单类型'] === '按钮/权限' || row['菜单类型'] === '子菜单' && parent?.['菜单类型'] !== '一级菜单') fail(key,row,'父级菜单层级无效');
       }
+      if (key === 'activationRegions' && !get(db,'platforms',row.refs?.['生效平台'])) fail(key,row,'生效平台不存在');
     }
     for (const [key,label] of Object.entries({products:'商品ID',payInfo:'支付通道ID',games:'ID',roles:'角色ID',channels:'渠道代码',dict:'字典编号'})) {
       const values = db[key].map(row=>row[label]);
       if (values.some(v=>!text(v)) || new Set(values).size !== values.length) errors.push(`${SCHEMA[key].name} 的${label}缺失或重复`);
+    }
+    const activationRegionKeys = new Set();
+    for (const row of db.activationRegions) {
+      const key = `${row.refs?.['生效平台'] || ''}/${String(row['激活地区'] || '').trim().toLocaleLowerCase()}`;
+      if (activationRegionKeys.has(key)) errors.push('同一生效平台下的激活地区不能重复');
+      activationRegionKeys.add(key);
     }
     const bindings = new Set();
     if (new Set(db.stock.map(row=>row.CDKEY)).size !== db.stock.length) errors.push('库存卡密重复');
@@ -459,6 +468,22 @@ const Model = (() => {
       for (const item of db.trash || []) if (item.key === 'bundles' && object(item.row)) migrateAddonRow(item.row);
       for (const row of db.gifts || []) row['赠品素材'] ||= '';
       db.audit.unshift({time:new Date().toISOString(),operator:'原型升级',action:'将加购规则字段更名为加购商品，并新增赠品素材配置；既有商品及价格配置保留'});
+    }
+    if (db.version < 40) {
+      db.activationRegions ||= (typeof makeActivationRegionSeed === 'function' ? makeActivationRegionSeed(db.platforms) : []);
+      for (const product of [...(db.products || []),...(db.trash || []).filter(item=>item.key==='products').map(item=>item.row)]) {
+        product.refs ||= {};
+        product['激活地区'] ||= '';
+        product.refs['激活地区'] ||= '';
+      }
+      const parent = db.permissions.find(row=>row['权限名称']==='商品管理'&&row['菜单类型']==='一级菜单');
+      if (parent && !db.permissions.some(row=>row['权限名称']===SCHEMA.activationRegions.name&&row['菜单类型']==='子菜单')) db.permissions.push({uid:'perm-activationRegions','权限名称':SCHEMA.activationRegions.name,'菜单类型':'子菜单','父级菜单':'商品管理','组件':'activationRegions','路径':ROUTES.activationRegions,'状态':'启用','创建时间':new Date().toISOString(),refs:{'父级菜单':parent.uid}});
+      for (const role of db.roles.filter(row=>['管理员','平台运营'].includes(row['角色名称']))) {
+        const ids = db.rolePermissions[role.uid] ||= [];
+        const menu = db.permissions.find(row=>row['组件']==='activationRegions');
+        if (menu && !ids.includes(menu.uid)) ids.push(menu.uid);
+      }
+      db.audit.unshift({time:new Date().toISOString(),operator:'原型升级',action:'新增激活地区管理菜单及商品激活地区字段；地区按生效平台关联，原商品保持未选择'});
     }
     db.version = VERSION;
     for (const item of db.trash) if (item.key === 'dict') item.row.refs = {};
