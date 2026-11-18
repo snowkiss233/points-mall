@@ -115,11 +115,11 @@ const Coupons = (() => {
     if(!methodLabels[d.method])return '请选择有效发放方式';
     if(d.method==='EVENT'){
       if(!eventLabels[d.eventType])return '请选择有效事件类型';
-      if(!repeatPolicyLabels[d.repeatPolicy||'CYCLE'])return '请选择有效重复发放规则';
+      if(!repeatPolicyLabels[d.repeatPolicy||'CYCLE'])return '请选择有效发放策略';
       if(validityTypeForEvent(d)!=='AFTER_RECEIPT')return '事件发券须使用领取后有效时长';
       const scope=d.ruleSnapshot||rule(db,d.templateId);
       if(scope.scope!=='SKU'||scope.skuIds.length!==1)return '事件发券须选择仅适用一个商品的优惠券模板';
-      if(d.userLimit!=null)return '事件发券由重复发放规则控制，不设置累计领取上限';
+      if(d.userLimit!=null)return '事件发券由发放策略控制，不设置累计领取上限';
     }
     if(d.limit!==null&&(!int(d.limit)||d.limit<1))return '计划发放总量须为正整数，或留空表示不限';
     if(d.userLimit!=null&&(!int(d.userLimit)||d.userLimit<1))return '每人本计划发放上限须为正整数';
