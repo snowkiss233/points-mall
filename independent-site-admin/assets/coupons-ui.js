@@ -1,6 +1,7 @@
 /* 营销管理 / 优惠券。沿用后台弹窗、表格和下拉控件。 */
 const CouponUI = (() => {
   const C=Coupons,tabs={templates:'优惠券模板',batches:'发放计划'};
+  const eventRepeatRule='同一用户在本计划下，券到账至失效期间再次触发不重发（已使用或回收也不提前补发）；券失效后再次触发，重新校验发放人群和计划额度后发下一张。到期本身不自动发券，计划截止或结束后停止发放。';
   let tab='',query={},cpPage=1,cpSize=10,selected=new Set(),afterNavigation=null;
   let routeToken='';
   function templateUrl(id){const hash=ROUTES.couponGrants+(id?'?'+new URLSearchParams({templateId:id}):'');history.replaceState(null,'','#'+hash);routeToken='batches:'+location.hash;}
@@ -113,7 +114,8 @@ const CouponUI = (() => {
       ${field('优惠券模板',`<select name="templateId" aria-label="优惠券模板"><option value="">请选择已上架模板</option>${choices.map(t=>`<option value="${h(t.id)}" ${t.id===d.templateId?'selected':''}>${h(t.name)} · ${h(t.id)} · ${h(summary(t))}</option>`).join('')}</select>`,'',true)}
       <div class="notice span2" id="cpBatchRule">请选择模板查看优惠规则。</div>
       ${field('发放方式',`<select name="method" aria-label="发放方式">${Object.entries(C.methodLabels).map(([v,l])=>`<option value="${v}" ${v===d.method?'selected':''}>${l}</option>`).join('')}</select>`,'事件触发发放由商城页面访问触发；原人工和接口发放规则保持。',true)}
-      <div class="field" id="cpEventType"><span class="required">发券触发事件</span><select name="eventType" aria-label="发券触发事件">${Object.entries(C.eventLabels).map(([v,l])=>`<option value="${v}" ${v===(d.eventType||'PRODUCT_DETAIL_VIEW')?'selected':''}>${l}</option>`).join('')}</select><div class="field-help">选择仅适用一个商品的优惠券模板。用户进入该商品详情后自动发券；同一张券有效期内不再发，到期后可再次发。</div></div>
+      <div class="field" id="cpEventType"><span class="required">发券触发事件</span><select name="eventType" aria-label="发券触发事件">${Object.entries(C.eventLabels).map(([v,l])=>`<option value="${v}" ${v===(d.eventType||'PRODUCT_DETAIL_VIEW')?'selected':''}>${l}</option>`).join('')}</select><div class="field-help">选择仅适用一个商品的优惠券模板。用户进入该商品详情后自动发券。</div></div>
+      <div class="field span2" id="cpEventRepeat"><span>重复发放规则（当前固定）</span><div class="notice">${h(eventRepeatRule)}</div></div>
       ${field('发放人群',radios('audienceType',[['ALL','全部用户'],['UIDS','模板导入 UID 名单'],['CONDITIONS','条件组合指定人群']],d.audienceType),'事件触发计划在用户进入商详时判断资格；人工发放计划在创建时固定名单。',true)}
       <div class="field span2" id="cpConditions"><span>指定人群条件（同时满足）</span><label><input type="checkbox" name="useRegistration">指定注册时间用户</label><div class="coupon-date-inputs"><input type="datetime-local" name="registeredFrom" aria-label="注册开始时间"><span>至</span><input type="datetime-local" name="registeredTo" aria-label="注册结束时间"></div><select name="paymentAudience" aria-label="付费条件"><option value="">不限付费状态</option><option value="UNPAID">未付费用户</option><option value="PAID_ANY">已付费用户 · 任意消费</option><option value="PAID_SKU">已付费用户 · 指定商品消费</option></select><div id="cpPaidSkus"><button type="button" class="btn small" id="cpChoosePaid">选择消费商品</button><span id="cpPaidCount"></span></div><div class="field-help">多个条件同时满足，取交集；付费按支付成功订单判断。</div></div>
       <div class="field span2" id="cpAudienceField"><span class="required">导入用户 UID</span><div class="coupon-upload"><a class="btn small" href="assets/templates/coupon-audience-template.xlsx" download="优惠券指定人群导入模板.xlsx">下载 Excel 模板</a><input name="audienceFile" type="file" aria-label="上传指定人群 Excel" accept=".xlsx"></div><div class="field-help">仅支持 .xlsx，且只能有一个含数据的工作表；首列为 UID，从第 2 行起每行填写一个，使用文本格式保留前导零与长 UID。重复 UID 自动去重。原型单次最多 10,000 行，文件不超过 5 MB。</div><div class="coupon-import-result" id="cpImportResult" aria-live="polite"></div></div>
@@ -144,7 +146,7 @@ const CouponUI = (() => {
     $('#cpChoosePaid').onclick=()=>chooseSkus(paidSkuIds,ids=>{paidSkuIds=ids;update();});
     const update=()=>{
       const manual=form.elements.method.value==='MANUAL',event=form.elements.method.value==='EVENT',audience=manual||event;if(event&&!editing){form.elements.validityType.value='AFTER_RECEIPT';if(!form.querySelector('input[name="triggerScenes"]:checked'))form.querySelector('input[name="triggerScenes"][value="PRODUCT_DETAIL"]').checked=true;}const relative=form.elements.validityType.value==='AFTER_RECEIPT',pack=audience&&form.elements.audienceType.value==='CONDITIONS',uids=audience&&form.elements.audienceType.value==='UIDS';
-      $('#cpEventType').hidden=!event;form.elements.eventType.disabled=!event;
+      $('#cpEventType').hidden=!event;$('#cpEventRepeat').hidden=!event;form.elements.eventType.disabled=!event;
       form.elements.audienceType[0].closest('.field').hidden=!audience;$('#cpConditions').hidden=!pack;$('#cpAudienceField').hidden=!uids;form.elements.audienceFile.disabled=!uids;$('#cpPaidSkus').hidden=!pack||form.elements.paymentAudience.value!=='PAID_SKU';$('#cpPaidCount').textContent='已选 '+paidSkuIds.length+' 个商品';
       $('#cpIssueDeadline').hidden=manual;form.elements.issueTo.disabled=manual;
       $('#cpFixedDates').hidden=relative;form.elements.validFrom.disabled=relative;form.elements.validTo.disabled=relative;
@@ -155,7 +157,7 @@ const CouponUI = (() => {
       }
 
       const count=pack?C.audienceUsers(db,{audienceType:'CONDITIONS',audienceConditions:conditions()}).length:uids?importedUids.length:db.users.length;
-      $('#cpTimingHelp .field-help').textContent=manual?`当前人群 ${count} 人，创建后每人发放 1 张；执行完成后计划自动结束并归档。`:event?`当前符合条件 ${count} 人（仅供预览）；进入所选商品商详时实时校验资格，按券有效期限制每人本周期领取一次。`:'创建后立即接收接口请求；无需选择发放人群，由接口调用方传入用户 UID、业务名称、来源系统及唯一奖励明细编号。';
+      $('#cpTimingHelp .field-help').textContent=manual?`当前人群 ${count} 人，创建后每人发放 1 张；执行完成后计划自动结束并归档。`:event?`当前符合条件 ${count} 人（仅供预览）；进入所选商品商详时实时校验资格。`:'创建后立即接收接口请求；无需选择发放人群，由接口调用方传入用户 UID、业务名称、来源系统及唯一奖励明细编号。';
       SelectControls.refresh(form);
     };
     form.elements.templateId.onchange=()=>{
@@ -199,7 +201,7 @@ const CouponUI = (() => {
   }
   function batchDetail(id){
     const b=batch(id);recipientState={id,uidPhone:'',orderId:'',redeemed:'',page:1};
-     modal('发放详情',dl([['发放方式',C.methodLabels[b.method]],['发放人群',C.audienceText(b)],['发券触发事件',b.method==='EVENT'?C.eventLabels[b.eventType]:'不适用'],['到账提示场景',(b.triggerScenes||[]).map(scene=>C.triggerSceneLabels[scene]||scene).join('、')||'历史计划未配置'],['发放截止时间',b.method==='MANUAL'?'不适用':C.date(b.issueTo)]])+'<div id="cpPlanRecipients"></div>','<button class="btn" data-action="close">关闭</button>',true);refreshRecipients();
+     modal('发放详情',dl([['发放方式',C.methodLabels[b.method]],['发放人群',C.audienceText(b)],['发券触发事件',b.method==='EVENT'?C.eventLabels[b.eventType]:'不适用'],['到账提示场景',(b.triggerScenes||[]).map(scene=>C.triggerSceneLabels[scene]||scene).join('、')||'历史计划未配置'],['发放截止时间',b.method==='MANUAL'?'不适用':C.date(b.issueTo)]])+(b.method==='EVENT'?`<div class="notice"><strong>重复发放规则（当前固定）</strong><br>${h(eventRepeatRule)}</div>`:'')+'<div id="cpPlanRecipients"></div>','<button class="btn" data-action="close">关闭</button>',true);refreshRecipients();
   }
   function refreshRecipients(){
     const root=$('#cpPlanRecipients');if(!root||!recipientState)return;const q=recipientState;
