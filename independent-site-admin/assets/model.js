@@ -1,6 +1,6 @@
 /* 原型数据规则。仅处理本地演示数据，不连接真实业务接口。 */
 const Model = (() => {
-  const VERSION = 40;
+  const VERSION = 41;
   const ALL_CHANNELS = '__all_channels__';
   const copy = value => JSON.parse(JSON.stringify(value));
   const object = value => value && typeof value === 'object' && !Array.isArray(value);
@@ -101,6 +101,8 @@ const Model = (() => {
     if (!product) return null;
     const available = bindings.filter(b => {
       const source = get(db,'sources',b.sourceId);
+      const supplier=get(db,'suppliers',b.supplierId);
+      if(product['账号类型']==='接口充值')return b['状态']==='启用'&&supplier?.['合作方式']==='接口'&&source?.['状态']==='上架'&&source['商品类型']==='接口充值'&&source['商品ID']===product['充值档位标识'];
       return b['状态'] === '启用' && source?.['状态'] === '上架' && Number(source['商品库存'] || 0) >= quantity;
     });
     if (product['货源切换模式'] === '自动切换') return available[0] || null;
@@ -125,7 +127,7 @@ const Model = (() => {
       product['供货商信息'] = [...new Set(bindings.map(b => name('suppliers', get(db, 'suppliers', b.supplierId))))].filter(Boolean).join('、') || '—';
       if (product['商品类型'] === '独立商品') {
         const ids = [...new Set(bindings.filter(b => b['状态'] === '启用').map(b => b.sourceId))];
-        product['库存'] = ids.reduce((n,id) => { const source = get(db, 'sources', id); return n + (source?.['状态'] === '上架' ? Number(source['商品库存'] || 0) : 0); }, 0);
+        product['库存'] = product['账号类型']==='接口充值'?null:ids.reduce((n,id) => { const source = get(db, 'sources', id); return n + (source?.['状态'] === '上架' ? Number(source['商品库存'] || 0) : 0); }, 0);
       }
     }
     for (const product of db.products.filter(p => p['商品类型'] === '组合商品')) {
@@ -184,7 +186,7 @@ const Model = (() => {
 
   function envelope(db) {
     const errors = [];
-    if (!object(db) || ![1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,VERSION].includes(db.version)) return ['不支持的备份版本'];
+    if (!object(db) || ![1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,VERSION].includes(db.version)) return ['不支持的备份版本'];
     if (db.version < 12 && db.searchHints !== undefined && !Array.isArray(db.searchHints)) errors.push('旧搜索底纹数据必须是数组');
     const collections = [...Object.keys(SCHEMA).filter(k => SCHEMA[k].columns && (k !== 'searchPlaceholder' || db.version >= 23) && (!['gifts','bundles'].includes(k) || db.version >= 25) && (k !== 'activationRegions' || db.version >= 40)), 'productSuppliers'];
     for (const key of collections) {
@@ -226,7 +228,8 @@ const Model = (() => {
         if (!object(prices) || Object.entries(prices).some(([id,value]) => !selected.includes(id) || typeof value !== 'number' || !Number.isFinite(value) || value < 0)) fail(key,row,'加购价格式错误');
       }
       for (const f of fields(key)) {
-        const inactive = (key === 'products' && (row['商品类型'] === '组合商品' ? ['账号类型','货源卡密类型','商品分类','商品子分类'].includes(f.label) : ['选择商品','生效时间'].includes(f.label))) || (['gifts','bundles'].includes(key) && row['适用对象'] === '全局默认' && ['关联购买商品','主商品'].includes(f.label)) || (key === 'auth' && f.label === '选择模块' && row['生效范围'] === '全部') || (key === 'dictItems' && ((f.label === 'key' && row['key类型'] === '图片') || (f.label === 'key图片' && row['key类型'] !== '图片')));
+        const productInactive = row['商品类型']==='组合商品' ? ['账号类型','货源卡密类型','商品分类','商品子分类','充值档位标识','充值时长（小时）'].includes(f.label) : ['选择商品','生效时间'].includes(f.label)||(row['账号类型']==='接口充值'?['绑定游戏类别','版本','生效平台','激活地区'].includes(f.label):['充值档位标识','充值时长（小时）'].includes(f.label));
+        const inactive = (key === 'products' && productInactive) || (['gifts','bundles'].includes(key) && row['适用对象'] === '全局默认' && ['关联购买商品','主商品'].includes(f.label)) || (key === 'auth' && f.label === '选择模块' && row['生效范围'] === '全部') || (key === 'dictItems' && ((f.label === 'key' && row['key类型'] === '图片') || (f.label === 'key图片' && row['key类型'] !== '图片')));
         if (inactive) continue;
         const value = rels[f.label] ? row.refs?.[f.label] : row[f.label];
         if (f.required && (value == null || value === '' || Array.isArray(value) && !value.length)) fail(key,row,`缺少${f.label}`);
@@ -242,6 +245,7 @@ const Model = (() => {
         if (!Array.isArray(row['选择商品']) || row['选择商品'].some(id => id === row.uid && key === 'products' || get(db,'products',id)?.['商品类型'] !== '独立商品')) fail(key,row,'组成/推荐商品关联无效');
       }
       if (key === 'products') {
+        if(row['账号类型']==='接口充值'&&row['商品类型']==='独立商品'&&(!text(row['充值档位标识'])||!(row['充值时长（小时）']>0)||row['货源卡密类型']!=='接口充值'))fail(key,row,'接口充值商品须配置档位、正数时长和匹配的货源类型');
         if (row.refs?.['版本'] && get(db,'versions',row.refs['版本'])?.parentId !== row.refs['绑定游戏类别']) fail(key,row,'版本不属于所选游戏');
         if (row.refs?.['商品子分类'] && get(db,'subcategories',row.refs['商品子分类'])?.parentId !== row.refs['商品分类']) fail(key,row,'子分类不属于所选分类');
         if (row.refs?.['激活地区'] && get(db,'activationRegions',row.refs['激活地区'])?.refs?.['生效平台'] !== row.refs?.['生效平台']) fail(key,row,'激活地区不属于所选生效平台');
@@ -254,6 +258,7 @@ const Model = (() => {
         if (!['未使用','已使用','已禁用'].includes(row['状态'])) fail(key,row,'库存状态无效');
       }
       if (key === 'sources' && get(db,'suppliers',row.parentId)?.['合作方式'] === '接口' && (typeof row['商品库存'] !== 'number' || !Number.isSafeInteger(row['商品库存']) || row['商品库存'] < 0)) fail(key,row,'接口库存必须是非负整数');
+      if (key === 'sources' && row['商品类型']==='接口充值' && get(db,'suppliers',row.parentId)?.['合作方式']!=='接口') fail(key,row,'接口充值货源必须归属接口供货商');
       if (key === 'batches' && get(db,'suppliers',get(db,'sources',row.parentId)?.parentId)?.['合作方式'] !== '导入') fail(key,row,'接口货源不能创建本地批次');
       if (key === 'promotions' && !(row['折扣'] > 0 && row['折扣'] <= 1)) fail(key,row,'折扣须大于 0 且不超过 1');
       if (key === 'promotions' && (row.refs?.['关联货源'] || []).some(id => get(db,'sources',id)?.parentId !== row.refs['供应商'])) fail(key,row,'货源不属于所选供应商');
@@ -277,6 +282,8 @@ const Model = (() => {
     if (new Set(db.stock.map(row=>row.CDKEY)).size !== db.stock.length) errors.push('库存卡密重复');
     for (const row of db.productSuppliers) {
       if (!get(db,'products',row.productId) || !get(db,'suppliers',row.supplierId) || get(db,'sources',row.sourceId)?.parentId !== row.supplierId) errors.push('商品供货商关联失效');
+      const product=get(db,'products',row.productId),source=get(db,'sources',row.sourceId);
+      if(product?.['账号类型']==='接口充值'&&(get(db,'suppliers',row.supplierId)?.['合作方式']!=='接口'||source?.['商品类型']!=='接口充值'||source?.['商品ID']!==product['充值档位标识']))errors.push('接口充值商品的供货商或档位不匹配');
       const pair = `${row.productId}/${row.supplierId}`;
       if (bindings.has(pair)) errors.push('同一商品不能重复关联供货商');
       bindings.add(pair);
@@ -484,6 +491,21 @@ const Model = (() => {
         if (menu && !ids.includes(menu.uid)) ids.push(menu.uid);
       }
       db.audit.unshift({time:new Date().toISOString(),operator:'原型升级',action:'新增激活地区管理菜单及商品激活地区字段；地区按生效平台关联，原商品保持未选择'});
+    }
+    if (db.version < 41) {
+      const supplierId='demo-leishen-supplier',sourceId='demo-leishen-24h-source',productId='demo-leishen-24h',tier='DEMO-LEISHEN-24H';
+      if(!get(db,'suppliers',supplierId))db.suppliers.push({uid:supplierId,refs:{},ID:'SUP-LEISHEN-DEMO','供货商':'雷神加速器（演示）','合作方式':'接口','选择服务商':'','票务类型':'不带票','合同期':'2027-12-31'});
+      if(!get(db,'sources',sourceId))db.sources.push({uid:sourceId,refs:{},parentId:supplierId,'商品ID':tier,'商品名称':'雷神加速器 24 小时接口档位（演示）','商品库存':0,'商品类型':'接口充值','商品折扣':'—','折扣时间':'—','状态':'上架'});
+      if(!get(db,'products',productId)){
+        const sample=db.products.find(p=>p['商品类型']==='独立商品');
+        if(sample){const product=copy(sample);Object.assign(product,{uid:productId,'商品ID':'DEMO-ACC-24H','商品名称':'雷神加速器 24 小时（演示）','商品子标题':'支付后充值到确认的雷神账号','商品类型':'独立商品','账号类型':'接口充值','货源卡密类型':'接口充值','充值档位标识':tier,'充值时长（小时）':24,'绑定游戏类别':'','版本':'','生效平台':'','激活地区':'','人民币售价':19.9,'人民币原价':29.9,'库存':null,'状态':'上架','发售状态':'已发售','商品规格':'可暂停加速时长 24 小时','规格介绍':'支付后由接口充值到确认的雷神账号。','商品详情':'演示商品：请在购买前确认雷神账号手机号。','选择商品':[],'货源切换模式':'手动切换','手动当前货源ID':sourceId});product.refs={...product.refs,'绑定游戏类别':'','版本':'','生效平台':'','激活地区':''};db.products.push(product);}
+      }
+      if(get(db,'products',productId)&&!db.productSuppliers.some(b=>b.productId===productId))db.productSuppliers.push({uid:'bind-'+sourceId,productId,supplierId,sourceId,'排序':1,'状态':'启用'});
+      if(db.couponData&&!db.couponData.batches.some(b=>b.method==='EVENT')){
+        const target=db.products.find(p=>p.uid==='1'&&p['状态']==='上架')||db.products.find(p=>p['状态']==='上架'&&p['商品类型']==='独立商品'&&p['账号类型']!=='接口充值');
+        if(target){const t=new Date().toISOString(),tpl=Coupons.saveTemplate(db,{name:'商详自动领取 10 元券（演示）',currency:'CNY',ruleType:'FIXED_AMOUNT',face:1000,threshold:0,scope:'SKU',skuIds:[target.uid]},'',t);const plan=Coupons.saveBatch(db,{name:target['商品名称']+' · 进入商详自动发券（演示）',templateId:tpl.id,method:'EVENT',eventType:'PRODUCT_DETAIL_VIEW',limit:null,userLimit:null,audienceType:'ALL',validityType:'AFTER_RECEIPT',validDurationSeconds:7*86400,issueFrom:t,issueTo:new Date(Date.now()+365*86400000).toISOString(),triggerScenes:['PRODUCT_DETAIL']},'',t);Coupons.activatePlan(db,plan.id,t);}
+      }
+      db.audit.unshift({time:new Date().toISOString(),operator:'原型升级',action:'新增事件触发优惠券及雷神接口充值商品演示数据；未修改历史商品或订单'});
     }
     db.version = VERSION;
     for (const item of db.trash) if (item.key === 'dict') item.row.refs = {};

@@ -334,7 +334,7 @@ const PhaseOne = (() => {
   function applyReleaseChange(db,old,product,time) {
     if (!old || old['发售状态'] !== '未发售' || product['发售状态'] !== '已发售') return [];
     Model.refresh(db);
-    const affected = db.products.filter(p=>p['状态']==='上架' && (p.uid===product.uid || p['商品类型']==='组合商品' && list(p['选择商品']).includes(product.uid)) && !(Number(p['库存']) > 0));
+    const affected = db.products.filter(p=>p['状态']==='上架' && (p.uid===product.uid || p['商品类型']==='组合商品' && list(p['选择商品']).includes(product.uid)) && p['账号类型']!=='接口充值' && !(Number(p['库存']) > 0));
     for (const row of affected) {
       row['状态'] = '下架';
       row['更新时间'] = time;
@@ -345,7 +345,7 @@ const PhaseOne = (() => {
   function purchase(db,game,product) {
     if (!product) return {allowed:false,label:'请选择商品',message:'发售状态按商品维护。'};
     const games = productGames(db,product);
-    if (!games.length) return {allowed:false,label:'暂无关联游戏',message:'请先关联游戏。'};
+    if (!games.length && product['账号类型']!=='接口充值') return {allowed:false,label:'暂无关联游戏',message:'请先关联游戏。'};
     if (product['发售状态'] === '未发售' || list(product['选择商品']).some(uid=>Model.get(db,'products',uid)?.['发售状态']==='未发售')) return {allowed:false,label:'敬请期待',message:'商品尚未发售，购买暂未开放。'};
     if (games.some(g => g['状态'] !== '启用') || product && product['状态'] !== '上架') return {allowed:false,label:'暂不可购买',message:'游戏已停用或商品已下架。'};
     const supplyError = product && listingIssue(db,product);
@@ -367,8 +367,10 @@ const PhaseOne = (() => {
       }
       return null;
     }
+    const recharge=product['账号类型']==='接口充值';
     const game = Model.get(db,'games',product.refs?.['绑定游戏类别']);
-    if (!game) return issue('绑定游戏类别','请先选择有效的关联游戏');
+    if (!recharge&&!game) return issue('绑定游戏类别','请先选择有效的关联游戏');
+    if(recharge&&(!String(product['充值档位标识']||'').trim()||!(Number(product['充值时长（小时）'])>0)||product['货源卡密类型']!=='接口充值'))return issue('充值档位标识','请填写充值档位、正数时长，并选择接口充值货源类型');
     if (product['发售状态'] === '未发售') return null;
     if (!checkStock) return null;
     const sources = db.productSuppliers.filter(b=>b.productId===product.uid && b['状态']==='启用').flatMap(b=>{
@@ -376,6 +378,7 @@ const PhaseOne = (() => {
       return supplier && source?.parentId===supplier.uid ? [source] : [];
     });
     if (!sources.length) return issue('状态','已发售商品上架前须绑定并启用供货商。请先保存为下架，再通过“供货商管理”配置。');
+    if(recharge&&!sources.some(source=>source['状态']==='上架'&&source['商品类型']==='接口充值'&&source['商品ID']===product['充值档位标识']&&Model.get(db,'suppliers',source.parentId)?.['合作方式']==='接口'))return issue('状态','接口充值商品须绑定已上架的接口供货商货源，且充值档位标识一致。');
     const routed = Model.resolveProductSupplier(db,product.uid,1);
     const hasStock = Boolean(routed && sources.some(source=>source.uid===routed.sourceId));
     return hasStock ? null : issue('状态','已发售商品上架前，已启用供货商的关联货源须有可用库存。');
