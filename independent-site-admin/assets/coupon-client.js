@@ -29,6 +29,7 @@
     const plan=C.eventPlan(d,p.uid);if(!plan)return null;
     const current=user(d),card=current&&d.couponData.userCoupons.filter(c=>c.batchId===plan.id&&c.userId===current.uid).sort((a,b)=>Date.parse(b.issuedAt)-Date.parse(a.issuedAt))[0];
     if(card&&Date.now()<Date.parse(card.validTo)&&C.displayStatus(card)!=='AVAILABLE')return null;
+    if(current&&card&&(plan.repeatPolicy||'CYCLE')==='ONCE'&&Date.now()>=Date.parse(card.validTo))return null;
     if(current&&!card&&!C.matchesAudience(d,plan,current))return null;
     if(current&&card&&Date.now()>=Date.parse(card.validTo)&&!C.matchesAudience(d,plan,current))return null;
     if(!card&&plan.limit!==null&&plan.issued>=plan.limit)return null;
@@ -49,9 +50,9 @@
     if(!user(d)){pendingSku=skuId;$('loginDialog').showModal();return;}
     currentSku=skuId;let result=null,error='';
     if(C.eventPlan(d,skuId))try{result=C.grantOnProductDetail(d,skuId,userUid);if(result.issued)save(d);}catch(e){error=e.message;}
-    const promo=offer(d,p),recharge=isRecharge(p),card=result?.coupon;
+    const promo=offer(d,p),recharge=isRecharge(p),card=result?.coupon,oneTime=(result?.batch?.repeatPolicy||'CYCLE')==='ONCE';
     const status=card&&Date.now()<Date.parse(card.validTo)?C.displayStatus(card):'';
-    const couponNote=error?error==='当前账号不在此优惠券的发放人群内'?`<div class="notice">当前账号不符合此券的领取条件，请按商品当前价格购买。</div>`:`<div class="notice">优惠券暂未到账：${h(error)}。请按当前价格查看，稍后重试。</div>`:result?.issued?`<div class="notice">优惠券已到账，本轮有效期至 ${h(C.date(card.validTo))}。有效期内再次进入不会重复发券。</div>`:status==='AVAILABLE'?`<div class="notice">本轮优惠券已领取，有效期至 ${h(C.date(card.validTo))}。</div>`:card?`<div class="notice">本轮优惠券已领取并使用；到期后再次进入商详可领取下一轮。</div>`:'';
+    const couponNote=error?error==='当前账号不在此优惠券的发放人群内'?`<div class="notice">当前账号不符合此券的领取条件，请按商品当前价格购买。</div>`:`<div class="notice">优惠券暂未到账：${h(error)}。请按当前价格查看，稍后重试。</div>`:result?.issued?`<div class="notice">优惠券已到账，有效期至 ${h(C.date(card.validTo))}。${oneTime?'本计划只触发一次。':'有效期内再次进入不会重复发券。'}</div>`:status==='AVAILABLE'?`<div class="notice">优惠券已领取，有效期至 ${h(C.date(card.validTo))}。${oneTime?'本计划不会再次发券。':''}</div>`:card?oneTime?`<div class="notice">本计划只触发一次，当前账号已领取过，不会再次发券。</div>`:`<div class="notice">本轮优惠券已领取并使用；到期后再次进入商详可领取下一轮。</div>`:'';
     $('detailContent').innerHTML=`<span class="eyebrow">${recharge?'雷神加速器 · 接口充值':'游戏数字商品'}</span><h2>${h(p['商品名称'])}</h2><p>${h(p['商品子标题']||'')}</p><div class="summary"><div class="row"><span>商品折后价</span><strong>${money(promo?.basePrice??p['人民币售价'])}</strong></div>${promo?`<div class="row"><span>${promo.card?'已领券价':'可领券后价'}</span><strong>${money(promo.price)}</strong></div>`:''}${recharge?`<div class="row"><span>充值时长</span><strong>${h(p['充值时长（小时）'])} 小时</strong></div><div class="row"><span>交付方式</span><strong>充值到雷神账号</strong></div>`:''}</div>${couponNote}${recharge?'<p>下单前请确认雷神账号手机号；支付成功后仍需等待接口返回到账结果。</p>':'<p>订单支付后按商品交付方式查看履约结果。</p>'}<span class="note">此页为原型，价格及发券演示不代表生产交易报价。</span>`;
     $('buyButton').textContent=recharge?'确认充值账号并购买':'立即购买';
     $('detailDialog').showModal();drawProducts(d,$('keyword').value.trim());
