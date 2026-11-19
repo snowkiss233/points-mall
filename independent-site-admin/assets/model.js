@@ -260,6 +260,7 @@ const Model = (() => {
       }
       if (key === 'products') {
         if(row['账号类型']==='接口充值'&&row['商品类型']==='独立商品'&&(!text(row['权益类型'])||row['货源卡密类型']!=='接口充值'||!benefitSpec(db,row.uid)))fail(key,row,'接口充值商品须配置权益类型及独立权益规格');
+        if(row['账号类型']!=='接口充值'&&row['货源卡密类型']==='接口充值')fail(key,row,'仅接口充值商品可使用接口充值货源卡密类型');
         if('充值档位标识' in row||'充值时长（小时）' in row)fail(key,row,'商品主表不能保存接口档位或权益规格字段');
         if (row.refs?.['版本'] && get(db,'versions',row.refs['版本'])?.parentId !== row.refs['绑定游戏类别']) fail(key,row,'版本不属于所选游戏');
         if (row.refs?.['商品子分类'] && get(db,'subcategories',row.refs['商品子分类'])?.parentId !== row.refs['商品分类']) fail(key,row,'子分类不属于所选分类');

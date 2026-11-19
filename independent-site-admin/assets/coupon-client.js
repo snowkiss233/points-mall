@@ -15,7 +15,7 @@
   const close=id=>{if($(id).open)$(id).close();};
   const user=d=>d.users.find(u=>u['用户UID']===userUid);
   const product=(d,id)=>d.products.find(p=>p.uid===id);
-  const isRecharge=p=>p?.['账号类型']==='接口充值';
+  const isRecharge=p=>p?.['货源卡密类型']==='接口充值';
   function initialize(){
     const d=read();
     if(!d.couponData.passphraseDemo){
