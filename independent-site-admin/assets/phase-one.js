@@ -370,7 +370,8 @@ const PhaseOne = (() => {
     const recharge=product['账号类型']==='接口充值';
     const game = Model.get(db,'games',product.refs?.['绑定游戏类别']);
     if (!recharge&&!game) return issue('绑定游戏类别','请先选择有效的关联游戏');
-    if(recharge&&(!String(product['充值档位标识']||'').trim()||!(Number(product['充值时长（小时）'])>0)||product['货源卡密类型']!=='接口充值'))return issue('充值档位标识','请填写充值档位、正数时长，并选择接口充值货源类型');
+    const benefit=recharge?Model.benefitSpec(db,product.uid):null;
+    if(recharge&&(!benefit||benefit.benefitType!==product['权益类型']||benefit.benefitType!=='加速器时长'||!['可暂停时长','不可暂停时长'].includes(benefit.spec?.durationType)||!(benefit.spec?.durationHours>0)))return issue('权益类型','请先配置有效的加速器权益规格');
     if (product['发售状态'] === '未发售') return null;
     if (!checkStock) return null;
     const sources = db.productSuppliers.filter(b=>b.productId===product.uid && b['状态']==='启用').flatMap(b=>{
@@ -378,7 +379,7 @@ const PhaseOne = (() => {
       return supplier && source?.parentId===supplier.uid ? [source] : [];
     });
     if (!sources.length) return issue('状态','已发售商品上架前须绑定并启用供货商。请先保存为下架，再通过“供货商管理”配置。');
-    if(recharge&&!sources.some(source=>source['状态']==='上架'&&source['商品类型']==='接口充值'&&source['商品ID']===product['充值档位标识']&&Model.get(db,'suppliers',source.parentId)?.['合作方式']==='接口'))return issue('状态','接口充值商品须绑定已上架的接口供货商货源，且充值档位标识一致。');
+    if(recharge&&!sources.some(source=>source['状态']==='上架'&&source['商品类型']==='接口充值'&&Model.get(db,'suppliers',source.parentId)?.['合作方式']==='接口'))return issue('状态','接口充值商品须绑定已上架的接口供货商货源。');
     const routed = Model.resolveProductSupplier(db,product.uid,1);
     const hasStock = Boolean(routed && sources.some(source=>source.uid===routed.sourceId));
     return hasStock ? null : issue('状态','已发售商品上架前，已启用供货商的关联货源须有可用库存。');

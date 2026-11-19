@@ -1,6 +1,6 @@
 /* 原型数据规则。仅处理本地演示数据，不连接真实业务接口。 */
 const Model = (() => {
-  const VERSION = 41;
+  const VERSION = 42;
   const ALL_CHANNELS = '__all_channels__';
   const copy = value => JSON.parse(JSON.stringify(value));
   const object = value => value && typeof value === 'object' && !Array.isArray(value);
@@ -8,6 +8,14 @@ const Model = (() => {
   const fields = key => key === 'products' ? PRODUCT_FIELDS : SCHEMA[key]?.fields || [];
   const name = (key, row) => row?.[NAME_KEYS[key] || SCHEMA[key]?.columns?.[0]] || row?.uid || '';
   const get = (db, key, id) => (db[key] || []).find(row => row.uid === id);
+  const benefitSpec = (db, productId) => (db.productBenefitSpecs || []).find(row => row.productId === productId) || null;
+  function saveBenefitSpec(db, productId, benefitType, spec) {
+    db.productBenefitSpecs ||= [];
+    const old=benefitSpec(db,productId),time=new Date().toISOString();
+    const row={uid:old?.uid||uid('benefit-spec'),productId,benefitType,specVersion:1,spec:copy(spec),createdAt:old?.createdAt||time,updatedAt:time};
+    if(old)Object.assign(old,row);else db.productBenefitSpecs.push(row);
+    return row;
+  }
   let sequence = 0;
   const uid = (prefix = 'local') => `${prefix}-${Date.now().toString(36)}-${(++sequence).toString(36)}`;
 
@@ -44,10 +52,12 @@ const Model = (() => {
     row.refs = {...row.refs};
     for (const [label, relation] of Object.entries(relations(key, row))) row.refs[label] = relation.multi ? (draft[label] || []) : (draft[label] || '');
     if (key === 'products') {
+      delete row['充值档位标识'];delete row['充值时长（小时）'];delete row['时长类型'];
       if (row['商品类型'] === '组合商品') {
         for (const label of ['商品分类','商品子分类']) row.refs[label] = '';
-        row['账号类型'] = row['货源卡密类型'] = '';
+        row['账号类型'] = row['货源卡密类型'] = row['权益类型'] = '';
       } else row['选择商品'] = [];
+      if(row['账号类型']!=='接口充值')row['权益类型']='';
     }
     if (['gifts','bundles'].includes(key) && row['适用对象'] === '全局默认') {
       const relation = key === 'gifts' ? '关联购买商品' : '主商品';
@@ -102,7 +112,7 @@ const Model = (() => {
     const available = bindings.filter(b => {
       const source = get(db,'sources',b.sourceId);
       const supplier=get(db,'suppliers',b.supplierId);
-      if(product['账号类型']==='接口充值')return b['状态']==='启用'&&supplier?.['合作方式']==='接口'&&source?.['状态']==='上架'&&source['商品类型']==='接口充值'&&source['商品ID']===product['充值档位标识'];
+      if(product['账号类型']==='接口充值')return b['状态']==='启用'&&supplier?.['合作方式']==='接口'&&source?.['状态']==='上架'&&source['商品类型']==='接口充值';
       return b['状态'] === '启用' && source?.['状态'] === '上架' && Number(source['商品库存'] || 0) >= quantity;
     });
     if (product['货源切换模式'] === '自动切换') return available[0] || null;
@@ -186,7 +196,7 @@ const Model = (() => {
 
   function envelope(db) {
     const errors = [];
-    if (!object(db) || ![1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,VERSION].includes(db.version)) return ['不支持的备份版本'];
+    if (!object(db) || ![1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,VERSION].includes(db.version)) return ['不支持的备份版本'];
     if (db.version < 12 && db.searchHints !== undefined && !Array.isArray(db.searchHints)) errors.push('旧搜索底纹数据必须是数组');
     const collections = [...Object.keys(SCHEMA).filter(k => SCHEMA[k].columns && (k !== 'searchPlaceholder' || db.version >= 23) && (!['gifts','bundles'].includes(k) || db.version >= 25) && (k !== 'activationRegions' || db.version >= 40)), 'productSuppliers'];
     for (const key of collections) {
@@ -197,6 +207,10 @@ const Model = (() => {
         if (ids.has(row.uid)) errors.push(`${key} 的 uid 重复：${row.uid}`);
         ids.add(row.uid);
       }
+    }
+    if(db.version>=42){
+      if(!Array.isArray(db.productBenefitSpecs))errors.push('productBenefitSpecs 必须是数组');
+      else if(new Set(db.productBenefitSpecs.map(row=>row.uid)).size!==db.productBenefitSpecs.length)errors.push('商品权益规格 ID 重复');
     }
     for (const key of ['audit','queryLogs','exportJobs','statJobs','trash','outflows']) if (!Array.isArray(db[key]) || db[key].some(r => !object(r))) errors.push(`${key} 格式错误`);
     if (db.version >= 26) for (const key of ['giftBlacklist','bundleBlacklist']) if (!Array.isArray(db[key]) || db[key].some(r => !object(r) || !text(r.uid) || !text(r.productId) || !['启用','禁用'].includes(r.status))) errors.push(`${key} 格式错误`);
@@ -228,7 +242,7 @@ const Model = (() => {
         if (!object(prices) || Object.entries(prices).some(([id,value]) => !selected.includes(id) || typeof value !== 'number' || !Number.isFinite(value) || value < 0)) fail(key,row,'加购价格式错误');
       }
       for (const f of fields(key)) {
-        const productInactive = row['商品类型']==='组合商品' ? ['账号类型','货源卡密类型','商品分类','商品子分类','充值档位标识','充值时长（小时）'].includes(f.label) : ['选择商品','生效时间'].includes(f.label)||(row['账号类型']==='接口充值'?['绑定游戏类别','版本','生效平台','激活地区'].includes(f.label):['充值档位标识','充值时长（小时）'].includes(f.label));
+        const productInactive = row['商品类型']==='组合商品' ? ['账号类型','权益类型','货源卡密类型','商品分类','商品子分类'].includes(f.label) : ['选择商品','生效时间'].includes(f.label)||(row['账号类型']==='接口充值'?['绑定游戏类别','版本','生效平台','激活地区'].includes(f.label):f.label==='权益类型');
         const inactive = (key === 'products' && productInactive) || (['gifts','bundles'].includes(key) && row['适用对象'] === '全局默认' && ['关联购买商品','主商品'].includes(f.label)) || (key === 'auth' && f.label === '选择模块' && row['生效范围'] === '全部') || (key === 'dictItems' && ((f.label === 'key' && row['key类型'] === '图片') || (f.label === 'key图片' && row['key类型'] !== '图片')));
         if (inactive) continue;
         const value = rels[f.label] ? row.refs?.[f.label] : row[f.label];
@@ -245,7 +259,8 @@ const Model = (() => {
         if (!Array.isArray(row['选择商品']) || row['选择商品'].some(id => id === row.uid && key === 'products' || get(db,'products',id)?.['商品类型'] !== '独立商品')) fail(key,row,'组成/推荐商品关联无效');
       }
       if (key === 'products') {
-        if(row['账号类型']==='接口充值'&&row['商品类型']==='独立商品'&&(!text(row['充值档位标识'])||!(row['充值时长（小时）']>0)||row['货源卡密类型']!=='接口充值'))fail(key,row,'接口充值商品须配置档位、正数时长和匹配的货源类型');
+        if(row['账号类型']==='接口充值'&&row['商品类型']==='独立商品'&&(!text(row['权益类型'])||row['货源卡密类型']!=='接口充值'||!benefitSpec(db,row.uid)))fail(key,row,'接口充值商品须配置权益类型及独立权益规格');
+        if('充值档位标识' in row||'充值时长（小时）' in row)fail(key,row,'商品主表不能保存接口档位或权益规格字段');
         if (row.refs?.['版本'] && get(db,'versions',row.refs['版本'])?.parentId !== row.refs['绑定游戏类别']) fail(key,row,'版本不属于所选游戏');
         if (row.refs?.['商品子分类'] && get(db,'subcategories',row.refs['商品子分类'])?.parentId !== row.refs['商品分类']) fail(key,row,'子分类不属于所选分类');
         if (row.refs?.['激活地区'] && get(db,'activationRegions',row.refs['激活地区'])?.refs?.['生效平台'] !== row.refs?.['生效平台']) fail(key,row,'激活地区不属于所选生效平台');
@@ -278,12 +293,21 @@ const Model = (() => {
       if (activationRegionKeys.has(key)) errors.push('同一生效平台下的激活地区不能重复');
       activationRegionKeys.add(key);
     }
+    const seenBenefitProducts=new Set();
+    for(const row of db.productBenefitSpecs){
+      const product=get(db,'products',row.productId);
+      if(!text(row.uid)||!product||product['账号类型']!=='接口充值')errors.push('商品权益规格关联无效');
+      if(seenBenefitProducts.has(row.productId))errors.push('同一商品只能有一条权益规格');
+      seenBenefitProducts.add(row.productId);
+      if(row.benefitType!==product?.['权益类型']||!BENEFIT_SPEC_SCHEMAS[row.benefitType]||row.specVersion!==1||!object(row.spec))errors.push('商品权益规格类型或版本无效');
+      if(row.benefitType==='加速器时长'&&(!(['可暂停时长','不可暂停时长'].includes(row.spec?.durationType)||row.spec?.durationType==='待确认'&&product?.['状态']==='下架')||!Number.isSafeInteger(row.spec?.durationHours)||row.spec.durationHours<=0))errors.push('加速器权益规格须配置时长类型和正整数小时数');
+    }
     const bindings = new Set();
     if (new Set(db.stock.map(row=>row.CDKEY)).size !== db.stock.length) errors.push('库存卡密重复');
     for (const row of db.productSuppliers) {
       if (!get(db,'products',row.productId) || !get(db,'suppliers',row.supplierId) || get(db,'sources',row.sourceId)?.parentId !== row.supplierId) errors.push('商品供货商关联失效');
       const product=get(db,'products',row.productId),source=get(db,'sources',row.sourceId);
-      if(product?.['账号类型']==='接口充值'&&(get(db,'suppliers',row.supplierId)?.['合作方式']!=='接口'||source?.['商品类型']!=='接口充值'||source?.['商品ID']!==product['充值档位标识']))errors.push('接口充值商品的供货商或档位不匹配');
+      if(product?.['账号类型']==='接口充值'&&(get(db,'suppliers',row.supplierId)?.['合作方式']!=='接口'||source?.['商品类型']!=='接口充值'))errors.push('接口充值商品的供货商或货源类型不匹配');
       const pair = `${row.productId}/${row.supplierId}`;
       if (bindings.has(pair)) errors.push('同一商品不能重复关联供货商');
       bindings.add(pair);
@@ -507,6 +531,23 @@ const Model = (() => {
       }
       db.audit.unshift({time:new Date().toISOString(),operator:'原型升级',action:'新增事件触发优惠券及雷神接口充值商品演示数据；未修改历史商品或订单'});
     }
+    if(db.version<42){
+      db.productBenefitSpecs ||= [];
+      for(const product of db.products){
+        if(product['账号类型']==='接口充值'){
+          product['权益类型']='加速器时长';
+          const desc=String(product['商品规格']||'')+' '+String(product['规格介绍']||'');
+          const durationType=desc.includes('不可暂停')?'不可暂停时长':desc.includes('可暂停')?'可暂停时长':'待确认';
+          const durationHours=Number(product['充值时长（小时）']);
+          if(!benefitSpec(db,product.uid))saveBenefitSpec(db,product.uid,'加速器时长',{durationType,durationHours});
+          if(durationType==='待确认')product['状态']='下架';
+        }else product['权益类型']='';
+        delete product['充值档位标识'];delete product['充值时长（小时）'];
+      }
+      const demoSource=get(db,'sources','demo-leishen-24h-source');
+      if(demoSource){demoSource['商品ID']='DEMO-LEISHEN-API';demoSource['商品名称']='雷神加速器接口充值货源（演示）';}
+      db.audit.unshift({time:new Date().toISOString(),operator:'原型升级',action:'商品主表新增权益类型，历史加速器时长迁移至独立商品权益规格表；未能识别时长类型的商品已下架待核对'});
+    }
     db.version = VERSION;
     for (const item of db.trash) if (item.key === 'dict') item.row.refs = {};
     return db;
@@ -549,5 +590,5 @@ const Model = (() => {
     const parent = parentKey && get(db,parentKey,route.parent);
     return {parentKey,parent,valid:!parentKey || Boolean(parent)};
   }
-  return {VERSION,ALL_CHANNELS,copy,uid,name,get,fields,relations,choices,formDraft,fromForm,promotionStatus,statusAction,stockRows,productSupplierBindings,resolveProductSupplier,refresh,references,matches,validate,prepare,addStock,routeInfo,routeHref,parentContext};
+  return {VERSION,ALL_CHANNELS,copy,uid,name,get,benefitSpec,saveBenefitSpec,fields,relations,choices,formDraft,fromForm,promotionStatus,statusAction,stockRows,productSupplierBindings,resolveProductSupplier,refresh,references,matches,validate,prepare,addStock,routeInfo,routeHref,parentContext};
 })();
