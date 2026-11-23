@@ -49,6 +49,30 @@
     const rows=d.products.filter(p=>p['状态']==='上架'&&p['发售状态']==='已发售'&&(!term||p['商品名称'].toLowerCase().includes(term.toLowerCase())));
     $('products').innerHTML=rows.length?rows.map(p=>{const promo=offer(d,p),recharge=isRecharge(p);return `<article class="card ${recharge?'recharge':''}"><div class="art"></div><div class="grow"><span class="pill">${recharge?'接口充值 · 雷神加速器':'数字商品'}</span><h3>${h(p['商品名称'])}</h3><p>${h(p['商品子标题']||p['商品规格']||'')}</p></div><div>${promo?`<span class="price">${money(promo.price)}</span><span class="old">${money(promo.basePrice)}</span><div class="promo">${promo.card?'已领券价':promo.conditional?'符合条件可享券后价':'可领券后价'} · ${promo.conditional?'登录后核验资格':'进入商详自动发券'}</div>`:`<span class="price">${money(p['人民币售价'])}</span><div class="promo">${recharge?'支付后充值至确认的雷神账号':'即时交付数字商品'}</div>`}</div><button class="primary" data-detail="${h(p.uid)}">查看商品详情</button></article>`;}).join(''):'<div class="empty">没有找到相关商品</div>';
   }
+  function drawCouponFloat(d){
+    const current=user(d),cards=current?d.couponData.userCoupons.filter(c=>c.userId===current.uid&&C.displayStatus(c)==='AVAILABLE').sort((a,b)=>Date.parse(a.validTo)-Date.parse(b.validTo)):[];
+    $('couponFloatCount').textContent=cards.length+' 张';
+    $('couponFloatList').innerHTML=!current?'<div class="coupon-float-empty">登录后查看可用优惠券</div>':cards.length?cards.map(c=>{
+      const rule=C.get(d,'batches',c.batchId)?.ruleSnapshot||C.get(d,'templates',c.templateId)||{};
+      const value=rule.ruleType==='DISCOUNT'?(rule.discountTenths||0)/10+'折':C.money(rule.face||0)+'元';
+      const condition=rule.threshold?'满 ¥'+C.money(rule.threshold)+' 可用':'无门槛可用';
+      return `<div class="coupon-float-card"><div class="coupon-float-value">${h(value)}<small>${rule.ruleType==='DISCOUNT'?'折扣券':'满减券'}</small></div><div class="coupon-float-copy"><strong>${h(rule.name||'优惠券')}</strong><span>${h(condition)} · ${rule.scope==='SKU'?'指定商品':'全部商品'}</span></div><button class="coupon-float-use" type="button" data-coupon-use="${h(c.id)}">去使用</button></div>`;
+    }).join(''):'<div class="coupon-float-empty">暂无可用优惠券</div>';
+  }
+  function useCoupon(couponId){
+    const d=read(),current=user(d),card=d.couponData.userCoupons.find(c=>c.id===couponId&&c.userId===current?.uid&&C.displayStatus(c)==='AVAILABLE');
+    if(!card){drawCouponFloat(d);$('message').textContent='这张优惠券当前不可使用，请刷新后重试';return;}
+    const rule=C.get(d,'batches',card.batchId)?.ruleSnapshot||{};
+    if(rule.useDestination==='CUSTOM'&&rule.usePath){
+      const path=rule.usePath.trim();
+      if(!/^(?:\/(?!\/)|\.\/|#\/)[^\s]*$/.test(path)){$('message').textContent='该券的目标路径无效，请联系运营处理';return;}
+      const target=new URL(path,location.href);
+      if(target.origin!==location.origin){$('message').textContent='该券的目标路径无效，请联系运营处理';return;}
+      location.assign(target.href);return;
+    }
+    $('couponFloatPanel').hidden=true;$('couponFloatToggle').setAttribute('aria-expanded','false');$('keyword').value='';drawProducts(d);$('search').scrollIntoView({behavior:'smooth',block:'start'});$('keyword').focus();
+    $('message').textContent='已进入商品搜索页，可查找适用商品';
+  }
   function openDetail(skuId){
     const d=read(),p=product(d,skuId);if(!p)return;
     if(!user(d)){pendingSku=skuId;$('loginDialog').showModal();return;}
@@ -59,7 +83,7 @@
     const couponNote=error?error==='当前账号不在此优惠券的发放人群内'?`<div class="notice">当前账号不符合此券的领取条件，请按商品当前价格购买。</div>`:`<div class="notice">优惠券暂未到账：${h(error)}。请按当前价格查看，稍后重试。</div>`:result?.issued?`<div class="notice">优惠券已到账，有效期至 ${h(C.date(card.validTo))}。${oneTime?'本计划只触发一次。':'有效期内再次进入不会重复发券。'}</div>`:status==='AVAILABLE'?`<div class="notice">优惠券已领取，有效期至 ${h(C.date(card.validTo))}。${oneTime?'本计划不会再次发券。':''}</div>`:card?oneTime?`<div class="notice">本计划只触发一次，当前账号已领取过，不会再次发券。</div>`:`<div class="notice">本轮优惠券已领取并使用；到期后再次进入商详可领取下一轮。</div>`:'';
     $('detailContent').innerHTML=`<span class="eyebrow">${recharge?'雷神加速器 · 接口充值':'游戏数字商品'}</span><h2>${h(p['商品名称'])}</h2><p>${h(p['商品子标题']||'')}</p><div class="summary"><div class="row"><span>商品折后价</span><strong>${money(promo?.basePrice??p['人民币售价'])}</strong></div>${promo?`<div class="row"><span>${promo.card?'已领券价':'可领券后价'}</span><strong>${money(promo.price)}</strong></div>`:''}${recharge?`<div class="row"><span>时长类型</span><strong>${h(benefit?.durationType||'')}</strong></div><div class="row"><span>充值时长</span><strong>${h(benefit?.durationHours||0)} 小时</strong></div><div class="row"><span>交付方式</span><strong>充值到已绑定手机号对应的雷神账号</strong></div>`:''}</div>${couponNote}${recharge?`<p>支付后向当前账号已绑定的手机号充值。${boundPhone(d,userUid)?'请核对绑定手机号；支付成功不代表充值已到账。':'当前账号未绑定手机号，支付后需先绑定并验证，才会提交充值。'}</p>`:'<p>订单支付后按商品交付方式查看履约结果。</p>'}<span class="note">此页为原型，价格及发券演示不代表生产交易报价。</span>`;
     $('buyButton').textContent='立即购买';
-    $('detailDialog').showModal();drawProducts(d,$('keyword').value.trim());
+    $('detailDialog').showModal();drawProducts(d,$('keyword').value.trim());drawCouponFloat(d);
   }
   function openConfirm(){
     const d=read(),p=product(d,currentSku);if(!p)return;
@@ -108,7 +132,7 @@
     try{const d=read();if(!user(d)){pendingCode=code;$('loginDialog').showModal();return;}
       const request={batchId:d.couponData.passphraseDemo[code],userUid,sourceSystem:'渠道口令场景（演示）',sourceRecordId:JSON.stringify([code,userUid]),businessType:'PASSPHRASE',businessName:code+' 口令奖励'};
       const existing=d.couponData.grantTasks.find(t=>t.sourceSystem===request.sourceSystem&&t.sourceRecordId===request.sourceRecordId);if(existing?.success){$('message').textContent='该口令奖励已领取';return;}
-      const task=C.grantFromSystem(d,request);save(d);if(!task.success)throw Error(d.couponData.grantItems.find(i=>i.taskId===task.id)?.error||'领取失败');
+      const task=C.grantFromSystem(d,request);save(d);drawCouponFloat(d);if(!task.success)throw Error(d.couponData.grantItems.find(i=>i.taskId===task.id)?.error||'领取失败');
       const item=d.couponData.grantItems.find(i=>i.taskId===task.id),card=C.get(d,'userCoupons',item.couponId),rule=C.get(d,'batches',card.batchId).ruleSnapshot;
       $('rewardValue').textContent=rule.ruleType==='DISCOUNT'?rule.discountTenths/10+' 折':money(rule.face/100);$('rewardName').textContent=rule.name;$('rewardValidity').textContent=C.date(card.validFrom)+' 至 '+C.date(card.validTo);$('reward').showModal();
     }catch(e){$('message').textContent=e.message;}
@@ -116,11 +140,13 @@
   $('search').onsubmit=e=>{e.preventDefault();const term=$('keyword').value.trim(),code=term.toUpperCase(),d=read();$('message').textContent='';if(code==='EXPIRED'){$('message').textContent='口令已过期';return;}if(d.couponData.passphraseDemo?.[code])receive(code);else if(/^(YOPLAY|WELCOME)/.test(code))$('message').textContent='口令无效，请核对后重试';else drawProducts(d,term);};
   $('products').onclick=e=>{const button=e.target.closest('[data-detail]');if(button)openDetail(button.dataset.detail);};
   $('loginButton').onclick=()=>$('loginDialog').showModal();$('cancelLogin').onclick=()=>{pendingSku='';pendingCode='';close('loginDialog');};
-  $('confirmLogin').onclick=()=>{userUid=$('account').value;sessionStorage.setItem('yoplay-client-user',userUid);$('loginButton').textContent=userUid;close('loginDialog');drawProducts(read(),$('keyword').value.trim());if(pendingSku){const sku=pendingSku;pendingSku='';openDetail(sku);}else if(pendingCode){const code=pendingCode;pendingCode='';receive(code);}};
+  $('confirmLogin').onclick=()=>{userUid=$('account').value;sessionStorage.setItem('yoplay-client-user',userUid);$('loginButton').textContent=userUid;close('loginDialog');const d=read();drawProducts(d,$('keyword').value.trim());drawCouponFloat(d);if(pendingSku){const sku=pendingSku;pendingSku='';openDetail(sku);}else if(pendingCode){const code=pendingCode;pendingCode='';receive(code);}};
+  $('couponFloatToggle').onclick=()=>{const panel=$('couponFloatPanel'),opening=panel.hidden;panel.hidden=!opening;$('couponFloatToggle').setAttribute('aria-expanded',String(opening));if(opening)drawCouponFloat(read());};
+  $('couponFloatList').onclick=e=>{const button=e.target.closest('[data-coupon-use]');if(button)useCoupon(button.dataset.couponUse);};
   $('closeDetail').onclick=()=>close('detailDialog');$('buyButton').onclick=openConfirm;$('closeConfirm').onclick=()=>close('confirmDialog');$('payButton').onclick=completePayment;
   $('closePayment').onclick=()=>close('paymentDialog');$('paymentOrderButton').onclick=()=>orders().find(o=>o.id===currentOrder)?.status==='WAIT_BINDING'?showBind():showOrder(currentOrder);$('ordersButton').onclick=showOrders;$('closeOrders').onclick=()=>close('ordersDialog');
   $('ordersContent').onclick=e=>{const button=e.target.closest('[data-order]');if(button)showOrder(button.dataset.order);};$('closeOrder').onclick=()=>close('orderDialog');
   $('completeOrder').onclick=()=>{const list=orders(),o=list.find(x=>x.id===currentOrder&&x.type==='RECHARGE');if(!o)return;if(o.status==='WAIT_BINDING')return showBind();if(o.status==='PROCESSING'){o.status='SUCCESS';saveOrders(list);close('orderDialog');showOrder(o.id);}};
   $('cancelBind').onclick=()=>{close('bindDialog');showOrder(currentOrder);};$('confirmBind').onclick=confirmBind;$('closeReward').onclick=()=>close('reward');
-  try{const d=initialize();$('account').innerHTML=d.users.map(u=>`<option value="${h(u['用户UID'])}">${h(u['用户昵称']||u['用户UID'])}${u['用户UID']==='U-DEMO-01'?' · 已绑定演示':u['用户UID']==='U-DEMO-02'?' · 未绑定演示':''}</option>`).join('');if(userUid)$('loginButton').textContent=userUid;drawProducts(d);}catch(e){$('message').textContent='演示数据加载失败：'+e.message;}
+  try{const d=initialize();$('account').innerHTML=d.users.map(u=>`<option value="${h(u['用户UID'])}">${h(u['用户昵称']||u['用户UID'])}${u['用户UID']==='U-DEMO-01'?' · 已绑定演示':u['用户UID']==='U-DEMO-02'?' · 未绑定演示':''}</option>`).join('');if(userUid)$('loginButton').textContent=userUid;drawProducts(d);drawCouponFloat(d);}catch(e){$('message').textContent='演示数据加载失败：'+e.message;}
 })();

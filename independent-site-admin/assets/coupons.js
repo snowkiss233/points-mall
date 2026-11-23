@@ -1,6 +1,6 @@
 /* 优惠券领域模型：本地原型数据，计价输入由交易侧提供；不连接真实支付。 */
 const COUPON_PAGES = {
-  coupons:{view:'templates',name:'优惠券模板',path:'/marketing/coupons',desc:'维护可复用的优惠规则；同一模板可创建多个人工或接口发放计划。'},
+  coupons:{view:'templates',name:'优惠券模板',path:'/marketing/coupons',desc:'维护可复用的优惠规则与去使用跳转；同一模板可用于人工、接口或事件触发发放。'},
   couponGrants:{view:'batches',name:'优惠券发放',path:'/marketing/couponGrants',desc:'配置发放人群、时间与券有效期，查看用户获券明细。'},
 };
 for(const [key,p] of Object.entries(COUPON_PAGES)){ROUTES[key]=p.path;SCHEMA[key]={name:p.name,desc:p.desc};}
@@ -75,20 +75,24 @@ const Coupons = (() => {
     if(!['ALL','SKU'].includes(d.scope))return '请选择适用范围';
     if(d.scope==='SKU'&&(!d.skuIds?.length||d.skuIds.some(x=>!Model.get(db,'products',x))))return '请至少选择一个有效商品';
     if(d.scope==='SKU'&&new Set(d.skuIds).size!==d.skuIds.length)return '适用商品不能重复';
+    const destination=d.useDestination||'SEARCH';
+    if(!['SEARCH','CUSTOM'].includes(destination))return '请选择去使用跳转方式';
+    if(destination==='CUSTOM'&&!/^(?:\/(?!\/)|\.\/|#\/)[^\s]*$/.test(d.usePath||''))return '自定义路径须为站内路径，以 /、./ 或 #/ 开头';
+    if(destination==='CUSTOM'&&String(d.usePath).length>300)return '自定义路径最多 300 个字符';
     return '';
   }
-  function rule(db,templateId){const t=get(db,'templates',templateId);return {name:t.name,currency:t.currency,ruleType:t.ruleType||'FIXED_AMOUNT',discountTenths:t.discountTenths??null,face:t.face,threshold:t.threshold,scope:t.scope,bearer:'PLATFORM',skuIds:db.couponData.scopes.filter(s=>s.templateId===t.id).map(s=>s.skuId)};}
+  function rule(db,templateId){const t=get(db,'templates',templateId);return {name:t.name,currency:t.currency,ruleType:t.ruleType||'FIXED_AMOUNT',discountTenths:t.discountTenths??null,face:t.face,threshold:t.threshold,scope:t.scope,bearer:'PLATFORM',useDestination:t.useDestination||'SEARCH',usePath:t.useDestination==='CUSTOM'?t.usePath:'',skuIds:db.couponData.scopes.filter(s=>s.templateId===t.id).map(s=>s.skuId)};}
   function saveTemplate(db,d,templateId='',t=now()) {
     const error=templateIssue(db,d);assert(!error,error);const old=templateId?get(db,'templates',templateId):null;
     assert(!templateId||old,'券模板不存在');assert(!old?.deletedAt,'模板已删除，不能编辑');
     assert(!old||!db.couponData.batches.some(b=>b.templateId===old.id&&batchState(b,t)==='ENABLED'),'存在发放中的计划，当前模板不可编辑');
     const beforeRule=old?copy(rule(db,old.id)):null,beforeRevision=old?.revision||0;
-    const fields={name:d.name.trim(),currency:d.currency,ruleType:d.ruleType||'FIXED_AMOUNT',discountTenths:d.ruleType==='DISCOUNT'?d.discountTenths:null,face:d.ruleType==='DISCOUNT'?0:d.face,threshold:d.threshold,scope:d.scope};
+    const fields={name:d.name.trim(),currency:d.currency,ruleType:d.ruleType||'FIXED_AMOUNT',discountTenths:d.ruleType==='DISCOUNT'?d.discountTenths:null,face:d.ruleType==='DISCOUNT'?0:d.face,threshold:d.threshold,scope:d.scope,useDestination:d.useDestination||'SEARCH',usePath:d.useDestination==='CUSTOM'?d.usePath.trim():''};
     const row=old?Object.assign(old,fields,{updatedAt:t,revision:(old.revision||1)+1}):{id:id('TPL'),...fields,status:'ENABLED',bearer:'PLATFORM',revision:1,deletedAt:null,createdAt:t,updatedAt:t,publishedAt:t};
     if(!old)db.couponData.templates.unshift(row);
     db.couponData.scopes=db.couponData.scopes.filter(s=>s.templateId!==row.id);
     if(d.scope==='SKU')db.couponData.scopes.push(...d.skuIds.map(skuId=>({id:id('SCOPE'),templateId:row.id,skuId})));
-    const afterRule=copy(rule(db,row.id)),changes=Object.fromEntries(['name','currency','ruleType','discountTenths','face','threshold','scope','skuIds'].filter(k=>JSON.stringify(beforeRule?.[k]??null)!==JSON.stringify(afterRule[k])).map(k=>[k,{before:beforeRule?.[k]??null,after:afterRule[k]}]));
+    const afterRule=copy(rule(db,row.id)),changes=Object.fromEntries(['name','currency','ruleType','discountTenths','face','threshold','scope','skuIds','useDestination','usePath'].filter(k=>JSON.stringify(beforeRule?.[k]??null)!==JSON.stringify(afterRule[k])).map(k=>[k,{before:beforeRule?.[k]??null,after:afterRule[k]}]));
     log(db,old?'编辑券模板':'创建券模板',row.id,old?row.status:'',row.status,'编辑仅影响后续新建计划；已有计划按保存的规则执行',t,{beforeRule,afterRule,beforeRevision,afterRevision:row.revision,changes});return row;
   }
   function setTemplateStatus(db,templateId,status,t=now()) {
