@@ -1,6 +1,6 @@
 /* 优惠券领域模型：本地原型数据，计价输入由交易侧提供；不连接真实支付。 */
 const COUPON_PAGES = {
-  coupons:{view:'templates',name:'优惠券模板',path:'/marketing/coupons',desc:'维护可复用的优惠规则与去使用跳转；同一模板可用于人工、接口或事件触发发放。'},
+  coupons:{view:'templates',name:'优惠券模板',path:'/marketing/coupons',desc:'维护可复用的优惠规则与使用引导页面；同一模板可用于人工、接口或事件触发发放。'},
   couponGrants:{view:'batches',name:'优惠券发放',path:'/marketing/couponGrants',desc:'配置发放人群、时间与券有效期，查看用户获券明细。'},
 };
 for(const [key,p] of Object.entries(COUPON_PAGES)){ROUTES[key]=p.path;SCHEMA[key]={name:p.name,desc:p.desc};}
@@ -76,9 +76,9 @@ const Coupons = (() => {
     if(d.scope==='SKU'&&(!d.skuIds?.length||d.skuIds.some(x=>!Model.get(db,'products',x))))return '请至少选择一个有效商品';
     if(d.scope==='SKU'&&new Set(d.skuIds).size!==d.skuIds.length)return '适用商品不能重复';
     const destination=d.useDestination||'SEARCH';
-    if(!['SEARCH','CUSTOM'].includes(destination))return '请选择去使用跳转方式';
-    if(destination==='CUSTOM'&&!/^(?:\/(?!\/)|\.\/|#\/)[^\s]*$/.test(d.usePath||''))return '自定义路径须为站内路径，以 /、./ 或 #/ 开头';
-    if(destination==='CUSTOM'&&String(d.usePath).length>300)return '自定义路径最多 300 个字符';
+    if(!['SEARCH','CUSTOM'].includes(destination))return '请选择使用引导页面';
+    if(destination==='CUSTOM'&&!/^(?:\/(?!\/)|\.\/|#\/)[^\s]*$/.test(d.usePath||''))return '页面路径须为站内路径，以 /、./ 或 #/ 开头';
+    if(destination==='CUSTOM'&&String(d.usePath).length>300)return '页面路径最多 300 个字符';
     return '';
   }
   function rule(db,templateId){const t=get(db,'templates',templateId);return {name:t.name,currency:t.currency,ruleType:t.ruleType||'FIXED_AMOUNT',discountTenths:t.discountTenths??null,face:t.face,threshold:t.threshold,scope:t.scope,bearer:'PLATFORM',useDestination:t.useDestination||'SEARCH',usePath:t.useDestination==='CUSTOM'?t.usePath:'',skuIds:db.couponData.scopes.filter(s=>s.templateId===t.id).map(s=>s.skuId)};}

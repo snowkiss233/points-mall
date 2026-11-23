@@ -65,9 +65,9 @@
     const rule=C.get(d,'batches',card.batchId)?.ruleSnapshot||{};
     if(rule.useDestination==='CUSTOM'&&rule.usePath){
       const path=rule.usePath.trim();
-      if(!/^(?:\/(?!\/)|\.\/|#\/)[^\s]*$/.test(path)){$('message').textContent='该券的目标路径无效，请联系运营处理';return;}
+      if(!/^(?:\/(?!\/)|\.\/|#\/)[^\s]*$/.test(path)){$('message').textContent='该券的页面路径无效，请联系运营处理';return;}
       const target=new URL(path,location.href);
-      if(target.origin!==location.origin){$('message').textContent='该券的目标路径无效，请联系运营处理';return;}
+      if(target.origin!==location.origin){$('message').textContent='该券的页面路径无效，请联系运营处理';return;}
       location.assign(target.href);return;
     }
     $('couponFloatPanel').hidden=true;$('couponFloatToggle').setAttribute('aria-expanded','false');$('keyword').value='';drawProducts(d);$('search').scrollIntoView({behavior:'smooth',block:'start'});$('keyword').focus();
