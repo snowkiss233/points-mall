@@ -157,7 +157,12 @@ const Coupons = (() => {
     return '';
   }
   const validityTypeForEvent=d=>d.validityType||'FIXED';
-  function saveBatch(db,d,batchId='',t=now()){
+  // Historical demo records retain their original fixed validity and issuance mode.
+  // This token is private: new plans still pass all current scene validations.
+  const legacySeedToken=Symbol('legacy-coupon-seed');
+  function saveBatch(db,d,batchId='',t=now(),seedToken=null){
+    const legacySeed=seedToken===legacySeedToken;
+    if(legacySeed)d={...d,triggerScenes:['PLAN_START']};
     const old=batchId?get(db,'batches',batchId):null;assert(!batchId||old,'发放计划不存在');assert(!old||batchState(old,t)!=='CLOSED','已结束计划不可编辑');
     if(old){const editable=['triggerScenes','validityType','validFrom','validTo','validDays','validDurationSeconds','issueTo'];d={...old,...Object.fromEntries(editable.filter(k=>d[k]!==undefined).map(k=>[k,d[k]]))};}
     const same=old&&old.templateId===d.templateId,tpl=get(db,'templates',d.templateId);
@@ -168,10 +173,11 @@ const Coupons = (() => {
     if(detailTriggered(d)&&snapshot.scope==='SKU'&&snapshot.skuIds.length===1)assert(!db.couponData.batches.some(b=>b.id!==old?.id&&detailTriggered(b)&&b.ruleSnapshot?.skuIds?.[0]===snapshot.skuIds[0]&&batchState(b,t)==='ENABLED'&&(!b.issueTo||ms(b.issueTo)>ms(d.issueFrom))),'该商品已有发放中的商详触发计划，请先结束旧计划');
     if(d.validityType==='AFTER_RECEIPT'){d.validFrom=null;d.validTo=null;}else d.validDays=null;
     if(d.audienceType==='UIDS'){const issue=audienceIssue(db,d.audienceUids);assert(!issue,issue);}
-    const error=batchIssue(db,{...d,ruleSnapshot:snapshot},!!old);assert(!error,error);
+    const error=batchIssue(db,{...d,ruleSnapshot:snapshot},!!old||legacySeed);assert(!error,error);
     const durationSeconds=d.validityType==='AFTER_RECEIPT'?(d.validDurationSeconds??d.validDays*86400):null;
     const fields={name:d.name.trim(),templateId:d.templateId,method:d.method,eventType:null,repeatPolicy:sceneTriggered(d)?d.repeatPolicy||'CYCLE':null,limit:d.limit===undefined?null:d.limit,userLimit:d.userLimit===undefined?null:d.userLimit,audienceConditions:copy(d.audienceConditions||{}),validFrom:d.validFrom,validTo:d.validTo,issueFrom:d.issueFrom,issueTo:d.issueTo,triggerScenes:[...new Set(d.triggerScenes||[])],ruleSnapshot:copy(snapshot),validityType:d.validityType,validDays:durationSeconds!==null&&durationSeconds%86400===0?durationSeconds/86400:null,validDurationSeconds:durationSeconds,timingType:d.timingType,audienceType:d.method==='SYSTEM'?'ALL':d.audienceType,audienceUids:d.method==='MANUAL'&&d.audienceType==='UIDS'?[...d.audienceUids]:[],audienceFileName:d.method==='MANUAL'&&['UIDS','CONDITIONS'].includes(d.audienceType)?(d.audienceFileName||''):''};
     const row=old?Object.assign(old,fields,{updatedAt:t}):{id:id('BATCH'),...fields,status:'DRAFT',issued:0,createdAt:t,updatedAt:t,publishedAt:null};
+    if(legacySeed)row.legacyPlan=true;
     if(!old)db.couponData.batches.unshift(row);log(db,old?'编辑发放计划':'创建发放计划',row.id,old?'DRAFT':'',row.status,'券规则按创建计划时保存，后续模板变更不影响本计划',t);return row;
   }
   function setBatchStatus(db,batchId,status,t=now(),reason='人工结束'){
@@ -378,7 +384,7 @@ const Coupons = (() => {
     if(db.couponData.reusableDemo)return;db.couponData.reusableDemo=true;
     const tpl=saveTemplate(db,{name:'满200减10（复用示例）',currency:'CNY',face:1000,threshold:20000,scope:'ALL',skuIds:[],allowedMethods:['MANUAL','SYSTEM']},'',t);setTemplateStatus(db,tpl.id,'ENABLED',t);
     const base={templateId:tpl.id,limit:100,userLimit:2,issueFrom:at(t,-1),issueTo:at(t,7),validFrom:at(t,-1),validTo:at(t,14)};
-    const manual=saveBatch(db,{...base,name:'日常运营计划（演示）',method:'MANUAL',userLimit:1},'',t);activatePlan(db,manual.id,t);
+    const manual=saveBatch(db,{...base,name:'日常运营计划（演示）',method:'MANUAL',userLimit:1},'',t,legacySeedToken);activatePlan(db,manual.id,t);
     const system=saveBatch(db,{...base,name:'活动奖品计划（演示）',method:'SYSTEM',validTo:at(t,30)},'',t);setBatchStatus(db,system.id,'ENABLED',t);
     const u=db.users.find(u=>u['用户UID']==='U-DEMO-02');if(u){grantFromSystem(db,{batchId:system.id,userUid:u['用户UID'],sourceSystem:'活动系统（演示）',sourceRecordId:'AWARD-DEMO-001',activityId:'ACTIVITY-DEMO-001',activityName:'转盘活动（演示）'},t);}
   }
@@ -393,7 +399,7 @@ const Coupons = (() => {
     if(db.couponData){separateLegacy(db,t);normalizePlans(db,t);seedReusable(db,t);return;}
     db.couponData={templates:[],batches:[],scopes:[],grantTasks:[],grantItems:[],userCoupons:[],redemptions:[],events:[]};
     const base={allowedMethods:['MANUAL'],method:'MANUAL',currency:'CNY',face:2000,threshold:6000,scope:'ALL',skuIds:[],limit:2000,userLimit:10,validFrom:at(t,-5),validTo:at(t,30),issueFrom:at(t,-7),issueTo:at(t,20)};
-    const seedBatch=(d,time)=>{const tpl=saveTemplate(db,d,'',time);setTemplateStatus(db,tpl.id,'ENABLED',time);const b=saveBatch(db,{...d,templateId:tpl.id,name:d.name+' · 首期'},'',time);return b;};
+    const seedBatch=(d,time)=>{const tpl=saveTemplate(db,d,'',time);setTemplateStatus(db,tpl.id,'ENABLED',time);const b=saveBatch(db,{...d,templateId:tpl.id,name:d.name+' · 首期'},'',time,legacySeedToken);return b;};
     const common=seedBatch({...base,name:'全场满60减20'},at(t,-6));setBatchStatus(db,common.id,'ENABLED',at(t,-6));
     const gameProducts=db.products.filter(p=>p['商品名称'].includes('黑神话'));
     const special=seedBatch({...base,name:'游戏精选满200减30',face:3000,threshold:20000,scope:gameProducts.length?'SKU':'ALL',skuIds:gameProducts.map(p=>p.uid),limit:500,userLimit:1},at(t,-6));setBatchStatus(db,special.id,'ENABLED',at(t,-6));
