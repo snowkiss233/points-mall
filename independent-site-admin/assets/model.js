@@ -1,6 +1,6 @@
 /* 原型数据规则。仅处理本地演示数据，不连接真实业务接口。 */
 const Model = (() => {
-  const VERSION = 42;
+  const VERSION = 43;
   const ALL_CHANNELS = '__all_channels__';
   const copy = value => JSON.parse(JSON.stringify(value));
   const object = value => value && typeof value === 'object' && !Array.isArray(value);
@@ -526,9 +526,9 @@ const Model = (() => {
         if(sample){const product=copy(sample);Object.assign(product,{uid:productId,'商品ID':'DEMO-ACC-24H','商品名称':'雷神加速器 24 小时（演示）','商品子标题':'支付后充值到确认的雷神账号','商品类型':'独立商品','账号类型':'接口充值','货源卡密类型':'接口充值','充值档位标识':tier,'充值时长（小时）':24,'绑定游戏类别':'','版本':'','生效平台':'','激活地区':'','人民币售价':19.9,'人民币原价':29.9,'库存':null,'状态':'上架','发售状态':'已发售','商品规格':'可暂停加速时长 24 小时','规格介绍':'支付后由接口充值到确认的雷神账号。','商品详情':'演示商品：请在购买前确认雷神账号手机号。','选择商品':[],'货源切换模式':'手动切换','手动当前货源ID':sourceId});product.refs={...product.refs,'绑定游戏类别':'','版本':'','生效平台':'','激活地区':''};db.products.push(product);}
       }
       if(get(db,'products',productId)&&!db.productSuppliers.some(b=>b.productId===productId))db.productSuppliers.push({uid:'bind-'+sourceId,productId,supplierId,sourceId,'排序':1,'状态':'启用'});
-      if(db.couponData&&!db.couponData.batches.some(b=>b.method==='EVENT')){
+      if(db.couponData&&!db.couponData.batches.some(b=>b.triggerScenes?.includes('PRODUCT_DETAIL')&&b.repeatPolicy)){
         const target=db.products.find(p=>p.uid==='1'&&p['状态']==='上架')||db.products.find(p=>p['状态']==='上架'&&p['商品类型']==='独立商品'&&p['账号类型']!=='接口充值');
-        if(target){const t=new Date().toISOString(),tpl=Coupons.saveTemplate(db,{name:'商详自动领取 10 元券（演示）',currency:'CNY',ruleType:'FIXED_AMOUNT',face:1000,threshold:0,scope:'SKU',skuIds:[target.uid]},'',t);const plan=Coupons.saveBatch(db,{name:target['商品名称']+' · 进入商详自动发券（演示）',templateId:tpl.id,method:'EVENT',eventType:'PRODUCT_DETAIL_VIEW',limit:null,userLimit:null,audienceType:'ALL',validityType:'AFTER_RECEIPT',validDurationSeconds:7*86400,issueFrom:t,issueTo:new Date(Date.now()+365*86400000).toISOString(),triggerScenes:['PRODUCT_DETAIL']},'',t);Coupons.activatePlan(db,plan.id,t);}
+        if(target){const t=new Date().toISOString(),tpl=Coupons.saveTemplate(db,{name:'商详自动领取 10 元券（演示）',currency:'CNY',ruleType:'FIXED_AMOUNT',face:1000,threshold:0,scope:'SKU',skuIds:[target.uid]},'',t);const plan=Coupons.saveBatch(db,{name:target['商品名称']+' · 进入商详自动发券（演示）',templateId:tpl.id,method:'MANUAL',repeatPolicy:'CYCLE',limit:null,userLimit:null,audienceType:'ALL',validityType:'AFTER_RECEIPT',validDurationSeconds:7*86400,issueFrom:t,issueTo:new Date(Date.now()+365*86400000).toISOString(),triggerScenes:['PRODUCT_DETAIL']},'',t);Coupons.activatePlan(db,plan.id,t);}
       }
       db.audit.unshift({time:new Date().toISOString(),operator:'原型升级',action:'新增事件触发优惠券及雷神接口充值商品演示数据；未修改历史商品或订单'});
     }
@@ -548,6 +548,14 @@ const Model = (() => {
       const demoSource=get(db,'sources','demo-leishen-24h-source');
       if(demoSource){demoSource['商品ID']='DEMO-LEISHEN-API';demoSource['商品名称']='雷神加速器接口充值货源（演示）';}
       db.audit.unshift({time:new Date().toISOString(),operator:'原型升级',action:'商品主表新增权益类型，历史加速器时长迁移至独立商品权益规格表；未能识别时长类型的商品已下架待核对'});
+    }
+    if(db.version<43&&db.couponData){
+      for(const plan of db.couponData.batches){
+        if(plan.method==='EVENT'){plan.method='MANUAL';plan.triggerScenes=['PRODUCT_DETAIL'];plan.eventType=null;plan.repeatPolicy ||= 'CYCLE';}
+        else if(plan.method==='MANUAL'&&!(plan.repeatPolicy&&plan.triggerScenes?.includes('PRODUCT_DETAIL')))plan.triggerScenes=['PLAN_START'];
+        else if(plan.method==='SYSTEM')plan.triggerScenes=['API_REQUEST'];
+      }
+      db.audit.unshift({time:new Date().toISOString(),operator:'原型升级',action:'优惠券发放方式收敛为人工/接口；历史商详事件计划归入人工发放的触发场景，保留发券与审计记录'});
     }
     db.version = VERSION;
     for (const item of db.trash) if (item.key === 'dict') item.row.refs = {};
