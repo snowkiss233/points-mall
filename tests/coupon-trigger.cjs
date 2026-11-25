@@ -26,10 +26,10 @@ function fixture() {
   const template = Coupons.saveTemplate(db, {name:'商详券', currency:'CNY',ruleType:'FIXED_AMOUNT',face:1000,threshold:0,scope:'SKU',skuIds:['sku-1']}, '', start);
   return {db, template};
 }
-function plan(db, template, scene, strategy = null) {
-  const d = {name:'测试发券',templateId:template.id,method:'MANUAL',triggerScenes:[scene],repeatPolicy:strategy,
-    limit:null,userLimit:null,audienceType:'ALL',issueFrom:start,issueTo:scene==='PRODUCT_DETAIL'?later(48):null,validityType:scene==='PRODUCT_DETAIL'?'AFTER_RECEIPT':'FIXED',
-    validDurationSeconds:3600,validFrom:start,validTo:later(24)};
+function plan(db, template, scenes, strategy = null) {
+  const d = {name:'测试发券',templateId:template.id,method:'MANUAL',triggerScenes:scenes,repeatPolicy:strategy,
+    limit:null,userLimit:null,audienceType:'ALL',issueFrom:start,issueTo:later(48),validityType:'AFTER_RECEIPT',
+    validDurationSeconds:3600,validFrom:null,validTo:null};
   const batch = Coupons.saveBatch(db,d,'',start);
   Coupons.activatePlan(db,batch.id,start);
   return batch;
@@ -37,8 +37,9 @@ function plan(db, template, scene, strategy = null) {
 
 test('商品详情页触发循环发放，仅在上一张券失效并再次访问后补发', () => {
   const {db,template} = fixture();
-  const batch = plan(db,template,'PRODUCT_DETAIL','CYCLE');
+  const batch = plan(db,template,['HOME','PRODUCT_DETAIL','GAME_LIST'],'CYCLE');
   assert.equal(batch.status,'ENABLED');
+  assert.deepEqual([...batch.triggerScenes],['HOME','PRODUCT_DETAIL','GAME_LIST']);
   assert.equal(batch.issued,0);
   assert.equal(Coupons.grantOnProductDetail(db,'sku-1','U-1',later(0.1)).issued,true);
   assert.equal(Coupons.grantOnProductDetail(db,'sku-1','U-1',later(0.5)).issued,false);
@@ -48,15 +49,12 @@ test('商品详情页触发循环发放，仅在上一张券失效并再次访�
   assert.equal(Coupons.validate(db).length,0);
 });
 
-test('只触发一次与计划开启时发放保留各自行为', () => {
+test('多场景共用只触发一次策略，且空场景不能创建', () => {
   const {db,template} = fixture();
-  const once = plan(db,template,'PRODUCT_DETAIL','ONCE');
+  const once = plan(db,template,['HOME','PRODUCT_DETAIL','PAYMENT_SUCCESS'],'ONCE');
   assert.equal(Coupons.grantOnProductDetail(db,'sku-1','U-1',later(0.1)).issued,true);
   assert.equal(Coupons.grantOnProductDetail(db,'sku-1','U-1',later(1.2)).onceComplete,true);
   assert.equal(once.issued,1);
-  Coupons.setBatchStatus(db,once.id,'CLOSED',later(2));
-  const immediate = plan(db,template,'PLAN_START');
-  assert.equal(immediate.status,'CLOSED');
-  assert.equal(immediate.issued,2);
+  assert.throws(()=>plan(db,template,[],'CYCLE'),/请至少选择一个有效触发场景/);
   assert.equal(Coupons.validate(db).length,0);
 });

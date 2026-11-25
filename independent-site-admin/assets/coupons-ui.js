@@ -114,10 +114,10 @@ const CouponUI = (() => {
       ${field('计划名称','<input name="batchName" aria-label="计划名称" maxlength="60" placeholder="如：10月运营发券" value="'+h(d.name)+'">','',true)}
       ${field('优惠券模板',`<select name="templateId" aria-label="优惠券模板"><option value="">请选择已上架模板</option>${choices.map(t=>`<option value="${h(t.id)}" ${t.id===d.templateId?'selected':''}>${h(t.name)} · ${h(t.id)} · ${h(summary(t))}</option>`).join('')}</select>`,'',true)}
       <div class="notice span2" id="cpBatchRule">请选择模板查看优惠规则。</div>
-      ${field('发放方式',`<select name="method" aria-label="发放方式">${Object.entries(C.methodLabels).map(([v,l])=>`<option value="${v}" ${v===d.method?'selected':''}>${l}</option>`).join('')}</select>`,'人工发放可在计划开启时或进入商品详情页时触发。',true)}
-      <div class="field" id="cpTriggerScenes"><span class="required">触发场景</span><select name="triggerScene" aria-label="触发场景"><option value="PLAN_START">计划开启时</option><option value="PRODUCT_DETAIL">商品详情页</option><option value="API_REQUEST">接口请求时</option><option value="HOME" disabled>首页（暂不支持）</option><option value="GAME_LIST" disabled>游戏查询列表（暂不支持）</option><option value="PAYMENT_SUCCESS" disabled>支付完成（暂不支持）</option></select><div class="field-help">商详触发仅支持单商品模板；接口发放由接口请求触发。</div></div>
-      <div class="field span2" id="cpEventRepeat"><span class="required">发放策略</span>${radios('repeatPolicy',Object.entries(C.repeatPolicyLabels),d.repeatPolicy||'CYCLE')}<div class="field-help">只触发一次：每人本计划最多一张。循环触发：上一张券失效后再次进入商详才补发。</div></div>
-      ${field('发放人群',radios('audienceType',[['ALL','全部用户'],['UIDS','模板导入 UID 名单'],['CONDITIONS','条件组合指定人群']],d.audienceType),'商详触发时实时校验人群；计划开启时发放则固定名单。',true)}
+      ${field('发放方式',`<select name="method" aria-label="发放方式">${Object.entries(C.methodLabels).map(([v,l])=>`<option value="${v}" ${v===d.method?'selected':''}>${l}</option>`).join('')}</select>`,'人工发放由所选客户端场景触发。',true)}
+      <div class="field" id="cpTriggerScenes"><span class="required">触发场景</span><div class="coupon-check-grid">${[['HOME','首页'],['PRODUCT_DETAIL','商品详情页'],['GAME_LIST','游戏列表'],['PAYMENT_SUCCESS','支付完成']].map(([v,l])=>`<label><input type="checkbox" name="triggerScenes" value="${v}"> ${l}</label>`).join('')}</div><div class="field-help">用户进入任一所选场景时触发发券；包含商品详情页时，仅支持单商品模板。</div></div>
+      <div class="field span2" id="cpEventRepeat"><span class="required">发放策略</span>${radios('repeatPolicy',Object.entries(C.repeatPolicyLabels),d.repeatPolicy||'CYCLE')}<div class="field-help">只触发一次：每人本计划最多一张。循环触发：上一张券失效后再次进入任一所选场景才补发。</div></div>
+      ${field('发放人群',radios('audienceType',[['ALL','全部用户'],['UIDS','模板导入 UID 名单'],['CONDITIONS','条件组合指定人群']],d.audienceType),'用户进入任一所选场景时实时校验发放资格。',true)}
       <div class="field span2" id="cpConditions"><span>指定人群条件（同时满足）</span><label><input type="checkbox" name="useRegistration">指定注册时间用户</label><div class="coupon-date-inputs"><input type="datetime-local" name="registeredFrom" aria-label="注册开始时间"><span>至</span><input type="datetime-local" name="registeredTo" aria-label="注册结束时间"></div><select name="paymentAudience" aria-label="付费条件"><option value="">不限付费状态</option><option value="UNPAID">未付费用户</option><option value="PAID_ANY">已付费用户 · 任意消费</option><option value="PAID_SKU">已付费用户 · 指定商品消费</option></select><div id="cpPaidSkus"><button type="button" class="btn small" id="cpChoosePaid">选择消费商品</button><span id="cpPaidCount"></span></div><div class="field-help">多个条件同时满足，取交集；付费按支付成功订单判断。</div></div>
       <div class="field span2" id="cpAudienceField"><span class="required">导入用户 UID</span><div class="coupon-upload"><a class="btn small" href="assets/templates/coupon-audience-template.xlsx" download="优惠券指定人群导入模板.xlsx">下载 Excel 模板</a><input name="audienceFile" type="file" aria-label="上传指定人群 Excel" accept=".xlsx"></div><div class="field-help">仅支持 .xlsx，且只能有一个含数据的工作表；首列为 UID，从第 2 行起每行填写一个，使用文本格式保留前导零与长 UID。重复 UID 自动去重。原型单次最多 10,000 行，文件不超过 5 MB。</div><div class="coupon-import-result" id="cpImportResult" aria-live="polite"></div></div>
       ${field('发放时间',radios('timingType',[['IMMEDIATE','立即发放'],['SCHEDULED','定时发放（暂不支持）',true]],'IMMEDIATE'),'创建后立即生效。',true,true)}
@@ -125,18 +125,18 @@ const CouponUI = (() => {
       ${field('券有效期',radios('validityType',[['FIXED','固定周期'],['AFTER_RECEIPT','领取后有效']],d.validityType),'',true,true)}
       <div class="field span2" id="cpFixedDates"><span class="required">券有效期</span><div class="coupon-date-inputs">${input('validFrom',local(d.validFrom),'datetime-local')}<span>至</span>${input('validTo',local(d.validTo),'datetime-local')}</div></div>
       <div class="field span2" id="cpRelativeDays"><span class="required">领取后有效时长</span><div class="coupon-days">领取后 ${input('validDays',Math.floor((d.validDurationSeconds??(d.validDays||7)*86400)/86400),'number','min="0" step="1"')} 天 ${input('validHours',Math.floor(((d.validDurationSeconds??(d.validDays||7)*86400)%86400)/3600),'number','min="0" max="23" step="1"')} 小时 ${input('validMinutes',Math.floor(((d.validDurationSeconds??(d.validDays||7)*86400)%3600)/60),'number','min="0" max="59" step="1"')} 分 ${input('validSeconds',(d.validDurationSeconds??(d.validDays||7)*86400)%60,'number','min="0" max="59" step="1"')} 秒内有效</div><div class="field-help">有效期从实际到账时刻起算，按天、时、分、秒累加；到达失效时刻后不可使用。</div></div>
-       <div class="field span2" id="cpIssueDeadline"><span class="required">发放截止时间</span>${input('issueTo',local(d.issueTo),'datetime-local','required')}<div class="field-help">商详触发或接口发放须设置截止时间；截止后不再新发券。</div></div>
+       <div class="field span2" id="cpIssueDeadline"><span class="required">发放截止时间</span>${input('issueTo',local(d.issueTo),'datetime-local','required')}<div class="field-help">场景触发或接口发放须设置截止时间；截止后不再新发券。</div></div>
       <div class="notice span2">计划创建后立即开启。未结束前可编辑有效期、接口截止时间及触发场景等允许字段；结束后仅供查看。模板作废会停止本计划继续发券。</div>
     </form>`;
     const mid=modal(batchId?'编辑发放计划':'新建发放计划',body,'<button class="btn" data-action="close">取消</button><button class="btn primary" type="submit" form="cpBatchForm">'+(editing?'保存':'创建')+'</button>',true),form=$('#cpBatchForm');
     let importedUids=[...(d.audienceUids||[])],importedFile=d.audienceFileName||'',uploadVersion=0,uploading=false;
     $('#cpImportResult').textContent=d.audienceType==='UIDS'&&importedUids.length?`已导入 ${importedUids.length} 个 UID（${importedFile||'历史指定人群'}）`:'尚未导入 UID';
     let paidSkuIds=[...(d.audienceConditions?.paidSkuIds||[])];
-    const ac=d.audienceConditions||{};form.elements.useRegistration.checked=!!ac.registeredFrom;form.elements.registeredFrom.value=local(ac.registeredFrom);form.elements.registeredTo.value=local(ac.registeredTo);form.elements.paymentAudience.value=ac.payment||'';form.elements.triggerScene.value=d.method==='SYSTEM'?'API_REQUEST':d.triggerScenes?.includes('PRODUCT_DETAIL')?'PRODUCT_DETAIL':'PLAN_START';
+    const ac=d.audienceConditions||{};form.elements.useRegistration.checked=!!ac.registeredFrom;form.elements.registeredFrom.value=local(ac.registeredFrom);form.elements.registeredTo.value=local(ac.registeredTo);form.elements.paymentAudience.value=ac.payment||'';form.querySelectorAll('input[name="triggerScenes"]').forEach(n=>n.checked=(d.triggerScenes||[]).includes(n.value));
     const conditions=()=>({registeredFrom:form.elements.useRegistration.checked&&form.elements.registeredFrom.value?new Date(form.elements.registeredFrom.value).toISOString():null,registeredTo:form.elements.useRegistration.checked&&form.elements.registeredTo.value?new Date(form.elements.registeredTo.value).toISOString():null,payment:form.elements.paymentAudience.value,paidSkuIds:[...paidSkuIds]});
     const lockEditFields=()=>{
       if(!editing)return;
-       const editable=new Set(['validityType','validFrom','validTo','validDays','validHours','validMinutes','validSeconds','issueTo']);
+       const editable=new Set(['triggerScenes','validityType','validFrom','validTo','validDays','validHours','validMinutes','validSeconds','issueTo']);
       form.classList.add('coupon-editing');
       form.querySelectorAll('input,select,textarea,button').forEach(el=>{
         if(el.type==='submit')return;
@@ -145,19 +145,19 @@ const CouponUI = (() => {
     };
     $('#cpChoosePaid').onclick=()=>chooseSkus(paidSkuIds,ids=>{paidSkuIds=ids;update();});
     const update=()=>{
-      const manual=form.elements.method.value==='MANUAL',scene=form.elements.triggerScene,audience=manual;if(!editing){if(!manual)scene.value='API_REQUEST';else if(scene.value==='API_REQUEST')scene.value='PLAN_START';}const detail=manual&&scene.value==='PRODUCT_DETAIL';if(detail&&!editing)form.elements.validityType.value='AFTER_RECEIPT';const relative=form.elements.validityType.value==='AFTER_RECEIPT',pack=audience&&form.elements.audienceType.value==='CONDITIONS',uids=audience&&form.elements.audienceType.value==='UIDS';
-      $('#cpEventRepeat').hidden=!detail;scene.disabled=!manual;
+      const manual=form.elements.method.value==='MANUAL',audience=manual,selectedScenes=[...form.querySelectorAll('input[name="triggerScenes"]:checked')].map(n=>n.value),triggered=manual&&selectedScenes.length>0;if(triggered&&!editing)form.elements.validityType.value='AFTER_RECEIPT';const relative=form.elements.validityType.value==='AFTER_RECEIPT',pack=audience&&form.elements.audienceType.value==='CONDITIONS',uids=audience&&form.elements.audienceType.value==='UIDS';
+      $('#cpEventRepeat').hidden=!triggered;$('#cpTriggerScenes').hidden=!manual;form.querySelectorAll('input[name="triggerScenes"]').forEach(n=>n.disabled=!manual);
       form.elements.audienceType[0].closest('.field').hidden=!audience;$('#cpConditions').hidden=!pack;$('#cpAudienceField').hidden=!uids;form.elements.audienceFile.disabled=!uids;$('#cpPaidSkus').hidden=!pack||form.elements.paymentAudience.value!=='PAID_SKU';$('#cpPaidCount').textContent='已选 '+paidSkuIds.length+' 个商品';
-      $('#cpIssueDeadline').hidden=manual&&!detail;form.elements.issueTo.disabled=manual&&!detail;
+      $('#cpIssueDeadline').hidden=manual&&!triggered;form.elements.issueTo.disabled=manual&&!triggered;
       $('#cpFixedDates').hidden=relative;form.elements.validFrom.disabled=relative;form.elements.validTo.disabled=relative;
       $('#cpRelativeDays').hidden=!relative;for(const key of ['validDays','validHours','validMinutes','validSeconds'])form.elements[key].disabled=!relative;
       if(editing){
-         form.elements.issueTo.disabled=manual&&!detail;
+         form.elements.issueTo.disabled=manual&&!triggered;
         lockEditFields();
       }
 
       const count=pack?C.audienceUsers(db,{audienceType:'CONDITIONS',audienceConditions:conditions()}).length:uids?importedUids.length:db.users.length;
-      $('#cpTimingHelp .field-help').textContent=detail?`当前符合条件 ${count} 人（仅供预览）；进入所选商品商详时实时校验资格。`:manual?`当前人群 ${count} 人，创建后每人发放 1 张；执行完成后计划自动结束并归档。`:'创建后立即接收接口请求；无需选择发放人群，由接口调用方传入用户 UID、业务名称、来源系统及唯一奖励明细编号。';
+      $('#cpTimingHelp .field-help').textContent=triggered?`当前符合条件 ${count} 人（仅供预览）；进入任一所选场景时实时校验资格。`:manual?'请至少选择一个触发场景。':'创建后立即接收接口请求；无需选择发放人群，由接口调用方传入用户 UID、业务名称、来源系统及唯一奖励明细编号。';
       SelectControls.refresh(form);
     };
     form.elements.templateId.onchange=()=>{
@@ -166,7 +166,7 @@ const CouponUI = (() => {
       box.textContent=t?summary(saved||t)+'；'+((saved||t).scope==='ALL'?'全部商品':'指定 '+ids.length+' 个商品')+'。规则随计划保存，后续模板变更不影响本计划。':'请选择模板查看优惠规则。';
       if(t&&(saved||t).scope==='SKU'){box.insertAdjacentHTML('beforeend',' <button type="button" class="link-btn">查看适用商品</button>');box.querySelector('button').onclick=()=>showSkus(ids);}update();
     };
-    form.addEventListener('change',e=>{if(['method','triggerScene','audienceType','validityType','useRegistration','paymentAudience','registeredFrom','registeredTo'].includes(e.target.name))update();});form.elements.templateId.onchange();
+    form.addEventListener('change',e=>{if(['method','triggerScenes','audienceType','validityType','useRegistration','paymentAudience','registeredFrom','registeredTo'].includes(e.target.name))update();});form.elements.templateId.onchange();
     form.elements.audienceFile.onchange=async()=>{
       const file=form.elements.audienceFile.files[0],ticket=++uploadVersion,box=$('#cpImportResult'),submit=$('#'+mid+' .modal-foot button[type=submit]');
       importedUids=[];importedFile='';uploading=false;box.classList.remove('bad');update();
@@ -191,17 +191,17 @@ const CouponUI = (() => {
         data.validityType=data.validityType||d.validityType;data.validDays=data.validDays||d.validDays;
       }
       const durationSeconds=['validDays','validHours','validMinutes','validSeconds'].reduce((sum,k)=>sum+(Number(data[k])||0)*({validDays:86400,validHours:3600,validMinutes:60,validSeconds:1}[k]),0);
-       const hasAudience=data.method==='MANUAL',triggerScene=editing?d.triggerScenes?.[0]:form.elements.triggerScene.value,detail=hasAudience&&triggerScene==='PRODUCT_DETAIL';
-       const payload={name:data.batchName,templateId:data.templateId,method:data.method,eventType:null,repeatPolicy:detail?(editing?d.repeatPolicy:data.repeatPolicy):null,limit:editing?d.limit:null,userLimit:editing?d.userLimit:null,audienceType:hasAudience?data.audienceType:'ALL',audienceConditions:hasAudience&&data.audienceType==='CONDITIONS'?(editing?data.audienceConditions:conditions()):{},audienceUids:hasAudience&&data.audienceType==='UIDS'?(editing?[...data.audienceUids]:[...importedUids]):[],audienceFileName:hasAudience&&data.audienceType==='UIDS'?(editing?data.audienceFileName:importedFile):'',timingType:data.timingType,validityType:data.validityType,validDays:durationSeconds%86400===0?durationSeconds/86400:null,validDurationSeconds:data.validityType==='AFTER_RECEIPT'?durationSeconds:null,issueFrom:editing?d.issueFrom:time,triggerScenes:editing?d.triggerScenes:[triggerScene],issueTo:data.issueTo?new Date(data.issueTo).toISOString():(editing?d.issueTo:null)};
+       const hasAudience=data.method==='MANUAL',triggerScenes=[...form.querySelectorAll('input[name="triggerScenes"]:checked')].map(n=>n.value),triggered=hasAudience&&triggerScenes.length>0;
+       const payload={name:data.batchName,templateId:data.templateId,method:data.method,eventType:null,repeatPolicy:triggered?(editing?d.repeatPolicy:data.repeatPolicy):null,limit:editing?d.limit:null,userLimit:editing?d.userLimit:null,audienceType:hasAudience?data.audienceType:'ALL',audienceConditions:hasAudience&&data.audienceType==='CONDITIONS'?(editing?data.audienceConditions:conditions()):{},audienceUids:hasAudience&&data.audienceType==='UIDS'?(editing?[...data.audienceUids]:[...importedUids]):[],audienceFileName:hasAudience&&data.audienceType==='UIDS'?(editing?data.audienceFileName:importedFile):'',timingType:data.timingType,validityType:data.validityType,validDays:durationSeconds%86400===0?durationSeconds/86400:null,validDurationSeconds:data.validityType==='AFTER_RECEIPT'?durationSeconds:null,issueFrom:editing?d.issueFrom:time,triggerScenes:hasAudience?triggerScenes:['API_REQUEST'],issueTo:data.issueTo?new Date(data.issueTo).toISOString():(editing?d.issueTo:null)};
       for(const k of ['validFrom','validTo'])payload[k]=data[k]?new Date(data[k]).toISOString():null;
       if(hasAudience&&payload.audienceType==='UIDS'&&!importedUids.length)throw Error('请上传 Excel 导入指定人群 UID');
       if(payload.audienceType==='CONDITIONS'&&form.elements.useRegistration.checked&&(!payload.audienceConditions.registeredFrom||!payload.audienceConditions.registeredTo))throw Error('请完整填写注册时间范围');
-       if(!run(editing?'编辑发放计划':'创建发放计划',()=>{const b=C.saveBatch(db,payload,batchId,time);if(!editing)C.activatePlan(db,b.id,time);return b;},b=>{closeModal(mid);if(current==='couponGrants')templateUrl('');go('batches',()=>toast(editing?'发放计划已保存':b.method==='MANUAL'&&b.triggerScenes?.includes('PRODUCT_DETAIL')?'商详触发计划已创建并开启':b.method==='MANUAL'?'已向 '+b.issued+' 位用户发券，计划已归档':'接口发放计划已创建并开启'));}))error(form,lastCommitError);
+       if(!run(editing?'编辑发放计划':'创建发放计划',()=>{const b=C.saveBatch(db,payload,batchId,time);if(!editing)C.activatePlan(db,b.id,time);return b;},b=>{closeModal(mid);if(current==='couponGrants')templateUrl('');go('batches',()=>toast(editing?'发放计划已保存':b.method==='MANUAL'?'场景触发计划已创建并开启':'接口发放计划已创建并开启'));}))error(form,lastCommitError);
     }catch(err){error(form,err.message==='Invalid time value'?'请完整填写有效日期时间':err.message);}};
   }
   function batchDetail(id){
     const b=batch(id);recipientState={id,uidPhone:'',orderId:'',redeemed:'',page:1};
-      modal('发放详情',dl([['发放方式',C.methodLabels[b.method]],['发放人群',C.audienceText(b)],['触发场景',(b.triggerScenes||[]).map(scene=>C.triggerSceneLabels[scene]||scene).join('、')||'历史计划未配置'],['发放策略',b.triggerScenes?.includes('PRODUCT_DETAIL')?C.repeatPolicyLabels[b.repeatPolicy||'CYCLE']:'不适用'],['发放截止时间',b.method==='MANUAL'&&!b.triggerScenes?.includes('PRODUCT_DETAIL')?'不适用':C.date(b.issueTo)]])+'<div id="cpPlanRecipients"></div>','<button class="btn" data-action="close">关闭</button>',true);refreshRecipients();
+      modal('发放详情',dl([['发放方式',C.methodLabels[b.method]],['发放人群',C.audienceText(b)],['触发场景',(b.triggerScenes||[]).map(scene=>C.triggerSceneLabels[scene]||scene).join('、')||'历史计划未配置'],['发放策略',b.method==='MANUAL'&&b.repeatPolicy?C.repeatPolicyLabels[b.repeatPolicy]:'不适用'],['发放截止时间',b.method==='MANUAL'&&!b.repeatPolicy?'不适用':C.date(b.issueTo)]])+'<div id="cpPlanRecipients"></div>','<button class="btn" data-action="close">关闭</button>',true);refreshRecipients();
   }
   function refreshRecipients(){
     const root=$('#cpPlanRecipients');if(!root||!recipientState)return;const q=recipientState;
