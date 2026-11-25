@@ -22,7 +22,7 @@ const Coupons = (() => {
   const labels={DRAFT:'结束',SCHEDULED:'待发放',ENABLED:'开启',OPEN:'开启',ENDED:'结束',PAUSED:'已下架',CLOSED:'结束',VOID:'已作废',AVAILABLE:'未使用',PENDING:'待生效',LOCKED:'订单锁定',USED:'已核销',EXPIRED:'已过期',REVOKED:'已回收',SUCCESS:'成功',PARTIAL_SUCCESS:'部分成功',FAILED:'失败',REDEEMED:'已核销',RELEASED:'已释放',RETURNED:'已返还',NONE:'未触发',EXPIRED_NOT_RETURNED:'已过期不返券',ISSUING:'发放中',ISSUED:'已发完'};
   function displayStatus(c,t=now()){return c.status==='AVAILABLE'?(ms(t)>=ms(c.validTo)?'EXPIRED':ms(t)<ms(c.validFrom)?'PENDING':'AVAILABLE'):c.status;}
   const methodLabels={MANUAL:'人工发放',SYSTEM:'接口发放'};
-  const repeatPolicyLabels={ONCE:'只触发一次',CYCLE:'循环触发'};
+  const repeatPolicyLabels={ONCE:'仅领取一次',CYCLE:'可重复领取'};
   const triggerSceneLabels={HOME:'首页',PRODUCT_DETAIL:'商品详情页',GAME_LIST:'游戏列表',PAYMENT_SUCCESS:'支付完成',PLAN_START:'计划开启时（历史）',API_REQUEST:'接口请求时'};
   const clientTriggerScenes=['HOME','PRODUCT_DETAIL','GAME_LIST','PAYMENT_SUCCESS'];
   const sceneTriggered=b=>b.method==='MANUAL'&&b.triggerScenes?.some(scene=>clientTriggerScenes.includes(scene));
@@ -120,10 +120,10 @@ const Coupons = (() => {
     if(!d.name?.trim()||d.name.trim().length>60)return '请填写 1–60 字计划名称';
     if(!methodLabels[d.method])return '请选择有效发放方式';
     if(sceneTriggered(d)){
-      if(!repeatPolicyLabels[d.repeatPolicy||'CYCLE'])return '请选择有效发放策略';
+      if(!repeatPolicyLabels[d.repeatPolicy||'CYCLE'])return '请选择有效领取规则';
       if(validityTypeForEvent(d)!=='AFTER_RECEIPT')return '场景触发发券须使用领取后有效时长';
       if(detailTriggered(d)){const scope=d.ruleSnapshot||rule(db,d.templateId);if(scope.scope!=='SKU'||scope.skuIds.length!==1)return '包含商品详情页时，须选择仅适用一个商品的优惠券模板';}
-      if(d.userLimit!=null)return '场景触发发券由发放策略控制，不设置累计领取上限';
+      if(d.userLimit!=null)return '场景触发发券由领取规则控制，不设置累计领取上限';
     }
     if(d.limit!==null&&(!int(d.limit)||d.limit<1))return '计划发放总量须为正整数，或留空表示不限';
     if(d.userLimit!=null&&(!int(d.userLimit)||d.userLimit<1))return '每人本计划发放上限须为正整数';
