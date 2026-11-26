@@ -75,13 +75,12 @@ const FormValidation = (() => {
 
     if (key === 'products' && visible('选择商品') && draft['商品类型'] === '组合商品' && !selected(draft['选择商品']).length) return error('选择商品', '请至少选择一个组合商品');
     if (key === 'products' && draft['商品类型'] === '独立商品' && draft['账号类型'] === '接口充值') {
-      if(draft['货源卡密类型']!=='接口充值')return error('货源卡密类型','接口充值商品的货源卡密类型须为接口充值');
       if(draft['权益类型']!=='加速器时长')return error('权益类型','请选择已支持的接口充值权益类型');
       const spec=draft._benefitSpec||{};
       if(!['可暂停时长','不可暂停时长'].includes(spec.durationType))return error('时长类型','请选择加速器时长类型');
       if(!numeric(spec.durationHours)||!Number.isSafeInteger(Number(spec.durationHours))||Number(spec.durationHours)<=0)return error('充值时长（小时）','充值时长须为正整数小时数');
     }
-    if(key==='products'&&draft['商品类型']==='独立商品'&&draft['账号类型']!=='接口充值'&&draft['货源卡密类型']==='接口充值')return error('货源卡密类型','仅接口充值商品可选择接口充值货源卡密类型');
+    if(key==='products'&&draft['商品类型']==='独立商品'&&draft['账号类型']==='账号'&&!['卡号、卡密','卡号、卡密、邮箱、地址'].includes(draft['货源卡密类型']))return error('货源卡密类型','请选择账号履约展示字段');
     if (key === 'promotions' && visible('折扣') && (!numeric(draft['折扣']) || Number(draft['折扣']) <= 0 || Number(draft['折扣']) > 1)) return error('折扣', '折扣须大于 0 且不超过 1，例如 0.85 表示 8.5 折');
     const limits = selected(draft['权限限制']);
     if (key === 'blacklist' && visible('权限限制') && limits.includes('解除拉黑') && limits.length > 1) return error('权限限制', '解除拉黑不能与其他限制同时选择');

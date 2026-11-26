@@ -1,6 +1,6 @@
 /* 原型数据规则。仅处理本地演示数据，不连接真实业务接口。 */
 const Model = (() => {
-  const VERSION = 43;
+  const VERSION = 44;
   const ALL_CHANNELS = '__all_channels__';
   const copy = value => JSON.parse(JSON.stringify(value));
   const object = value => value && typeof value === 'object' && !Array.isArray(value);
@@ -242,7 +242,7 @@ const Model = (() => {
         if (!object(prices) || Object.entries(prices).some(([id,value]) => !selected.includes(id) || typeof value !== 'number' || !Number.isFinite(value) || value < 0)) fail(key,row,'加购价格式错误');
       }
       for (const f of fields(key)) {
-        const productInactive = row['商品类型']==='组合商品' ? ['账号类型','权益类型','货源卡密类型','商品分类','商品子分类'].includes(f.label) : ['选择商品','生效时间'].includes(f.label)||(row['账号类型']==='接口充值'?['绑定游戏类别','版本','生效平台','激活地区'].includes(f.label):f.label==='权益类型');
+        const productInactive = row['商品类型']==='组合商品' ? ['账号类型','权益类型','货源卡密类型','商品分类','商品子分类'].includes(f.label) : ['选择商品','生效时间'].includes(f.label)||(row['账号类型']==='接口充值'?['绑定游戏类别','版本','生效平台','激活地区'].includes(f.label):f.label==='权益类型')||(row['账号类型']!=='账号'&&f.label==='货源卡密类型');
         const inactive = (key === 'products' && productInactive) || (['gifts','bundles'].includes(key) && row['适用对象'] === '全局默认' && ['关联购买商品','主商品'].includes(f.label)) || (key === 'auth' && f.label === '选择模块' && row['生效范围'] === '全部') || (key === 'dictItems' && ((f.label === 'key' && row['key类型'] === '图片') || (f.label === 'key图片' && row['key类型'] !== '图片')));
         if (inactive) continue;
         const value = rels[f.label] ? row.refs?.[f.label] : row[f.label];
@@ -259,8 +259,9 @@ const Model = (() => {
         if (!Array.isArray(row['选择商品']) || row['选择商品'].some(id => id === row.uid && key === 'products' || get(db,'products',id)?.['商品类型'] !== '独立商品')) fail(key,row,'组成/推荐商品关联无效');
       }
       if (key === 'products') {
-        if(row['账号类型']==='接口充值'&&row['商品类型']==='独立商品'&&(!text(row['权益类型'])||row['货源卡密类型']!=='接口充值'||!benefitSpec(db,row.uid)))fail(key,row,'接口充值商品须配置权益类型及独立权益规格');
-        if(row['账号类型']!=='接口充值'&&row['货源卡密类型']==='接口充值')fail(key,row,'仅接口充值商品可使用接口充值货源卡密类型');
+        if(row['账号类型']==='接口充值'&&row['商品类型']==='独立商品'&&(!text(row['权益类型'])||!benefitSpec(db,row.uid)))fail(key,row,'接口充值商品须配置权益类型及独立权益规格');
+        if(row['账号类型']==='账号'&&!['卡号、卡密','卡号、卡密、邮箱、地址'].includes(row['货源卡密类型']))fail(key,row,'账号履约须配置有效的展示字段');
+        if(row['账号类型']!=='账号'&&text(row['货源卡密类型']))fail(key,row,'仅账号履约可配置履约展示字段');
         if('充值档位标识' in row||'充值时长（小时）' in row)fail(key,row,'商品主表不能保存接口档位或权益规格字段');
         if (row.refs?.['版本'] && get(db,'versions',row.refs['版本'])?.parentId !== row.refs['绑定游戏类别']) fail(key,row,'版本不属于所选游戏');
         if (row.refs?.['商品子分类'] && get(db,'subcategories',row.refs['商品子分类'])?.parentId !== row.refs['商品分类']) fail(key,row,'子分类不属于所选分类');
@@ -556,6 +557,12 @@ const Model = (() => {
         else if(plan.method==='SYSTEM')plan.triggerScenes=['API_REQUEST'];
       }
       db.audit.unshift({time:new Date().toISOString(),operator:'原型升级',action:'优惠券发放方式收敛为人工/接口；历史商详事件计划归入人工发放的触发场景，保留发券与审计记录'});
+    }
+    if(db.version<44){
+      const accountFields=['卡号、卡密','卡号、卡密、邮箱、地址'];
+      const products=[...(db.products||[]),...(db.trash||[]).filter(item=>item.key==='products').map(item=>item.row)];
+      for(const product of products)product['货源卡密类型']=product['账号类型']==='账号'?(accountFields.includes(product['货源卡密类型'])?product['货源卡密类型']:'卡号、卡密'):'';
+      db.audit.unshift({time:new Date().toISOString(),operator:'原型升级',action:'商品账号类型更名为履约方式；货源卡密类型更名为履约展示字段，并按账号履约迁移展示字段'});
     }
     db.version = VERSION;
     for (const item of db.trash) if (item.key === 'dict') item.row.refs = {};
